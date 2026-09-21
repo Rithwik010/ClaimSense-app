@@ -1,0 +1,5 @@
+modifier,source
+XE,"HCPCS Level II October 2026 (data/raw/hcpcs/2026-10): separate encounter, a service that is distinct"
+XP,"HCPCS Level II October 2026 (data/raw/hcpcs/2026-10): separate practitioner, a service that is distinct"
+XS,"HCPCS Level II October 2026 (data/raw/hcpcs/2026-10): separate structure, a service that is distinct"
+XU,"HCPCS Level II October 2026 (data/raw/hcpcs/2026-10): unusual non-overlapping service, a service that is distinct"
