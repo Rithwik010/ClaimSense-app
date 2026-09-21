@@ -15,6 +15,7 @@ by the team and received into the repo on 2026-09-21. Downloads are done by peop
 | ICD-10-CM code descriptions in tabular order (74,879 codes) | FY2027 (effective 2026-10-01) | `icd10cm/FY2027/` | `2027-code-descriptions-tabular-order.zip` | [cms.gov](https://www.cms.gov/medicare/coding-billing/icd-10-codes) | CMS/NCHS (US government work) |
 | HCPCS Level II alpha-numeric file | October 2026, v2 | `hcpcs/2026-10/` | `HCPC2026_OCT_ANWEB_v2.txt` / `.xlsx`, record layout, transaction report, corrections, NOC codes, procedure notes | [cms.gov](https://www.cms.gov/medicare/coding-billing/healthcare-common-procedure-system/quarterly-update) | CMS (US government work) |
 | Place of Service code set | 2024-05-02 | `pos/2024-05-02/` | `Website_POS_database__5_2_24 (kmk).pdf` | [cms.gov](https://www.cms.gov/medicare/coding-billing/place-of-service-codes/code-sets) | CMS (US government work) |
+| NCCI PTP edits, practitioner: full edit tables (2,637,645 pairs; row counts match CMS) | v323r0, effective 2026-10-01 | `ncci-ptp/ccipra-v323r0-f1/` … `-f4/` | `ccipra-v323r0-f1.TXT` … `-f4.txt` (+ `.xlsx`) | [cms.gov](https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-procedure-procedure-ptp-edits) | Contains CPT® (© AMA); AMA license accepted at download by the team |
 | NCCI PTP edits, practitioner: quarterly changes only | effective 2026-10-01 | `ncci-ptp/2026-10-changes-only/` | additions, deletions, modifier-indicator changes | [cms.gov](https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-procedure-procedure-ptp-edits) | Contains CPT® (© AMA); AMA license accepted at download |
 | MUE table, practitioner services | effective 2026-07-01 | `mue/2026-07/` | `MCR_MUE_PractitionerServices_Eff_07-01-2026.csv` / `.xlsx` | [cms.gov](https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-medically-unlikely-edits) | Contains CPT® (© AMA); AMA license accepted at download |
 | Physician Fee Schedule relative value files | RVU26A (January 2026) | `pfs/rvu26a/` | `PPRRVU2026_Jan_*`, `GPCI2026`, `26LOCCO`, `ANES2026`, `OPPSCAP_Jan`, `RVU26AR.pdf` | [cms.gov](https://www.cms.gov/medicare/payment/fee-schedules/physician/pfs-relative-value-files) | Contains CPT® (© AMA); AMA license accepted at download |
@@ -27,13 +28,12 @@ by the team and received into the repo on 2026-09-21. Downloads are done by peop
 
 ## Still to download
 
-| Source | Needed for | Page | Status |
-|---|---|---|---|
-| NCCI PTP edits, practitioner: the **full** edit tables, v323r0 effective 2026-10-01 (4 zip files) | Rule R11 | [cms.gov](https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/medicare-ncci-procedure-procedure-ptp-edits) | On hold: team decision on the AMA CPT license (below) |
+Nothing outstanding.
 
 ## Open question: AMA CPT license
 
 CMS's NCCI, MUE and PFS downloads sit behind an AMA license that authorizes CPT use "internally
 within your organization within the United States" and limits use "to use in Medicare, Medicaid
-or other programs administered by CMS". The team must decide whether and how this project may use
-CPT-containing files, and record the decision in `DECISIONS.md`.
+or other programs administered by CMS". The team downloaded these files and is confirming with its guide / Evernorth that a private,
+non-commercial academic prototype is acceptable; record the outcome in `DECISIONS.md`. Until then:
+never commit or publish CPT-containing files, datasets or models.
