@@ -6,6 +6,7 @@ from typing import Annotated
 
 import httpx
 from fastapi import Depends, FastAPI, Request, Response
+from fastapi.responses import RedirectResponse
 from sqlalchemy import Engine
 
 from app.api.health import HealthReport, build_health_report, get_http_client
@@ -29,11 +30,16 @@ async def log_requests(
     log.info(
         "request",
         method=request.method,
-        route=getattr(route, "path", "unmatched"),
+        route=getattr(route, "path", request.url.path),
         status=response.status_code,
         duration_ms=round((time.perf_counter() - started) * 1000, 1),
     )
     return response
+
+
+@app.get("/", include_in_schema=False)
+def root() -> RedirectResponse:
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")

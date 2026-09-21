@@ -22,6 +22,8 @@ def configure_logging(level: int = logging.INFO) -> None:
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=True,
     )
+    # The request middleware logs every request as JSON; drop uvicorn's duplicate plain-text line.
+    logging.getLogger("uvicorn.access").disabled = True
 
 
 def get_logger(name: str) -> structlog.typing.FilteringBoundLogger:
