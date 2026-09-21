@@ -1,0 +1,478 @@
+{
+  "cases": [
+    {
+      "case_id": "R07-01",
+      "title": "In-network claim filed 91 days after service",
+      "rules": [
+        "R07"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R07-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-01-05",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R07",
+            "outcome": "DENY",
+            "reason_code": "DN_LATE_FILING",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "2027-01-05 - 2026-10-06 = 91 days (Oct 6->Nov 6 = 31, ->Dec 6 = 30, ->Jan 5 = 30).",
+        "PLN-PPO-GOLD in-network window 90 days; 91 > 90 -> DENY DN_LATE_FILING."
+      ],
+      "sources": [
+        "plans.yaml: PLN-PPO-GOLD filing_window_days in_network 90"
+      ]
+    },
+    {
+      "case_id": "R07-02",
+      "title": "In-network claim filed exactly 90 days after service",
+      "rules": [
+        "R07"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R07-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-01-04",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "2027-01-04 - 2026-10-06 = 90 days; 90 <= 90 -> within the window.",
+        "All other rules pass -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R07-03",
+      "title": "Out-of-network claim filed 150 days after service (PPO window 180)",
+      "rules": [
+        "R07",
+        "R08"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R07-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000103",
+          "billing_tin": "080000010",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000103"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-03-05",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": [
+          "OON"
+        ]
+      },
+      "worked_steps": [
+        "Provider 1000000103 is out of network for PLN-PPO-GOLD -> out-of-network window 180 days.",
+        "2027-03-05 - 2026-10-06 = 91 + 31 (Jan) + 28 (Feb) = 150 <= 180.",
+        "R08: GOLD covers out-of-network -> PASS with flag OON."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R07-04",
+      "title": "Out-of-network claim filed 181 days after service",
+      "rules": [
+        "R07",
+        "R08"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R07-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000103",
+          "billing_tin": "080000010",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000103"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-04-05",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R07",
+            "outcome": "DENY",
+            "reason_code": "DN_LATE_FILING",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": [
+          "OON"
+        ]
+      },
+      "worked_steps": [
+        "150 days to 2027-03-05 + 31 days to 2027-04-05 = 181 > 180 -> DENY DN_LATE_FILING.",
+        "R08 still evaluated (Group B runs all): out-of-network on GOLD -> PASS with flag OON."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R07-05",
+      "title": "EPO claim filed 115 days after service (window 120)",
+      "rules": [
+        "R07"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R07-05",
+          "member_id": "MBR-G00003",
+          "patient": {
+            "first_name": "Mei",
+            "last_name": "Lin",
+            "date_of_birth": "1990-02-27",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-01-29",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "2027-01-29 - 2026-10-06 = 91 + 24 = 115 days.",
+        "PLN-EPO in-network window 120 -> within -> PASS."
+      ],
+      "sources": [
+        "plans.yaml: PLN-EPO filing window 120"
+      ]
+    },
+    {
+      "case_id": "R07-06",
+      "title": "Filing window counts from the last date of service",
+      "rules": [
+        "R07"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R07-06",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-01",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-11-15",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-01-10",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "Last DOS = 2026-11-15; 2027-01-10 - 2026-11-15 = 15 + 31 + 10 = 56 days <= 90.",
+        "(Line 1 alone would be 101 days, but R07 uses the last DOS.) -> PASS."
+      ],
+      "sources": []
+    }
+  ]
+}

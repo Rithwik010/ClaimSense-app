@@ -1,0 +1,511 @@
+{
+  "cases": [
+    {
+      "case_id": "R04-01",
+      "title": "Member ID not found",
+      "rules": [
+        "R04"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R04-01",
+          "member_id": "MBR-999999",
+          "patient": {
+            "first_name": "Sam",
+            "last_name": "Doe",
+            "date_of_birth": "1980-01-01",
+            "sex": "U",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R04",
+            "outcome": "REJECT",
+            "reason_code": "RJ_MEMBER_NOT_FOUND",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "MBR-999999 is not in the members table.",
+        "R04 fails -> Group A -> REJECT RJ_MEMBER_NOT_FOUND."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R04-02",
+      "title": "Member not found and member ID read below the confidence threshold",
+      "rules": [
+        "R04",
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R04-02",
+          "member_id": "MBR-999999",
+          "patient": {
+            "first_name": "Sam",
+            "last_name": "Doe",
+            "date_of_birth": "1980-01-01",
+            "sex": "U",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "member_id": 0.62
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R04",
+            "outcome": "REJECT",
+            "reason_code": "RJ_LOW_CONFIDENCE_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R04 fails (MBR-999999 not found); R04 uses member_id.",
+        "member_id confidence 0.62 < 0.85 (EXTRACTION_CONFIDENCE_MIN).",
+        "H5: the reason becomes RJ_LOW_CONFIDENCE_FIELD (outcome REJECT)."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "DUP-01",
+      "title": "Same member, billing provider, date and code as an existing claim",
+      "rules": [
+        "DUP"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-DUP-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "existing_claims": [
+            {
+              "claim_id": "CLM-EXIST-01",
+              "member_id": "MBR-G00001",
+              "billing_npi": "1000000012",
+              "date_of_service": "2026-10-06",
+              "procedure_code": "99213",
+              "status": "AWAITING_REVIEW"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "DUP",
+            "outcome": "REJECT",
+            "reason_code": "RJ_DUPLICATE",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "Existing claim CLM-EXIST-01: MBR-G00001, billing 1000000012, DOS 2026-10-06, 99213, status AWAITING_REVIEW.",
+        "The new claim has the same four values -> duplicate -> REJECT RJ_DUPLICATE (Group A, D8)."
+      ],
+      "sources": [
+        "reason_code_map.csv: RJ_DUPLICATE -> OA 18"
+      ]
+    },
+    {
+      "case_id": "DUP-02",
+      "title": "Same claim but a different date of service is not a duplicate",
+      "rules": [
+        "DUP"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-DUP-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-05",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "existing_claims": [
+            {
+              "claim_id": "CLM-EXIST-01",
+              "member_id": "MBR-G00001",
+              "billing_npi": "1000000012",
+              "date_of_service": "2026-10-06",
+              "procedure_code": "99213",
+              "status": "AWAITING_REVIEW"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "Existing claim DOS 2026-10-06; new DOS 2026-10-05 -> key differs -> not a duplicate.",
+        "All other rules pass -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "DUP-03",
+      "title": "A matching claim that was rejected does not count as a duplicate",
+      "rules": [
+        "DUP"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-DUP-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "existing_claims": [
+            {
+              "claim_id": "CLM-EXIST-02",
+              "member_id": "MBR-G00001",
+              "billing_npi": "1000000012",
+              "date_of_service": "2026-10-06",
+              "procedure_code": "99213",
+              "status": "REJECTED"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "Existing claim has the same key but status REJECTED (returned to the provider).",
+        "Assumption A-R6: rejected claims are excluded from the duplicate check -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "DUP-04",
+      "title": "Only the second line repeats an existing claim",
+      "rules": [
+        "DUP"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-DUP-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-02",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "existing_claims": [
+            {
+              "claim_id": "CLM-EXIST-01",
+              "member_id": "MBR-G00001",
+              "billing_npi": "1000000012",
+              "date_of_service": "2026-10-06",
+              "procedure_code": "99213",
+              "status": "AWAITING_REVIEW"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "DUP",
+            "outcome": "REJECT",
+            "reason_code": "RJ_DUPLICATE",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "Line 2 (DOS 2026-10-06, 99213) matches CLM-EXIST-01 for the same member and billing NPI.",
+        "One duplicated line makes the claim a duplicate -> REJECT RJ_DUPLICATE."
+      ],
+      "sources": []
+    }
+  ]
+}

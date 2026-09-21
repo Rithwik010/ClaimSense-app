@@ -1,0 +1,332 @@
+{
+  "cases": [
+    {
+      "case_id": "B-01",
+      "title": "Rendering provider not found and filed late: REJECT outranks DENY",
+      "rules": [
+        "R06",
+        "R07"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-B-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1999999992"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-01-05",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R06",
+            "outcome": "REJECT",
+            "reason_code": "RJ_PROVIDER_NOT_FOUND",
+            "line_no": null
+          },
+          {
+            "rule_id": "R07",
+            "outcome": "DENY",
+            "reason_code": "DN_LATE_FILING",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R06: rendering 1999999992 not found -> REJECT.",
+        "R07: billing provider 1000000012 is in network; 91 days > 90 -> DENY.",
+        "Precedence REJECT > DENY > PEND -> claim REJECT."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "B-02",
+      "title": "HMO member sees an out-of-network specialist with no referral",
+      "rules": [
+        "R08",
+        "R09"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-B-02",
+          "member_id": "MBR-G00002",
+          "patient": {
+            "first_name": "Daniel",
+            "last_name": "Okafor",
+            "date_of_birth": "1975-09-14",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000095",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "R002"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99214",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 27000,
+              "rendering_npi": "1000000095"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R08",
+            "outcome": "DENY",
+            "reason_code": "DN_OUT_OF_NETWORK",
+            "line_no": null
+          },
+          {
+            "rule_id": "R09",
+            "outcome": "DENY",
+            "reason_code": "DN_MISSING_REFERRAL",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R08: out of network on the HMO -> DENY.",
+        "R09: CARDIOLOGY needs a referral on the HMO; none -> DENY.",
+        "Both failures recorded; claim DENY."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "B-03",
+      "title": "No authorization and filed late",
+      "rules": [
+        "R07",
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-B-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "62323",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 55000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-01-05",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R07",
+            "outcome": "DENY",
+            "reason_code": "DN_LATE_FILING",
+            "line_no": null
+          },
+          {
+            "rule_id": "R10",
+            "outcome": "DENY",
+            "reason_code": "DN_NO_AUTH",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R07: 91 days > 90 -> DENY.",
+        "R10: no authorization for 62323 -> DENY.",
+        "Both recorded; claim DENY."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "B-04",
+      "title": "Pending provider and filed late: DENY outranks PEND",
+      "rules": [
+        "R06",
+        "R07"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-B-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000111",
+          "billing_tin": "080000011",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000111"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-01-05",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R06",
+            "outcome": "PEND",
+            "reason_code": "PD_PROVIDER_ENROLLMENT",
+            "line_no": null
+          },
+          {
+            "rule_id": "R07",
+            "outcome": "DENY",
+            "reason_code": "DN_LATE_FILING",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R06: enrollment pending -> PEND.",
+        "R07: 91 days > 90 -> DENY.",
+        "DENY outranks PEND -> claim DENY."
+      ],
+      "sources": []
+    }
+  ]
+}

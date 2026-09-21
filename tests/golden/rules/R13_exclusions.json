@@ -1,0 +1,426 @@
+{
+  "cases": [
+    {
+      "case_id": "R13-01",
+      "title": "Excluded code on PPO Silver; the only line is denied",
+      "rules": [
+        "R13"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R13-01",
+          "member_id": "MBR-G00004",
+          "patient": {
+            "first_name": "Carlos",
+            "last_name": "Mendez",
+            "date_of_birth": "1968-11-03",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": "AUTH-G-0101",
+          "diagnoses": [
+            "M47816"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64635",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 93000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0101",
+              "member_id": "MBR-G00004",
+              "provider_npi": "1000000020",
+              "procedure_code": "64635",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R13",
+            "outcome": "DENY",
+            "reason_code": "DN_EXCLUDED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_EXCLUDED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "exclusions.yaml: PLN-PPO-SILVER excludes 64635.",
+        "Authorization present, so Group B passes; line 1 DENY DN_EXCLUDED.",
+        "Every line denied -> claim DENY."
+      ],
+      "sources": [
+        "reason_code_map.csv: DN_EXCLUDED -> CO 204"
+      ]
+    },
+    {
+      "case_id": "R13-02",
+      "title": "Excluded patch test on the HMO; visit on another day continues",
+      "rules": [
+        "R13"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R13-02",
+          "member_id": "MBR-G00002",
+          "patient": {
+            "first_name": "Daniel",
+            "last_name": "Okafor",
+            "date_of_birth": "1975-09-14",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000087",
+          "billing_tin": "080000008",
+          "referring_npi": "1000000012",
+          "prior_auth_number": "AUTH-G-0102",
+          "diagnoses": [
+            "L237"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "95044",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 20,
+              "charge_cents": 20000,
+              "rendering_npi": "1000000087"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-13",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000087"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0102",
+              "member_id": "MBR-G00002",
+              "provider_npi": "1000000087",
+              "procedure_code": "95044",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R13",
+            "outcome": "DENY",
+            "reason_code": "DN_EXCLUDED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_EXCLUDED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "PLN-HMO excludes 95044 -> line 1 DENY DN_EXCLUDED (20 units <= MUE 90).",
+        "Line 2 (99213 on 2026-10-13) PASS; different day, so no 95044/99213 PTP edit.",
+        "Referral and HMO DIAGNOSTIC_TESTS authorization present."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R13-03",
+      "title": "Manual therapy excluded on the EPO; exercise continues",
+      "rules": [
+        "R13"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R13-03",
+          "member_id": "MBR-G00003",
+          "patient": {
+            "first_name": "Mei",
+            "last_name": "Lin",
+            "date_of_birth": "1990-02-27",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000046",
+          "billing_tin": "080000004",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97140",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 2,
+              "charge_cents": 11000,
+              "rendering_npi": "1000000046"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97110",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 2,
+              "charge_cents": 12000,
+              "rendering_npi": "1000000046"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0103",
+              "member_id": "MBR-G00003",
+              "provider_npi": "1000000046",
+              "procedure_code": "97140",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-G-0104",
+              "member_id": "MBR-G00003",
+              "provider_npi": "1000000046",
+              "procedure_code": "97110",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R13",
+            "outcome": "DENY",
+            "reason_code": "DN_EXCLUDED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_EXCLUDED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "PLN-EPO excludes 97140 -> line 1 DENY DN_EXCLUDED.",
+        "EPO REHAB_THERAPY needs auth: AUTH-G-0103 (97140) and AUTH-G-0104 (97110) on file.",
+        "97110/97140 is not a PTP pair -> line 2 PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R13-04",
+      "title": "Same code is not excluded on PPO Gold",
+      "rules": [
+        "R13"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R13-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": "AUTH-G-0105",
+          "diagnoses": [
+            "M47816"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64635",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 93000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0105",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64635",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "PLN-PPO-GOLD has no exclusions -> PASS (authorization present)."
+      ],
+      "sources": []
+    }
+  ]
+}

@@ -1,0 +1,249 @@
+{
+  "cases": [
+    {
+      "case_id": "X-01",
+      "title": "Every line denied by different line rules",
+      "rules": [
+        "R11",
+        "R13"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-X-01",
+          "member_id": "MBR-G00004",
+          "patient": {
+            "first_name": "Carlos",
+            "last_name": "Mendez",
+            "date_of_birth": "1968-11-03",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M47816"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64635",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 93000,
+              "rendering_npi": "1000000020"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64493",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 38000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0201",
+              "member_id": "MBR-G00004",
+              "provider_npi": "1000000020",
+              "procedure_code": "64635",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-G-0202",
+              "member_id": "MBR-G00004",
+              "provider_npi": "1000000020",
+              "procedure_code": "64493",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R13",
+            "outcome": "DENY",
+            "reason_code": "DN_EXCLUDED",
+            "line_no": 1
+          },
+          {
+            "rule_id": "R11",
+            "outcome": "DENY",
+            "reason_code": "DN_NCCI_BUNDLED",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_EXCLUDED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_NCCI_BUNDLED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "Authorizations on file for both codes (SILVER PAIN_MANAGEMENT needs auth).",
+        "Line 1: 64635 excluded on SILVER -> DENY DN_EXCLUDED.",
+        "Line 2: PTP 64635/64493 indicator 1, no bypass modifier -> DENY DN_NCCI_BUNDLED.",
+        "Every line denied -> claim DENY."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "X-02",
+      "title": "One line fails both the NCCI and the MUE edit",
+      "rules": [
+        "R11",
+        "R12"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-X-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000053",
+          "billing_tin": "080000005",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "L97419"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "11042",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 26500,
+              "rendering_npi": "1000000053"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97597",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 2,
+              "charge_cents": 41000,
+              "rendering_npi": "1000000053"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R11",
+            "outcome": "DENY",
+            "reason_code": "DN_NCCI_BUNDLED",
+            "line_no": 2
+          },
+          {
+            "rule_id": "R12",
+            "outcome": "DENY",
+            "reason_code": "DN_MUE_EXCEEDED",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_NCCI_BUNDLED",
+              "DN_MUE_EXCEEDED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "Line 2: 11042/97597 indicator 1, no bypass -> DN_NCCI_BUNDLED.",
+        "Line 2: 97597 MUE 1; 2 units -> DN_MUE_EXCEEDED.",
+        "Reason codes listed in rule order (R11, R12). Line 1 PASS."
+      ],
+      "sources": []
+    }
+  ]
+}

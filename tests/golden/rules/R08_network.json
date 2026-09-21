@@ -1,0 +1,306 @@
+{
+  "cases": [
+    {
+      "case_id": "R08-01",
+      "title": "HMO member seen out of network",
+      "rules": [
+        "R08"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R08-01",
+          "member_id": "MBR-G00002",
+          "patient": {
+            "first_name": "Daniel",
+            "last_name": "Okafor",
+            "date_of_birth": "1975-09-14",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000103",
+          "billing_tin": "080000010",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000103"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R08",
+            "outcome": "DENY",
+            "reason_code": "DN_OUT_OF_NETWORK",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "Provider 1000000103 is out of network for PLN-HMO.",
+        "PLN-HMO out_of_network is null (not covered) -> DENY DN_OUT_OF_NETWORK.",
+        "Primary care needs no referral, so R09 passes."
+      ],
+      "sources": [
+        "plans.yaml: PLN-HMO out_of_network null"
+      ]
+    },
+    {
+      "case_id": "R08-02",
+      "title": "EPO member seen out of network",
+      "rules": [
+        "R08"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R08-02",
+          "member_id": "MBR-G00003",
+          "patient": {
+            "first_name": "Mei",
+            "last_name": "Lin",
+            "date_of_birth": "1990-02-27",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000103",
+          "billing_tin": "080000010",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000103"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R08",
+            "outcome": "DENY",
+            "reason_code": "DN_OUT_OF_NETWORK",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "PLN-EPO does not cover out-of-network care -> DENY DN_OUT_OF_NETWORK."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R08-03",
+      "title": "PPO member seen out of network",
+      "rules": [
+        "R08"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R08-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000103",
+          "billing_tin": "080000010",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000103"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": [
+          "OON"
+        ]
+      },
+      "worked_steps": [
+        "PLN-PPO-GOLD covers out-of-network care -> R08 PASS with flag OON.",
+        "14 days to file, within 180 -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R08-04",
+      "title": "High-deductible PPO member seen out of network",
+      "rules": [
+        "R08"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R08-04",
+          "member_id": "MBR-G00005",
+          "patient": {
+            "first_name": "Priya",
+            "last_name": "Nair",
+            "date_of_birth": "1987-06-19",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000095",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "I5022"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "93306",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 39500,
+              "rendering_npi": "1000000095"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": [
+          "OON"
+        ]
+      },
+      "worked_steps": [
+        "PLN-HDHP covers out-of-network -> PASS with flag OON.",
+        "93306 is DIAGNOSTIC_TESTS: no auth on HDHP; no referral rules on HDHP."
+      ],
+      "sources": []
+    }
+  ]
+}

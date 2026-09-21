@@ -1,0 +1,493 @@
+{
+  "description": "Shared reference records for the rules golden cases. Plans, benefits, exclusions and code tables come from data/curated/ and data/raw/ as loaded by P2.1.",
+  "members": [
+    {
+      "member_id": "MBR-G00001",
+      "plan_id": "PLN-PPO-GOLD",
+      "first_name": "Asha",
+      "last_name": "Rao",
+      "date_of_birth": "1981-04-02",
+      "sex": "F",
+      "address_line": "12 Elm St",
+      "city": "Austin",
+      "state": "TX",
+      "zip_code": "78701",
+      "coverage_start": "2026-01-01",
+      "coverage_end": null
+    },
+    {
+      "member_id": "MBR-G00002",
+      "plan_id": "PLN-HMO",
+      "first_name": "Daniel",
+      "last_name": "Okafor",
+      "date_of_birth": "1975-09-14",
+      "sex": "M",
+      "address_line": "12 Elm St",
+      "city": "Austin",
+      "state": "TX",
+      "zip_code": "78701",
+      "coverage_start": "2026-01-01",
+      "coverage_end": null
+    },
+    {
+      "member_id": "MBR-G00003",
+      "plan_id": "PLN-EPO",
+      "first_name": "Mei",
+      "last_name": "Lin",
+      "date_of_birth": "1990-02-27",
+      "sex": "F",
+      "address_line": "12 Elm St",
+      "city": "Austin",
+      "state": "TX",
+      "zip_code": "78701",
+      "coverage_start": "2026-01-01",
+      "coverage_end": null
+    },
+    {
+      "member_id": "MBR-G00004",
+      "plan_id": "PLN-PPO-SILVER",
+      "first_name": "Carlos",
+      "last_name": "Mendez",
+      "date_of_birth": "1968-11-03",
+      "sex": "M",
+      "address_line": "12 Elm St",
+      "city": "Austin",
+      "state": "TX",
+      "zip_code": "78701",
+      "coverage_start": "2026-01-01",
+      "coverage_end": null
+    },
+    {
+      "member_id": "MBR-G00005",
+      "plan_id": "PLN-HDHP",
+      "first_name": "Priya",
+      "last_name": "Nair",
+      "date_of_birth": "1987-06-19",
+      "sex": "F",
+      "address_line": "12 Elm St",
+      "city": "Austin",
+      "state": "TX",
+      "zip_code": "78701",
+      "coverage_start": "2026-01-01",
+      "coverage_end": null
+    },
+    {
+      "member_id": "MBR-G00006",
+      "plan_id": "PLN-PPO-GOLD",
+      "first_name": "Tom",
+      "last_name": "Becker",
+      "date_of_birth": "1959-01-30",
+      "sex": "M",
+      "address_line": "12 Elm St",
+      "city": "Austin",
+      "state": "TX",
+      "zip_code": "78701",
+      "coverage_start": "2025-01-01",
+      "coverage_end": "2026-10-31"
+    },
+    {
+      "member_id": "MBR-G00007",
+      "plan_id": "PLN-PPO-GOLD",
+      "first_name": "Leah",
+      "last_name": "Cohen",
+      "date_of_birth": "1994-08-08",
+      "sex": "F",
+      "address_line": "12 Elm St",
+      "city": "Austin",
+      "state": "TX",
+      "zip_code": "78701",
+      "coverage_start": "2026-11-01",
+      "coverage_end": null
+    }
+  ],
+  "providers": [
+    {
+      "npi": "1000000012",
+      "tin": "080000001",
+      "name": "Golden Pcp Provider",
+      "provider_type": "PRIMARY_CARE",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000020",
+      "tin": "080000002",
+      "name": "Golden Pain Provider",
+      "provider_type": "PAIN_MEDICINE",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000038",
+      "tin": "080000003",
+      "name": "Golden Rad Provider",
+      "provider_type": "RADIOLOGY",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000046",
+      "tin": "080000004",
+      "name": "Golden Pt Provider",
+      "provider_type": "PHYSICAL_THERAPY",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000053",
+      "tin": "080000005",
+      "name": "Golden Wound Provider",
+      "provider_type": "WOUND_CARE",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000061",
+      "tin": "080000006",
+      "name": "Golden Gi Provider",
+      "provider_type": "GASTROENTEROLOGY",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000079",
+      "tin": "080000007",
+      "name": "Golden Card Provider",
+      "provider_type": "CARDIOLOGY",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000087",
+      "tin": "080000008",
+      "name": "Golden Allergy Provider",
+      "provider_type": "ALLERGY_IMMUNOLOGY",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000095",
+      "tin": "080000009",
+      "name": "Golden Oon Card Provider",
+      "provider_type": "CARDIOLOGY",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000103",
+      "tin": "080000010",
+      "name": "Golden Oon Pcp Provider",
+      "provider_type": "PRIMARY_CARE",
+      "enrollment_status": "ENROLLED"
+    },
+    {
+      "npi": "1000000111",
+      "tin": "080000011",
+      "name": "Golden Pending Provider",
+      "provider_type": "PRIMARY_CARE",
+      "enrollment_status": "PENDING"
+    },
+    {
+      "npi": "1000000129",
+      "tin": "080000012",
+      "name": "Golden Pain2 Provider",
+      "provider_type": "PAIN_MEDICINE",
+      "enrollment_status": "ENROLLED"
+    }
+  ],
+  "provider_networks": [
+    {
+      "npi": "1000000012",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000012",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000012",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000012",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000012",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    },
+    {
+      "npi": "1000000020",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000020",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000020",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000020",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000020",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    },
+    {
+      "npi": "1000000038",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000038",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000038",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000038",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000038",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    },
+    {
+      "npi": "1000000046",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000046",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000046",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000046",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000046",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    },
+    {
+      "npi": "1000000053",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000053",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000053",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000053",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000053",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    },
+    {
+      "npi": "1000000061",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000061",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000061",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000061",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000061",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    },
+    {
+      "npi": "1000000079",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000079",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000079",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000079",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000079",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    },
+    {
+      "npi": "1000000087",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000087",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000087",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000087",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000087",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    },
+    {
+      "npi": "1000000095",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": false
+    },
+    {
+      "npi": "1000000095",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": false
+    },
+    {
+      "npi": "1000000095",
+      "plan_id": "PLN-HMO",
+      "in_network": false
+    },
+    {
+      "npi": "1000000095",
+      "plan_id": "PLN-EPO",
+      "in_network": false
+    },
+    {
+      "npi": "1000000095",
+      "plan_id": "PLN-HDHP",
+      "in_network": false
+    },
+    {
+      "npi": "1000000103",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": false
+    },
+    {
+      "npi": "1000000103",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": false
+    },
+    {
+      "npi": "1000000103",
+      "plan_id": "PLN-HMO",
+      "in_network": false
+    },
+    {
+      "npi": "1000000103",
+      "plan_id": "PLN-EPO",
+      "in_network": false
+    },
+    {
+      "npi": "1000000103",
+      "plan_id": "PLN-HDHP",
+      "in_network": false
+    },
+    {
+      "npi": "1000000111",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000111",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000111",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000111",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000111",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    },
+    {
+      "npi": "1000000129",
+      "plan_id": "PLN-PPO-GOLD",
+      "in_network": true
+    },
+    {
+      "npi": "1000000129",
+      "plan_id": "PLN-PPO-SILVER",
+      "in_network": true
+    },
+    {
+      "npi": "1000000129",
+      "plan_id": "PLN-HMO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000129",
+      "plan_id": "PLN-EPO",
+      "in_network": true
+    },
+    {
+      "npi": "1000000129",
+      "plan_id": "PLN-HDHP",
+      "in_network": true
+    }
+  ],
+  "authorizations": [],
+  "existing_claims": []
+}
