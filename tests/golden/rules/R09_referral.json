@@ -1,0 +1,301 @@
+{
+  "cases": [
+    {
+      "case_id": "R09-01",
+      "title": "HMO specialist visit without a referring provider",
+      "rules": [
+        "R09"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R09-01",
+          "member_id": "MBR-G00002",
+          "patient": {
+            "first_name": "Daniel",
+            "last_name": "Okafor",
+            "date_of_birth": "1975-09-14",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000079",
+          "billing_tin": "080000007",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "R002"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99214",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 27000,
+              "rendering_npi": "1000000079"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R09",
+            "outcome": "DENY",
+            "reason_code": "DN_MISSING_REFERRAL",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "PLN-HMO requires a referral for CARDIOLOGY; referring_npi is empty.",
+        "R09 fails -> DENY DN_MISSING_REFERRAL."
+      ],
+      "sources": [
+        "plans.yaml: PLN-HMO referral_required_provider_types",
+        "reason_code_map.csv: DN_MISSING_REFERRAL -> CO 288 / N286"
+      ]
+    },
+    {
+      "case_id": "R09-02",
+      "title": "HMO specialist visit with a referring provider",
+      "rules": [
+        "R09"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R09-02",
+          "member_id": "MBR-G00002",
+          "patient": {
+            "first_name": "Daniel",
+            "last_name": "Okafor",
+            "date_of_birth": "1975-09-14",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000079",
+          "billing_tin": "080000007",
+          "referring_npi": "1000000012",
+          "prior_auth_number": null,
+          "diagnoses": [
+            "R002"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99214",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 27000,
+              "rendering_npi": "1000000079"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "referring_npi 1000000012 present -> R09 passes.",
+        "All other rules pass -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R09-03",
+      "title": "HMO primary care visit needs no referral",
+      "rules": [
+        "R09"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R09-03",
+          "member_id": "MBR-G00002",
+          "patient": {
+            "first_name": "Daniel",
+            "last_name": "Okafor",
+            "date_of_birth": "1975-09-14",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "PRIMARY_CARE is not in the HMO referral list -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R09-04",
+      "title": "PPO specialist visit needs no referral",
+      "rules": [
+        "R09"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R09-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000079",
+          "billing_tin": "080000007",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "R002"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99214",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 27000,
+              "rendering_npi": "1000000079"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "PLN-PPO-GOLD has no referral rules -> PASS."
+      ],
+      "sources": []
+    }
+  ]
+}

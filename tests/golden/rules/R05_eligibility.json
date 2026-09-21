@@ -1,0 +1,394 @@
+{
+  "cases": [
+    {
+      "case_id": "R05-01",
+      "title": "Date of service after coverage ended",
+      "rules": [
+        "R05"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R05-01",
+          "member_id": "MBR-G00006",
+          "patient": {
+            "first_name": "Tom",
+            "last_name": "Becker",
+            "date_of_birth": "1959-01-30",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-11-05",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-11-12",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R05",
+            "outcome": "DENY",
+            "reason_code": "DN_NOT_ELIGIBLE",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "MBR-G00006 coverage 2025-01-01 to 2026-10-31.",
+        "DOS 2026-11-05 > 2026-10-31 -> not eligible.",
+        "Group B failure -> DENY DN_NOT_ELIGIBLE; Group C not run."
+      ],
+      "sources": [
+        "reason_code_map.csv: DN_NOT_ELIGIBLE -> CO 27"
+      ]
+    },
+    {
+      "case_id": "R05-02",
+      "title": "Date of service before coverage started",
+      "rules": [
+        "R05"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R05-02",
+          "member_id": "MBR-G00007",
+          "patient": {
+            "first_name": "Leah",
+            "last_name": "Cohen",
+            "date_of_birth": "1994-08-08",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-20",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-27",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R05",
+            "outcome": "DENY",
+            "reason_code": "DN_NOT_ELIGIBLE",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "MBR-G00007 coverage starts 2026-11-01.",
+        "DOS 2026-10-20 < 2026-11-01 -> not eligible -> DENY DN_NOT_ELIGIBLE."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R05-03",
+      "title": "Date of service on the last day of coverage",
+      "rules": [
+        "R05"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R05-03",
+          "member_id": "MBR-G00006",
+          "patient": {
+            "first_name": "Tom",
+            "last_name": "Becker",
+            "date_of_birth": "1959-01-30",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-31",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-11-10",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "Coverage end 2026-10-31 is inclusive; DOS 2026-10-31 is covered.",
+        "All other rules pass -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R05-04",
+      "title": "Second line after coverage ended",
+      "rules": [
+        "R05"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R05-04",
+          "member_id": "MBR-G00006",
+          "patient": {
+            "first_name": "Tom",
+            "last_name": "Becker",
+            "date_of_birth": "1959-01-30",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-28",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-11-02",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-11-09",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R05",
+            "outcome": "DENY",
+            "reason_code": "DN_NOT_ELIGIBLE",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "Line 1 DOS 2026-10-28 is covered; line 2 DOS 2026-11-02 is after 2026-10-31.",
+        "R05 needs eligibility on every DOS -> fails -> DENY DN_NOT_ELIGIBLE for the claim."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R05-05",
+      "title": "Not eligible, but the date of service was read with low confidence",
+      "rules": [
+        "R05",
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R05-05",
+          "member_id": "MBR-G00006",
+          "patient": {
+            "first_name": "Tom",
+            "last_name": "Becker",
+            "date_of_birth": "1959-01-30",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-11-05",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-11-12",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "service_lines.0.date_of_service": 0.7
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R05",
+            "outcome": "REJECT",
+            "reason_code": "RJ_LOW_CONFIDENCE_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R05 fails as in R05-01; R05 uses member_id and service_lines.0.date_of_service.",
+        "service_lines.0.date_of_service confidence 0.70 < 0.85.",
+        "H5: a failure on a low-confidence field is REJECT, never DENY -> REJECT RJ_LOW_CONFIDENCE_FIELD."
+      ],
+      "sources": []
+    }
+  ]
+}

@@ -1,0 +1,729 @@
+{
+  "cases": [
+    {
+      "case_id": "R10-01",
+      "title": "Epidural injection without an authorization",
+      "rules": [
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R10-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "62323",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 55000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R10",
+            "outcome": "DENY",
+            "reason_code": "DN_NO_AUTH",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "62323 -> PAIN_MANAGEMENT; PLN-PPO-GOLD PAIN_MANAGEMENT auth_required true.",
+        "No authorization for MBR-G00001 / 1000000020 / 62323 -> DENY DN_NO_AUTH."
+      ],
+      "sources": [
+        "benefits.yaml: PLN-PPO-GOLD PAIN_MANAGEMENT auth_required",
+        "reason_code_map.csv: DN_NO_AUTH -> CO 197"
+      ]
+    },
+    {
+      "case_id": "R10-02",
+      "title": "Epidural injection with a matching authorization",
+      "rules": [
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R10-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": "AUTH-G-0001",
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "62323",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 55000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0001",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "62323",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "AUTH-G-0001: MBR-G00001, 1000000020, 62323, 2026-10-01 to 2026-12-31.",
+        "Member, rendering provider, code match; DOS 2026-10-06 inside the dates -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R10-03",
+      "title": "Authorization expired before the date of service",
+      "rules": [
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R10-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": "AUTH-G-0001",
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "62323",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 55000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0001",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "62323",
+              "start_date": "2026-07-01",
+              "end_date": "2026-09-30",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R10",
+            "outcome": "DENY",
+            "reason_code": "DN_NO_AUTH",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "AUTH-G-0001 runs 2026-07-01 to 2026-09-30; DOS 2026-10-06 is after it.",
+        "No matching authorization -> DENY DN_NO_AUTH."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R10-04",
+      "title": "Authorization is for a different procedure code",
+      "rules": [
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R10-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": "AUTH-G-0001",
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "62323",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 55000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0001",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64483",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R10",
+            "outcome": "DENY",
+            "reason_code": "DN_NO_AUTH",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "AUTH-G-0001 authorizes 64483; the line bills 62323 -> code does not match -> DENY DN_NO_AUTH."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R10-05",
+      "title": "Authorization is for a different provider",
+      "rules": [
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R10-05",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": "AUTH-G-0001",
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "62323",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 55000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0001",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000129",
+              "procedure_code": "62323",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R10",
+            "outcome": "DENY",
+            "reason_code": "DN_NO_AUTH",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "AUTH-G-0001 names provider 1000000129; the rendering provider is 1000000020 -> DENY DN_NO_AUTH."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R10-06",
+      "title": "Therapy on a PPO needs no authorization",
+      "rules": [
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R10-06",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000046",
+          "billing_tin": "080000004",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97110",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 2,
+              "charge_cents": 12000,
+              "rendering_npi": "1000000046"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "97110 -> REHAB_THERAPY; PLN-PPO-GOLD auth_required false -> R10 passes.",
+        "Units 2 <= MUE 6 -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R10-07",
+      "title": "Therapy on the HMO needs an authorization",
+      "rules": [
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R10-07",
+          "member_id": "MBR-G00002",
+          "patient": {
+            "first_name": "Daniel",
+            "last_name": "Okafor",
+            "date_of_birth": "1975-09-14",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000046",
+          "billing_tin": "080000004",
+          "referring_npi": "1000000012",
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97110",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 2,
+              "charge_cents": 12000,
+              "rendering_npi": "1000000046"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R10",
+            "outcome": "DENY",
+            "reason_code": "DN_NO_AUTH",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "PLN-HMO REHAB_THERAPY auth_required true; no authorization on file.",
+        "Referral present (R09 passes) -> DENY DN_NO_AUTH."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R10-08",
+      "title": "Colonoscopy needs no authorization",
+      "rules": [
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R10-08",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000061",
+          "billing_tin": "080000006",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "K921"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45378",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 75500,
+              "rendering_npi": "1000000061"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "45378 candidates ENDOSCOPY and PREVENTIVE_CARE; both auth_required false on GOLD -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R10-09",
+      "title": "Date of service on the authorization's last day",
+      "rules": [
+        "R10"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R10-09",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": "AUTH-G-0001",
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-12-31",
+              "place_of_service": "11",
+              "procedure_code": "62323",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 55000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-01-08",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-G-0001",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "62323",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "AUTH-G-0001 ends 2026-12-31 (inclusive); DOS 2026-12-31 -> matches -> PASS."
+      ],
+      "sources": []
+    }
+  ]
+}

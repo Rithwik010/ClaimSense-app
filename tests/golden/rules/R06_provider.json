@@ -1,0 +1,311 @@
+{
+  "cases": [
+    {
+      "case_id": "R06-01",
+      "title": "Billing provider not found",
+      "rules": [
+        "R06"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R06-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1999999992",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1999999992"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R06",
+            "outcome": "REJECT",
+            "reason_code": "RJ_PROVIDER_NOT_FOUND",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "1999999992 has a valid check digit (R03 passes) but is not in the providers table.",
+        "R06 not found -> REJECT RJ_PROVIDER_NOT_FOUND.",
+        "Assumption A-R2: R07-R10 need the provider record and are not evaluated for an unknown provider."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R06-02",
+      "title": "Billing provider enrollment pending",
+      "rules": [
+        "R06"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R06-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000111",
+          "billing_tin": "080000011",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000111"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PEND",
+        "status": "PENDED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R06",
+            "outcome": "PEND",
+            "reason_code": "PD_PROVIDER_ENROLLMENT",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "Provider 1000000111 has enrollment_status PENDING.",
+        "R06 -> PEND PD_PROVIDER_ENROLLMENT; no other Group B failure -> claim PEND (PENDED_BY_RULE)."
+      ],
+      "sources": [
+        "reason_code_map.csv: PD_PROVIDER_ENROLLMENT -> OA 133"
+      ]
+    },
+    {
+      "case_id": "R06-03",
+      "title": "Rendering provider not found",
+      "rules": [
+        "R06"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R06-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1999999992"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R06",
+            "outcome": "REJECT",
+            "reason_code": "RJ_PROVIDER_NOT_FOUND",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "Billing 1000000012 is found; rendering 1999999992 is not.",
+        "R06 checks billing and every rendering NPI -> REJECT RJ_PROVIDER_NOT_FOUND."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R06-04",
+      "title": "Pending provider and member not eligible: DENY outranks PEND",
+      "rules": [
+        "R05",
+        "R06"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R06-04",
+          "member_id": "MBR-G00006",
+          "patient": {
+            "first_name": "Tom",
+            "last_name": "Becker",
+            "date_of_birth": "1959-01-30",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000111",
+          "billing_tin": "080000011",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-11-05",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000111"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-11-12",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R05",
+            "outcome": "DENY",
+            "reason_code": "DN_NOT_ELIGIBLE",
+            "line_no": null
+          },
+          {
+            "rule_id": "R06",
+            "outcome": "PEND",
+            "reason_code": "PD_PROVIDER_ENROLLMENT",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R05 fails (DOS after 2026-10-31) -> DENY.",
+        "R06 fails (enrollment pending) -> PEND.",
+        "Group B evaluates all rules; precedence REJECT > DENY > PEND -> claim DENY."
+      ],
+      "sources": []
+    }
+  ]
+}

@@ -1,0 +1,908 @@
+{
+  "cases": [
+    {
+      "case_id": "R11-01",
+      "title": "Colonoscopy with biopsy and a diagnostic colonoscopy on the same day",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R11-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000061",
+          "billing_tin": "080000006",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "K921"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45380",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 96000,
+              "rendering_npi": "1000000061"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45378",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 75500,
+              "rendering_npi": "1000000061"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R11",
+            "outcome": "DENY",
+            "reason_code": "DN_NCCI_BUNDLED",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_NCCI_BUNDLED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "NCCI PTP v323r0: column 1 45380, column 2 45378, modifier indicator 0, active.",
+        "Same DOS -> column-2 line (line 2) denied DN_NCCI_BUNDLED; indicator 0 allows no bypass.",
+        "Line 1 passes -> claim PASS with one line left."
+      ],
+      "sources": [
+        "data/raw/ncci-ptp ccipra-v323r0: 45380/45378 indicator 0"
+      ]
+    },
+    {
+      "case_id": "R11-02",
+      "title": "Debridement pair without a modifier",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R11-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000053",
+          "billing_tin": "080000005",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "L97419"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "11042",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 26500,
+              "rendering_npi": "1000000053"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97597",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 20500,
+              "rendering_npi": "1000000053"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R11",
+            "outcome": "DENY",
+            "reason_code": "DN_NCCI_BUNDLED",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_NCCI_BUNDLED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "PTP 11042 (column 1) / 97597 (column 2), indicator 1 (bypass allowed).",
+        "No bypass modifier on either line -> line 2 DENY DN_NCCI_BUNDLED."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R11-03",
+      "title": "Debridement pair with a separate-structure modifier",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R11-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000053",
+          "billing_tin": "080000005",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "L97419"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "11042",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 26500,
+              "rendering_npi": "1000000053"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97597",
+              "modifiers": [
+                "XS"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 20500,
+              "rendering_npi": "1000000053"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": [
+              "NCCI_BYPASS"
+            ]
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "Indicator 1 and modifier XS is a bypass modifier (ncci_bypass_modifiers.csv).",
+        "Line 2 PASS with flag NCCI_BYPASS: the model checks that the notes document a distinct service."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R11-04",
+      "title": "Bypass modifier on a pair that allows none",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R11-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000061",
+          "billing_tin": "080000006",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "K921"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45380",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 96000,
+              "rendering_npi": "1000000061"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45378",
+              "modifiers": [
+                "XS"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 75500,
+              "rendering_npi": "1000000061"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R11",
+            "outcome": "DENY",
+            "reason_code": "DN_NCCI_BUNDLED",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_NCCI_BUNDLED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "45380/45378 indicator 0 -> modifiers cannot bypass -> line 2 DENY DN_NCCI_BUNDLED."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R11-05",
+      "title": "Pair on different dates of service is not edited",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R11-05",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000061",
+          "billing_tin": "080000006",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "K921"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45380",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 96000,
+              "rendering_npi": "1000000061"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-20",
+              "place_of_service": "22",
+              "procedure_code": "45378",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 75500,
+              "rendering_npi": "1000000061"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-27",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "Line 1 DOS 2026-10-06, line 2 DOS 2026-10-20 -> not the same day -> no PTP edit (assumption A-R3).",
+        "Both lines PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R11-06",
+      "title": "Laterality modifier is not a bypass modifier",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R11-06",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000061",
+          "billing_tin": "080000006",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "K921"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45385",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 100000,
+              "rendering_npi": "1000000061"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45380",
+              "modifiers": [
+                "LT"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 96000,
+              "rendering_npi": "1000000061"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R11",
+            "outcome": "DENY",
+            "reason_code": "DN_NCCI_BUNDLED",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_NCCI_BUNDLED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "PTP 45385/45380 indicator 1.",
+        "LT is not in ncci_bypass_modifiers.csv -> no bypass -> line 2 DENY DN_NCCI_BUNDLED."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R11-07",
+      "title": "Column-2 code listed first on the claim",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R11-07",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000053",
+          "billing_tin": "080000005",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "L97419"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97597",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 20500,
+              "rendering_npi": "1000000053"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "11042",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 26500,
+              "rendering_npi": "1000000053"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R11",
+            "outcome": "DENY",
+            "reason_code": "DN_NCCI_BUNDLED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_NCCI_BUNDLED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "97597 is column 2 of the 11042/97597 pair regardless of line order.",
+        "Line 1 (97597) DENY DN_NCCI_BUNDLED; line 2 PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R11-08",
+      "title": "Office visit on the same day as debridement",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R11-08",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000053",
+          "billing_tin": "080000005",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "L97419"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000053"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "11042",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 26500,
+              "rendering_npi": "1000000053"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R11",
+            "outcome": "DENY",
+            "reason_code": "DN_NCCI_BUNDLED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_NCCI_BUNDLED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "PTP 11042 (column 1) / 99213 (column 2), indicator 1; no bypass modifier.",
+        "Line 1 (99213) DENY DN_NCCI_BUNDLED; line 2 PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R11-09",
+      "title": "Polyp removal and biopsy of a separate lesion",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R11-09",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000061",
+          "billing_tin": "080000006",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "K921"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45385",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 100000,
+              "rendering_npi": "1000000061"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "22",
+              "procedure_code": "45380",
+              "modifiers": [
+                "XS"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 96000,
+              "rendering_npi": "1000000061"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": [
+              "NCCI_BYPASS"
+            ]
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "PTP 45385/45380 indicator 1; XS present -> PASS with flag NCCI_BYPASS on line 2."
+      ],
+      "sources": []
+    }
+  ]
+}

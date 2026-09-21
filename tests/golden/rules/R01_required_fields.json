@@ -1,0 +1,443 @@
+{
+  "cases": [
+    {
+      "case_id": "R01-01",
+      "title": "Member ID missing",
+      "rules": [
+        "R01"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R01",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R01",
+            "outcome": "REJECT",
+            "reason_code": "RJ_MISSING_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "member_id (Box 1a) is absent from the claim.",
+        "R01 fails -> Group A failure -> REJECT RJ_MISSING_FIELD; no later rule runs (D8)."
+      ],
+      "sources": [
+        "reason_code_map.csv: RJ_MISSING_FIELD -> CO 16 / MA130"
+      ]
+    },
+    {
+      "case_id": "R01-02",
+      "title": "Procedure code missing on the only line",
+      "rules": [
+        "R01"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R01",
+            "outcome": "REJECT",
+            "reason_code": "RJ_MISSING_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "service_lines[0].procedure_code (Box 24D) is absent.",
+        "R01 fails -> REJECT RJ_MISSING_FIELD."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R01-03",
+      "title": "Billing NPI missing",
+      "rules": [
+        "R01"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R01",
+            "outcome": "REJECT",
+            "reason_code": "RJ_MISSING_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "billing_npi (Box 33a) is absent.",
+        "R01 fails -> REJECT RJ_MISSING_FIELD (R03 cannot check a missing NPI)."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R01-04",
+      "title": "No diagnosis codes",
+      "rules": [
+        "R01"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R01",
+            "outcome": "REJECT",
+            "reason_code": "RJ_MISSING_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "diagnoses (Box 21) is an empty list; at least one is required.",
+        "R01 fails -> REJECT RJ_MISSING_FIELD."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R01-05",
+      "title": "Patient date of birth missing",
+      "rules": [
+        "R01"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R01",
+            "outcome": "REJECT",
+            "reason_code": "RJ_MISSING_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "patient.date_of_birth (Box 3) is absent.",
+        "R01 fails -> REJECT RJ_MISSING_FIELD."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R01-06",
+      "title": "Date of service missing",
+      "rules": [
+        "R01"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R01",
+            "outcome": "REJECT",
+            "reason_code": "RJ_MISSING_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "service_lines[0].date_of_service (Box 24A) is absent.",
+        "R01 fails -> REJECT RJ_MISSING_FIELD."
+      ],
+      "sources": []
+    }
+  ]
+}

@@ -1,0 +1,1166 @@
+{
+  "cases": [
+    {
+      "case_id": "C10",
+      "title": "Imaging with the whole deductible remaining",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-PPO-GOLD",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 0,
+          "oop_met_cents": 0
+        },
+        "fee_schedule": {
+          "70551": {
+            "inn_allowed_cents": 24425,
+            "oon_allowed_cents": 19540
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "70551",
+            "units": 1,
+            "billed_cents": 39000,
+            "decision": "APPROVE",
+            "benefit_category": "ADVANCED_IMAGING"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 39000,
+              "allowed_cents": 24425,
+              "contractual_adjustment_cents": 14575,
+              "deductible_cents": 24425,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 24425,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 39000,
+            "allowed_cents": 24425,
+            "contractual_adjustment_cents": 14575,
+            "deductible_cents": 24425,
+            "copay_cents": 0,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 24425,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 24425,
+          "oop_met_cents": 24425
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-PPO-GOLD, IN_NETWORK: deductible 50000, coinsurance 2000 bps, OOP max 300000.",
+        "Accumulators before: deductible met 0 -> remaining 50000; OOP met 0 -> remaining 300000.",
+        "Line 1 70551 x1: fee 70551: RVU 5.85 x CF 33.4009 = 195.395265 -> national 19540; in-network 19540 x 1.25 = 24425.00 -> 24425; out-of-network 19540.",
+        "  fee for line = 24425 x 1 units = 24425 (A1); allowed = min(billed 39000, 24425) = 24425.",
+        "  contractual adjustment = 14575; balance-bill exposure = 0 (A9).",
+        "  ADVANCED_IMAGING DEDUCTIBLE_COINSURANCE: deductible = min(remaining 50000, 24425) = 24425; coinsurance = (24425 - 24425) x 2000 / 10000 = 0 -> 0.",
+        "  OOP: cost share 24425 <= remaining 300000 -> no cap.",
+        "  plan pays = 24425 - 24425 = 0; member pays = 24425.",
+        "  working accumulators: deductible remaining 25575, OOP remaining 275575.",
+        "Totals: plan pays 0, member pays 24425. Working accumulators after (IN_NETWORK): deductible met 24425, OOP met 24425 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C11",
+      "title": "Deductible partly met",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-PPO-GOLD",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 30000,
+          "oop_met_cents": 30000
+        },
+        "fee_schedule": {
+          "70553": {
+            "inn_allowed_cents": 39621,
+            "oon_allowed_cents": 31697
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "70553",
+            "units": 1,
+            "billed_cents": 60000,
+            "decision": "APPROVE",
+            "benefit_category": "ADVANCED_IMAGING"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 60000,
+              "allowed_cents": 39621,
+              "contractual_adjustment_cents": 20379,
+              "deductible_cents": 20000,
+              "copay_cents": 0,
+              "coinsurance_cents": 3924,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 15697,
+              "member_pays_cents": 23924,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 60000,
+            "allowed_cents": 39621,
+            "contractual_adjustment_cents": 20379,
+            "deductible_cents": 20000,
+            "copay_cents": 0,
+            "coinsurance_cents": 3924,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 15697,
+            "member_pays_cents": 23924,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 50000,
+          "oop_met_cents": 53924
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-PPO-GOLD, IN_NETWORK: deductible 50000, coinsurance 2000 bps, OOP max 300000.",
+        "Accumulators before: deductible met 30000 -> remaining 20000; OOP met 30000 -> remaining 270000.",
+        "Line 1 70553 x1: fee 70553: RVU 9.49 x CF 33.4009 = 316.974541 -> national 31697; in-network 31697 x 1.25 = 39621.25 -> 39621; out-of-network 31697.",
+        "  fee for line = 39621 x 1 units = 39621 (A1); allowed = min(billed 60000, 39621) = 39621.",
+        "  contractual adjustment = 20379; balance-bill exposure = 0 (A9).",
+        "  ADVANCED_IMAGING DEDUCTIBLE_COINSURANCE: deductible = min(remaining 20000, 39621) = 20000; coinsurance = (39621 - 20000) x 2000 / 10000 = 3924.2 -> 3924.",
+        "  OOP: cost share 23924 <= remaining 270000 -> no cap.",
+        "  plan pays = 39621 - 23924 = 15697; member pays = 23924.",
+        "  working accumulators: deductible remaining 0, OOP remaining 246076.",
+        "Totals: plan pays 15697, member pays 23924. Working accumulators after (IN_NETWORK): deductible met 50000, OOP met 53924 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C12",
+      "title": "Deductible met: coinsurance only",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-PPO-GOLD",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 50000,
+          "oop_met_cents": 62000
+        },
+        "fee_schedule": {
+          "70553": {
+            "inn_allowed_cents": 39621,
+            "oon_allowed_cents": 31697
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "70553",
+            "units": 1,
+            "billed_cents": 60000,
+            "decision": "APPROVE",
+            "benefit_category": "ADVANCED_IMAGING"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 60000,
+              "allowed_cents": 39621,
+              "contractual_adjustment_cents": 20379,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 7924,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 31697,
+              "member_pays_cents": 7924,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 60000,
+            "allowed_cents": 39621,
+            "contractual_adjustment_cents": 20379,
+            "deductible_cents": 0,
+            "copay_cents": 0,
+            "coinsurance_cents": 7924,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 31697,
+            "member_pays_cents": 7924,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 50000,
+          "oop_met_cents": 69924
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-PPO-GOLD, IN_NETWORK: deductible 50000, coinsurance 2000 bps, OOP max 300000.",
+        "Accumulators before: deductible met 50000 -> remaining 0; OOP met 62000 -> remaining 238000.",
+        "Line 1 70553 x1: fee 70553: RVU 9.49 x CF 33.4009 = 316.974541 -> national 31697; in-network 31697 x 1.25 = 39621.25 -> 39621; out-of-network 31697.",
+        "  fee for line = 39621 x 1 units = 39621 (A1); allowed = min(billed 60000, 39621) = 39621.",
+        "  contractual adjustment = 20379; balance-bill exposure = 0 (A9).",
+        "  ADVANCED_IMAGING DEDUCTIBLE_COINSURANCE: deductible = min(remaining 0, 39621) = 0; coinsurance = (39621 - 0) x 2000 / 10000 = 7924.2 -> 7924.",
+        "  OOP: cost share 7924 <= remaining 238000 -> no cap.",
+        "  plan pays = 39621 - 7924 = 31697; member pays = 7924.",
+        "  working accumulators: deductible remaining 0, OOP remaining 230076.",
+        "Totals: plan pays 31697, member pays 7924. Working accumulators after (IN_NETWORK): deductible met 50000, OOP met 69924 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C13",
+      "title": "Surgery with a small deductible remainder",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-PPO-GOLD",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 45000,
+          "oop_met_cents": 45000
+        },
+        "fee_schedule": {
+          "66984": {
+            "inn_allowed_cents": 57825,
+            "oon_allowed_cents": 46260
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "66984",
+            "units": 1,
+            "billed_cents": 90000,
+            "decision": "APPROVE",
+            "benefit_category": "OUTPATIENT_SURGERY"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 90000,
+              "allowed_cents": 57825,
+              "contractual_adjustment_cents": 32175,
+              "deductible_cents": 5000,
+              "copay_cents": 0,
+              "coinsurance_cents": 10565,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 42260,
+              "member_pays_cents": 15565,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 90000,
+            "allowed_cents": 57825,
+            "contractual_adjustment_cents": 32175,
+            "deductible_cents": 5000,
+            "copay_cents": 0,
+            "coinsurance_cents": 10565,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 42260,
+            "member_pays_cents": 15565,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 50000,
+          "oop_met_cents": 60565
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-PPO-GOLD, IN_NETWORK: deductible 50000, coinsurance 2000 bps, OOP max 300000.",
+        "Accumulators before: deductible met 45000 -> remaining 5000; OOP met 45000 -> remaining 255000.",
+        "Line 1 66984 x1: fee 66984: RVU 13.85 x CF 33.4009 = 462.602465 -> national 46260; in-network 46260 x 1.25 = 57825.00 -> 57825; out-of-network 46260.",
+        "  fee for line = 57825 x 1 units = 57825 (A1); allowed = min(billed 90000, 57825) = 57825.",
+        "  contractual adjustment = 32175; balance-bill exposure = 0 (A9).",
+        "  OUTPATIENT_SURGERY DEDUCTIBLE_COINSURANCE: deductible = min(remaining 5000, 57825) = 5000; coinsurance = (57825 - 5000) x 2000 / 10000 = 10565 -> 10565.",
+        "  OOP: cost share 15565 <= remaining 255000 -> no cap.",
+        "  plan pays = 57825 - 15565 = 42260; member pays = 15565.",
+        "  working accumulators: deductible remaining 0, OOP remaining 239435.",
+        "Totals: plan pays 42260, member pays 15565. Working accumulators after (IN_NETWORK): deductible met 50000, OOP met 60565 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C14",
+      "title": "Silver 30 percent coinsurance",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-PPO-SILVER",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 150000,
+          "oop_met_cents": 160000
+        },
+        "fee_schedule": {
+          "93306": {
+            "inn_allowed_cents": 24591,
+            "oon_allowed_cents": 19673
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "93306",
+            "units": 1,
+            "billed_cents": 39500,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 39500,
+              "allowed_cents": 24591,
+              "contractual_adjustment_cents": 14909,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 7377,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 17214,
+              "member_pays_cents": 7377,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 39500,
+            "allowed_cents": 24591,
+            "contractual_adjustment_cents": 14909,
+            "deductible_cents": 0,
+            "copay_cents": 0,
+            "coinsurance_cents": 7377,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 17214,
+            "member_pays_cents": 7377,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 150000,
+          "oop_met_cents": 167377
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-PPO-SILVER, IN_NETWORK: deductible 150000, coinsurance 3000 bps, OOP max 550000.",
+        "Accumulators before: deductible met 150000 -> remaining 0; OOP met 160000 -> remaining 390000.",
+        "Line 1 93306 x1: fee 93306: RVU 5.89 x CF 33.4009 = 196.731301 -> national 19673; in-network 19673 x 1.25 = 24591.25 -> 24591; out-of-network 19673.",
+        "  fee for line = 24591 x 1 units = 24591 (A1); allowed = min(billed 39500, 24591) = 24591.",
+        "  contractual adjustment = 14909; balance-bill exposure = 0 (A9).",
+        "  DIAGNOSTIC_TESTS DEDUCTIBLE_COINSURANCE: deductible = min(remaining 0, 24591) = 0; coinsurance = (24591 - 0) x 3000 / 10000 = 7377.3 -> 7377.",
+        "  OOP: cost share 7377 <= remaining 390000 -> no cap.",
+        "  plan pays = 24591 - 7377 = 17214; member pays = 7377.",
+        "  working accumulators: deductible remaining 0, OOP remaining 382623.",
+        "Totals: plan pays 17214, member pays 7377. Working accumulators after (IN_NETWORK): deductible met 150000, OOP met 167377 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C15",
+      "title": "High-deductible office visit applies the deductible",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-HDHP",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 0,
+          "oop_met_cents": 0
+        },
+        "fee_schedule": {
+          "99213": {
+            "inn_allowed_cents": 11899,
+            "oon_allowed_cents": 9519
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "99213",
+            "units": 1,
+            "billed_cents": 19000,
+            "decision": "APPROVE",
+            "benefit_category": "OFFICE_VISIT_PCP"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 19000,
+              "allowed_cents": 11899,
+              "contractual_adjustment_cents": 7101,
+              "deductible_cents": 11899,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 11899,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 19000,
+            "allowed_cents": 11899,
+            "contractual_adjustment_cents": 7101,
+            "deductible_cents": 11899,
+            "copay_cents": 0,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 11899,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 11899,
+          "oop_met_cents": 11899
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-HDHP, IN_NETWORK: deductible 320000, coinsurance 1000 bps, OOP max 650000.",
+        "Accumulators before: deductible met 0 -> remaining 320000; OOP met 0 -> remaining 650000.",
+        "Line 1 99213 x1: fee 99213: RVU 2.85 x CF 33.4009 = 95.192565 -> national 9519; in-network 9519 x 1.25 = 11898.75 -> 11899; out-of-network 9519.",
+        "  fee for line = 11899 x 1 units = 11899 (A1); allowed = min(billed 19000, 11899) = 11899.",
+        "  contractual adjustment = 7101; balance-bill exposure = 0 (A9).",
+        "  OFFICE_VISIT_PCP DEDUCTIBLE_COINSURANCE: deductible = min(remaining 320000, 11899) = 11899; coinsurance = (11899 - 11899) x 1000 / 10000 = 0 -> 0.",
+        "  OOP: cost share 11899 <= remaining 650000 -> no cap.",
+        "  plan pays = 11899 - 11899 = 0; member pays = 11899.",
+        "  working accumulators: deductible remaining 308101, OOP remaining 638101.",
+        "Totals: plan pays 0, member pays 11899. Working accumulators after (IN_NETWORK): deductible met 11899, OOP met 11899 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C16",
+      "title": "High-deductible 10 percent coinsurance",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-HDHP",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 320000,
+          "oop_met_cents": 330000
+        },
+        "fee_schedule": {
+          "99214": {
+            "inn_allowed_cents": 16951,
+            "oon_allowed_cents": 13561
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "99214",
+            "units": 1,
+            "billed_cents": 27000,
+            "decision": "APPROVE",
+            "benefit_category": "OFFICE_VISIT_SPECIALIST"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 27000,
+              "allowed_cents": 16951,
+              "contractual_adjustment_cents": 10049,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 1695,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 15256,
+              "member_pays_cents": 1695,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 27000,
+            "allowed_cents": 16951,
+            "contractual_adjustment_cents": 10049,
+            "deductible_cents": 0,
+            "copay_cents": 0,
+            "coinsurance_cents": 1695,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 15256,
+            "member_pays_cents": 1695,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 320000,
+          "oop_met_cents": 331695
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-HDHP, IN_NETWORK: deductible 320000, coinsurance 1000 bps, OOP max 650000.",
+        "Accumulators before: deductible met 320000 -> remaining 0; OOP met 330000 -> remaining 320000.",
+        "Line 1 99214 x1: fee 99214: RVU 4.06 x CF 33.4009 = 135.607654 -> national 13561; in-network 13561 x 1.25 = 16951.25 -> 16951; out-of-network 13561.",
+        "  fee for line = 16951 x 1 units = 16951 (A1); allowed = min(billed 27000, 16951) = 16951.",
+        "  contractual adjustment = 10049; balance-bill exposure = 0 (A9).",
+        "  OFFICE_VISIT_SPECIALIST DEDUCTIBLE_COINSURANCE: deductible = min(remaining 0, 16951) = 0; coinsurance = (16951 - 0) x 1000 / 10000 = 1695.1 -> 1695.",
+        "  OOP: cost share 1695 <= remaining 320000 -> no cap.",
+        "  plan pays = 16951 - 1695 = 15256; member pays = 1695.",
+        "  working accumulators: deductible remaining 0, OOP remaining 318305.",
+        "Totals: plan pays 15256, member pays 1695. Working accumulators after (IN_NETWORK): deductible met 320000, OOP met 331695 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C17",
+      "title": "Coinsurance rounds half up (x.5 cents)",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-PPO-SILVER",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 150000,
+          "oop_met_cents": 160000
+        },
+        "fee_schedule": {
+          "93306": {
+            "inn_allowed_cents": 24591,
+            "oon_allowed_cents": 19673
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "93306",
+            "units": 1,
+            "billed_cents": 12345,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 12345,
+              "allowed_cents": 12345,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 3704,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 8641,
+              "member_pays_cents": 3704,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 12345,
+            "allowed_cents": 12345,
+            "contractual_adjustment_cents": 0,
+            "deductible_cents": 0,
+            "copay_cents": 0,
+            "coinsurance_cents": 3704,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 8641,
+            "member_pays_cents": 3704,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 150000,
+          "oop_met_cents": 163704
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-PPO-SILVER, IN_NETWORK: deductible 150000, coinsurance 3000 bps, OOP max 550000.",
+        "Accumulators before: deductible met 150000 -> remaining 0; OOP met 160000 -> remaining 390000.",
+        "Line 1 93306 x1: fee 93306: RVU 5.89 x CF 33.4009 = 196.731301 -> national 19673; in-network 19673 x 1.25 = 24591.25 -> 24591; out-of-network 19673.",
+        "  fee for line = 24591 x 1 units = 24591 (A1); allowed = min(billed 12345, 24591) = 12345.",
+        "  contractual adjustment = 0; balance-bill exposure = 0 (A9).",
+        "  DIAGNOSTIC_TESTS DEDUCTIBLE_COINSURANCE: deductible = min(remaining 0, 12345) = 0; coinsurance = (12345 - 0) x 3000 / 10000 = 3703.5 -> 3704.",
+        "  OOP: cost share 3704 <= remaining 390000 -> no cap.",
+        "  plan pays = 12345 - 3704 = 8641; member pays = 3704.",
+        "  working accumulators: deductible remaining 0, OOP remaining 386296.",
+        "Totals: plan pays 8641, member pays 3704. Working accumulators after (IN_NETWORK): deductible met 150000, OOP met 163704 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C18",
+      "title": "EPO 25 percent coinsurance rounds half up",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-EPO",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 100000,
+          "oop_met_cents": 110000
+        },
+        "fee_schedule": {
+          "93308": {
+            "inn_allowed_cents": 12650,
+            "oon_allowed_cents": 10120
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "93308",
+            "units": 1,
+            "billed_cents": 10002,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 10002,
+              "allowed_cents": 10002,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 2501,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 7501,
+              "member_pays_cents": 2501,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 10002,
+            "allowed_cents": 10002,
+            "contractual_adjustment_cents": 0,
+            "deductible_cents": 0,
+            "copay_cents": 0,
+            "coinsurance_cents": 2501,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 7501,
+            "member_pays_cents": 2501,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 100000,
+          "oop_met_cents": 112501
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-EPO, IN_NETWORK: deductible 100000, coinsurance 2500 bps, OOP max 450000.",
+        "Accumulators before: deductible met 100000 -> remaining 0; OOP met 110000 -> remaining 340000.",
+        "Line 1 93308 x1: fee 93308: RVU 3.03 x CF 33.4009 = 101.204727 -> national 10120; in-network 10120 x 1.25 = 12650.00 -> 12650; out-of-network 10120.",
+        "  fee for line = 12650 x 1 units = 12650 (A1); allowed = min(billed 10002, 12650) = 10002.",
+        "  contractual adjustment = 0; balance-bill exposure = 0 (A9).",
+        "  DIAGNOSTIC_TESTS DEDUCTIBLE_COINSURANCE: deductible = min(remaining 0, 10002) = 0; coinsurance = (10002 - 0) x 2500 / 10000 = 2500.5 -> 2501.",
+        "  OOP: cost share 2501 <= remaining 340000 -> no cap.",
+        "  plan pays = 10002 - 2501 = 7501; member pays = 2501.",
+        "  working accumulators: deductible remaining 0, OOP remaining 337499.",
+        "Totals: plan pays 7501, member pays 2501. Working accumulators after (IN_NETWORK): deductible met 100000, OOP met 112501 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C45",
+      "title": "HMO deductible larger than the allowed amount",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-HMO",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 0,
+          "oop_met_cents": 0
+        },
+        "fee_schedule": {
+          "93306": {
+            "inn_allowed_cents": 24591,
+            "oon_allowed_cents": 19673
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "93306",
+            "units": 1,
+            "billed_cents": 39500,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 39500,
+              "allowed_cents": 24591,
+              "contractual_adjustment_cents": 14909,
+              "deductible_cents": 24591,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 24591,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 39500,
+            "allowed_cents": 24591,
+            "contractual_adjustment_cents": 14909,
+            "deductible_cents": 24591,
+            "copay_cents": 0,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 24591,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 24591,
+          "oop_met_cents": 24591
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-HMO, IN_NETWORK: deductible 25000, coinsurance 2000 bps, OOP max 400000.",
+        "Accumulators before: deductible met 0 -> remaining 25000; OOP met 0 -> remaining 400000.",
+        "Line 1 93306 x1: fee 93306: RVU 5.89 x CF 33.4009 = 196.731301 -> national 19673; in-network 19673 x 1.25 = 24591.25 -> 24591; out-of-network 19673.",
+        "  fee for line = 24591 x 1 units = 24591 (A1); allowed = min(billed 39500, 24591) = 24591.",
+        "  contractual adjustment = 14909; balance-bill exposure = 0 (A9).",
+        "  DIAGNOSTIC_TESTS DEDUCTIBLE_COINSURANCE: deductible = min(remaining 25000, 24591) = 24591; coinsurance = (24591 - 24591) x 2000 / 10000 = 0 -> 0.",
+        "  OOP: cost share 24591 <= remaining 400000 -> no cap.",
+        "  plan pays = 24591 - 24591 = 0; member pays = 24591.",
+        "  working accumulators: deductible remaining 409, OOP remaining 375409.",
+        "Totals: plan pays 0, member pays 24591. Working accumulators after (IN_NETWORK): deductible met 24591, OOP met 24591 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C46",
+      "title": "EPO stress echo coinsurance",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-EPO",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 100000,
+          "oop_met_cents": 100000
+        },
+        "fee_schedule": {
+          "93350": {
+            "inn_allowed_cents": 23171,
+            "oon_allowed_cents": 18537
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "93350",
+            "units": 1,
+            "billed_cents": 36000,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 36000,
+              "allowed_cents": 23171,
+              "contractual_adjustment_cents": 12829,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 5793,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 17378,
+              "member_pays_cents": 5793,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 36000,
+            "allowed_cents": 23171,
+            "contractual_adjustment_cents": 12829,
+            "deductible_cents": 0,
+            "copay_cents": 0,
+            "coinsurance_cents": 5793,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 17378,
+            "member_pays_cents": 5793,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 100000,
+          "oop_met_cents": 105793
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-EPO, IN_NETWORK: deductible 100000, coinsurance 2500 bps, OOP max 450000.",
+        "Accumulators before: deductible met 100000 -> remaining 0; OOP met 100000 -> remaining 350000.",
+        "Line 1 93350 x1: fee 93350: RVU 5.55 x CF 33.4009 = 185.374995 -> national 18537; in-network 18537 x 1.25 = 23171.25 -> 23171; out-of-network 18537.",
+        "  fee for line = 23171 x 1 units = 23171 (A1); allowed = min(billed 36000, 23171) = 23171.",
+        "  contractual adjustment = 12829; balance-bill exposure = 0 (A9).",
+        "  DIAGNOSTIC_TESTS DEDUCTIBLE_COINSURANCE: deductible = min(remaining 0, 23171) = 0; coinsurance = (23171 - 0) x 2500 / 10000 = 5792.75 -> 5793.",
+        "  OOP: cost share 5793 <= remaining 350000 -> no cap.",
+        "  plan pays = 23171 - 5793 = 17378; member pays = 5793.",
+        "  working accumulators: deductible remaining 0, OOP remaining 344207.",
+        "Totals: plan pays 17378, member pays 5793. Working accumulators after (IN_NETWORK): deductible met 100000, OOP met 105793 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C47",
+      "title": "Cataract surgery with the full deductible",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-PPO-GOLD",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 0,
+          "oop_met_cents": 0
+        },
+        "fee_schedule": {
+          "66984": {
+            "inn_allowed_cents": 57825,
+            "oon_allowed_cents": 46260
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "66984",
+            "units": 1,
+            "billed_cents": 90000,
+            "decision": "APPROVE",
+            "benefit_category": "OUTPATIENT_SURGERY"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 90000,
+              "allowed_cents": 57825,
+              "contractual_adjustment_cents": 32175,
+              "deductible_cents": 50000,
+              "copay_cents": 0,
+              "coinsurance_cents": 1565,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 6260,
+              "member_pays_cents": 51565,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 90000,
+            "allowed_cents": 57825,
+            "contractual_adjustment_cents": 32175,
+            "deductible_cents": 50000,
+            "copay_cents": 0,
+            "coinsurance_cents": 1565,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 6260,
+            "member_pays_cents": 51565,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 50000,
+          "oop_met_cents": 51565
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-PPO-GOLD, IN_NETWORK: deductible 50000, coinsurance 2000 bps, OOP max 300000.",
+        "Accumulators before: deductible met 0 -> remaining 50000; OOP met 0 -> remaining 300000.",
+        "Line 1 66984 x1: fee 66984: RVU 13.85 x CF 33.4009 = 462.602465 -> national 46260; in-network 46260 x 1.25 = 57825.00 -> 57825; out-of-network 46260.",
+        "  fee for line = 57825 x 1 units = 57825 (A1); allowed = min(billed 90000, 57825) = 57825.",
+        "  contractual adjustment = 32175; balance-bill exposure = 0 (A9).",
+        "  OUTPATIENT_SURGERY DEDUCTIBLE_COINSURANCE: deductible = min(remaining 50000, 57825) = 50000; coinsurance = (57825 - 50000) x 2000 / 10000 = 1565 -> 1565.",
+        "  OOP: cost share 51565 <= remaining 300000 -> no cap.",
+        "  plan pays = 57825 - 51565 = 6260; member pays = 51565.",
+        "  working accumulators: deductible remaining 0, OOP remaining 248435.",
+        "Totals: plan pays 6260, member pays 51565. Working accumulators after (IN_NETWORK): deductible met 50000, OOP met 51565 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C48",
+      "title": "Silver endoscopy entirely within the deductible",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-PPO-SILVER",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 0,
+          "oop_met_cents": 0
+        },
+        "fee_schedule": {
+          "45385": {
+            "inn_allowed_cents": 62501,
+            "oon_allowed_cents": 50001
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "45385",
+            "units": 1,
+            "billed_cents": 100000,
+            "decision": "APPROVE",
+            "benefit_category": "ENDOSCOPY"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 100000,
+              "allowed_cents": 62501,
+              "contractual_adjustment_cents": 37499,
+              "deductible_cents": 62501,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 62501,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 100000,
+            "allowed_cents": 62501,
+            "contractual_adjustment_cents": 37499,
+            "deductible_cents": 62501,
+            "copay_cents": 0,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 62501,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 62501,
+          "oop_met_cents": 62501
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-PPO-SILVER, IN_NETWORK: deductible 150000, coinsurance 3000 bps, OOP max 550000.",
+        "Accumulators before: deductible met 0 -> remaining 150000; OOP met 0 -> remaining 550000.",
+        "Line 1 45385 x1: fee 45385: RVU 14.97 x CF 33.4009 = 500.011473 -> national 50001; in-network 50001 x 1.25 = 62501.25 -> 62501; out-of-network 50001.",
+        "  fee for line = 62501 x 1 units = 62501 (A1); allowed = min(billed 100000, 62501) = 62501.",
+        "  contractual adjustment = 37499; balance-bill exposure = 0 (A9).",
+        "  ENDOSCOPY DEDUCTIBLE_COINSURANCE: deductible = min(remaining 150000, 62501) = 62501; coinsurance = (62501 - 62501) x 3000 / 10000 = 0 -> 0.",
+        "  OOP: cost share 62501 <= remaining 550000 -> no cap.",
+        "  plan pays = 62501 - 62501 = 0; member pays = 62501.",
+        "  working accumulators: deductible remaining 87499, OOP remaining 487499.",
+        "Totals: plan pays 0, member pays 62501. Working accumulators after (IN_NETWORK): deductible met 62501, OOP met 62501 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    },
+    {
+      "case_id": "C49",
+      "title": "Deductible remaining equals the allowed amount",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-PPO-GOLD",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 25575,
+          "oop_met_cents": 25575
+        },
+        "fee_schedule": {
+          "70551": {
+            "inn_allowed_cents": 24425,
+            "oon_allowed_cents": 19540
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "70551",
+            "units": 1,
+            "billed_cents": 39000,
+            "decision": "APPROVE",
+            "benefit_category": "ADVANCED_IMAGING"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 39000,
+              "allowed_cents": 24425,
+              "contractual_adjustment_cents": 14575,
+              "deductible_cents": 24425,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 24425,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 39000,
+            "allowed_cents": 24425,
+            "contractual_adjustment_cents": 14575,
+            "deductible_cents": 24425,
+            "copay_cents": 0,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 24425,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 50000,
+          "oop_met_cents": 50000
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-PPO-GOLD, IN_NETWORK: deductible 50000, coinsurance 2000 bps, OOP max 300000.",
+        "Accumulators before: deductible met 25575 -> remaining 24425; OOP met 25575 -> remaining 274425.",
+        "Line 1 70551 x1: fee 70551: RVU 5.85 x CF 33.4009 = 195.395265 -> national 19540; in-network 19540 x 1.25 = 24425.00 -> 24425; out-of-network 19540.",
+        "  fee for line = 24425 x 1 units = 24425 (A1); allowed = min(billed 39000, 24425) = 24425.",
+        "  contractual adjustment = 14575; balance-bill exposure = 0 (A9).",
+        "  ADVANCED_IMAGING DEDUCTIBLE_COINSURANCE: deductible = min(remaining 24425, 24425) = 24425; coinsurance = (24425 - 24425) x 2000 / 10000 = 0 -> 0.",
+        "  OOP: cost share 24425 <= remaining 274425 -> no cap.",
+        "  plan pays = 24425 - 24425 = 0; member pays = 24425.",
+        "  working accumulators: deductible remaining 0, OOP remaining 250000.",
+        "Totals: plan pays 0, member pays 24425. Working accumulators after (IN_NETWORK): deductible met 50000, OOP met 50000 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
+    }
+  ]
+}

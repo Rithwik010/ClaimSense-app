@@ -1,0 +1,541 @@
+{
+  "cases": [
+    {
+      "case_id": "H5-01",
+      "title": "Billing NPI failed its format check during OCR",
+      "rules": [
+        "R03",
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-H5-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1234567890",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "billing_npi": 0.0
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R03",
+            "outcome": "REJECT",
+            "reason_code": "RJ_LOW_CONFIDENCE_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "billing_npi failed its validator during intake -> confidence 0 (\u00a78.2).",
+        "R03 fails on billing_npi; 0 < 0.85 -> REJECT RJ_LOW_CONFIDENCE_FIELD."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "H5-02",
+      "title": "No authorization, but the procedure code was read with low confidence",
+      "rules": [
+        "R10",
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-H5-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000002",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "62323",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 55000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "service_lines.0.procedure_code": 0.8
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R10",
+            "outcome": "REJECT",
+            "reason_code": "RJ_LOW_CONFIDENCE_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R10 fails (no auth for 62323); R10 uses service_lines.0.procedure_code.",
+        "Confidence 0.80 < 0.85 -> REJECT RJ_LOW_CONFIDENCE_FIELD instead of DENY."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "H5-03",
+      "title": "Filed late, but the date of service was read with low confidence",
+      "rules": [
+        "R07",
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-H5-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2027-01-05",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "service_lines.0.date_of_service": 0.6
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R07",
+            "outcome": "REJECT",
+            "reason_code": "RJ_LOW_CONFIDENCE_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R07 fails (91 days); R07 uses service_lines.0.date_of_service.",
+        "Confidence 0.60 < 0.85 -> REJECT RJ_LOW_CONFIDENCE_FIELD."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "H5-04",
+      "title": "Low-confidence field not used by the failing rule",
+      "rules": [
+        "R05",
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-H5-04",
+          "member_id": "MBR-G00006",
+          "patient": {
+            "first_name": "Tom",
+            "last_name": "Becker",
+            "date_of_birth": "1959-01-30",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-11-05",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-11-12",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "patient.last_name": 0.4
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R05",
+            "outcome": "DENY",
+            "reason_code": "DN_NOT_ELIGIBLE",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R05 fails (DOS after coverage end).",
+        "Only patient.last_name is low (0.40); R05 does not use it -> no conversion -> DENY DN_NOT_ELIGIBLE."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "H5-05",
+      "title": "Low-confidence field alone does not stop a claim",
+      "rules": [
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-H5-05",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "patient.address.line1": 0.4
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "patient.address.line1 confidence 0.40, but no rule fails -> PASS (\u00a78.2: recorded and shown in review)."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "H5-06",
+      "title": "Confidence exactly at the threshold is not low",
+      "rules": [
+        "R04",
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-H5-06",
+          "member_id": "MBR-999999",
+          "patient": {
+            "first_name": "Sam",
+            "last_name": "Doe",
+            "date_of_birth": "1980-01-01",
+            "sex": "U",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "member_id": 0.85
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R04",
+            "outcome": "REJECT",
+            "reason_code": "RJ_MEMBER_NOT_FOUND",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "member_id confidence 0.85 is not below 0.85 -> no conversion.",
+        "R04 fails -> REJECT RJ_MEMBER_NOT_FOUND."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "H5-07",
+      "title": "Out-of-network denial with a low-confidence billing NPI",
+      "rules": [
+        "R08",
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-H5-07",
+          "member_id": "MBR-G00002",
+          "patient": {
+            "first_name": "Daniel",
+            "last_name": "Okafor",
+            "date_of_birth": "1975-09-14",
+            "sex": "M",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000103",
+          "billing_tin": "080000010",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 19000,
+              "rendering_npi": "1000000103"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "billing_npi": 0.7
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R08",
+            "outcome": "REJECT",
+            "reason_code": "RJ_LOW_CONFIDENCE_FIELD",
+            "line_no": null
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R08 fails (HMO, out of network); network status is looked up from billing_npi (assumption A-R1).",
+        "billing_npi confidence 0.70 < 0.85 -> REJECT RJ_LOW_CONFIDENCE_FIELD."
+      ],
+      "sources": []
+    }
+  ]
+}

@@ -1,0 +1,471 @@
+{
+  "cases": [
+    {
+      "case_id": "R12-01",
+      "title": "Therapeutic exercise units above the MUE",
+      "rules": [
+        "R12"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R12-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000046",
+          "billing_tin": "080000004",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97110",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 7,
+              "charge_cents": 42000,
+              "rendering_npi": "1000000046"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97530",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 2,
+              "charge_cents": 14000,
+              "rendering_npi": "1000000046"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R12",
+            "outcome": "DENY",
+            "reason_code": "DN_MUE_EXCEEDED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MUE_EXCEEDED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "MUE (practitioner, 2026-10-01) for 97110 = 6; line 1 has 7 units -> DENY DN_MUE_EXCEEDED.",
+        "97530 MUE 6; 2 units -> PASS. Claim continues with line 2."
+      ],
+      "sources": [
+        "data/raw/mue/2026-10: 97110 = 6, 97530 = 6"
+      ]
+    },
+    {
+      "case_id": "R12-02",
+      "title": "Units equal to the MUE",
+      "rules": [
+        "R12"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R12-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000046",
+          "billing_tin": "080000004",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97110",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 6,
+              "charge_cents": 36000,
+              "rendering_npi": "1000000046"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "6 units <= MUE 6 -> PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R12-03",
+      "title": "Units split across two lines on the same day",
+      "rules": [
+        "R12"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R12-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000046",
+          "billing_tin": "080000004",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97110",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 4,
+              "charge_cents": 24000,
+              "rendering_npi": "1000000046"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97110",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 3,
+              "charge_cents": 18000,
+              "rendering_npi": "1000000046"
+            },
+            {
+              "line_no": 3,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97530",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 2,
+              "charge_cents": 14000,
+              "rendering_npi": "1000000046"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R12",
+            "outcome": "DENY",
+            "reason_code": "DN_MUE_EXCEEDED",
+            "line_no": 1
+          },
+          {
+            "rule_id": "R12",
+            "outcome": "DENY",
+            "reason_code": "DN_MUE_EXCEEDED",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MUE_EXCEEDED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MUE_EXCEEDED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 3,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "97110 MUE adjudication indicator 3 (date-of-service edit): units add up per code and day (assumption A-R4).",
+        "4 + 3 = 7 > 6 -> both 97110 lines DENY DN_MUE_EXCEEDED.",
+        "Line 3 (97530, 2 units) PASS."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R12-04",
+      "title": "Office visit billed with 3 units; every line denied",
+      "rules": [
+        "R12"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R12-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000001",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "99213",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 3,
+              "charge_cents": 57000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R12",
+            "outcome": "DENY",
+            "reason_code": "DN_MUE_EXCEEDED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MUE_EXCEEDED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "MUE for 99213 = 2; 3 units -> line 1 DENY DN_MUE_EXCEEDED.",
+        "Every line denied by Group C -> claim DENY (DENIED_BY_RULE)."
+      ],
+      "sources": []
+    },
+    {
+      "case_id": "R12-05",
+      "title": "Units above the MUE but read with low confidence",
+      "rules": [
+        "R12",
+        "H5"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R12-05",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Asha",
+            "last_name": "Rao",
+            "date_of_birth": "1981-04-02",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000046",
+          "billing_tin": "080000004",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "97110",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 7,
+              "charge_cents": 42000,
+              "rendering_npi": "1000000046"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "service_lines.0.units": 0.5
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R12",
+            "outcome": "REJECT",
+            "reason_code": "RJ_LOW_CONFIDENCE_FIELD",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R12 fails on line 1 (7 > 6); R12 uses service_lines.0.units.",
+        "Units confidence 0.50 < 0.85 -> H5 -> claim REJECT RJ_LOW_CONFIDENCE_FIELD."
+      ],
+      "sources": []
+    }
+  ]
+}
