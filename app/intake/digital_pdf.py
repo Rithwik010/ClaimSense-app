@@ -1,0 +1,44 @@
+"""Digital PDF intake (INSTRUCTIONS.md §8.2): PyMuPDF text extraction from the known box coordinates
+of our synthetic form (`layout.py`). Confidence is 1.0 for a field that was read and passes its
+format check, 0.0 otherwise.
+"""
+
+from typing import Any
+
+import pymupdf
+
+from app.intake.form_codec import from_form_values
+from app.intake.layout import ALL_PAGE_ONE_BOXES, NOTES_BOX, PRIMARY_PAID_BOXES, Box
+
+Word = tuple[float, float, float, float, str]
+
+
+def _words_in(words: list[Word], box: Box) -> list[Word]:
+    inside = []
+    for x0, y0, x1, y1, text in words:
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        if box.x0 <= cx <= box.x1 and box.y0 <= cy <= box.y1:
+            inside.append((x0, y0, x1, y1, text))
+    return sorted(inside, key=lambda w: (round(w[1]), w[0]))
+
+
+def read_form_values(pdf: bytes) -> dict[str, str]:
+    """Text found inside every layout box, keyed by field path (empty boxes are omitted)."""
+    values: dict[str, str] = {}
+    with pymupdf.open(stream=pdf, filetype="pdf") as doc:
+        pages: list[list[Word]] = [
+            [(w[0], w[1], w[2], w[3], w[4]) for w in page.get_text("words")] for page in doc
+        ]
+    boxes = ALL_PAGE_ONE_BOXES + [NOTES_BOX] + PRIMARY_PAID_BOXES
+    for box in boxes:
+        if box.page >= len(pages):
+            continue
+        text = " ".join(w[4] for w in _words_in(pages[box.page], box))
+        if text:
+            values[box.field] = text
+    return values
+
+
+def parse_digital_pdf(pdf: bytes) -> dict[str, Any]:
+    """The claim dictionary read from a digital PDF (validate it with `IntakeClaim`)."""
+    return from_form_values(read_form_values(pdf))
