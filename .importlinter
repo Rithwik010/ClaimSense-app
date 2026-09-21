@@ -1,0 +1,46 @@
+[importlinter]
+root_packages =
+    app
+    frontend
+include_external_packages = True
+
+[importlinter:contract:rules-calculator-no-ml]
+name = app.rules and app.calculator must not import ML, RAG or model libraries (H1, H3)
+type = forbidden
+source_modules =
+    app.rules
+    app.calculator
+forbidden_modules =
+    app.ml
+    app.rag
+    ollama
+    qdrant_client
+    fastembed
+
+[importlinter:contract:domain-independent]
+name = app.domain must not import any other app package
+type = forbidden
+source_modules =
+    app.domain
+forbidden_modules =
+    app.intake
+    app.rules
+    app.calculator
+    app.context
+    app.ml
+    app.rag
+    app.explain
+    app.review
+    app.workflow
+    app.audit
+    app.db
+    app.api
+    app.core
+
+[importlinter:contract:frontend-http-only]
+name = frontend must not import app (it calls the API over HTTP only)
+type = forbidden
+source_modules =
+    frontend
+forbidden_modules =
+    app

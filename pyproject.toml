@@ -1,0 +1,53 @@
+[project]
+name = "claimsense"
+version = "0.1.0"
+description = "CMS-1500 claim processing: deterministic rules, fine-tuned Gemma 4 SLM recommendation, deterministic calculator, human review."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "alembic>=1.20.0",
+    "faker>=40.39.0",
+    "fastapi>=0.141.1",
+    "fastembed>=0.8.0",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "ollama>=0.6.2",
+    "pandas>=3.0.6",
+    "pillow>=12.3.0",
+    "psycopg[binary]>=3.3.6",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pymupdf>=1.28.2",
+    "pytesseract>=0.3.13",
+    "pyyaml>=6.0.3",
+    "qdrant-client>=1.19.1",
+    "reportlab>=5.0.1",
+    "scikit-learn>=1.9.1",
+    "sqlalchemy>=2.0.54",
+    "streamlit>=1.64.0",
+    "structlog>=26.1.0",
+    "uvicorn>=0.53.0",
+]
+
+[dependency-groups]
+dev = [
+    "import-linter>=2.15",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
