@@ -21,7 +21,8 @@ ClaimSense: CMS-1500 claims → deterministic rules → fine-tuned Gemma 4 SLM r
   model weights, `.env`, or secrets. Never copy AMA CPT descriptor text.
 - `app/domain/contracts.py` is frozen: propose changes, don't make them.
 - Golden test expected values are human-written: never change them to pass a test.
-- No new dependencies without approval. Never push to `main`.
+- No new dependencies without approval. No pull requests: commit to `main` and push only
+  when a team member says so.
 - Explanations are built from the decision record, never from model free text.
 
 ## Workflow
