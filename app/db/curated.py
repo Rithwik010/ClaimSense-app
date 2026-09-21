@@ -1,0 +1,356 @@
+"""Readers for the committed curated data in `data/curated/` (INSTRUCTIONS.md §9.2).
+
+Pure file readers with no database access. The seed loaders (P2.1) insert what these return and the
+synthetic generators (`training/generate/`) read the same values, so both always agree.
+`validate_curated` lists every consistency problem; the test suite requires it to return none.
+"""
+
+import csv
+import re
+from dataclasses import dataclass
+from datetime import date
+from decimal import Decimal
+from functools import lru_cache
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+CURATED_DIR = Path(__file__).resolve().parents[2] / "data" / "curated"
+
+CRITERION_HEADING = re.compile(r"^## (POL-[A-Z]+-[0-9]{3}\.c[0-9]+)\s*$", re.MULTILINE)
+
+
+@dataclass(frozen=True)
+class NetworkTerms:
+    deductible_cents: int
+    coinsurance_bps: int
+    oop_max_cents: int
+
+
+@dataclass(frozen=True)
+class PlanConfig:
+    plan_id: str
+    name: str
+    plan_type: str
+    effective_date: date
+    filing_window_inn_days: int
+    filing_window_oon_days: int
+    referral_required_provider_types: frozenset[str]
+    in_network: NetworkTerms
+    out_of_network: NetworkTerms | None
+
+    @property
+    def oon_covered(self) -> bool:
+        return self.out_of_network is not None
+
+
+@dataclass(frozen=True)
+class BenefitConfig:
+    plan_id: str
+    benefit_category: str
+    covered: bool
+    auth_required: bool
+    visit_limit: int | None
+    cost_share_rule: str
+    copay_cents: int | None
+
+
+@dataclass(frozen=True)
+class Exclusion:
+    plan_id: str
+    procedure_code: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class ScopeEntry:
+    procedure_code: str
+    code_system: str
+    policy_id: str | None
+    candidate_categories: tuple[str, ...]
+    provider_types: tuple[str, ...]
+    policy_split: str | None
+
+
+@dataclass(frozen=True)
+class Criterion:
+    criterion_id: str
+    text: str
+    source: str
+
+
+@dataclass(frozen=True)
+class CoveragePolicy:
+    policy_id: str
+    title: str
+    procedure_codes: tuple[str, ...]
+    plan_ids: tuple[str, ...]
+    effective_date: date
+    sources: tuple[str, ...]
+    billing_article: str
+    split: str
+    criteria: tuple[Criterion, ...]
+
+
+@dataclass(frozen=True)
+class ReasonCodeEntry:
+    internal_code: str
+    outcome: str
+    group_code: str
+    carc: str
+    rarc: str | None
+    notes: str | None
+
+
+@dataclass(frozen=True)
+class FeeRule:
+    source_file: str
+    conversion_factor: Decimal
+    rvu_column: str
+    in_network_bps: int
+    out_of_network_bps: int
+    effective_date: date
+
+
+@dataclass(frozen=True)
+class DiagnosisSupport:
+    """Which covered ICD-10-CM groups of the billing article support a procedure code.
+
+    `alternatives` is a tuple of group combinations: a line is supported when, for at least one
+    combination, each group in it has one of the line's diagnoses (`1|2+3` = group 1, or both
+    group 2 and group 3)."""
+
+    procedure_code: str
+    billing_article: str
+    alternatives: tuple[tuple[int, ...], ...]
+    source: str
+
+
+@dataclass(frozen=True)
+class CuratedData:
+    provider_types: dict[str, bool]  # provider type -> primary care
+    plans: dict[str, PlanConfig]
+    categories: tuple[str, ...]
+    benefits: dict[tuple[str, str], BenefitConfig]
+    exclusions: tuple[Exclusion, ...]
+    scope: dict[str, ScopeEntry]
+    descriptions: dict[str, str]
+    reason_codes: dict[str, ReasonCodeEntry]
+    fee_rule: FeeRule
+    policies: dict[str, CoveragePolicy]
+    diagnosis_support: dict[str, DiagnosisSupport]
+    bypass_modifiers: frozenset[str]
+
+    def benefit(self, plan_id: str, category: str) -> BenefitConfig:
+        return self.benefits[(plan_id, category)]
+
+    def excluded_codes(self, plan_id: str) -> frozenset[str]:
+        return frozenset(e.procedure_code for e in self.exclusions if e.plan_id == plan_id)
+
+    def policy_for_code(self, procedure_code: str) -> CoveragePolicy | None:
+        entry = self.scope.get(procedure_code)
+        return self.policies[entry.policy_id] if entry and entry.policy_id else None
+
+    def auth_required(self, plan_id: str, procedure_code: str) -> bool:
+        """Every candidate category of a code agrees on auth (checked by `validate_curated`)."""
+        categories = self.scope[procedure_code].candidate_categories
+        return self.benefit(plan_id, categories[0]).auth_required
+
+    def criteria(self) -> dict[str, Criterion]:
+        return {c.criterion_id: c for p in self.policies.values() for c in p.criteria}
+
+
+def _read_yaml(name: str) -> Any:
+    return yaml.safe_load((CURATED_DIR / name).read_text(encoding="utf-8"))
+
+
+def _read_csv(name: str) -> list[dict[str, str]]:
+    with (CURATED_DIR / name).open(encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def _terms(raw: dict[str, int] | None) -> NetworkTerms | None:
+    return NetworkTerms(**raw) if raw else None
+
+
+def parse_policy(text: str) -> CoveragePolicy:
+    """Parse a coverage policy file: YAML front matter, then `## <criterion id>` sections that end
+    with a `Source:` line."""
+    _, front, body = text.split("---", 2)
+    meta = yaml.safe_load(front)
+    parts = CRITERION_HEADING.split(body)
+    criteria = []
+    for criterion_id, section in zip(parts[1::2], parts[2::2], strict=True):
+        lines = [line.strip() for line in section.strip().splitlines() if line.strip()]
+        sources = [line for line in lines if line.startswith("Source:")]
+        criterion_text = " ".join(line for line in lines if not line.startswith("Source:"))
+        source = sources[0].removeprefix("Source:").strip() if sources else ""
+        criteria.append(Criterion(criterion_id, criterion_text, source))
+    return CoveragePolicy(
+        policy_id=meta["policy_id"],
+        title=meta["title"],
+        procedure_codes=tuple(str(code) for code in meta["procedure_codes"]),
+        plan_ids=tuple(meta["plan_ids"]),
+        effective_date=meta["effective_date"],
+        sources=tuple(meta["sources"]),
+        billing_article=meta["billing_article"],
+        split=meta["split"],
+        criteria=tuple(criteria),
+    )
+
+
+def _parse_alternatives(value: str) -> tuple[tuple[int, ...], ...]:
+    return tuple(tuple(int(g) for g in alt.split("+")) for alt in value.split("|"))
+
+
+@lru_cache
+def load_curated() -> CuratedData:
+    plans_raw = _read_yaml("plans.yaml")
+    plans = {
+        p["plan_id"]: PlanConfig(
+            plan_id=p["plan_id"],
+            name=p["name"],
+            plan_type=p["plan_type"],
+            effective_date=p["effective_date"],
+            filing_window_inn_days=p["filing_window_days"]["in_network"],
+            filing_window_oon_days=p["filing_window_days"]["out_of_network"],
+            referral_required_provider_types=frozenset(p["referral_required_provider_types"]),
+            in_network=NetworkTerms(**p["in_network"]),
+            out_of_network=_terms(p["out_of_network"]),
+        )
+        for p in plans_raw["plans"]
+    }
+    benefits_raw = _read_yaml("benefits.yaml")
+    benefits = {
+        (plan_id, category): BenefitConfig(
+            plan_id=plan_id,
+            benefit_category=category,
+            covered=row["covered"],
+            auth_required=row["auth_required"],
+            visit_limit=row["visit_limit"],
+            cost_share_rule=row["cost_share_rule"],
+            copay_cents=row.get("copay_cents"),
+        )
+        for plan_id, rows in benefits_raw["benefits"].items()
+        for category, row in rows.items()
+    }
+    exclusions = tuple(
+        Exclusion(plan_id, str(row["procedure_code"]), row["reason"])
+        for plan_id, rows in _read_yaml("exclusions.yaml")["exclusions"].items()
+        for row in rows
+    )
+    scope = {
+        row["procedure_code"]: ScopeEntry(
+            procedure_code=row["procedure_code"],
+            code_system=row["code_system"],
+            policy_id=row["policy_id"] or None,
+            candidate_categories=tuple(row["candidate_benefit_categories"].split(";")),
+            provider_types=tuple(row["provider_types"].split(";")),
+            policy_split=row["policy_split"] or None,
+        )
+        for row in _read_csv("procedure_scope.csv")
+    }
+    reason_codes = {
+        row["internal_code"]: ReasonCodeEntry(
+            internal_code=row["internal_code"],
+            outcome=row["outcome"],
+            group_code=row["group_code"],
+            carc=row["carc"],
+            rarc=row["rarc"] or None,
+            notes=row["notes"] or None,
+        )
+        for row in _read_csv("reason_code_map.csv")
+    }
+    fee = _read_yaml("fee_schedule.yaml")
+    policies = {
+        policy.policy_id: policy
+        for policy in (
+            parse_policy(path.read_text(encoding="utf-8"))
+            for path in sorted((CURATED_DIR / "coverage_policies").glob("POL-*.md"))
+        )
+    }
+    support = {
+        row["procedure_code"]: DiagnosisSupport(
+            procedure_code=row["procedure_code"],
+            billing_article=row["billing_article"],
+            alternatives=_parse_alternatives(row["supporting_groups"]),
+            source=row["source"],
+        )
+        for row in _read_csv("diagnosis_support.csv")
+    }
+    return CuratedData(
+        provider_types={p["provider_type"]: p["primary_care"] for p in plans_raw["provider_types"]},
+        plans=plans,
+        categories=tuple(benefits_raw["categories"]),
+        benefits=benefits,
+        exclusions=exclusions,
+        scope=scope,
+        descriptions={
+            r["procedure_code"]: r["description"] for r in _read_csv("procedure_descriptions.csv")
+        },
+        reason_codes=reason_codes,
+        fee_rule=FeeRule(
+            source_file=fee["source_file"],
+            conversion_factor=Decimal(fee["conversion_factor"]),
+            rvu_column=fee["rvu_column"],
+            in_network_bps=fee["in_network_bps"],
+            out_of_network_bps=fee["out_of_network_bps"],
+            effective_date=fee["effective_date"],
+        ),
+        policies=policies,
+        diagnosis_support=support,
+        bypass_modifiers=frozenset(r["modifier"] for r in _read_csv("ncci_bypass_modifiers.csv")),
+    )
+
+
+def validate_curated(data: CuratedData) -> list[str]:
+    """Cross-file consistency checks. Returns a list of problems (empty when consistent)."""
+    problems: list[str] = []
+    categories = set(data.categories)
+    for plan_id in data.plans:
+        missing = categories - {c for (p, c) in data.benefits if p == plan_id}
+        if missing:
+            problems.append(f"{plan_id}: no benefit row for {sorted(missing)}")
+    for benefit in data.benefits.values():
+        if benefit.plan_id not in data.plans:
+            problems.append(f"benefit for unknown plan {benefit.plan_id}")
+        if (benefit.cost_share_rule == "COPAY") != (benefit.copay_cents is not None):
+            problems.append(f"{benefit.plan_id}/{benefit.benefit_category}: copay vs rule")
+    for plan in data.plans.values():
+        unknown = plan.referral_required_provider_types - set(data.provider_types)
+        if unknown:
+            problems.append(f"{plan.plan_id}: unknown referral provider types {sorted(unknown)}")
+    for exclusion in data.exclusions:
+        if exclusion.procedure_code not in data.scope:
+            problems.append(f"exclusion {exclusion.procedure_code} is not an in-scope code")
+    for code, entry in data.scope.items():
+        if code not in data.descriptions:
+            problems.append(f"{code}: no team-written description")
+        if not set(entry.candidate_categories) <= categories:
+            problems.append(f"{code}: unknown candidate categories")
+        if not set(entry.provider_types) <= set(data.provider_types):
+            problems.append(f"{code}: unknown provider types")
+        for plan_id in data.plans:
+            auth = {data.benefit(plan_id, c).auth_required for c in entry.candidate_categories}
+            if len(auth) > 1:
+                problems.append(f"{plan_id}/{code}: candidate categories disagree on auth")
+        if entry.policy_id:
+            policy = data.policies.get(entry.policy_id)
+            if policy is None:
+                problems.append(f"{code}: unknown policy {entry.policy_id}")
+            elif code not in policy.procedure_codes or entry.policy_split != policy.split:
+                problems.append(f"{code}: scope and {entry.policy_id} disagree")
+            support = data.diagnosis_support.get(code)
+            if support is None or (policy and support.billing_article != policy.billing_article):
+                problems.append(f"{code}: missing or mismatched diagnosis support row")
+    for policy in data.policies.values():
+        for number, criterion in enumerate(policy.criteria, start=1):
+            if criterion.criterion_id != f"{policy.policy_id}.c{number}":
+                problems.append(f"{criterion.criterion_id}: IDs must run c1, c2, ...")
+            if not criterion.source or not criterion.text:
+                problems.append(f"{criterion.criterion_id}: missing text or source")
+        for code in policy.procedure_codes:
+            if data.scope.get(code) is None or data.scope[code].policy_id != policy.policy_id:
+                problems.append(f"{policy.policy_id}: code {code} not mapped in procedure_scope")
+    return problems
