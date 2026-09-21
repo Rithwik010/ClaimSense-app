@@ -309,6 +309,8 @@ class ScenarioBuilder:
             raise ScenarioError("no same-day office/procedure pair")
         if scenario_type == "same_profile_multi":
             profiles = [p for p in self._profiles() if len(p.codes) >= 2]
+            if not profiles:
+                raise ScenarioError("no profile with several codes")
             profile = rng.choice(profiles)
             mode = rng.choices(
                 ("approve", "pend", "deny_criterion", "deny_dx"), weights=(55, 20, 15, 10)
@@ -349,6 +351,8 @@ class ScenarioBuilder:
             return lines, {provider_type}, None
         if scenario_type == "ncci_bypass":
             options = [k for k, (policy, _, _) in BYPASS_SETS.items() if policy in self.policies]
+            if not options:
+                raise ScenarioError("no bypass pair in these policies")
             kind = rng.choice(options)
             policy_id, column1, column2 = BYPASS_SETS[kind]
             profile = rng.choice(
@@ -370,12 +374,16 @@ class ScenarioBuilder:
             return self._plan_rule_denied()
         if scenario_type == "excluded_only":
             options = [e for e in EXCLUDED_EXTRAS if e[2].split("/")[0] in self.policies]
+            if not options:
+                raise ScenarioError("no excluded code in these policies")
             plan_id, code, key = rng.choice(options)
             profile = next(p for p in self._profiles() if p.key == key)
             line = self._policy_line(profile, "approve", code)
             line.expect_rule_denial = True
             return [line], None, {plan_id}
         if scenario_type == "mue_only":
+            if "POL-REHAB-001" not in self.policies:
+                raise ScenarioError("MUE scenarios use POL-REHAB-001")
             profile = next(
                 p for p in self._profiles({"POL-REHAB-001"}) if p.profile_id == "treatment"
             )
@@ -423,6 +431,8 @@ class ScenarioBuilder:
                 for b in profile.codes:
                     if a != b and self.cb.ncci_indicator(a, b, DOS_START) in ("0", "1"):
                         pairs.append((profile, a, b))
+        if not pairs:
+            raise ScenarioError("no NCCI pair within a profile")
         profile, column1, column2 = rng.choice(pairs)
         model = self._policy_line(profile, _mode_weights(rng), column1)
         bundled = PlannedLine(
