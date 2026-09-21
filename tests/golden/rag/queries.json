@@ -1,0 +1,509 @@
+{
+  "metric": "recall@3: for each query with expected IDs, the share of expected IDs found in the top 3 results (retrieval filtered by plan ID or ALL and effective date <= date of service before similarity search, \u00a78.4). Queries with no expected IDs pass when no criterion is returned after filtering and the relevance threshold.",
+  "target": "recall@3 >= 0.85 (P3.3)",
+  "queries": [
+    {
+      "query_id": "RAG-01",
+      "query": "MRI brain without contrast for headaches for 6 weeks despite ibuprofen with new weakness of the left hand",
+      "procedure_code": "70551",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-IMG-001.c2",
+        "POL-IMG-001.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-02",
+      "query": "MRI brain with and without contrast to characterize an enhancing lesion seen on the prior scan",
+      "procedure_code": "70553",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-IMG-001.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-03",
+      "query": "Brain MRI to stage prostate cancer in a patient without neurological symptoms",
+      "procedure_code": "70551",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-IMG-001.c4"
+      ]
+    },
+    {
+      "query_id": "RAG-04",
+      "query": "CT of the head for a sudden severe headache with dizziness",
+      "procedure_code": "70450",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-IMG-001.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-05",
+      "query": "Ultrasound of the heel for plantar fasciitis after failed stretching and orthotics",
+      "procedure_code": "76882",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-IMG-002.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-06",
+      "query": "Ultrasound of a soft tissue mass near the wrist, possible ganglion cyst",
+      "procedure_code": "76882",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-IMG-002.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-07",
+      "query": "Ultrasound of both knees, the second knee only for comparison",
+      "procedure_code": "76881",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-IMG-002.c4"
+      ]
+    },
+    {
+      "query_id": "RAG-08",
+      "query": "Ultrasound ordered to diagnose an obvious bunion",
+      "procedure_code": "76882",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-IMG-002.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-09",
+      "query": "Transthoracic echocardiogram for shortness of breath and a new murmur, suspected valve disease",
+      "procedure_code": "93306",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-CAR-001.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-10",
+      "query": "Repeat echocardiogram six months after a normal study with unchanged symptoms",
+      "procedure_code": "93308",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-CAR-001.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-11",
+      "query": "Stress echocardiogram after a nondiagnostic treadmill test for exertional chest pain",
+      "procedure_code": "93350",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-CAR-001.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-12",
+      "query": "48-hour Holter monitor for palpitations and near fainting",
+      "procedure_code": "93224",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-CAR-002.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-13",
+      "query": "Seven-day heart rhythm recording because palpitations happen only every few days",
+      "procedure_code": "93241",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-CAR-002.c3",
+        "POL-CAR-002.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-14",
+      "query": "Event monitor to check for recurrence after catheter ablation for atrial fibrillation",
+      "procedure_code": "93268",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-CAR-002.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-15",
+      "query": "Home sleep apnea test for loud snoring, witnessed apneas and daytime sleepiness",
+      "procedure_code": "95806",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-DX-001.c1",
+        "POL-DX-001.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-16",
+      "query": "CPAP titration study after a diagnostic sleep study showed moderate obstructive sleep apnea",
+      "procedure_code": "95811",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-DX-001.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-17",
+      "query": "Nerve conduction study for hand numbness and tingling, suspected carpal tunnel syndrome",
+      "procedure_code": "95907",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-DX-002.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-18",
+      "query": "Nerve conduction testing three days after a wrist fracture from a fall",
+      "procedure_code": "95910",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-DX-002.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-19",
+      "query": "Yearly nerve testing to monitor known diabetic neuropathy",
+      "procedure_code": "95907",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-DX-002.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-20",
+      "query": "Skin prick allergy testing for seasonal allergic rhinitis to tree pollen",
+      "procedure_code": "95004",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-DX-003.c1",
+        "POL-DX-003.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-21",
+      "query": "Patch testing for suspected allergic contact dermatitis to nickel",
+      "procedure_code": "95044",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-DX-003.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-22",
+      "query": "Neuropsychological testing to tell early dementia apart from depression",
+      "procedure_code": "96130",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-BH-001.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-23",
+      "query": "Routine yearly re-testing of a stable, chronically disabled patient",
+      "procedure_code": "96130",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-BH-001.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-24",
+      "query": "Lumbar epidural steroid injection for radiculopathy from a disc herniation seen on MRI",
+      "procedure_code": "62323",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-PAIN-001.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-25",
+      "query": "Transforaminal epidural injection after 6 weeks of failed physical therapy, pain 8 of 10, Oswestry 50 percent",
+      "procedure_code": "64483",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-PAIN-001.c3",
+        "POL-PAIN-001.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-26",
+      "query": "Repeat epidural injection after 60 percent pain relief that lasted 4 months",
+      "procedure_code": "62323",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-PAIN-001.c5"
+      ]
+    },
+    {
+      "query_id": "RAG-27",
+      "query": "Cervical epidural injection under fluoroscopy at several levels in one session",
+      "procedure_code": "62321",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-PAIN-001.c4"
+      ]
+    },
+    {
+      "query_id": "RAG-28",
+      "query": "Lumbar facet joint block for chronic axial low back pain lasting 6 months",
+      "procedure_code": "64493",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-PAIN-002.c1",
+        "POL-PAIN-002.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-29",
+      "query": "Radiofrequency ablation of lumbar facet nerves after two diagnostic blocks",
+      "procedure_code": "64635",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-PAIN-002.c4"
+      ]
+    },
+    {
+      "query_id": "RAG-30",
+      "query": "Facet injection in a patient with untreated radicular leg pain",
+      "procedure_code": "64493",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-PAIN-002.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-31",
+      "query": "Cataract surgery for glare limiting night driving, vision 20/60 with best glasses",
+      "procedure_code": "66984",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-SURG-001.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-32",
+      "query": "Cataract with mild lens clouding and no visual complaints",
+      "procedure_code": "66984",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-SURG-001.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-33",
+      "query": "Cataract removal needed to monitor and treat diabetic retinopathy",
+      "procedure_code": "66982",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-SURG-001.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-34",
+      "query": "Colonoscopy for iron-deficiency anemia and a positive stool blood test",
+      "procedure_code": "45380",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-SURG-002.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-35",
+      "query": "Surveillance colonoscopy three years after removal of a large adenomatous polyp",
+      "procedure_code": "45378",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-SURG-002.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-36",
+      "query": "Radiofrequency ablation of the great saphenous vein after 3 months of compression stockings",
+      "procedure_code": "36475",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-SURG-003.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-37",
+      "query": "Treatment of spider veins on both thighs",
+      "procedure_code": "36478",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-SURG-003.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-38",
+      "query": "Upper eyelid blepharoplasty with 20 degrees of upper visual field loss",
+      "procedure_code": "15823",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-SURG-004.c3",
+        "POL-SURG-004.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-39",
+      "query": "Eyelid surgery to look less tired, no visual complaints",
+      "procedure_code": "15822",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-SURG-004.c4"
+      ]
+    },
+    {
+      "query_id": "RAG-40",
+      "query": "Toenail debridement for diabetic neuropathy with loss of protective sensation on monofilament testing",
+      "procedure_code": "11721",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-FOOT-001.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-41",
+      "query": "Toenail trimming for a patient taking warfarin",
+      "procedure_code": "11720",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-FOOT-001.c2"
+      ]
+    },
+    {
+      "query_id": "RAG-42",
+      "query": "Therapeutic exercise with a written plan of care and specific goals",
+      "procedure_code": "97110",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-REHAB-001.c2",
+        "POL-REHAB-001.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-43",
+      "query": "Maintenance therapy with no further improvement expected",
+      "procedure_code": "97530",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-REHAB-001.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-44",
+      "query": "Debridement of a diabetic foot ulcer down to the subcutaneous fat",
+      "procedure_code": "11042",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-WOUND-001.c1"
+      ]
+    },
+    {
+      "query_id": "RAG-45",
+      "query": "Wound debridement repeated weekly for 10 weeks",
+      "procedure_code": "97597",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [
+        "POL-WOUND-001.c3"
+      ]
+    },
+    {
+      "query_id": "RAG-46",
+      "query": "Office visit for a sore throat and cough",
+      "procedure_code": "99213",
+      "plan_id": "PLN-PPO-SILVER",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [],
+      "why_empty": "no policy covers office visits"
+    },
+    {
+      "query_id": "RAG-47",
+      "query": "Total knee replacement for osteoarthritis",
+      "procedure_code": "27447",
+      "plan_id": "PLN-HMO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [],
+      "why_empty": "procedure outside the policy scope"
+    },
+    {
+      "query_id": "RAG-48",
+      "query": "Influenza vaccination at a primary care visit",
+      "procedure_code": "90686",
+      "plan_id": "PLN-EPO",
+      "date_of_service": "2026-11-02",
+      "expected_criterion_ids": [],
+      "why_empty": "procedure outside the policy scope"
+    },
+    {
+      "query_id": "RAG-49",
+      "query": "Lumbar epidural steroid injection for radiculopathy from a disc herniation seen on MRI",
+      "procedure_code": "62323",
+      "plan_id": "PLN-HDHP",
+      "date_of_service": "2025-12-15",
+      "expected_criterion_ids": [],
+      "why_empty": "date of service before every policy's effective date (2026-01-01): the date filter removes all criteria"
+    },
+    {
+      "query_id": "RAG-50",
+      "query": "Physical therapy evaluation for knee pain after a sprain",
+      "procedure_code": "97161",
+      "plan_id": "PLN-PPO-GOLD",
+      "date_of_service": "2025-11-03",
+      "expected_criterion_ids": [],
+      "why_empty": "date of service before every policy's effective date (2026-01-01)"
+    }
+  ]
+}
