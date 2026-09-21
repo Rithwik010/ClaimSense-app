@@ -25,6 +25,8 @@ by the team and received into the repo on 2026-09-21. Downloads are done by peop
 | Uniform Glossary (English) | 2023-06-07 | `sbc/2023-06-07/` | `Uniform-Glossary English-060723.pdf` | [cms.gov](https://www.cms.gov/marketplace/resources/forms-reports-other#Summary_of_Benefits_and_Coverage_and_Uniform_Glossary) | CMS/DOL (US government work) |
 | SBC template (English) | 2024-11-04 | `sbc/template-2024-11-04/` | `english-sbc-template-accessible-format-110424.pdf`, `english-sbc-template-standard-format-110424.docx` | [cms.gov](https://www.cms.gov/marketplace/resources/forms-reports-other#Summary_of_Benefits_and_Coverage_and_Uniform_Glossary) | CMS/DOL (US government work) |
 | Sample completed SBC (English) | 2025-01-28 | `sbc/sample-2025-01-28/` | `english-sample-completed-sbc-accessible-format-012825.pdf`, `english-sample-completed-sbc-standard-format-012825.doc` | [cms.gov](https://www.cms.gov/marketplace/resources/forms-reports-other#Summary_of_Benefits_and_Coverage_and_Uniform_Glossary) | CMS/DOL (US government work) |
+| Cigna Companion Guide: 837 Professional (Evernorth is part of The Cigna Group) | v1.18 | `payer-guides/2026-09-21/` | `5010-837P-companion-guide.pdf` | [cigna.com](https://www.cigna.com/static/www-cigna-com/docs/5010-837P-companion-guide.pdf) | © Cigna; public download, reference only |
+| Evernorth e-course: medical and behavioral claim submission by EDI | © 2021 | `payer-guides/2026-09-21/` | `medBehaviorClaimSubmit.pdf` | [evernorth.com](https://static.evernorth.com/assets/evernorth/provider/pdf/resourceLibrary/eCourses/medical/ediOptions/medBehaviorClaimSubmit.pdf) | © Evernorth; public download, reference only |
 
 ## Still to download
 
