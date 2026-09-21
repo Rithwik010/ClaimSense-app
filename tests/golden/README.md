@@ -9,7 +9,7 @@ If one looks wrong, stop and ask.
 | `rules/` | 90 | P2.3 rules engine |
 | `calculator/` | 52 | P2.4 calculator |
 | `e2e/` | 30 | P5.6 end-to-end pipeline |
-| `rag/` | 45 queries | P3.3 retrieval (recall@3) |
+| `rag/` | 50 queries | P3.3 retrieval (recall@3) |
 | `blind_review/` | 30 claims | P6.1 reviewer agreement |
 
 `tests/unit/test_golden_files.py` checks that every file is well formed: contracts validate, codes
@@ -71,11 +71,35 @@ change only at finalization, §8.6).
 | A8 | Totals are sums over every line. |
 | A9 | Contractual adjustment (billed − allowed) is in-network only; balance-bill exposure (billed − allowed) is out-of-network only and is not part of `member_pays`. |
 
-## Other sets
+## End-to-end cases (`e2e/cases.json`)
 
-- `e2e/`: full claims with the reference records they need, the model answer to use when the model
-  is stubbed, the expected rule outcome, line decisions, review tier, amounts and final status.
-- `rag/queries.json`: a query, plan and date of service, and the criterion IDs that should appear in
-  the top 3 (an empty list means no policy is relevant).
-- `blind_review/`: claims for reviewers to decide before they see the model output. The generator
-  labels are in `blind_review/answer_key.json`; reviewers must not open it until they are done.
+Each case gives the claim (`given.claim`), its source format, field confidences, the reference
+records it needs (member, providers, network rows, authorizations, accumulators, existing claims),
+the model answer to use when the model is stubbed, and the reviewer's action. Expected values:
+
+- `rules`: the rule outcome. Claims stopped by rules end there (`recommendation: null`).
+- `recommendation`: whether the model output is valid, the line decisions and who made them
+  (RULE / MODEL / VALIDATION), the derived claim decision, the review tier (§8.5) and the amounts.
+- `final`: status, line decisions after review, amounts after the calculator re-runs, and the stored
+  accumulators after finalization.
+
+Claims and model answers come from the scenario engine (`training/generate/scenarios.py`); tiers,
+statuses and amounts are worked out step by step with the calculator assumptions above.
+`DIGITAL_PDF` cases are rendered and parsed by the runner; the `SCANNED` cases stub intake with the
+given confidences (OCR accuracy is measured in P5.1). The review tier's high-dollar threshold is
+`REVIEW_HIGH_DOLLAR_CENTS` = 100000 and the confidence threshold 0.85.
+
+## RAG queries (`rag/queries.json`)
+
+A query, procedure code, plan and date of service, and the criterion IDs that should appear in the
+top 3. An empty list (with `why_empty`) means no policy is relevant: an office visit, a procedure
+outside the scope, or a date of service before every policy's effective date. The file states the
+recall@3 metric and the P3.3 target (0.85).
+
+## Blind review (`blind_review/`)
+
+`claims.json` holds 30 claims exactly as the model sees them (`review_view`), and
+`review_sheet.csv` one row per line to decide. Reviewers fill in the sheet **before** seeing any
+model output. The generator's labels are written by `uv run python -m training.generate.blind_review`
+to `data/generated/blind_review/answer_key.json` (never committed); do not open it until the sheet is
+complete. The test suite checks that the generator still reproduces the committed claims.

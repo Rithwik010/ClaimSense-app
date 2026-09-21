@@ -161,3 +161,120 @@ def test_calculator_fee_inputs_match_the_fee_schedule_rule(case: dict[str, Any])
             fee.out_of_network_bps,
         )
         assert (amounts["inn_allowed_cents"], amounts["oon_allowed_cents"]) == (inn, oon)
+
+
+# --- End-to-end ----------------------------------------------------------------------------------
+
+E2E_CASES = load_cases("e2e")
+FINAL_STATUS = {
+    "APPROVE": "FINAL_APPROVED",
+    "DENY": "FINAL_DENIED",
+    "PEND": "FINAL_PENDED",
+    "PARTIAL": "FINAL_PARTIAL",
+}
+
+
+def derived_decision(decisions: list[str]) -> str:
+    found = set(decisions)
+    if "PEND" in found:
+        return "PEND"
+    if found == {"DENY"}:
+        return "DENY"
+    if found == {"APPROVE"}:
+        return "APPROVE"
+    return "PARTIAL"
+
+
+def test_e2e_covers_every_outcome() -> None:
+    assert 25 <= len(E2E_CASES) <= 40 and len(set(ids(E2E_CASES))) == len(E2E_CASES)
+    statuses = {c["expected"]["final"]["status"] for c in E2E_CASES}
+    assert statuses == {
+        "REJECTED",
+        "DENIED_BY_RULE",
+        "PENDED_BY_RULE",
+        "FINAL_APPROVED",
+        "FINAL_DENIED",
+        "FINAL_PENDED",
+        "FINAL_PARTIAL",
+    }
+    tiers = {(c["expected"]["recommendation"] or {}).get("review_tier") for c in E2E_CASES}
+    assert {"QUICK", "STANDARD", "FULL"} <= tiers
+    formats = {c["given"]["source_format"] for c in E2E_CASES}
+    assert formats == {"JSON", "DIGITAL_PDF", "SCANNED"}
+    actions = {(c["given"]["review_action"] or {}).get("action") for c in E2E_CASES}
+    assert {"ACCEPT", "OVERRIDE"} <= actions
+
+
+@pytest.mark.parametrize("case", E2E_CASES, ids=ids(E2E_CASES))
+def test_e2e_case_is_consistent(case: dict[str, Any]) -> None:
+    from app.domain.contracts import ReviewAction, SLMOutput
+
+    given, expected = case["given"], case["expected"]
+    assert case["worked_steps"]
+    assert all(npi_is_valid(p["npi"]) for p in given["reference_additions"]["providers"])
+    recommendation = expected["recommendation"]
+    if recommendation is None:  # stopped by the rules: final at intake
+        assert expected["final"]["status"] == expected["status_after_processing"]
+        assert expected["rules"]["failures"]
+        return
+    IntakeClaim.model_validate(given["claim"])
+    ReviewAction.model_validate(given["review_action"])
+    if recommendation["output_valid"]:
+        SLMOutput.model_validate(given["model_answer"])
+    for stage in (recommendation, expected["final"]):
+        breakdown = CostBreakdown.model_validate(stage["amounts"])
+        for field in type(breakdown.totals).model_fields:
+            total = sum(getattr(line, field) for line in breakdown.lines)
+            assert getattr(breakdown.totals, field) == total
+    decisions = [line["decision"] for line in recommendation["line_decisions"]]
+    assert recommendation["claim_decision"] == derived_decision(decisions)
+    final = [line["decision"] for line in expected["final"]["line_decisions"]]
+    assert expected["final"]["claim_decision"] == derived_decision(final)
+    assert expected["final"]["status"] == FINAL_STATUS[derived_decision(final)]
+
+
+# --- RAG queries and blind review ----------------------------------------------------------------
+
+
+def test_rag_queries() -> None:
+    data = json.loads((GOLDEN / "rag" / "queries.json").read_text(encoding="utf-8"))
+    queries = data["queries"]
+    known = load_curated().criteria()
+    assert 40 <= len(queries) <= 50
+    assert len({q["query_id"] for q in queries}) == len(queries)
+    assert sum(1 for q in queries if not q["expected_criterion_ids"]) >= 5
+    for query in queries:
+        assert query["plan_id"] in load_curated().plans and query["query"]
+        assert 1 <= len(query["expected_criterion_ids"]) <= 3 or query.get("why_empty")
+        assert set(query["expected_criterion_ids"]) <= set(known)
+    covered = {cid.split(".")[0] for q in queries for cid in q["expected_criterion_ids"]}
+    assert covered == set(load_curated().policies)
+
+
+def test_blind_review_claims_and_sheet() -> None:
+    from app.domain.contracts import ContextPackage, RulesOutcome
+    from app.ml.prompt import lines_to_decide
+
+    data = json.loads((GOLDEN / "blind_review" / "claims.json").read_text(encoding="utf-8"))
+    claims = data["claims"]
+    assert len(claims) == 30
+    sheet = (GOLDEN / "blind_review" / "review_sheet.csv").read_text(encoding="utf-8").splitlines()
+    rows = [row.split(",")[:2] for row in sheet[1:]]
+    expected_rows = []
+    for claim in claims:
+        IntakeClaim.model_validate(claim["claim"])
+        ContextPackage.model_validate(claim["context"])
+        rules = RulesOutcome.model_validate(claim["rules_outcome"])
+        expected_rows += [[claim["claim_id"], str(n)] for n in lines_to_decide(rules)]
+        assert "model_answer" not in claim and "target" not in claim
+    assert rows == expected_rows
+
+
+@requires_raw
+def test_blind_review_is_reproducible() -> None:
+    from training.generate.blind_review import build
+
+    document, sheet, _ = build()
+    committed = json.loads((GOLDEN / "blind_review" / "claims.json").read_text(encoding="utf-8"))
+    assert json.loads(json.dumps(document)) == committed
+    assert sheet == (GOLDEN / "blind_review" / "review_sheet.csv").read_text(encoding="utf-8")
