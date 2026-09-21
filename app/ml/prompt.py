@@ -118,13 +118,13 @@ def render_user_message(
         parts.append(f"Line {line_context.line_no} ({line_context.procedure_code}):")
         if not line_context.criteria:
             parts.append("  No criteria retrieved.")
+        policies: dict[str, list] = {}  # retrieval order, grouped under one header per policy
         for criterion in line_context.criteria:
-            codes = ", ".join(lookups.policy_codes.get(criterion.policy_id, []))
-            parts.append(
-                f"  [{criterion.criterion_id}] {criterion.policy_title} "
-                f"(policy {criterion.policy_id}, "
-                f"covers {codes}): {criterion.text} Source: {criterion.source}"
-            )
+            policies.setdefault(criterion.policy_id, []).append(criterion)
+        for policy_id, criteria in policies.items():
+            codes = ", ".join(lookups.policy_codes.get(policy_id, []))
+            parts.append(f"  Policy {policy_id} {criteria[0].policy_title} (covers {codes}):")
+            parts += [f"    [{c.criterion_id}] {c.text} ({c.source})" for c in criteria]
     parts.append("")
     parts.append(f"LINES TO DECIDE: {', '.join(str(n) for n in lines_to_decide(rules))}")
     return "\n".join(parts)
