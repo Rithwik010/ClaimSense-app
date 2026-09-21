@@ -1,0 +1,10 @@
+# Fee schedule rule (DECISIONS.md 2026-09-21, D6). The loader computes allowed amounts per code:
+#   base  = total non-facility RVU x conversion factor, from the PFS file below (national, no GPCI)
+#   in-network allowed     = base x in_network_bps / 10000, rounded half-up to whole cents
+#   out-of-network allowed = base x out_of_network_bps / 10000, rounded half-up to whole cents
+source_file: data/raw/pfs/rvu26a/PPRRVU2026_Jan_nonQPP.csv
+conversion_factor: "33.4009"   # read from the file; the loader fails if the file disagrees
+rvu_column: NON-FACILITY TOTAL
+in_network_bps: 12500
+out_of_network_bps: 10000
+effective_date: 2026-01-01

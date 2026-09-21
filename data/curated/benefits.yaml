@@ -1,0 +1,70 @@
+# Benefits per plan and category (synthesized; DECISIONS.md 2026-09-21). Money in integer cents.
+# cost_share_rule COPAY: member pays min(copay_cents, allowed); the deductible does not apply.
+# cost_share_rule DEDUCTIBLE_COINSURANCE: the plan's network deductible and coinsurance apply (plans.yaml).
+# visit_limit: visits per calendar year; one visit = one date of service with a line in the category.
+# auth_required: every candidate category of a code agrees on this (checked by the loader), so rule R10
+# can run before the model chooses a category.
+
+categories: [OFFICE_VISIT_PCP, OFFICE_VISIT_SPECIALIST, PREVENTIVE_CARE, ADVANCED_IMAGING, DIAGNOSTIC_TESTS, MENTAL_HEALTH_OUTPATIENT, PAIN_MANAGEMENT, OUTPATIENT_SURGERY, ENDOSCOPY, MINOR_PROCEDURES, REHAB_THERAPY]
+
+benefits:
+  PLN-PPO-GOLD:
+    OFFICE_VISIT_PCP: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 2500}
+    OFFICE_VISIT_SPECIALIST: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 5000}
+    PREVENTIVE_CARE: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 0}
+    ADVANCED_IMAGING: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    DIAGNOSTIC_TESTS: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MENTAL_HEALTH_OUTPATIENT: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 2500}
+    PAIN_MANAGEMENT: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    OUTPATIENT_SURGERY: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    ENDOSCOPY: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MINOR_PROCEDURES: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    REHAB_THERAPY: {covered: true, auth_required: false, visit_limit: 30, cost_share_rule: COPAY, copay_cents: 3000}
+  PLN-PPO-SILVER:
+    OFFICE_VISIT_PCP: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 4000}
+    OFFICE_VISIT_SPECIALIST: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 7500}
+    PREVENTIVE_CARE: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 0}
+    ADVANCED_IMAGING: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    DIAGNOSTIC_TESTS: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MENTAL_HEALTH_OUTPATIENT: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 4000}
+    PAIN_MANAGEMENT: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    OUTPATIENT_SURGERY: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    ENDOSCOPY: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MINOR_PROCEDURES: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    REHAB_THERAPY: {covered: true, auth_required: false, visit_limit: 20, cost_share_rule: COPAY, copay_cents: 5000}
+  PLN-HMO:
+    OFFICE_VISIT_PCP: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 2000}
+    OFFICE_VISIT_SPECIALIST: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 4000}
+    PREVENTIVE_CARE: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 0}
+    ADVANCED_IMAGING: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    DIAGNOSTIC_TESTS: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MENTAL_HEALTH_OUTPATIENT: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 2000}
+    PAIN_MANAGEMENT: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    OUTPATIENT_SURGERY: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    ENDOSCOPY: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MINOR_PROCEDURES: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    REHAB_THERAPY: {covered: true, auth_required: true, visit_limit: 20, cost_share_rule: COPAY, copay_cents: 3000}
+  PLN-EPO:
+    OFFICE_VISIT_PCP: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 3000}
+    OFFICE_VISIT_SPECIALIST: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 6000}
+    PREVENTIVE_CARE: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 0}
+    ADVANCED_IMAGING: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    DIAGNOSTIC_TESTS: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MENTAL_HEALTH_OUTPATIENT: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 3000}
+    PAIN_MANAGEMENT: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    OUTPATIENT_SURGERY: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    ENDOSCOPY: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MINOR_PROCEDURES: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    REHAB_THERAPY: {covered: true, auth_required: true, visit_limit: 25, cost_share_rule: COPAY, copay_cents: 4000}
+  PLN-HDHP:
+    OFFICE_VISIT_PCP: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    OFFICE_VISIT_SPECIALIST: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    PREVENTIVE_CARE: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: COPAY, copay_cents: 0}
+    ADVANCED_IMAGING: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    DIAGNOSTIC_TESTS: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MENTAL_HEALTH_OUTPATIENT: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    PAIN_MANAGEMENT: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    OUTPATIENT_SURGERY: {covered: true, auth_required: true, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    ENDOSCOPY: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    MINOR_PROCEDURES: {covered: true, auth_required: false, visit_limit: null, cost_share_rule: DEDUCTIBLE_COINSURANCE}
+    REHAB_THERAPY: {covered: true, auth_required: false, visit_limit: 20, cost_share_rule: DEDUCTIBLE_COINSURANCE}

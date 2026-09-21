@@ -1,0 +1,42 @@
+{
+  "claim": {
+    "id": "CLM-500-SPECIALIST",
+    "member": {
+      "id": "MBR-SARAH-001",
+      "name": "Sarah Chen",
+      "active": true,
+      "plan_type": "PPO",
+      "effective": "2024-03-15T00:00:00Z"
+    },
+    "provider": {
+      "npi": "1234567890",
+      "name": "Dr. Rivera, Orthopedics",
+      "network_status": "IN_NETWORK",
+      "enrolled": true
+    },
+    "date_of_service": "2025-03-15T00:00:00Z",
+    "submitted_at": "2025-03-20T00:00:00Z",
+    "covered_service": true,
+    "referral_obtained": true,
+    "authorization_obtained": true,
+    "service_lines": [
+      {
+        "cpt_code": "99214",
+        "icd10_code": "M25.561",
+        "description": "Office visit, established patient, moderate complexity",
+        "charge_cents": 50000
+      }
+    ]
+  },
+  "plan": {
+    "plan_type": "PPO",
+    "timely_filing_days": 90,
+    "in_network_copay_cents": 4000,
+    "in_network_allowed_cents": 40000,
+    "out_of_network_allowed_pct": 0.7,
+    "out_of_network_coinsurance_pct": 0.4,
+    "covers_out_of_network": true,
+    "requires_referral": false,
+    "usual_customary_cents": 38000
+  }
+}

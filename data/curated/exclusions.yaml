@@ -1,0 +1,13 @@
+# Fixed exclusions per plan (synthesized plan design; DECISIONS.md 2026-09-21). Rule R13 denies a line
+# whose procedure code is listed for the member's plan (DN_EXCLUDED). Conditional exclusions, such as
+# cosmetic versus functional eyelid surgery, are not listed here: they are coverage criteria that the
+# model evaluates from the coverage policies.
+exclusions:
+  PLN-PPO-GOLD: []
+  PLN-PPO-SILVER:
+    - {procedure_code: "64635", reason: "Radiofrequency destruction of facet joint nerves is not a plan benefit"}
+  PLN-HMO:
+    - {procedure_code: "95044", reason: "Patch allergy testing is not a plan benefit"}
+  PLN-EPO:
+    - {procedure_code: "97140", reason: "Manual therapy is not a plan benefit"}
+  PLN-HDHP: []

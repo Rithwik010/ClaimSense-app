@@ -1,0 +1,66 @@
+# Fictional plans (synthesized; DECISIONS.md 2026-09-21). Money in integer cents; percentages in
+# basis points (20% = 2000). Deductibles and out-of-pocket maximums reset every 1 January (D7).
+# A plan with `out_of_network: null` does not cover out-of-network care (rule R08 denies it).
+
+provider_types:
+  - {provider_type: PRIMARY_CARE, primary_care: true}
+  - {provider_type: RADIOLOGY, primary_care: false}
+  - {provider_type: CARDIOLOGY, primary_care: false}
+  - {provider_type: NEUROLOGY, primary_care: false}
+  - {provider_type: SLEEP_MEDICINE, primary_care: false}
+  - {provider_type: ALLERGY_IMMUNOLOGY, primary_care: false}
+  - {provider_type: PSYCHOLOGY, primary_care: false}
+  - {provider_type: PAIN_MEDICINE, primary_care: false}
+  - {provider_type: OPHTHALMOLOGY, primary_care: false}
+  - {provider_type: GASTROENTEROLOGY, primary_care: false}
+  - {provider_type: VASCULAR_SURGERY, primary_care: false}
+  - {provider_type: PLASTIC_SURGERY, primary_care: false}
+  - {provider_type: PODIATRY, primary_care: false}
+  - {provider_type: PHYSICAL_THERAPY, primary_care: false}
+  - {provider_type: WOUND_CARE, primary_care: false}
+
+plans:
+  - plan_id: PLN-PPO-GOLD
+    name: ClaimSense PPO Gold
+    plan_type: PPO
+    effective_date: 2026-01-01
+    filing_window_days: {in_network: 90, out_of_network: 180}
+    referral_required_provider_types: []
+    in_network: {deductible_cents: 50000, coinsurance_bps: 2000, oop_max_cents: 300000}
+    out_of_network: {deductible_cents: 100000, coinsurance_bps: 4000, oop_max_cents: 600000}
+
+  - plan_id: PLN-PPO-SILVER
+    name: ClaimSense PPO Silver
+    plan_type: PPO
+    effective_date: 2026-01-01
+    filing_window_days: {in_network: 90, out_of_network: 180}
+    referral_required_provider_types: []
+    in_network: {deductible_cents: 150000, coinsurance_bps: 3000, oop_max_cents: 550000}
+    out_of_network: {deductible_cents: 300000, coinsurance_bps: 5000, oop_max_cents: 1100000}
+
+  - plan_id: PLN-HMO
+    name: ClaimSense HMO Select
+    plan_type: HMO
+    effective_date: 2026-01-01
+    filing_window_days: {in_network: 90, out_of_network: 90}
+    referral_required_provider_types: [RADIOLOGY, CARDIOLOGY, NEUROLOGY, SLEEP_MEDICINE, ALLERGY_IMMUNOLOGY, PSYCHOLOGY, PAIN_MEDICINE, OPHTHALMOLOGY, GASTROENTEROLOGY, VASCULAR_SURGERY, PLASTIC_SURGERY, PODIATRY, PHYSICAL_THERAPY, WOUND_CARE]
+    in_network: {deductible_cents: 25000, coinsurance_bps: 2000, oop_max_cents: 400000}
+    out_of_network: null
+
+  - plan_id: PLN-EPO
+    name: ClaimSense EPO Choice
+    plan_type: EPO
+    effective_date: 2026-01-01
+    filing_window_days: {in_network: 120, out_of_network: 120}
+    referral_required_provider_types: []
+    in_network: {deductible_cents: 100000, coinsurance_bps: 2500, oop_max_cents: 450000}
+    out_of_network: null
+
+  - plan_id: PLN-HDHP
+    name: ClaimSense HSA Saver (high deductible PPO)
+    plan_type: PPO
+    effective_date: 2026-01-01
+    filing_window_days: {in_network: 90, out_of_network: 180}
+    referral_required_provider_types: []
+    in_network: {deductible_cents: 320000, coinsurance_bps: 1000, oop_max_cents: 650000}
+    out_of_network: {deductible_cents: 640000, coinsurance_bps: 4000, oop_max_cents: 1300000}

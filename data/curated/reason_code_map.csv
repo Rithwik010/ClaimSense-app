@@ -1,0 +1,21 @@
+internal_code,outcome,group_code,carc,rarc,notes
+RJ_MISSING_FIELD,REJECT,CO,16,MA130,
+RJ_INVALID_CODE,REJECT,CO,16,M51,RARC M76 when the invalid code is a diagnosis; M77 when it is the place of service
+RJ_INVALID_NPI,REJECT,CO,16,N257,RARC N290 for the rendering NPI; N286 for the referring NPI
+RJ_MEMBER_NOT_FOUND,REJECT,CO,31,,
+RJ_PROVIDER_NOT_FOUND,REJECT,CO,208,,
+RJ_DUPLICATE,REJECT,OA,18,,CARC 18 is used only with group code OA
+RJ_LOW_CONFIDENCE_FIELD,REJECT,CO,16,MA130,
+DN_NOT_ELIGIBLE,DENY,CO,27,,CARC 26 when the date of service is before coverage start
+DN_LATE_FILING,DENY,CO,29,,
+DN_OUT_OF_NETWORK,DENY,CO,242,,
+DN_MISSING_REFERRAL,DENY,CO,288,N286,
+DN_NO_AUTH,DENY,CO,197,,
+DN_NCCI_BUNDLED,DENY,CO,236,,
+DN_MUE_EXCEEDED,DENY,CO,151,N362,
+DN_EXCLUDED,DENY,CO,204,,
+DN_NOT_MEDICALLY_NECESSARY,DENY,CO,50,,Model recommendation confirmed by a reviewer
+DN_CONDITIONAL_EXCLUSION,DENY,CO,96,N130,Model recommendation confirmed by a reviewer; CARC 96 requires a remark code
+PD_PROVIDER_ENROLLMENT,PEND,OA,133,,CARC 133 is used only with group code OA
+PD_MISSING_DOCUMENTATION,PEND,CO,252,M127,Model recommendation confirmed by a reviewer; CARC 252 requires a remark code
+MODEL_OUTPUT_INVALID,PEND,OA,133,,Internal: model output failed validation; sent to FULL review
