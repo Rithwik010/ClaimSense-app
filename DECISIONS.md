@@ -11,3 +11,5 @@ Add rows only for decisions the team has made.
 | 2026-09-21 | Pipeline is synchronous; Redis/RQ deferred to stretch | Simplicity for the prototype |
 | 2026-09-21 | COB default: traditional (secondary pays the lesser of its normal payment and the remaining balance) | Needs a defined rule for the calculator |
 | 2026-09-21 | INSTRUCTIONS.md v1.0 adopted as the implementation specification | Single source of truth |
+| 2026-09-21 | No pull requests. Each task is built on a local `p<phase>.<task>` branch, merged into `main` locally, and pushed only when a team member says so. Overrides H13 and the pull-request steps in §11, §12 and §14. | Team reviews changes together before pushing |
+| 2026-09-21 | Laptop (Manideep3183): Apple M5, 16 GB RAM, macOS, no NVIDIA GPU. Training and server machines to be decided. | Hardware record (SETUP Part G) |
