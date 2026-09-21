@@ -5,6 +5,7 @@ import logging
 from fastapi.testclient import TestClient
 
 from app.api.main import app
+from app.core.logging import configure_logging
 
 
 def test_root_redirects_to_docs() -> None:
@@ -15,5 +16,10 @@ def test_root_redirects_to_docs() -> None:
     assert response.headers["location"] == "/docs"
 
 
-def test_uvicorn_access_log_is_disabled() -> None:
-    assert logging.getLogger("uvicorn.access").disabled
+def test_configure_logging_disables_uvicorn_access_log() -> None:
+    access_log = logging.getLogger("uvicorn.access")
+    access_log.disabled = False
+
+    configure_logging()
+
+    assert access_log.disabled

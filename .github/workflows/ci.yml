@@ -10,6 +10,20 @@ jobs:
   checks:
     name: Lint, import checks and tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: claimsense
+          POSTGRES_PASSWORD: claimsense
+          POSTGRES_DB: claimsense
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U claimsense -d claimsense"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v7
 
@@ -31,3 +45,5 @@ jobs:
 
       - name: Tests
         run: uv run pytest
+        env:
+          CLAIMSENSE_REQUIRE_DB: "1"

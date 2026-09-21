@@ -51,3 +51,6 @@ select = ["E", "W", "F", "I", "B", "UP"]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-ra"
+
+[tool.ruff.lint.per-file-ignores]
+"migrations/versions/*.py" = ["E501"]  # generated SQL strings in constraints
