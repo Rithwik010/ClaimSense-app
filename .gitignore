@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+data/raw/
+data/generated/
+*.gguf
+*.safetensors
+models/
+outputs/
+checkpoints/
+confidential/
+.DS_Store
+.vscode/
+.idea/
