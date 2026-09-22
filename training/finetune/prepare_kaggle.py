@@ -57,9 +57,19 @@ def notebook(dataset_slug: str) -> dict:
             "print(open(f'{OUT}/lengths.json').read())\n"
             "log = json.load(open(f'{OUT}/training-log.json'))\n"
             "print({k: v for k, v in log.items() if k != 'history'})\n"
-            "!ls -la {OUT} {OUT}/gguf",
+            "!ls -la {OUT}\n"
+            "!ls -la {OUT}/gguf 2>/dev/null || echo 'no GGUF yet (smoke run or export cell)'",
         ),
     ]
+    cells.append(
+        (
+            "code",
+            "# GGUF export from the saved adapter: check it once on the smoke adapter before the\n"
+            "# full run, and rerun it if the full run's export fails.\n"
+            "!python {TRAIN} --data {DATA} --out {OUT} --export-from {OUT}/adapter\n"
+            "!ls -la {OUT}/gguf",
+        )
+    )
     return {
         "cells": [
             {
