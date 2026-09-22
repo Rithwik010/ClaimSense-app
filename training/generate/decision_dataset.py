@@ -1,14 +1,19 @@
 """Decision dataset generator (P3.5, INSTRUCTIONS.md §9.4): chat records for fine-tuning.
 
-Each record is system (prompt `decision_v1`) + user (claim, rules result, plan benefits, retrieved
+Each record is system (prompt `decision_v2`) + user (claim, rules result, plan benefits, retrieved
 criteria) + assistant (the target `SLMOutput` as JSON). Structured inputs go to a sidecar file so
-the records can be re-rendered (for example with real retrieval after P3.3).
+the records can be checked and re-rendered.
+
+Retrieval is real by default: the same retriever, query text, filters and minimum score as the live
+pipeline (needs Qdrant with the `coverage_policies` collection and the embedding model). Unit tests
+pass no retriever and get simulated retrieval.
 
 Splits: train and validation use policies marked TRAIN and note template set A. The test split uses
 template set B only: about 100 records whose lines come from TEST_ONLY policies (never seen in
 training) and the rest from TRAIN policies. The leakage and quality checks run before anything is
 written; a failing dataset is not written.
 
+    uv run python -m app.rag.knowledge            # build the collection first
     uv run python -m training.generate.decision_dataset [--seed N] [--train N] [--out DIR]
 """
 
@@ -22,6 +27,7 @@ import jinja2
 
 from app.db.curated import load_curated
 from app.ml.prompt import PROMPT_VERSION, PromptLookups, render_user_message, system_prompt
+from app.rag.retrieve import Retriever
 from training.generate.checks import check_record, distribution
 from training.generate.claims import claim_decision
 from training.generate.common import DEFAULT_SEED, GENERATED_DIR, write_json, write_jsonl
@@ -29,7 +35,7 @@ from training.generate.reference import generate_reference
 from training.generate.scenarios import GENERATOR_VERSION as SCENARIO_VERSION
 from training.generate.scenarios import ScenarioBuilder, ScenarioError
 
-GENERATOR_VERSION = "decision-dataset-v1"
+GENERATOR_VERSION = "decision-dataset-v2"
 SCENARIO_WEIGHTS = {
     "approve_single": 20,
     "deny_dx": 9,
@@ -70,6 +76,7 @@ def _records(
     start: int,
     seed: int,
     lookups: PromptLookups,
+    retrieval: str,
     skip_types: tuple[str, ...] = (),
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     rng = random.Random(f"{seed}-{split}-{start}")
@@ -103,6 +110,7 @@ def _records(
             "dataset_version": GENERATOR_VERSION,
             "scenario_version": SCENARIO_VERSION,
             "prompt_version": PROMPT_VERSION,
+            "retrieval": retrieval,
             "policy_id": scenario.policy_ids[0] if scenario.policy_ids else None,
             "claim_decision": claim_decision(scenario.line_labels),
         }
@@ -119,7 +127,12 @@ def _records(
     return records, inputs
 
 
-def build_dataset(seed: int = DEFAULT_SEED, sizes: dict[str, int] | None = None) -> dict[str, Any]:
+def build_dataset(
+    seed: int = DEFAULT_SEED,
+    sizes: dict[str, int] | None = None,
+    retriever: Retriever | None = None,
+    retrieval: str = "simulated",
+) -> dict[str, Any]:
     sizes = sizes or DEFAULT_SIZES
     curated = load_curated()
     reference = generate_reference(DEFAULT_SEED)[0]
@@ -128,43 +141,33 @@ def build_dataset(seed: int = DEFAULT_SEED, sizes: dict[str, int] | None = None)
     test_only = {p for p, x in curated.policies.items() if x.split == "TEST_ONLY"}
     everything = train_policies | test_only
 
+    def builder(offset: int, template_set: str, policies: set[str], seen: set[str]):  # noqa: ANN202
+        return ScenarioBuilder(
+            seed + offset, template_set, policies, seen, reference, retriever, lookups
+        )
+
+    def records(split: str, build: ScenarioBuilder, count: int, start: int = 0, skip=()):  # noqa: ANN001, ANN202
+        return _records(build, split, count, start, seed, lookups, retrieval, skip)
+
     splits: dict[str, tuple[list, list]] = {}
-    splits["train"] = _records(
-        ScenarioBuilder(seed, "A", train_policies, train_policies, reference),
-        "train",
-        sizes["train"],
-        0,
-        seed,
-        lookups,
+    splits["train"] = records(
+        "train", builder(0, "A", train_policies, train_policies), sizes["train"]
     )
-    splits["validation"] = _records(
-        ScenarioBuilder(seed + 1, "A", train_policies, train_policies, reference),
-        "validation",
-        sizes["validation"],
-        0,
-        seed,
-        lookups,
+    splits["validation"] = records(
+        "validation", builder(1, "A", train_policies, train_policies), sizes["validation"]
     )
     unseen = min(TEST_UNSEEN_POLICY_RECORDS, sizes["test"] // 3)
-    test_unseen = _records(
-        ScenarioBuilder(seed + 2, "B", test_only, everything, reference),
+    test_unseen = records(
         "test",
+        builder(2, "B", test_only, everything),
         unseen,
-        0,
-        seed,
-        lookups,
-        skip_types=("office_visit",),  # office visits have no policy, so they test nothing unseen
+        skip=("office_visit",),  # office visits have no policy, so they test nothing unseen
     )
-    test_seen = _records(
-        ScenarioBuilder(seed + 3, "B", train_policies, everything, reference),
-        "test",
-        sizes["test"] - unseen,
-        unseen,
-        seed,
-        lookups,
+    test_seen = records(
+        "test", builder(3, "B", train_policies, everything), sizes["test"] - unseen, unseen
     )
     splits["test"] = (test_unseen[0] + test_seen[0], test_unseen[1] + test_seen[1])
-    return {"splits": splits, "curated": curated, "test_only": test_only}
+    return {"splits": splits, "curated": curated, "test_only": test_only, "retrieval": retrieval}
 
 
 def run_checks(built: dict[str, Any]) -> dict[str, Any]:
@@ -226,6 +229,7 @@ def data_card(built: dict[str, Any], checks: dict[str, Any], seed: int) -> str:
         ("Complexity", "complexity"),
         ("Scenario types", "scenario_types"),
         ("Benefit categories", "benefit_categories"),
+        ("Criterion statuses", "criterion_statuses"),
         ("Policies", "policies"),
     ]
     keys = {key: sorted({k for s in stats.values() for k in s[key]}) for _, key in tables}
@@ -236,6 +240,7 @@ def data_card(built: dict[str, Any], checks: dict[str, Any], seed: int) -> str:
         version=GENERATOR_VERSION,
         scenario_version=SCENARIO_VERSION,
         prompt_version=PROMPT_VERSION,
+        retrieval=built["retrieval"],
         seed=seed,
         stats=stats,
         lengths=lengths,
@@ -248,9 +253,14 @@ def data_card(built: dict[str, Any], checks: dict[str, Any], seed: int) -> str:
 
 
 def write_dataset(
-    out_dir: Path, seed: int, sizes: dict[str, int], card_path: Path | None
+    out_dir: Path,
+    seed: int,
+    sizes: dict[str, int],
+    card_path: Path | None,
+    retriever: Retriever | None = None,
+    retrieval: str = "simulated",
 ) -> dict[str, Any]:
-    built = build_dataset(seed, sizes)
+    built = build_dataset(seed, sizes, retriever, retrieval)
     checks = run_checks(built)
     if checks["problems"]:
         raise SystemExit("dataset checks failed:\n" + "\n".join(checks["problems"][:50]))
@@ -259,6 +269,8 @@ def write_dataset(
         write_jsonl(out_dir / f"{split}_inputs.jsonl", inputs)
     summary = {
         "generator_version": GENERATOR_VERSION,
+        "prompt_version": PROMPT_VERSION,
+        "retrieval": retrieval,
         "seed": seed,
         "sizes": {split: len(records) for split, (records, _) in built["splits"].items()},
         "distribution": {
@@ -274,6 +286,27 @@ def write_dataset(
     return summary
 
 
+def live_retriever() -> tuple[Retriever, str]:
+    """The retriever the API uses, and a label naming its settings and knowledge version."""
+    from qdrant_client import QdrantClient
+
+    from app.core.settings import get_settings
+    from app.rag.embedding import FastEmbedder
+    from app.rag.knowledge import criterion_chunks, knowledge_version
+    from app.rag.retrieve import CriteriaRetriever
+
+    settings = get_settings()
+    embedder = FastEmbedder(settings.embedding_model, settings.embedding_cache_dir)
+    retriever = CriteriaRetriever(
+        QdrantClient(url=settings.qdrant_url),
+        embedder,
+        top_k=settings.rag_top_k,
+        min_score=settings.rag_min_score,
+    )
+    version = knowledge_version(criterion_chunks(load_curated()), embedder.name)
+    return retriever, f"{retriever.settings_label}; knowledge {version}"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
@@ -284,9 +317,13 @@ def main() -> None:
     parser.add_argument(
         "--card", type=Path, default=Path(__file__).resolve().parents[2] / "docs" / "data-card.md"
     )
+    parser.add_argument("--simulated-retrieval", action="store_true", help="no Qdrant (tests)")
     args = parser.parse_args()
     sizes = {"train": args.train, "validation": args.validation, "test": args.test}
-    summary = write_dataset(args.out, args.seed, sizes, args.card)
+    retriever, retrieval = None, "simulated"
+    if not args.simulated_retrieval:
+        retriever, retrieval = live_retriever()
+    summary = write_dataset(args.out, args.seed, sizes, args.card, retriever, retrieval)
     print(json.dumps(summary["sizes"]), "checks passed")
 
 

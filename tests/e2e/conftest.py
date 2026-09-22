@@ -10,14 +10,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_decision_model
+from app.api.deps import get_decision_model, get_retriever
 from app.api.main import app
 from app.db.models import FeeScheduleEntry
 from app.db.seed import load_reference, seed_curated, upsert
 from app.db.session import get_engine
 from app.ml.client import DecisionModel
 from tests.database import alembic_config, fresh_database
-from tests.e2e.support import golden_fee_rows
+from tests.e2e.support import StubRetriever, golden_fee_rows
 
 
 @pytest.fixture(scope="module")
@@ -47,9 +47,10 @@ def load_case_reference(engine: Engine) -> Callable[[dict[str, Any]], None]:
 def api(engine: Engine) -> Iterator[Callable[[DecisionModel], TestClient]]:
     clients: list[TestClient] = []
 
-    def make(model: DecisionModel) -> TestClient:
+    def make(model: DecisionModel, retriever: StubRetriever | None = None) -> TestClient:
         app.dependency_overrides[get_engine] = lambda: engine
         app.dependency_overrides[get_decision_model] = lambda: model
+        app.dependency_overrides[get_retriever] = lambda: retriever or StubRetriever()
         client = TestClient(app)
         clients.append(client)
         return client

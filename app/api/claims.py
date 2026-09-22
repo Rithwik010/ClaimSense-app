@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_decision_model, get_session
+from app.api.deps import get_decision_model, get_retriever, get_session
 from app.audit.events import list_events
 from app.core.settings import Settings, get_settings
 from app.db.models import Claim
@@ -23,6 +23,7 @@ from app.domain.contracts import (
     SourceFormat,
 )
 from app.ml.client import DecisionModel, ModelUnavailable
+from app.rag.retrieve import RetrievalUnavailable, Retriever
 from app.workflow.pipeline import (
     ClaimNotFound,
     DuplicateClaim,
@@ -83,17 +84,18 @@ def process(
     session: SessionDep,
     settings: SettingsDep,
     model: Annotated[DecisionModel, Depends(get_decision_model)],
+    retriever: Annotated[Retriever, Depends(get_retriever)],
 ) -> DecisionRecord:
-    """Rules -> context -> model -> calculator; returns the decision record."""
+    """Rules -> context (with retrieval) -> model -> calculator; returns the decision record."""
     try:
-        return process_claim(session, claim_id, model, settings)
+        return process_claim(session, claim_id, model, settings, retriever)
     except ClaimNotFound as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
     except InvalidTransition as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     except PipelineError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
-    except ModelUnavailable as exc:
+    except (ModelUnavailable, RetrievalUnavailable) as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
 
 

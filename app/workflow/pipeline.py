@@ -49,6 +49,7 @@ from app.domain.contracts import (
 from app.ml.client import DecisionModel
 from app.ml.prompt import PROMPT_VERSION, PromptLookups, render_user_message, system_prompt
 from app.ml.validate import ValidationResult, validate_output
+from app.rag.retrieve import Retriever
 from app.review.tiers import review_tier
 from app.rules import RULES_VERSION
 from app.rules.engine import evaluate
@@ -275,7 +276,11 @@ def _prompt_lookups(session: Session, claim: IntakeClaim) -> PromptLookups:
 
 
 def process_claim(
-    session: Session, claim_id: str, model: DecisionModel, settings: Settings
+    session: Session,
+    claim_id: str,
+    model: DecisionModel,
+    settings: Settings,
+    retriever: Retriever | None,
 ) -> DecisionRecord:
     started = time.perf_counter()
     row = session.get(Claim, claim_id, with_for_update=True)
@@ -325,15 +330,18 @@ def process_claim(
         if lookups.is_in_network(session, claim.billing_npi, member.plan_id)
         else Network.OUT_OF_NETWORK
     )
+    prompt_lookups = _prompt_lookups(session, claim)
     try:
-        context = assemble_context(session, claim, rules, member.plan_id, network)
+        context = assemble_context(
+            session, claim, rules, member.plan_id, network, prompt_lookups, retriever
+        )
     except ContextError as exc:
         raise PipelineError(str(exc)) from exc
     record_event(
         session, claim_id, EventType.CONTEXT_ASSEMBLED, _context_payload(context), versions
     )
 
-    user_message = render_user_message(claim, rules, context, _prompt_lookups(session, claim))
+    user_message = render_user_message(claim, rules, context, prompt_lookups)
     model_started = time.perf_counter()
     text = model.complete(system_prompt(), user_message)
     model_ms = round((time.perf_counter() - model_started) * 1000, 1)

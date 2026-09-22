@@ -1,8 +1,11 @@
-"""Helpers for the end-to-end tests: golden cases, fee rows and a stub model."""
+"""Helpers for the end-to-end tests: golden cases, fee rows, a stub model and a stub retriever."""
 
 import json
+from datetime import date
 from pathlib import Path
 from typing import Any
+
+from app.domain.contracts import RetrievedCriterion
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden"
 E2E_CASES = {
@@ -40,3 +43,15 @@ class StubModel:
     def complete(self, system: str, user: str) -> str:
         self.prompts.append((system, user))
         return self.answer
+
+
+class StubRetriever:
+    """Returns fixed criteria for every line (none by default)."""
+
+    def __init__(self, criteria: list[RetrievedCriterion] | None = None) -> None:
+        self.criteria = criteria or []
+        self.queries: list[str] = []
+
+    def retrieve(self, query: str, plan_id: str, day: date, exclude_policies=()):  # noqa: ANN001, ANN201
+        self.queries.append(query)
+        return list(self.criteria)

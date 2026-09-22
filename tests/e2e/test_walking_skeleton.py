@@ -199,3 +199,58 @@ def test_seeding_again_is_safe(engine: Engine) -> None:
         seed_curated(session)
         session.commit()
         assert session.scalar(select(func.count()).select_from(Plan)) == 5
+
+
+def test_retrieved_criteria_reach_the_prompt_and_the_record(api, load_case_reference) -> None:
+    from datetime import date
+
+    from app.domain.contracts import RetrievedCriterion
+    from tests.e2e.support import StubRetriever
+
+    case = E2E_CASES["E2E-14"]
+    load_case_reference(case)
+    criterion = RetrievedCriterion(
+        criterion_id="POL-BH-001.c1",
+        policy_id="POL-BH-001",
+        policy_title="Psychological and neuropsychological testing",
+        text="Testing is covered when ...",
+        source="LCD L34520 v32, Indications.",
+        effective_date=date(2026, 1, 1),
+    )
+    answer = json.loads(json.dumps(case["given"]["model_answer"]))
+    answer["lines"][0]["criteria"] = [
+        {
+            "criterion_id": "POL-BH-001.c1",
+            "status": "NOT_APPLICABLE",
+            "evidence": "Does not apply to this service.",
+        }
+    ]
+    model, retriever = StubModel(json.dumps(answer)), StubRetriever([criterion])
+    client = api(model, retriever)
+    claim = new_claim("E2E-14", "CLM-SKEL-RAG")
+
+    client.post("/v1/claims/intake", json=claim)
+    record = DecisionRecord.model_validate(client.post("/v1/claims/CLM-SKEL-RAG/process").json())
+
+    assert retriever.queries[0].startswith("Office visit")
+    assert claim["clinical_notes"] in retriever.queries[0]
+    assert "[POL-BH-001.c1]" in model.prompts[0][1]
+    assert record.output_errors == [] and record.claim_decision.value == "APPROVE"
+    assert record.context_refs.lines[0].criteria == [criterion]
+    assert record.versions.policy_versions == {"POL-BH-001": "2026-01-01"}
+
+
+def test_retrieval_unavailable_returns_503(api, load_case_reference) -> None:
+    from app.rag.retrieve import RetrievalUnavailable
+    from tests.e2e.support import StubRetriever
+
+    class DownRetriever(StubRetriever):
+        def retrieve(self, query, plan_id, day, exclude_policies=()):  # noqa: ANN001, ANN201
+            raise RetrievalUnavailable("retrieval unavailable (ConnectError)")
+
+    load_case_reference(E2E_CASES["E2E-14"])
+    client = api(StubModel("unused"), DownRetriever())
+    client.post("/v1/claims/intake", json=new_claim("E2E-14", "CLM-SKEL-NORAG"))
+
+    assert client.post("/v1/claims/CLM-SKEL-NORAG/process").status_code == 503
+    assert client.get("/v1/claims/CLM-SKEL-NORAG").json()["status"] == "RECEIVED"
