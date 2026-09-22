@@ -67,6 +67,7 @@ def notebook(dataset_slug: str) -> dict:
             "# GGUF export from the saved adapter, only when there is no GGUF yet: tests the\n"
             "# export on the smoke adapter, and retries it if the full run's export failed.\n"
             "import glob\n"
+            "!df -h /kaggle/working /tmp\n"
             "if not glob.glob(f'{OUT}/gguf/*.gguf'):\n"
             "    !python {TRAIN} --data {DATA} --out {OUT} --export-from {OUT}/adapter\n"
             "!ls -la {OUT}/gguf",

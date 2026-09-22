@@ -15,12 +15,17 @@ One GPU only: Kaggle's "T4 x2" would otherwise split Gemma 4 across two devices,
 multimodal layers do not support. T4s have no bf16 and Gemma 4 does not train in fp16, so training
 runs in float32 there. A smoke run prints the estimated time of the full run. If the GGUF export
 fails, the adapter is already saved: rerun with `--export-from <out>/adapter`.
+
+The GGUF export writes a 16-bit merge and a 16-bit GGUF before the Q4_K_M file (about 21 GB), more
+than Kaggle's 20 GB output folder holds. It works in `--gguf-work-dir` (default /tmp, Kaggle's
+larger scratch disk) and copies only the final Q4_K_M file into `<out>/gguf`.
 """
 
 import argparse
 import json
 import math
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -30,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data import (  # noqa: E402  (a sibling file on Kaggle; training.finetune.data in the repo)
     CONFIG,
     length_report,
+    quantized_files,
     read_jsonl,
     supports_system_role,
     to_chat,
@@ -41,8 +47,32 @@ from data import (  # noqa: E402  (a sibling file on Kaggle; training.finetune.d
 FULL_TRAIN_RECORDS = 2000
 
 
-def export_gguf(model, tokenizer, out: Path, quantization: str) -> None:  # noqa: ANN001
-    model.save_pretrained_gguf(str(out / "gguf"), tokenizer, quantization_method=quantization)
+GGUF_WORK_DIR = Path("/tmp/claimsense-gguf")
+GGUF_SPACE_NEEDED_GB = 22
+
+
+def export_gguf(model, tokenizer, out: Path, quantization: str, work: Path) -> None:  # noqa: ANN001
+    """Export on the scratch disk, keep only the final quantized file in the output folder."""
+    if work.exists():
+        shutil.rmtree(work)
+    work.mkdir(parents=True)
+    free_gb = shutil.disk_usage(work).free / 1e9
+    print(f"GGUF export in {work}: {free_gb:.1f} GB free (needs about {GGUF_SPACE_NEEDED_GB})")
+    if free_gb < GGUF_SPACE_NEEDED_GB:
+        raise SystemExit(f"not enough space in {work}; pass --gguf-work-dir on a bigger disk")
+    model.save_pretrained_gguf(str(work), tokenizer, quantization_method=quantization)
+    written = [p for p in work.parent.glob(f"{work.name}*/**/*") if p.is_file()]
+    finals = quantized_files(written, quantization)
+    if not finals:
+        names = sorted(p.name for p in written if p.suffix == ".gguf")
+        raise SystemExit(f"no {quantization} GGUF among the exported files: {names}")
+    target = out / "gguf"
+    target.mkdir(parents=True, exist_ok=True)
+    for path in finals:
+        shutil.copy2(path, target / path.name)
+        print(f"kept {target / path.name} ({path.stat().st_size / 1e9:.2f} GB)")
+    for leftover in work.parent.glob(f"{work.name}*"):
+        shutil.rmtree(leftover, ignore_errors=True)  # the 16-bit merge and intermediate GGUF
 
 
 def main() -> None:
@@ -56,6 +86,7 @@ def main() -> None:
     parser.add_argument("--eval-steps", type=int, default=CONFIG["eval_every_steps"])
     parser.add_argument("--no-gguf", action="store_true")
     parser.add_argument("--export-from", type=Path, help="only export GGUF from a saved adapter")
+    parser.add_argument("--gguf-work-dir", type=Path, default=GGUF_WORK_DIR)
     args = parser.parse_args()
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")  # before torch initialises CUDA
     config = {**CONFIG, "max_seq_length": args.max_seq_length, "num_train_epochs": args.epochs}
@@ -80,7 +111,7 @@ def main() -> None:
             max_seq_length=config["max_seq_length"],
             load_in_4bit=config["load_in_4bit"],
         )
-        export_gguf(model, tokenizer, out, config["gguf_quantization"])
+        export_gguf(model, tokenizer, out, config["gguf_quantization"], args.gguf_work_dir)
         return
 
     model, tokenizer = FastModel.from_pretrained(
@@ -212,7 +243,7 @@ def main() -> None:
     model.save_pretrained(str(out / "adapter"))
     tokenizer.save_pretrained(str(out / "adapter"))
     if not args.no_gguf:
-        export_gguf(model, tokenizer, out, config["gguf_quantization"])
+        export_gguf(model, tokenizer, out, config["gguf_quantization"], args.gguf_work_dir)
     print(json.dumps({k: v for k, v in log.items() if k != "history"}, indent=2))
 
 
