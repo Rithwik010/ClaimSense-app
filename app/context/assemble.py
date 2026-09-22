@@ -4,9 +4,9 @@ Plan facts come from the database. Candidate benefit categories per procedure co
 `data/curated/procedure_scope.csv`; office visits are narrowed to one category by the rendering
 provider's primary-care flag (DECISIONS.md, data-generation choice 2), as in the training data.
 
-Coverage criteria come from retrieval (P3.3): for each line, the top-k criteria for the line's query
-(procedure, diagnoses, notes), filtered by plan and date of service. Without a retriever every line
-has no criteria.
+Coverage criteria come from retrieval (P3.3): for each line, the criteria of the policy covering the
+line's procedure code (plan and date filters), ranked by similarity to the line's query (procedure,
+diagnoses, notes). Without a retriever every line has no criteria.
 """
 
 from sqlalchemy.orm import Session
@@ -97,6 +97,7 @@ def assemble_context(
                     ),
                     plan_id,
                     line.date_of_service,
+                    line.procedure_code,
                 )
                 if retriever
                 else [],

@@ -18,8 +18,11 @@ class Settings(BaseSettings):
     embedding_cache_dir: Path = (
         Path(__file__).resolve().parents[2] / "data/generated/models/fastembed"
     )
-    rag_top_k: int = Field(default=3, ge=1)
-    rag_min_score: float = Field(default=0.0, ge=-1.0, le=1.0)  # cosine; tuned in P3.3
+    # Top 5 within the covering policy: every criterion of the largest policy (P3.3 measurement).
+    rag_top_k: int = Field(default=5, ge=1)
+    rag_min_score: float = Field(
+        default=0.0, ge=-1.0, le=1.0
+    )  # cosine; not needed with the code filter
     extraction_confidence_min: float = Field(default=0.85, ge=0.0, le=1.0)
     review_high_dollar_cents: int = Field(default=100_000, ge=0)
 

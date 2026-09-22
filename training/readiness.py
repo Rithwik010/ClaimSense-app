@@ -36,7 +36,7 @@ from app.db.curated import load_curated
 from app.db.session import get_engine
 from app.domain.contracts import IntakeClaim, Network, RulesOutcome
 from app.ml.prompt import PROMPT_VERSION, render_user_message, system_prompt
-from app.rag.retrieve import Retriever
+from app.rag.retrieve import CriteriaRetriever, Retriever
 from app.workflow.pipeline import prompt_lookups
 from training.finetune.data import CONFIG
 from training.generate import decision_dataset
@@ -153,8 +153,8 @@ class Excluding:
         self.retriever = retriever
         self.excluded = excluded
 
-    def retrieve(self, query, plan_id, day, exclude_policies=()):  # noqa: ANN001, ANN201
-        return self.retriever.retrieve(query, plan_id, day, self.excluded)
+    def retrieve(self, query, plan_id, day, procedure_code=None, exclude_policies=()):  # noqa: ANN001, ANN201
+        return self.retriever.retrieve(query, plan_id, day, procedure_code, self.excluded)
 
 
 def check_parity(
@@ -294,7 +294,8 @@ def main() -> int:
 
     from training.evaluate.rag import evaluate, load_queries
 
-    rag = evaluate(retriever, load_queries())  # type: ignore[arg-type]
+    at_3 = CriteriaRetriever(retriever.client, retriever.embedder, 3, retriever.min_score)
+    rag = evaluate(at_3, load_queries())  # P3.3 acceptance is recall@3
     results.append(
         (
             "4 retrieval golden target",

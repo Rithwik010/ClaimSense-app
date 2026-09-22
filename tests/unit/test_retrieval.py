@@ -129,3 +129,15 @@ def test_line_query_has_procedure_diagnoses_and_notes() -> None:
     assert query == "Epidural injection, lower back. M5417; Radiculopathy, lumbar region. " + (
         "Pain for 8 weeks."
     )
+
+
+def test_the_code_filter_keeps_only_the_covering_policy() -> None:
+    query = "Ultrasound of the heel for plantar fasciitis after failed stretching"
+    search = retriever(top_k=5)
+
+    covering = search.retrieve(query, "PLN-EPO", DAY, procedure_code="76882")
+    office = search.retrieve(query, "PLN-EPO", DAY, procedure_code="99213")
+
+    assert {c.policy_id for c in covering} == {"POL-IMG-002"}
+    assert len(covering) == len(load_curated().policies["POL-IMG-002"].criteria)
+    assert office == []  # no policy covers office visits

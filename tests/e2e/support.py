@@ -52,6 +52,8 @@ class StubRetriever:
         self.criteria = criteria or []
         self.queries: list[str] = []
 
-    def retrieve(self, query: str, plan_id: str, day: date, exclude_policies=()):  # noqa: ANN001, ANN201
+    def retrieve(
+        self, query: str, plan_id: str, day: date, procedure_code=None, exclude_policies=()
+    ):  # noqa: ANN001, ANN201
         self.queries.append(query)
         return list(self.criteria)
