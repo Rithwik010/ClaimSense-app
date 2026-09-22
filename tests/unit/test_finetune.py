@@ -127,6 +127,9 @@ def test_kaggle_folder_needs_real_retrieval_and_is_private(tmp_path) -> None:  #
     exec(cell[cell.index("\nSMOKE = True") :], namespace)  # the smoke-test settings only
     assert namespace["EXTRA"] == "--limit 50 --epochs 1 --eval-limit 20 --eval-steps 3 --no-gguf"
 
+    export = next(s for s in sources if "--export-from" in s)
+    assert "if not glob.glob(f'{OUT}/gguf/*.gguf'):" in export  # never exports twice
+
     renamed = prepare(decision, tmp_path / "kaggle", "someone", slug="claimsense")
     assert json.loads((renamed / "dataset-metadata.json").read_text())["id"] == "someone/claimsense"
 
