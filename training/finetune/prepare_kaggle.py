@@ -33,7 +33,7 @@ print(sorted(os.listdir(DATA)))
 
 # Smoke test first (a few minutes): SMOKE = True. Full training run: SMOKE = False.
 SMOKE = True
-EXTRA = "--limit 50 --epochs 1 --no-gguf" if SMOKE else ""
+EXTRA = "--limit 50 --epochs 1 --eval-limit 20 --eval-steps 3 --no-gguf" if SMOKE else ""
 OUT = "/kaggle/working/claimsense-smoke" if SMOKE else "/kaggle/working/claimsense"
 """
 
@@ -43,7 +43,7 @@ def notebook(dataset_slug: str) -> dict:
         (
             "markdown",
             "# ClaimSense decision model: QLoRA fine-tuning (P4.3)\n\n"
-            "Accelerator: GPU (T4 or P100). Internet: on. Input: the private "
+            "Accelerator: GPU T4 (the script uses one GPU). Internet: on. Input: the private "
             f"`{dataset_slug}` dataset.\nRun the smoke test first (`SMOKE = True`), then the full "
             "run (`SMOKE = False`). Outputs: `adapter/`, `gguf/`, `training-log.json`, "
             "`lengths.json`, `config.json`, `pip-freeze.txt`.",

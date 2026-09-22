@@ -10,10 +10,17 @@ with the private dataset attached (`prepare_kaggle.py` builds it):
 Steps: count exact tokens and stop if a record is longer than the max length; train on responses
 only with early stopping on validation loss; save the LoRA adapter, the merged GGUF (Q4_K_M), the
 config, the length report, the training log, one rendered example and the installed versions.
+
+One GPU only: Kaggle's "T4 x2" would otherwise split Gemma 4 across two devices, which its
+multimodal layers do not support. T4s have no bf16 and Gemma 4 does not train in fp16, so training
+runs in float32 there. A smoke run prints the estimated time of the full run. If the GGUF export
+fails, the adapter is already saved: rerun with `--export-from <out>/adapter`.
 """
 
 import argparse
 import json
+import math
+import os
 import subprocess
 import sys
 import time
@@ -26,8 +33,16 @@ from data import (  # noqa: E402  (a sibling file on Kaggle; training.finetune.d
     read_jsonl,
     supports_system_role,
     to_chat,
+    token_count,
     turn_markers,
+    warmup_steps,
 )
+
+FULL_TRAIN_RECORDS = 2000
+
+
+def export_gguf(model, tokenizer, out: Path, quantization: str) -> None:  # noqa: ANN001
+    model.save_pretrained_gguf(str(out / "gguf"), tokenizer, quantization_method=quantization)
 
 
 def main() -> None:
@@ -37,8 +52,12 @@ def main() -> None:
     parser.add_argument("--max-seq-length", type=int, default=CONFIG["max_seq_length"])
     parser.add_argument("--epochs", type=float, default=CONFIG["num_train_epochs"])
     parser.add_argument("--limit", type=int, help="first N training records (smoke test)")
+    parser.add_argument("--eval-limit", type=int, help="first N validation records (smoke test)")
+    parser.add_argument("--eval-steps", type=int, default=CONFIG["eval_every_steps"])
     parser.add_argument("--no-gguf", action="store_true")
+    parser.add_argument("--export-from", type=Path, help="only export GGUF from a saved adapter")
     args = parser.parse_args()
+    os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")  # before torch initialises CUDA
     config = {**CONFIG, "max_seq_length": args.max_seq_length, "num_train_epochs": args.epochs}
     out = args.out
     out.mkdir(parents=True, exist_ok=True)
@@ -54,6 +73,15 @@ def main() -> None:
     from datasets import Dataset
     from transformers import EarlyStoppingCallback
     from trl import SFTConfig, SFTTrainer
+
+    if args.export_from:
+        model, tokenizer = FastModel.from_pretrained(
+            model_name=str(args.export_from),
+            max_seq_length=config["max_seq_length"],
+            load_in_4bit=config["load_in_4bit"],
+        )
+        export_gguf(model, tokenizer, out, config["gguf_quantization"])
+        return
 
     model, tokenizer = FastModel.from_pretrained(
         model_name=config["base_model"],
@@ -76,8 +104,9 @@ def main() -> None:
 
     def texts(split: str) -> list[str]:
         records = read_jsonl(args.data / f"{split}.jsonl")
-        if split == "train" and args.limit:
-            records = records[: args.limit]
+        limit = args.limit if split == "train" else args.eval_limit
+        if limit:
+            records = records[:limit]
         return [
             render(to_chat(r["messages"], system_role), False).removeprefix("<bos>")
             for r in records
@@ -85,7 +114,7 @@ def main() -> None:
 
     train_texts, validation_texts = texts("train"), texts("validation")
     lengths = {
-        split: [len(tokenizer(text=t, add_special_tokens=True)["input_ids"]) for t in items]
+        split: [token_count(tokenizer, t) for t in items]
         for split, items in (("train", train_texts), ("validation", validation_texts))
     }
     report = {
@@ -112,8 +141,10 @@ def main() -> None:
         lora_dropout=config["lora_dropout"],
         bias="none",
         random_state=config["seed"],
+        use_gradient_checkpointing="unsloth",
     )
     bf16 = torch.cuda.is_bf16_supported()
+    print(f"GPUs visible: {torch.cuda.device_count()}; precision: {'bf16' if bf16 else 'float32'}")
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -128,17 +159,17 @@ def main() -> None:
             gradient_accumulation_steps=config["gradient_accumulation_steps"],
             num_train_epochs=config["num_train_epochs"],
             learning_rate=config["learning_rate"],
-            warmup_ratio=config["warmup_ratio"],
+            warmup_steps=warmup_steps(len(train_texts), config["num_train_epochs"]),
             weight_decay=config["weight_decay"],
             lr_scheduler_type=config["lr_scheduler_type"],
             optim=config["optim"],
             bf16=bf16,
-            fp16=not bf16,  # T4 and P100 have no bf16 (§10: bf16 where supported)
+            fp16=False,  # Gemma 4 does not train in fp16; without bf16 (T4) Unsloth uses float32
             logging_steps=10,
             eval_strategy="steps",
-            eval_steps=config["eval_every_steps"],
+            eval_steps=args.eval_steps,
             save_strategy="steps",
-            save_steps=config["eval_every_steps"],
+            save_steps=args.eval_steps,
             save_total_limit=2,
             load_best_model_at_end=True,
             metric_for_best_model="eval_loss",
@@ -155,22 +186,33 @@ def main() -> None:
     )
     started = time.time()
     result = trainer.train()
+    runtime = time.time() - started
+    steps = max(trainer.state.global_step, 1)
+    evals = sum(1 for entry in trainer.state.log_history if "eval_loss" in entry)
+    full_steps = (
+        math.ceil(
+            FULL_TRAIN_RECORDS
+            / (config["per_device_train_batch_size"] * config["gradient_accumulation_steps"])
+        )
+        * CONFIG["num_train_epochs"]
+    )
     log = {
-        "train_runtime_seconds": round(time.time() - started),
+        "train_runtime_seconds": round(runtime),
+        "seconds_per_step": round(runtime / steps, 1),
+        "evaluations": evals,
+        "estimated_full_run_hours_without_evals": round(runtime / steps * full_steps / 3600, 1),
         "train_loss": result.training_loss,
         "best_eval_loss": trainer.state.best_metric,
         "best_checkpoint": trainer.state.best_model_checkpoint,
         "history": trainer.state.log_history,
         "gpu": torch.cuda.get_device_name(0),
-        "precision": "bf16" if bf16 else "fp16",
+        "precision": "bf16" if bf16 else "float32",
     }
     (out / "training-log.json").write_text(json.dumps(log, indent=2))
     model.save_pretrained(str(out / "adapter"))
     tokenizer.save_pretrained(str(out / "adapter"))
     if not args.no_gguf:
-        model.save_pretrained_gguf(
-            str(out / "gguf"), tokenizer, quantization_method=config["gguf_quantization"]
-        )
+        export_gguf(model, tokenizer, out, config["gguf_quantization"])
     print(json.dumps({k: v for k, v in log.items() if k != "history"}, indent=2))
 
 

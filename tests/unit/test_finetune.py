@@ -11,7 +11,9 @@ from training.finetune.data import (
     length_report,
     supports_system_role,
     to_chat,
+    token_count,
     turn_markers,
+    warmup_steps,
 )
 from training.finetune.modelfile import base_directives, build
 
@@ -123,7 +125,31 @@ def test_kaggle_folder_needs_real_retrieval_and_is_private(tmp_path) -> None:  #
     namespace: dict = {}
     cell = next(s for s in sources if "SMOKE = True" in s)
     exec(cell[cell.index("\nSMOKE = True") :], namespace)  # the smoke-test settings only
-    assert namespace["EXTRA"] == "--limit 50 --epochs 1 --no-gguf"
+    assert namespace["EXTRA"] == "--limit 50 --epochs 1 --eval-limit 20 --eval-steps 3 --no-gguf"
 
     renamed = prepare(decision, tmp_path / "kaggle", "someone", slug="claimsense")
     assert json.loads((renamed / "dataset-metadata.json").read_text())["id"] == "someone/claimsense"
+
+
+class TextTokenizer:
+    def __call__(self, text: str, add_special_tokens: bool = True) -> dict:
+        return {"input_ids": ([2] if add_special_tokens else []) + [7] * len(text.split())}
+
+
+class Processor:
+    """Like Gemma 4's multimodal processor: a batch of one, and the text tokenizer inside."""
+
+    tokenizer = TextTokenizer()
+
+    def __call__(self, text: str, add_special_tokens: bool = True) -> dict:
+        return {"input_ids": [self.tokenizer(text, add_special_tokens)["input_ids"]]}
+
+
+def test_token_count_uses_the_text_tokenizer_of_a_processor() -> None:
+    assert token_count(TextTokenizer(), "one two three") == 4
+    assert token_count(Processor(), "one two three") == 4  # not 1 (the batch size)
+
+
+def test_warmup_steps_replace_the_ratio() -> None:
+    assert warmup_steps(2000, 2) == 15  # 250 steps per epoch x 2 epochs x 3%
+    assert warmup_steps(50, 1) == 1
