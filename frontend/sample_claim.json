@@ -1,0 +1,43 @@
+{
+  "claim_id": "CLM-SAMPLE-0001",
+  "member_id": "MBR-000020",
+  "patient": {
+    "first_name": "Patrick",
+    "last_name": "Harris",
+    "date_of_birth": "1994-11-08",
+    "sex": "M",
+    "address": {
+      "line1": "91081 Bennett Neck",
+      "city": "New Manuelview",
+      "state": "SC",
+      "zip_code": "82860"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "2186976371",
+  "billing_tin": "409107153",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "F419"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-11-22",
+      "place_of_service": "11",
+      "procedure_code": "99214",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A"
+      ],
+      "units": 1,
+      "charge_cents": 23600,
+      "rendering_npi": "2186976371"
+    }
+  ],
+  "clinical_notes": "The patient reports worry, restlessness and poor sleep for several months. Office visit to review the problem, examine the patient and agree on next steps. The patient understands the plan and wants to go ahead.",
+  "received_date": "2026-12-02",
+  "frequency_code": "1",
+  "other_coverage": null
+}

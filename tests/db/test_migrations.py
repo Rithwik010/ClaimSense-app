@@ -1,66 +1,29 @@
 """Alembic migrations on a fresh database (INSTRUCTIONS.md §11, P1.3).
 
-Uses a throwaway database (`claimsense_test` by default) next to the dev database. Skipped when
-Postgres is not reachable, unless CLAIMSENSE_REQUIRE_DB=1 (set in CI), in which case it fails.
+Uses a throwaway database (`claimsense_test`) next to the dev database (see tests/database.py).
 """
 
-import os
 from collections.abc import Iterator
 from datetime import date
 
 import pytest
 from alembic import command
 from alembic.autogenerate import compare_metadata
-from alembic.config import Config
 from alembic.migration import MigrationContext
 from sqlalchemy import Engine, create_engine, inspect, text
-from sqlalchemy.engine import make_url
-from sqlalchemy.exc import DBAPIError, OperationalError
+from sqlalchemy.exc import DBAPIError
 
-from app.core.settings import get_settings
 from app.db import models  # noqa: F401  (registers every table)
 from app.db.base import Base
+from tests.database import alembic_config, fresh_database
 
 TEST_DB_NAME = "claimsense_test"
 
 
-def test_database_url() -> str:
-    explicit = os.environ.get("TEST_DATABASE_URL")
-    if explicit:
-        return explicit
-    return (
-        make_url(get_settings().database_url)
-        .set(database=TEST_DB_NAME)
-        .render_as_string(hide_password=False)
-    )
-
-
-test_database_url.__test__ = False  # a helper, not a test
-
-
 @pytest.fixture(scope="module")
 def db_url() -> Iterator[str]:
-    url = make_url(test_database_url())
-    admin = create_engine(url.set(database="postgres"), isolation_level="AUTOCOMMIT")
-    try:
-        with admin.connect() as conn:
-            conn.execute(text(f'DROP DATABASE IF EXISTS "{url.database}" WITH (FORCE)'))
-            conn.execute(text(f'CREATE DATABASE "{url.database}"'))
-    except OperationalError as exc:
-        if os.environ.get("CLAIMSENSE_REQUIRE_DB") == "1":
-            raise
-        pytest.skip(f"Postgres not reachable ({type(exc).__name__}); run `docker compose up -d`")
-    yield url.render_as_string(hide_password=False)
-    with admin.connect() as conn:
-        conn.execute(text(f'DROP DATABASE IF EXISTS "{url.database}" WITH (FORCE)'))
-    admin.dispose()
-
-
-def alembic_config(url: str) -> Config:
-    config = Config("alembic.ini")
-    config.set_main_option("sqlalchemy.url", url)
-    config.attributes["configure_logger"] = False
-    return config
+    with fresh_database(TEST_DB_NAME) as url:
+        yield url
 
 
 @pytest.fixture
