@@ -6,7 +6,7 @@ One JSON claim goes through every stage of the pipeline in its simplest form:
 POST /v1/claims/intake  ->  claim stored (RECEIVED), audit INTAKE_COMPLETED
 POST /v1/claims/{id}/process
     rule R05 (eligibility)      -> DENY: DENIED_BY_RULE, audit AUTO_OUTCOME (final, no model)
-    context (plan facts)        -> audit CONTEXT_ASSEMBLED
+    context (plan facts, retrieved criteria) -> audit CONTEXT_ASSEMBLED
     base gemma4:e2b via Ollama  -> output validation -> audit SLM_RECOMMENDED or OUTPUT_INVALID
     calculator (COPAY lines)    -> audit CALCULATED
     decision record (version 1) -> AWAITING_REVIEW with claim decision and review tier
@@ -43,11 +43,11 @@ new claim ID.
 
 ## What the base model does
 
-With no coverage criteria retrieved, base `gemma4:e2b` still invents a criterion ID
-(for example `POL-C-111.c1`). Output validation rejects it. The line becomes PEND with
-`MODEL_OUTPUT_INVALID`, and the claim goes to FULL review. This is the intended behaviour for an
-untrained model. The fine-tuned model (P4) should stop inventing IDs. The model answers in about
-3 seconds on the M5 laptop with thinking disabled; with thinking on, it takes about 12 seconds.
+In the first P1.5 run (no retrieval yet), base `gemma4:e2b` invented a criterion ID
+(`POL-C-111.c1`). Output validation rejected it: the line became PEND with `MODEL_OUTPUT_INVALID`
+and the claim went to FULL review. This is the intended behaviour for an untrained model; the
+baseline (`docs/results.md`) measures it on the test split. The model answers in about 3 seconds on
+the M5 laptop with thinking disabled.
 
 ## Not in the skeleton yet
 
@@ -55,7 +55,7 @@ untrained model. The fine-tuned model (P4) should stop inventing IDs. The model 
 |---|---|---|
 | Rules other than R05, duplicates, H5 | An unknown member or billing provider returns 422, and the claim stays RECEIVED | P2.3 |
 | Deductible/coinsurance, out-of-network, COB | 422 when an approved line needs them | P2.4 |
-| Coverage criteria from retrieval | Every line has no criteria | P3.3, P5.2 |
+| Coverage criteria from retrieval | Built (P3.3); run `uv run python -m app.rag.knowledge` once so Qdrant has the collection | done |
 | PDF and scanned intake | JSON only | P5.1 |
 | Review, finalization, accumulator update | Records stop at AWAITING_REVIEW | P5.3 |
 | Explanation text, role header | Not returned | P5.4, P5.5 |
