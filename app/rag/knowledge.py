@@ -83,6 +83,7 @@ def build_coverage_collection(
     for field, schema in (
         ("plan_ids", models.PayloadSchemaType.KEYWORD),
         ("policy_id", models.PayloadSchemaType.KEYWORD),
+        ("procedure_codes", models.PayloadSchemaType.KEYWORD),
         ("effective_day", models.PayloadSchemaType.INTEGER),
     ):
         client.create_payload_index(COVERAGE_COLLECTION, field, field_schema=schema)

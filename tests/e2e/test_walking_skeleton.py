@@ -245,7 +245,7 @@ def test_retrieval_unavailable_returns_503(api, load_case_reference) -> None:
     from tests.e2e.support import StubRetriever
 
     class DownRetriever(StubRetriever):
-        def retrieve(self, query, plan_id, day, exclude_policies=()):  # noqa: ANN001, ANN201
+        def retrieve(self, query, plan_id, day, procedure_code=None, exclude_policies=()):  # noqa: ANN001, ANN201
             raise RetrievalUnavailable("retrieval unavailable (ConnectError)")
 
     load_case_reference(E2E_CASES["E2E-14"])

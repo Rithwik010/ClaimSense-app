@@ -1,6 +1,6 @@
 """P3.3 acceptance: retrieval with the real embedding model reaches recall@3 >= 0.85 on the golden
-queries, and returns nothing for the "no relevant policy" queries. Skipped until the model files are
-cached (`data/generated/models/fastembed`); in-memory Qdrant, so no server is needed."""
+queries and returns nothing for the "no relevant policy" queries; at the live top-k (5) it finds
+every expected criterion. Skipped until the model files are cached; in-memory Qdrant."""
 
 import pytest
 from qdrant_client import QdrantClient
@@ -24,10 +24,12 @@ def test_golden_queries_meet_the_recall_target() -> None:
     embedder = FastEmbedder(SETTINGS.embedding_model, SETTINGS.embedding_cache_dir)
     client = QdrantClient(":memory:")
     build_coverage_collection(client, embedder)
-    retriever = CriteriaRetriever(
-        client, embedder, top_k=SETTINGS.rag_top_k, min_score=SETTINGS.rag_min_score
+
+    at_3 = evaluate(CriteriaRetriever(client, embedder, 3, SETTINGS.rag_min_score), load_queries())
+    live = evaluate(
+        CriteriaRetriever(client, embedder, SETTINGS.rag_top_k, SETTINGS.rag_min_score),
+        load_queries(),
     )
 
-    report = evaluate(retriever, load_queries())
-
-    assert report["passed"], report
+    assert at_3["passed"], at_3
+    assert live["recall_at_k"] == 1.0 and live["empty_failures"] == [], live

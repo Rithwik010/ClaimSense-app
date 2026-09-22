@@ -27,7 +27,7 @@ import jinja2
 
 from app.db.curated import load_curated
 from app.ml.prompt import PROMPT_VERSION, PromptLookups, render_user_message, system_prompt
-from app.rag.retrieve import Retriever
+from app.rag.retrieve import CriteriaRetriever, Retriever
 from training.generate.checks import check_record, distribution
 from training.generate.claims import claim_decision
 from training.generate.common import DEFAULT_SEED, GENERATED_DIR, write_json, write_jsonl
@@ -286,14 +286,13 @@ def write_dataset(
     return summary
 
 
-def live_retriever() -> tuple[Retriever, str]:
+def live_retriever() -> tuple["CriteriaRetriever", str]:
     """The retriever the API uses, and a label naming its settings and knowledge version."""
     from qdrant_client import QdrantClient
 
     from app.core.settings import get_settings
     from app.rag.embedding import FastEmbedder
     from app.rag.knowledge import criterion_chunks, knowledge_version
-    from app.rag.retrieve import CriteriaRetriever
 
     settings = get_settings()
     embedder = FastEmbedder(settings.embedding_model, settings.embedding_cache_dir)

@@ -907,8 +907,10 @@ class ScenarioBuilder:
             self.lookups.procedure_descriptions,
             self.lookups.icd10_descriptions,
         )
-        day = claim.service_lines[line_no - 1].date_of_service
-        return self.retriever.retrieve(query, plan_id, day, self.excluded_policies)
+        line = claim.service_lines[line_no - 1]
+        return self.retriever.retrieve(
+            query, plan_id, line.date_of_service, line.procedure_code, self.excluded_policies
+        )
 
     def _context(
         self,

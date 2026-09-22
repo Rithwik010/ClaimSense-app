@@ -4,7 +4,10 @@ For each query with expected criterion IDs: the share of them found in the top-k
 expected IDs pass when nothing is returned after the filters and the minimum score. The searched
 text is the procedure description followed by the query, the same shape as a claim line's query.
 
-    uv run python -m training.evaluate.rag [--min-score 0.6]
+The P3.3 acceptance metric is recall@3, so evaluate with top-k 3 (`--top-k 3`); live retrieval
+uses top-k 5.
+
+    uv run python -m training.evaluate.rag --top-k 3
 """
 
 import argparse
@@ -33,7 +36,10 @@ def evaluate(retriever: CriteriaRetriever, queries: list[dict[str, Any]]) -> dic
             + (query["query"])
         )
         found = retriever.retrieve(
-            text, query["plan_id"], date.fromisoformat(query["date_of_service"])
+            text,
+            query["plan_id"],
+            date.fromisoformat(query["date_of_service"]),
+            query["procedure_code"],
         )
         ids = [c.criterion_id for c in found]
         expected = query["expected_criterion_ids"]
@@ -69,11 +75,12 @@ def main() -> None:
     settings = get_settings()
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--min-score", type=float, default=settings.rag_min_score)
+    parser.add_argument("--top-k", type=int, default=settings.rag_top_k)
     args = parser.parse_args()
     retriever = CriteriaRetriever(
         QdrantClient(url=settings.qdrant_url),
         FastEmbedder(settings.embedding_model, settings.embedding_cache_dir),
-        top_k=settings.rag_top_k,
+        top_k=args.top_k,
         min_score=args.min_score,
     )
     report = evaluate(retriever, load_queries())

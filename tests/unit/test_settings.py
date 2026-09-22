@@ -34,7 +34,7 @@ def test_defaults_match_spec() -> None:
     assert settings.ollama_url == "http://localhost:11434"
     assert settings.model_name == "gemma4:e2b"
     assert settings.embedding_model == "BAAI/bge-small-en-v1.5"
-    assert settings.rag_top_k == 3
+    assert settings.rag_top_k == 5  # the covering policy's criteria (P3.3)
     assert settings.extraction_confidence_min == 0.85
     assert settings.review_high_dollar_cents == 100_000
 
