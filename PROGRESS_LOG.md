@@ -16,10 +16,10 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | Area | State |
 |---|---|
 | **Fine-tuning** | **Running on Kaggle** (full run, started after 20:48; about 4.5 h). Notebook: Manideep3183's Kaggle account, private. Dataset: `manideep3183/claimsense` (private). |
-| Baseline (P4.2) | Paused at **237/300** test records (`data/generated/eval/baseline-gemma4-e2b.*`, on Manideep's laptop). Resumes where it stopped; must finish on **Ollama 0.34.1**. |
-| Readiness gate | 8/9 automated checks pass; check 9 waits for the baseline. Team review items open (section 4). |
+| Baseline (P4.2) | **Done** (300/300, Ollama 0.34.1): valid output 73%, line accuracy 0.42, macro-F1 **0.345**, criterion status 0.63. See `docs/results.md`. |
+| Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
 | Git | Local `main` is **48 commits ahead of `origin/main` (this log included): not pushed yet.** Teammates see none of this until a team member says "push". |
-| Laptop services | Docker (Postgres, Qdrant) and Ollama stopped at the time of writing. |
+| Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
 | Tests | Last full run with all services up: 782 passed (CI-skipped tests need `data/raw/`, Postgres, the embedding model or a live model). |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
@@ -29,7 +29,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | 1 Foundations | P1.1, P1.2, P1.3, P1.4 (contracts approved 2026-09-22), P1.5 | | |
 | 2 Rules and calculator | P2.2 | P2.1 (seed: curated, ICD-10, fees, reference; missing NCCI, MUE, POS), P2.3 (R05 only), P2.4 (in-network copay only), P2.5 (status table only) | |
 | 3 Knowledge and datasets | P3.1, P3.2, P3.3 (coverage_policies collection), P3.4, P3.5 (v2, real retrieval) | | |
-| 4 Model | P4.1 | P4.2 (237/300), **P4.3 running** | P4.4, P4.5 |
+| 4 Model | P4.1, P4.2 | **P4.3 running** | P4.4, P4.5 |
 | 5 Integration | | P5.1 (digital PDF only), P5.2 (context with retrieval), P5.3 (tiers only), P5.5 (skeleton page), P5.6 (golden set written) | P5.4 |
 | 6 Evaluation and demo | | | P6.1, P6.2, P6.3 |
 
@@ -86,7 +86,7 @@ Pull before starting; tell the team which task you take (add a timeline entry).
 | Sign off: prompt `decision_v2`; retrieval (code filter, top 5); max length 3072; visit limits out of v1; NCCI bypass modifiers XE/XP/XS/XU (59 and 25 not added) | team | `DECISIONS.md` |
 | Confirm the golden assumptions (`tests/golden/README.md`) and spot-check 10 rules + 10 calculator cases | team | `DECISIONS.md` |
 | AMA CPT license question (SOURCES.md) | team | `DECISIONS.md` |
-| Finish the baseline on Ollama 0.34.1 (decline the pending 0.34.2 update until then) | Manideep3183 | timeline |
+| Keep Ollama on 0.34.1 until the fine-tuned model is evaluated (decline the 0.34.2 update) | Manideep3183 | timeline |
 | After training: P4.5 import, P4.4 evaluation, retrieval ablation (eval mode not built yet) | next session | timeline |
 | Record the exact Hugging Face revision of the base model in the training log (not done) | next session | `training/finetune/train.py` |
 | Rebuild the golden end-to-end model answers for prompt v2 and real retrieval (P5.6) | later | `tests/golden/e2e/` |
@@ -186,6 +186,9 @@ Kaggle copy for anything model-related.
 - 20:48 | Claude | P4.3 | Keep the `mmproj` GGUF as well, in case Ollama needs it (`588ba9a`); Manideep3183 uploaded the new `data.py`.
 - ~21:00 | Manideep3183 | **P4.3** | **Full fine-tuning run started on Kaggle** (Save & Run All, Commit; about 4.5 h). Expected outputs in `claimsense/`: `gguf/*.Q4_K_M.gguf`, `gguf/*mmproj*.gguf`, `training-log.json`, `adapter/`.
 - 22:31 | Claude | docs | This progress log written.
+
+- 22:46 | Claude | P4.2 | **Baseline finished** (300/300, base `gemma4:e2b`, Ollama 0.34.1): valid output **73%**, line accuracy **0.422**, macro-F1 **0.345**, criterion status 0.633, evidence quoted 0.703, benefit category 1.00, complexity 0.279, claim decision 0.433, latency p50 9.6 s. Unseen policies score like seen ones (0.423 vs 0.422). Commonest failures: deciding a line that was denied by rules, and citing criteria that were not retrieved. Written to `docs/results.md`; this is the "before" number for P4.4 (target macro-F1 >= 0.90).
+- 22:48 | Claude | readiness | **Gate 9/9 automated checks pass** (dataset current, real retrieval, record checks, recall@3 0.978, train/live parity, no retrieval misses, lengths, blind review, baseline). Team review items remain open.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
