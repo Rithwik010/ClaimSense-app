@@ -104,9 +104,15 @@ def warmup_steps(records: int, epochs: float, ratio: float = 0.03) -> int:
 
 
 def quantized_files(paths: list[Path], quantization: str) -> list[Path]:
-    """The final GGUF files among everything the export wrote (not the 16-bit intermediate)."""
+    """The final GGUF files among everything the export wrote: the quantized model, and Gemma 4's
+    vision/audio projector (`mmproj`) in case Ollama needs it to load the model. Not the 16-bit
+    intermediate."""
     wanted = quantization.lower().replace("-", "_")
-    return sorted(p for p in paths if p.suffix == ".gguf" and wanted in p.name.lower())
+    models = [p for p in paths if p.suffix == ".gguf" and wanted in p.name.lower()]
+    if not models:
+        return []
+    projectors = [p for p in paths if p.suffix == ".gguf" and "mmproj" in p.name.lower()]
+    return sorted(models + projectors)
 
 
 def length_report(lengths: list[int], max_len: int) -> dict[str, Any]:
