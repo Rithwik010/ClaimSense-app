@@ -64,9 +64,11 @@ def notebook(dataset_slug: str) -> dict:
     cells.append(
         (
             "code",
-            "# GGUF export from the saved adapter: check it once on the smoke adapter before the\n"
-            "# full run, and rerun it if the full run's export fails.\n"
-            "!python {TRAIN} --data {DATA} --out {OUT} --export-from {OUT}/adapter\n"
+            "# GGUF export from the saved adapter, only when there is no GGUF yet: tests the\n"
+            "# export on the smoke adapter, and retries it if the full run's export failed.\n"
+            "import glob\n"
+            "if not glob.glob(f'{OUT}/gguf/*.gguf'):\n"
+            "    !python {TRAIN} --data {DATA} --out {OUT} --export-from {OUT}/adapter\n"
             "!ls -la {OUT}/gguf",
         )
     )
