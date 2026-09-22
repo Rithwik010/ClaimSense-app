@@ -80,3 +80,38 @@ def test_a_stopped_run_resumes(dataset, tmp_path) -> None:  # noqa: ANN001
     assert (first.calls, second.calls) == (5, count - 5)
     assert report["metrics"]["records"] == count
     assert "5/" in (tmp_path / "resume.log").read_text()
+
+
+def test_a_run_does_not_resume_on_another_engine(dataset, tmp_path) -> None:  # noqa: ANN001
+    from training.evaluate.model import run
+
+    directory, targets, _ = dataset
+    run(Answers(targets), "engine", directory, tmp_path, limit=2, engine="ollama 1")
+
+    with pytest.raises(SystemExit, match="must not mix engines"):
+        run(Answers(targets), "engine", directory, tmp_path, engine="ollama 2")
+    report = run(Answers(targets), "engine", directory, tmp_path, engine="ollama 1")
+    assert report["engine"] == "ollama 1"
+
+
+def test_a_dropped_connection_is_retried_then_fails() -> None:
+    from app.ml.client import ModelUnavailable
+    from training.evaluate.model import complete_with_retry
+
+    class Flaky:
+        name = "flaky"
+
+        def __init__(self, failures: int) -> None:
+            self.failures = failures
+
+        def complete(self, system: str, user: str) -> str:
+            if self.failures:
+                self.failures -= 1
+                raise ModelUnavailable("down")
+            return "ok"
+
+    waits: list[float] = []
+    assert complete_with_retry(Flaky(2), "s", "u", waits.append) == "ok"
+    assert waits == [15, 45]
+    with pytest.raises(ModelUnavailable):
+        complete_with_retry(Flaky(3), "s", "u", waits.append)
