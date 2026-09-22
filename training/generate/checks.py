@@ -9,8 +9,15 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.db.curated import CuratedData
-from app.domain.contracts import ContextPackage, IntakeClaim, LineDecision, RulesOutcome, SLMOutput
-from app.ml.prompt import lines_to_decide
+from app.domain.contracts import (
+    ContextPackage,
+    CriterionStatus,
+    IntakeClaim,
+    LineDecision,
+    RulesOutcome,
+    SLMOutput,
+)
+from app.ml.prompt import NOT_APPLICABLE, NOT_DOCUMENTED, lines_to_decide
 from training.generate.notes import LEAKAGE
 
 
@@ -21,6 +28,50 @@ def _strings(value: Any) -> list[str]:
         return [s for v in value.values() for s in _strings(v)]
     if isinstance(value, list):
         return [s for v in value for s in _strings(v)]
+    return []
+
+
+FIXED_EVIDENCE = {
+    CriterionStatus.NOT_DOCUMENTED: NOT_DOCUMENTED,
+    CriterionStatus.NOT_APPLICABLE: NOT_APPLICABLE,
+}
+
+
+def _status_problems(line: Any, covering: set[str], notes: str) -> list[str]:
+    """Evidence quotes the notes (MET, NOT_MET) or is the fixed text; other policies' criteria are
+    NOT_APPLICABLE."""
+    problems = []
+    for result in line.criteria:
+        label = f"line {line.line_no}: {result.criterion_id} {result.status.value}"
+        fixed = FIXED_EVIDENCE.get(result.status)
+        if fixed is not None and result.evidence != fixed:
+            problems.append(f"{label} needs the evidence {fixed!r}")
+        if fixed is None and result.evidence not in notes:
+            problems.append(f"{label} evidence is not a quote from the notes")
+        if result.criterion_id not in covering and result.status is not (
+            CriterionStatus.NOT_APPLICABLE
+        ):
+            problems.append(f"{label}: its policy does not cover the code")
+    return problems
+
+
+def _decision_problems(line: Any, flags: set[str]) -> list[str]:
+    """The decision follows from the statuses (prompt decision_v2)."""
+    statuses = {result.status for result in line.criteria}
+    label = f"line {line.line_no}: {line.decision.value}"
+    if line.decision is LineDecision.APPROVE and statuses & {
+        CriterionStatus.NOT_MET,
+        CriterionStatus.NOT_DOCUMENTED,
+    }:
+        return [f"{label} with a NOT_MET or NOT_DOCUMENTED criterion"]
+    if line.decision is LineDecision.PEND and not (
+        CriterionStatus.NOT_DOCUMENTED in statuses or "NCCI_BYPASS" in flags
+    ):
+        return [f"{label} without a NOT_DOCUMENTED criterion or the NCCI_BYPASS flag"]
+    if line.decision is LineDecision.PEND and CriterionStatus.NOT_MET in statuses:
+        return [f"{label} with a NOT_MET criterion (should be DENY)"]
+    if "DN_CONDITIONAL_EXCLUSION" in line.reasons and CriterionStatus.NOT_MET not in statuses:
+        return [f"{label} for an exclusion without a NOT_MET criterion"]
     return []
 
 
@@ -57,14 +108,23 @@ def check_record(
         if line_context is None:
             problems.append(f"line {line.line_no} has no context")
             continue
-        retrieved = {c.criterion_id for c in line_context.criteria}
-        for result in line.criteria:
-            if result.criterion_id not in known:
-                problems.append(f"unknown criterion {result.criterion_id}")
-            if result.criterion_id not in retrieved:
-                problems.append(
-                    f"criterion {result.criterion_id} was not retrieved for line {line.line_no}"
-                )
+        retrieved = [c.criterion_id for c in line_context.criteria]
+        listed = [result.criterion_id for result in line.criteria]
+        for criterion_id in listed:
+            if criterion_id not in known:
+                problems.append(f"unknown criterion {criterion_id}")
+        if listed != retrieved:
+            problems.append(
+                f"line {line.line_no}: criteria {listed} are not the retrieved {retrieved} in order"
+            )
+        covering = {
+            c.criterion_id
+            for c in line_context.criteria
+            if line_context.procedure_code in curated.policies[c.policy_id].procedure_codes
+        }
+        problems += _status_problems(line, covering, claim.clinical_notes)
+        flags = set(line_context.rule_flags)
+        problems += _decision_problems(line, flags)
         if line.benefit_category not in {
             f.benefit_category for f in line_context.candidate_benefits
         }:
@@ -90,10 +150,12 @@ def distribution(records: list[dict[str, Any]]) -> dict[str, Any]:
     decisions: Counter[str] = Counter()
     reasons: Counter[str] = Counter()
     categories: Counter[str] = Counter()
+    statuses: Counter[str] = Counter()
     for record in records:
         target = json.loads(record["messages"][-1]["content"])
         for line in target["lines"]:
             decisions[line["decision"]] += 1
+            statuses.update(c["status"] for c in line["criteria"])
             reasons.update(line["reasons"])
             categories[line["benefit_category"]] += 1
     meta = [r["metadata"] for r in records]
@@ -103,6 +165,7 @@ def distribution(records: list[dict[str, Any]]) -> dict[str, Any]:
         "line_decisions": dict(decisions.most_common()),
         "reasons": dict(reasons.most_common()),
         "benefit_categories": dict(categories.most_common()),
+        "criterion_statuses": dict(statuses.most_common()),
         "claim_decisions": dict(Counter(m["claim_decision"] for m in meta).most_common()),
         "complexity": dict(Counter(m["complexity"] for m in meta).most_common()),
         "scenario_types": dict(Counter(m["scenario_type"] for m in meta).most_common()),

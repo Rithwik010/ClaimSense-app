@@ -1,6 +1,8 @@
-"""Shared contracts (INSTRUCTIONS.md §8.1; DECISIONS.md 2026-09-21).
+"""Shared contracts (INSTRUCTIONS.md §8.1; DECISIONS.md 2026-09-21 and 2026-09-22).
 
-Frozen after team review in task P1.4: do not add, remove or rename fields without approval (H11).
+Approved by the team on 2026-09-22 (task P1.4) and frozen: do not add, remove or rename fields
+without approval (H11). The model output and the context shown to the model are part of the trained
+model's interface, so changing them means regenerating the dataset and retraining.
 
 Conventions: money is integer cents (`*_cents`, strict int, never float); every model rejects
 unknown fields; codes are validated for format only (whether a code exists is rule R02's job).
@@ -48,6 +50,15 @@ class LineDecision(StrEnum):
     APPROVE = "APPROVE"
     PEND = "PEND"
     DENY = "DENY"
+
+
+class CriterionStatus(StrEnum):
+    """How one retrieved coverage criterion applies to a line (DECISIONS.md 2026-09-22)."""
+
+    MET = "MET"  # the notes show it is satisfied
+    NOT_MET = "NOT_MET"  # the notes show it is not satisfied
+    NOT_DOCUMENTED = "NOT_DOCUMENTED"  # it applies, but the notes say nothing about it
+    NOT_APPLICABLE = "NOT_APPLICABLE"  # another policy's criterion, or a situation not in the claim
 
 
 class Complexity(StrEnum):
@@ -305,8 +316,10 @@ class ContextPackage(Contract):
 
 
 class CriterionResult(Contract):
+    """MET and NOT_MET quote the notes; NOT_DOCUMENTED and NOT_APPLICABLE use fixed evidence."""
+
     criterion_id: CriterionId
-    met: bool
+    status: CriterionStatus
     evidence: str
 
 

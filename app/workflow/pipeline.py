@@ -188,7 +188,10 @@ def _model_payload(result: ValidationResult, duration_ms: float) -> dict:
                 "decision": line.decision.value,
                 "benefit_category": line.benefit_category,
                 "reasons": list(line.reasons),
-                "criteria": [{"criterion_id": c.criterion_id, "met": c.met} for c in line.criteria],
+                "criteria": [
+                    {"criterion_id": c.criterion_id, "status": c.status.value}
+                    for c in line.criteria
+                ],
             }
             for line in result.output.lines
         ],

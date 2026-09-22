@@ -1,4 +1,4 @@
-"""Decision prompt decision_v1 (INSTRUCTIONS.md §8.5): sections, lines to decide, no money (H1)."""
+"""Decision prompt decision_v2 (INSTRUCTIONS.md §8.5): sections, lines to decide, no money (H1)."""
 
 import re
 from datetime import date
@@ -7,6 +7,7 @@ from app.domain.contracts import (
     BenefitFact,
     ContextPackage,
     CostShareRule,
+    CriterionStatus,
     IntakeClaim,
     LineContext,
     LineRuleOutcome,
@@ -16,6 +17,8 @@ from app.domain.contracts import (
     RulesOutcome,
 )
 from app.ml.prompt import (
+    NOT_APPLICABLE,
+    NOT_DOCUMENTED,
     PROMPT_VERSION,
     PromptLookups,
     age_on,
@@ -89,7 +92,7 @@ def sample() -> tuple[IntakeClaim, RulesOutcome, ContextPackage]:
 
 def test_system_prompt_is_versioned_and_forbids_amounts() -> None:
     text = system_prompt()
-    assert PROMPT_VERSION == "decision_v1"
+    assert PROMPT_VERSION == "decision_v2"
     assert "Never state or estimate any dollar amount" in text
     for reason in (
         "DN_CONDITIONAL_EXCLUSION",
@@ -97,6 +100,14 @@ def test_system_prompt_is_versioned_and_forbids_amounts() -> None:
         "PD_MISSING_DOCUMENTATION",
     ):
         assert reason in text
+
+
+def test_system_prompt_names_every_criterion_status_and_the_fixed_evidence() -> None:
+    text = system_prompt()
+    for status in CriterionStatus:
+        assert f"- {status.value}:" in text
+    assert f'"{NOT_DOCUMENTED}"' in text
+    assert f'"{NOT_APPLICABLE}"' in text
 
 
 def test_user_message_sections_in_order() -> None:

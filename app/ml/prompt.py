@@ -18,9 +18,10 @@ from app.domain.contracts import (
     RulesOutcome,
 )
 
-PROMPT_VERSION = "decision_v1"
+PROMPT_VERSION = "decision_v2"  # decision_v1: criteria as met true/false (superseded)
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 NOT_DOCUMENTED = "Not documented in the clinical notes."
+NOT_APPLICABLE = "Does not apply to this service."
 
 
 @dataclass(frozen=True)
