@@ -162,12 +162,16 @@ def test_warmup_steps_replace_the_ratio() -> None:
 def test_only_the_final_quantized_gguf_is_kept(tmp_path) -> None:  # noqa: ANN001
     from pathlib import Path
 
-    written = [
+    written = [  # the files the Kaggle smoke export wrote
         Path("work/model-00001-of-00002.safetensors"),
         Path("work_gguf/gemma-4-e2b-it.F16.gguf"),
         Path("work_gguf/gemma-4-e2b-it.Q4_K_M.gguf"),
-        Path("work_gguf/config.json"),
+        Path("work_gguf/gemma-4-e2b-it.F16-mmproj.gguf"),
+        Path("work_gguf/Modelfile"),
     ]
 
-    assert quantized_files(written, "q4_k_m") == [Path("work_gguf/gemma-4-e2b-it.Q4_K_M.gguf")]
-    assert quantized_files(written[:2], "q4_k_m") == []
+    assert quantized_files(written, "q4_k_m") == [
+        Path("work_gguf/gemma-4-e2b-it.F16-mmproj.gguf"),
+        Path("work_gguf/gemma-4-e2b-it.Q4_K_M.gguf"),
+    ]
+    assert quantized_files(written[:2], "q4_k_m") == []  # no quantized model: nothing kept
