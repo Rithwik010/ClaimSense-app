@@ -18,7 +18,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | **Fine-tuning** | **Running on Kaggle** (full run, started after 20:48; about 4.5 h). Notebook: Manideep3183's Kaggle account, private. Dataset: `manideep3183/claimsense` (private). |
 | Baseline (P4.2) | Paused at **237/300** test records (`data/generated/eval/baseline-gemma4-e2b.*`, on Manideep's laptop). Resumes where it stopped; must finish on **Ollama 0.34.1**. |
 | Readiness gate | 8/9 automated checks pass; check 9 waits for the baseline. Team review items open (section 4). |
-| Git | Local `main` is **46 commits ahead of `origin/main`: not pushed yet.** Teammates see none of this until a team member says "push". |
+| Git | Local `main` is **48 commits ahead of `origin/main` (this log included): not pushed yet.** Teammates see none of this until a team member says "push". |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama stopped at the time of writing. |
 | Tests | Last full run with all services up: 782 passed (CI-skipped tests need `data/raw/`, Postgres, the embedding model or a live model). |
 
