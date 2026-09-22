@@ -4,8 +4,9 @@ Plan facts come from the database. Candidate benefit categories per procedure co
 `data/curated/procedure_scope.csv`; office visits are narrowed to one category by the rendering
 provider's primary-care flag (DECISIONS.md, data-generation choice 2), as in the training data.
 
-Walking skeleton (P1.5): no coverage criteria yet. Retrieval arrives in P3.3 and is wired in here in
-P5.2; until then every line has an empty criteria list and the prompt says "No criteria retrieved."
+Coverage criteria come from retrieval (P3.3): for each line, the top-k criteria for the line's query
+(procedure, diagnoses, notes), filtered by plan and date of service. Without a retriever every line
+has no criteria.
 """
 
 from sqlalchemy.orm import Session
@@ -28,6 +29,8 @@ from app.domain.contracts import (
     Network,
     RulesOutcome,
 )
+from app.ml.prompt import PromptLookups
+from app.rag.retrieve import Retriever, line_query
 
 OFFICE_VISIT_PCP = "OFFICE_VISIT_PCP"
 OFFICE_VISIT_SPECIALIST = "OFFICE_VISIT_SPECIALIST"
@@ -38,7 +41,13 @@ class ContextError(ValueError):
 
 
 def assemble_context(
-    session: Session, claim: IntakeClaim, rules: RulesOutcome, plan_id: str, network: Network
+    session: Session,
+    claim: IntakeClaim,
+    rules: RulesOutcome,
+    plan_id: str,
+    network: Network,
+    lookups: PromptLookups,
+    retriever: Retriever | None,
 ) -> ContextPackage:
     curated = load_curated()
     plan = get_plan(session, plan_id)
@@ -79,7 +88,18 @@ def assemble_context(
                 line_no=line.line_no,
                 procedure_code=line.procedure_code,
                 candidate_benefits=facts,
-                criteria=[],
+                criteria=retriever.retrieve(
+                    line_query(
+                        claim,
+                        line.line_no,
+                        lookups.procedure_descriptions,
+                        lookups.icd10_descriptions,
+                    ),
+                    plan_id,
+                    line.date_of_service,
+                )
+                if retriever
+                else [],
                 rule_flags=list(outcome.flags),
             )
         )

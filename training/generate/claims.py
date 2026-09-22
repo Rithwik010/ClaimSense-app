@@ -19,6 +19,7 @@ from typing import Any
 from app.db.curated import load_curated
 from app.domain.contracts import IntakeClaim
 from app.intake.form_codec import to_form_values
+from app.rag.retrieve import Retriever
 from training.generate.common import (
     DEFAULT_SEED,
     DOS_END,
@@ -33,7 +34,7 @@ from training.generate.reference import generate_reference
 from training.generate.scenarios import GENERATOR_VERSION as SCENARIO_VERSION
 from training.generate.scenarios import Scenario, ScenarioBuilder
 
-GENERATOR_VERSION = "claims-v1"
+GENERATOR_VERSION = "claims-v2"  # v2: criterion statuses, real retrieval
 
 MODEL_PATH_MIX = {
     "approve_single": 30,
@@ -83,7 +84,7 @@ def claim_decision(labels: list[dict[str, Any]]) -> str:
 
 
 class CorpusBuilder:
-    def __init__(self, seed: int) -> None:
+    def __init__(self, seed: int, retriever: Retriever | None = None) -> None:
         curated = load_curated()
         self.curated = curated
         self.rng = random.Random(seed)
@@ -92,8 +93,8 @@ class CorpusBuilder:
         train = {p for p, x in curated.policies.items() if x.split == "TRAIN"}
         everything = set(curated.policies)
         self.builders = {
-            "A": ScenarioBuilder(seed, "A", train, train, self.reference),
-            "B": ScenarioBuilder(seed + 1, "B", everything, everything, self.reference),
+            "A": ScenarioBuilder(seed, "A", train, train, self.reference, retriever),
+            "B": ScenarioBuilder(seed + 1, "B", everything, everything, self.reference, retriever),
         }
         self.members = self.reference.members
         self.providers = self.reference.providers
@@ -334,8 +335,14 @@ def write_forms(records: list[dict[str, Any]], out_dir: Path, seed: int) -> None
         }
 
 
-def write_corpus(out_dir: Path, seed: int = DEFAULT_SEED, forms: bool = True) -> dict[str, Any]:
-    records = CorpusBuilder(seed).build()
+def write_corpus(
+    out_dir: Path,
+    seed: int = DEFAULT_SEED,
+    forms: bool = True,
+    retriever: Retriever | None = None,
+    retrieval: str = "simulated",
+) -> dict[str, Any]:
+    records = CorpusBuilder(seed, retriever).build()
     if forms:
         write_forms(records, out_dir, seed)
     auths = [a for r in records for a in r["authorizations"]]
@@ -344,6 +351,7 @@ def write_corpus(out_dir: Path, seed: int = DEFAULT_SEED, forms: bool = True) ->
     report = {
         "generator_version": GENERATOR_VERSION,
         "seed": seed,
+        "retrieval": retrieval,
         "claims": len(records),
         "authorizations_extra": len(auths),
         "by_scenario": {},
@@ -369,8 +377,14 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--out", type=Path, default=GENERATED_DIR / "claims")
     parser.add_argument("--no-forms", action="store_true")
+    parser.add_argument("--simulated-retrieval", action="store_true", help="no Qdrant (tests)")
     args = parser.parse_args()
-    report = write_corpus(args.out, args.seed, forms=not args.no_forms)
+    retriever, retrieval = None, "simulated"
+    if not args.simulated_retrieval:
+        from training.generate.decision_dataset import live_retriever
+
+        retriever, retrieval = live_retriever()
+    report = write_corpus(args.out, args.seed, not args.no_forms, retriever, retrieval)
     print(f"wrote {report['claims']} claims to {args.out}")
     print({k: v for k, v in report.items() if k.startswith("by_")})
 

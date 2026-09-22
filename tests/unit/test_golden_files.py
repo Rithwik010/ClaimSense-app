@@ -3,6 +3,7 @@ their own tasks; this checks structure, contracts, codes and arithmetic consiste
 
 import json
 import re
+from datetime import date
 from decimal import Decimal
 from functools import cache
 from pathlib import Path
@@ -251,6 +252,21 @@ def test_rag_queries() -> None:
     assert covered == set(load_curated().policies)
 
 
+def live_retriever_or_skip():  # noqa: ANN201
+    from app.core.settings import get_settings
+    from app.rag.embedding import model_files_present
+    from training.generate.decision_dataset import live_retriever
+
+    if not model_files_present(get_settings().embedding_cache_dir):
+        pytest.skip("embedding model not cached")
+    retriever, label = live_retriever()
+    try:
+        retriever.retrieve("probe", "PLN-HMO", date(2026, 11, 2))
+    except Exception as exc:  # noqa: BLE001
+        pytest.skip(f"Qdrant collection not available ({type(exc).__name__})")
+    return retriever, label
+
+
 def test_blind_review_claims_and_sheet() -> None:
     from app.domain.contracts import ContextPackage, RulesOutcome
     from app.ml.prompt import lines_to_decide
@@ -272,9 +288,14 @@ def test_blind_review_claims_and_sheet() -> None:
 
 @requires_raw
 def test_blind_review_is_reproducible() -> None:
+    """Regenerates the claims with the retrieval they were built with (the live retriever needs
+    the embedding model and Qdrant's coverage_policies collection; skipped without them)."""
     from training.generate.blind_review import build
 
-    document, sheet, _ = build()
     committed = json.loads((GOLDEN / "blind_review" / "claims.json").read_text(encoding="utf-8"))
+    if committed.get("retrieval", "simulated") == "simulated":
+        document, sheet, _ = build()
+    else:
+        document, sheet, _ = build(*live_retriever_or_skip())
     assert json.loads(json.dumps(document)) == committed
     assert sheet == (GOLDEN / "blind_review" / "review_sheet.csv").read_text(encoding="utf-8")

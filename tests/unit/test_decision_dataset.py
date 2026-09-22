@@ -79,3 +79,29 @@ def test_same_seed_same_dataset(built: dict) -> None:
     again = build_dataset(seed=99, sizes=SIZES)
     for split in SIZES:
         assert again["splits"][split][0] == built["splits"][split][0]
+
+
+def test_dataset_with_a_retriever_passes_every_check() -> None:
+    """The real-retrieval path: labels follow the retrieved criteria, and training splits never
+    retrieve test-only policies (in-memory Qdrant with the fake embedder)."""
+    from tests.unit.test_retrieval import retriever
+    from training.generate.decision_dataset import build_dataset, run_checks
+
+    built = build_dataset(
+        seed=5,
+        sizes={"train": 40, "validation": 10, "test": 30},
+        retriever=retriever(),
+        retrieval="fake",
+    )
+
+    assert run_checks(built)["problems"] == []
+    for split, (records, inputs) in built["splits"].items():
+        assert {r["metadata"]["retrieval"] for r in records} == {"fake"}
+        if split != "test":
+            retrieved = {
+                c["policy_id"]
+                for i in inputs
+                for line in i["context"]["lines"]
+                for c in line["criteria"]
+            }
+            assert not retrieved & built["test_only"]

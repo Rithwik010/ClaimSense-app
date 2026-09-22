@@ -172,6 +172,7 @@ def distribution(records: list[dict[str, Any]]) -> dict[str, Any]:
         "policies": dict(Counter(p for m in meta for p in m["policy_ids"]).most_common()),
         "template_sets": dict(Counter(m["template_id"] for m in meta).most_common()),
         "out_of_network": sum(1 for m in meta if m["network"] == "OUT_OF_NETWORK"),
+        "records_with_missed_criteria": sum(1 for m in meta if m.get("criteria_missed")),
         "lines_denied_by_rules": sum(
             1 for m in meta for label in m["line_labels"] if label["source"] == "RULE"
         ),

@@ -1,6 +1,7 @@
 {
-  "generator_version": "blind-review-v1",
+  "generator_version": "blind-review-v2",
   "seed": 7310001,
+  "retrieval": "simulated",
   "instructions": "For each line listed in review_sheet.csv, read review_view and record APPROVE, PEND or DENY, the benefit category, a reason code (DN_NOT_MEDICALLY_NECESSARY, DN_CONDITIONAL_EXCLUSION or PD_MISSING_DOCUMENTATION) and what is missing. Decide before seeing any model output, and do not open data/generated/blind_review/answer_key.json.",
   "claims": [
     {

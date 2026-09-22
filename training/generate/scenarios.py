@@ -6,8 +6,10 @@ notes, the `IntakeClaim`, the Group C rule outcome, the `ContextPackage` (plan f
 retrieval) and the target `SLMOutput`. Labels come only from the coverage policies, the billing-
 article diagnosis groups and the NCCI/MUE files (H6).
 
-Retrieval is simulated until P3.3 exists: each policy line gets its profile's criteria (at most
-RAG_TOP_K) plus distractors from other policies; office-visit lines get distractors only.
+Retrieval: with a retriever (P3.3) each line gets exactly what the live pipeline would retrieve for
+it (same query text, filters and minimum score); training splits exclude the test-only policies.
+Labels then come only from the retrieved criteria. Without a retriever (unit tests), retrieval is
+simulated: the profile's criteria plus distractors from other policies.
 """
 
 import random
@@ -35,7 +37,8 @@ from app.domain.contracts import (
     SLMLine,
     SLMOutput,
 )
-from app.ml.prompt import NOT_APPLICABLE, NOT_DOCUMENTED, age_on
+from app.ml.prompt import NOT_APPLICABLE, NOT_DOCUMENTED, PromptLookups, age_on
+from app.rag.retrieve import Retriever, line_query
 from training.generate.codebook import Codebook, load_codebook
 from training.generate.common import DEFAULT_SEED, DOS_END, DOS_START
 from training.generate.notes import (
@@ -49,7 +52,7 @@ from training.generate.notes import (
 )
 from training.generate.reference import ReferenceData, generate_reference
 
-GENERATOR_VERSION = "scenarios-v1"
+GENERATOR_VERSION = "scenarios-v2"  # v2: criterion statuses, real retrieval
 RAG_TOP_K = 3
 MIN_AGE = {
     "POL-SURG-001": 50,
@@ -140,6 +143,7 @@ class Scenario:
     authorizations: list[dict[str, Any]]
     member: dict[str, Any]
     provider: dict[str, Any]
+    criteria_missed: int = 0  # planned criteria of the covering policy that were not retrieved
 
     def metadata(self) -> dict[str, Any]:
         return {
@@ -152,6 +156,7 @@ class Scenario:
             "network": self.context.network.value,
             "line_labels": self.line_labels,
             "complexity": self.target.complexity.value if self.target else None,
+            "criteria_missed": self.criteria_missed,
         }
 
 
@@ -170,6 +175,8 @@ class ScenarioBuilder:
         policies: set[str],
         distractor_policies: set[str],
         reference: ReferenceData | None = None,
+        retriever: Retriever | None = None,
+        lookups: PromptLookups | None = None,
     ) -> None:
         self.rng = random.Random(seed)
         self.seed = seed
@@ -194,6 +201,13 @@ class ScenarioBuilder:
             for v in self.reference.visit_usage
         }
         self.auth_counter = 0
+        self.retriever = retriever
+        self.excluded_policies = frozenset(set(self.cur.policies) - set(distractor_policies))
+        self.lookups = lookups or PromptLookups(
+            icd10_descriptions=self.cb.icd10,
+            procedure_descriptions=self.cur.descriptions,
+            policy_codes={},
+        )
 
     # --- choices ---------------------------------------------------------------------------------
 
@@ -639,6 +653,13 @@ class ScenarioBuilder:
             authorizations=auths,
             member=member,
             provider=provider,
+            criteria_missed=sum(
+                len(set(line.profile.criteria) - {c.criterion_id for c in lc.criteria})
+                for line, outcome in zip(planned, rules.line_outcomes, strict=True)
+                if line.profile and outcome.outcome == "PASS"
+                for lc in context.lines
+                if lc.line_no == outcome.line_no
+            ),
         )
 
     def _rules(
@@ -878,6 +899,17 @@ class ScenarioBuilder:
             )
         return result
 
+    def _search(self, claim: IntakeClaim, line_no: int, plan_id: str) -> list[RetrievedCriterion]:
+        assert self.retriever is not None
+        query = line_query(
+            claim,
+            line_no,
+            self.lookups.procedure_descriptions,
+            self.lookups.icd10_descriptions,
+        )
+        day = claim.service_lines[line_no - 1].date_of_service
+        return self.retriever.retrieve(query, plan_id, day, self.excluded_policies)
+
     def _context(
         self,
         claim: IntakeClaim,
@@ -917,7 +949,9 @@ class ScenarioBuilder:
                     line_no=outcome.line_no,
                     procedure_code=line.code,
                     candidate_benefits=facts,
-                    criteria=self._retrieve(line, claim_policies),
+                    criteria=self._search(claim, outcome.line_no, plan_id)
+                    if self.retriever
+                    else self._retrieve(line, claim_policies),
                     rule_flags=list(outcome.flags),
                 )
             )

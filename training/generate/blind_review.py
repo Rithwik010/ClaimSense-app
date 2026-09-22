@@ -6,6 +6,9 @@ decide). The generator's labels go only to `data/generated/blind_review/answer_k
 never committed; reviewers must not open it until their sheet is complete. Deterministic: the
 test suite regenerates the claims and compares them with the committed file.
 
+Retrieval is the live retriever (as for the decision dataset), so reviewers see the criteria the
+model will see.
+
     uv run python -m training.generate.blind_review
 """
 
@@ -20,12 +23,13 @@ from typing import Any
 from app.db.curated import load_curated
 from app.domain.contracts import RulesOutcome
 from app.ml.prompt import lines_to_decide, render_user_message
+from app.rag.retrieve import Retriever
 from training.generate.common import DEFAULT_SEED, GENERATED_DIR, write_json
 from training.generate.decision_dataset import SCENARIO_WEIGHTS, prompt_lookups
 from training.generate.reference import generate_reference
 from training.generate.scenarios import ScenarioBuilder, ScenarioError
 
-GENERATOR_VERSION = "blind-review-v1"
+GENERATOR_VERSION = "blind-review-v2"
 BLIND_SEED = 7_310_001
 CLAIM_COUNT = 30
 GOLDEN_DIR = Path(__file__).resolve().parents[2] / "tests" / "golden" / "blind_review"
@@ -42,13 +46,21 @@ SHEET_COLUMNS = [
 ]
 
 
-def build() -> tuple[dict[str, Any], str, dict[str, Any]]:
+def build(
+    retriever: Retriever | None = None, retrieval: str = "simulated"
+) -> tuple[dict[str, Any], str, dict[str, Any]]:
     curated = load_curated()
     policies = set(curated.policies)
-    builder = ScenarioBuilder(
-        BLIND_SEED, "B", policies, policies, generate_reference(DEFAULT_SEED)[0]
-    )
     lookups = prompt_lookups()
+    builder = ScenarioBuilder(
+        BLIND_SEED,
+        "B",
+        policies,
+        policies,
+        generate_reference(DEFAULT_SEED)[0],
+        retriever,
+        lookups,
+    )
     rng = random.Random(BLIND_SEED)
     types, weights = list(SCENARIO_WEIGHTS), list(SCENARIO_WEIGHTS.values())
     claims, key = [], {}
@@ -84,6 +96,7 @@ def build() -> tuple[dict[str, Any], str, dict[str, Any]]:
     document = {
         "generator_version": GENERATOR_VERSION,
         "seed": BLIND_SEED,
+        "retrieval": retrieval,
         "instructions": (
             "For each line listed in review_sheet.csv, read review_view and record APPROVE, PEND "
             "or DENY, the benefit category, a reason code (DN_NOT_MEDICALLY_NECESSARY, "
@@ -96,8 +109,10 @@ def build() -> tuple[dict[str, Any], str, dict[str, Any]]:
     return document, sheet.getvalue(), key
 
 
-def write(golden_dir: Path, key_path: Path) -> None:
-    document, sheet, key = build()
+def write(golden_dir: Path, key_path: Path, simulated: bool = False) -> None:
+    from training.generate.decision_dataset import live_retriever
+
+    document, sheet, key = build() if simulated else build(*live_retriever())
     golden_dir.mkdir(parents=True, exist_ok=True)
     (golden_dir / "claims.json").write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
     (golden_dir / "review_sheet.csv").write_text(sheet, encoding="utf-8")
@@ -110,8 +125,9 @@ def main() -> None:
     parser.add_argument(
         "--key", type=Path, default=GENERATED_DIR / "blind_review" / "answer_key.json"
     )
+    parser.add_argument("--simulated-retrieval", action="store_true", help="no Qdrant (tests)")
     args = parser.parse_args()
-    write(args.golden_dir, args.key)
+    write(args.golden_dir, args.key, args.simulated_retrieval)
     print(f"wrote {CLAIM_COUNT} blind-review claims to {args.golden_dir}; key at {args.key}")
 
 
