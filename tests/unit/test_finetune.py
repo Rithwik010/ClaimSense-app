@@ -117,4 +117,13 @@ def test_kaggle_folder_needs_real_retrieval_and_is_private(tmp_path) -> None:  #
     assert metadata["isPrivate"] is True and metadata["id"] == f"someone/{DATASET_SLUG}"
     assert {p.name for p in (dataset / "finetune").iterdir()} == {"train.py", "data.py"}
     notebook = json.loads((tmp_path / "kaggle" / "claimsense-finetune.ipynb").read_text())
-    assert any("train.py" in "".join(c["source"]) for c in notebook["cells"])
+    sources = ["".join(c["source"]) for c in notebook["cells"] if c["cell_type"] == "code"]
+    assert any("glob.glob" in s and "train.jsonl" in s for s in sources)  # finds any mount path
+    assert any(s.startswith("!python {TRAIN} --data {DATA}") for s in sources)
+    namespace: dict = {}
+    cell = next(s for s in sources if "SMOKE = True" in s)
+    exec(cell[cell.index("\nSMOKE = True") :], namespace)  # the smoke-test settings only
+    assert namespace["EXTRA"] == "--limit 50 --epochs 1 --no-gguf"
+
+    renamed = prepare(decision, tmp_path / "kaggle", "someone", slug="claimsense")
+    assert json.loads((renamed / "dataset-metadata.json").read_text())["id"] == "someone/claimsense"
