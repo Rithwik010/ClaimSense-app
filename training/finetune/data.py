@@ -28,7 +28,8 @@ CONFIG: dict[str, Any] = {
     "gradient_accumulation_steps": 8,
     "learning_rate": 2e-4,
     "num_train_epochs": 2,
-    "warmup_ratio": 0.03,
+    "warmup_ratio": 0.03,  # converted to warmup steps
+    "precision": "bf16 if supported, else float32 (Gemma 4 does not train in fp16)",
     "weight_decay": 0.01,
     "lr_scheduler_type": "linear",
     "optim": "adamw_8bit",
@@ -81,6 +82,25 @@ def turn_markers(render: Render) -> tuple[str, str]:
     if not instruction_part.strip() or not response_part.strip():
         raise ValueError("could not find the turn markers in the chat template")
     return instruction_part, response_part
+
+
+def text_tokenizer(tokenizer: Any) -> Any:
+    """Gemma 4 loads with a multimodal processor; its text tokenizer counts tokens."""
+    return getattr(tokenizer, "tokenizer", tokenizer)
+
+
+def token_count(tokenizer: Any, text: str) -> int:
+    ids = text_tokenizer(tokenizer)(text, add_special_tokens=True)["input_ids"]
+    if ids and isinstance(ids[0], list):  # a batch of one
+        ids = ids[0]
+    return len(ids)
+
+
+def warmup_steps(records: int, epochs: float, ratio: float = 0.03) -> int:
+    steps_per_epoch = -(
+        -records // (CONFIG["per_device_train_batch_size"] * CONFIG["gradient_accumulation_steps"])
+    )
+    return max(1, round(steps_per_epoch * epochs * ratio))
 
 
 def length_report(lengths: list[int], max_len: int) -> dict[str, Any]:

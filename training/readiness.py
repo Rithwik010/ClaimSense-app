@@ -49,7 +49,7 @@ PARITY_SAMPLE = 25
 MAX_MISSED_SHARE = 0.10
 
 TEAM_ITEMS = [
-    ("Contracts approved and frozen", "DECISIONS.md 2026-09-22 (done)"),
+    ("Contracts approved and frozen", "DECISIONS.md 2026-09-22"),
     ("Prompt decision_v2 read and accepted", "DECISIONS.md"),
     (
         "3 policies spot-checked against their LCDs (criteria and which are conditional)",
@@ -323,7 +323,12 @@ def main() -> int:
         lines.append(f"- [{status}] {name}" + (f": {detail}" if detail else ""))
         lines += [f"    - {p}" for p in problems[:10]]
     lines += ["", "Team items (record in the place named):", ""]
-    lines += [f"- [ ] {item} ({where})" for item, where in TEAM_ITEMS]
+    decisions = (ROOT / "DECISIONS.md").read_text(encoding="utf-8")
+    lines += [
+        f"- [{'x' if item.startswith('Contracts') and 'Contracts approved' in decisions else ' '}] "
+        f"{item} ({where})"
+        for item, where in TEAM_ITEMS
+    ]
     lines += ["", "Blind review agreement with the labels:", ""]
     lines.append(json.dumps(agreement, indent=2) if agreement else "- sheet not filled in yet")
     report = "\n".join(lines) + "\n"

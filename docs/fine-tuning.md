@@ -6,7 +6,7 @@ Start only when `docs/training-readiness.md` is complete.
 ## 1. Prepare the upload (laptop)
 
 ```bash
-uv run python -m training.finetune.prepare_kaggle --kaggle-user <kaggle-username>
+uv run python -m training.finetune.prepare_kaggle --kaggle-user manideep3183 --slug claimsense
 ```
 
 This writes `data/generated/kaggle/claimsense-decision/` (train, validation and test records,
@@ -16,11 +16,12 @@ retrieval.
 
 ## 2. Upload (Kaggle website)
 
-1. Datasets → New dataset → upload the `claimsense-decision` folder. Set visibility to
-   **Private**. The records contain CPT codes; never make the dataset public.
+1. Datasets → New dataset → upload the contents of the `claimsense-decision` folder (the team's
+   dataset is `manideep3183/claimsense`). Set visibility to **Private**. The records contain CPT
+   codes; never make the dataset public.
 2. Code → New notebook → File → Import notebook → `claimsense-finetune.ipynb`.
-3. Notebook settings: Accelerator **GPU T4** (or P100), Internet **on**, add the
-   `claimsense-decision` dataset. Keep the notebook private.
+3. Notebook settings: Accelerator **GPU T4** (or P100), Internet **on**, Add Input → the private
+   dataset. Keep the notebook private. The notebook finds the dataset wherever Kaggle mounts it.
 
 ## 3. Train (Kaggle notebook)
 
@@ -35,8 +36,9 @@ Run all cells. The script:
   validation loss
 - saves `adapter/`, `gguf/` (Q4_K_M), `training-log.json`, `config.json`, `example.txt`
 
-Expect roughly 1–3 hours on a T4. For a quick smoke test first, add `--limit 50 --epochs 1
---no-gguf` to the command in the notebook.
+Run it first with `SMOKE = True` (50 records, 1 epoch, no GGUF; a few minutes) to check Unsloth,
+Gemma 4 and the chat template on Kaggle; then set `SMOKE = False` for the real run (roughly 1–3
+hours on a T4).
 
 ## 4. Serve (laptop)
 
