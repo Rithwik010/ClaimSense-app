@@ -7,8 +7,8 @@ import pytest
 
 from app.db import raw
 from app.db.curated import load_curated
-from app.domain.contracts import LineDecision, SLMOutput
-from app.ml.prompt import NOT_DOCUMENTED, lines_to_decide
+from app.domain.contracts import CriterionStatus, LineDecision, SLMOutput
+from app.ml.prompt import NOT_APPLICABLE, NOT_DOCUMENTED, lines_to_decide
 from training.generate.notes import LEAKAGE
 
 pytestmark = pytest.mark.skipif(not raw.raw_available(), reason="data/raw/ not present")
@@ -63,18 +63,24 @@ def check(scenario) -> None:  # noqa: ANN001
         assert line.benefit_category in {
             f.benefit_category for f in line_context.candidate_benefits
         }
+        assert [r.criterion_id for r in line.criteria] == list(retrieved)  # every one, in order
         for result in line.criteria:
-            assert result.criterion_id in retrieved
-            assert (
-                code in curated.policies[retrieved[result.criterion_id].policy_id].procedure_codes
-            )
-            assert result.evidence == NOT_DOCUMENTED or result.evidence in claim.clinical_notes
-            if result.met:
-                assert result.evidence != NOT_DOCUMENTED
+            policy = curated.policies[retrieved[result.criterion_id].policy_id]
+            if code not in policy.procedure_codes:
+                assert result.status is CriterionStatus.NOT_APPLICABLE
+            if result.status is CriterionStatus.NOT_APPLICABLE:
+                assert result.evidence == NOT_APPLICABLE
+            elif result.status is CriterionStatus.NOT_DOCUMENTED:
+                assert result.evidence == NOT_DOCUMENTED
+            else:
+                assert result.evidence in claim.clinical_notes
         assert set(line.reasons) <= MODEL_REASONS
         if line.decision == LineDecision.APPROVE:
             assert not line.reasons and not line.missing_information
-            assert all(c.met for c in line.criteria)
+            assert {c.status for c in line.criteria} <= {
+                CriterionStatus.MET,
+                CriterionStatus.NOT_APPLICABLE,
+            }
             service = claim.service_lines[line.line_no - 1]
             diagnoses = [claim.diagnoses[ord(p) - ord("A")] for p in service.diagnosis_pointers]
             assert codebook.supported(code, diagnoses)

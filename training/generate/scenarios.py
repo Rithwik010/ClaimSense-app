@@ -22,6 +22,7 @@ from app.domain.contracts import (
     ContextPackage,
     CostShareRule,
     CriterionResult,
+    CriterionStatus,
     IntakeClaim,
     LineContext,
     LineDecision,
@@ -34,7 +35,7 @@ from app.domain.contracts import (
     SLMLine,
     SLMOutput,
 )
-from app.ml.prompt import NOT_DOCUMENTED, age_on
+from app.ml.prompt import NOT_APPLICABLE, NOT_DOCUMENTED, age_on
 from training.generate.codebook import Codebook, load_codebook
 from training.generate.common import DEFAULT_SEED, DOS_END, DOS_START
 from training.generate.notes import (
@@ -83,6 +84,11 @@ COLON_SEGMENTS = (
     "cecum",
 )
 LINE_MODES = ("approve", "pend", "deny_criterion", "deny_dx")
+STATE_STATUS = {  # scenario state of a criterion -> the status the model should give it
+    "met": CriterionStatus.MET,
+    "not_met": CriterionStatus.NOT_MET,
+    "missing": CriterionStatus.NOT_DOCUMENTED,
+}
 MODE_WEIGHTS = (50, 20, 15, 15)
 
 SCENARIO_TYPES = (
@@ -932,61 +938,57 @@ class ScenarioBuilder:
         evidence: dict[tuple[str, str], str],
         oon: bool,
     ) -> SLMOutput:
+        """Labels from what the model is shown (prompt decision_v2): every retrieved criterion gets
+        a status, and the decision follows only from the criteria that were retrieved."""
         by_line = {c.line_no: c for c in context.lines}
         slm_lines = []
         for outcome, line in zip(rules.line_outcomes, planned, strict=True):
             if outcome.outcome != "PASS":
                 continue
             line_context = by_line[outcome.line_no]
-            category = self._category(line, line_context)
-            if line.profile is None:
-                slm_lines.append(
-                    SLMLine(
-                        line_no=outcome.line_no,
-                        decision=LineDecision.APPROVE,
-                        benefit_category=category,
-                        criteria=[],
-                        reasons=[],
-                        missing_information=[],
-                    )
-                )
-                continue
             profile = line.profile
+            # On an office visit, `unrelated` is just the visit's condition; on a policy line it is
+            # a diagnosis that does not support the procedure (DENY).
+            dx_mismatch = profile is not None and line.unrelated is not None
+            applicable = [
+                c.criterion_id
+                for c in line_context.criteria
+                if profile is not None and c.criterion_id in profile.criteria
+            ]
             results = []
             for retrieved in line_context.criteria:
                 criterion_id = retrieved.criterion_id
-                if criterion_id not in profile.criteria:
-                    continue
-                if line.unrelated:
-                    first = next(
-                        c.criterion_id
-                        for c in line_context.criteria
-                        if c.criterion_id in profile.criteria
+                if criterion_id not in applicable:
+                    status, text = CriterionStatus.NOT_APPLICABLE, NOT_APPLICABLE
+                elif dx_mismatch:  # the first applicable criterion fails on the diagnosis
+                    assert profile is not None
+                    status, text = (
+                        (CriterionStatus.NOT_MET, evidence[(profile.key, "unrelated")])
+                        if criterion_id == applicable[0]
+                        else (CriterionStatus.NOT_DOCUMENTED, NOT_DOCUMENTED)
                     )
+                else:
+                    assert profile is not None
+                    status = STATE_STATUS[line.states[criterion_id]]
                     text = (
-                        evidence[(profile.key, "unrelated")]
-                        if criterion_id == first
-                        else NOT_DOCUMENTED
+                        NOT_DOCUMENTED
+                        if status is CriterionStatus.NOT_DOCUMENTED
+                        else evidence[(profile.key, criterion_id)]
                     )
-                    results.append(
-                        CriterionResult(criterion_id=criterion_id, met=False, evidence=text)
-                    )
-                    continue
-                state = line.states[criterion_id]
-                text = evidence.get((profile.key, criterion_id), NOT_DOCUMENTED)
                 results.append(
-                    CriterionResult(criterion_id=criterion_id, met=state == "met", evidence=text)
+                    CriterionResult(criterion_id=criterion_id, status=status, evidence=text)
                 )
-            kinds = {c: self.t.criteria[c].kind for c in profile.criteria}
-            missing = [
-                self.t.criteria[c].missing for c in profile.criteria if line.states[c] == "missing"
-            ]
-            if "NCCI_BYPASS" in outcome.flags and line.bypass == "missing":
+            shown = {} if dx_mismatch else {c: line.states[c] for c in applicable}
+            missing = [self.t.criteria[c].missing for c, s in shown.items() if s == "missing"]
+            if "NCCI_BYPASS" in outcome.flags and line.bypass == "missing" and profile:
                 kind = "wound" if profile.policy_id == "POL-WOUND-001" else "colon"
                 missing.append(self.t.distinct[kind]["missing"])
-            if any(s == "not_met" and kinds[c] == "exclusion" for c, s in line.states.items()):
+            exclusion = any(
+                s == "not_met" and self.t.criteria[c].kind == "exclusion" for c, s in shown.items()
+            )
+            if exclusion:
                 decision, reasons, missing = LineDecision.DENY, ["DN_CONDITIONAL_EXCLUSION"], []
-            elif line.unrelated or any(s == "not_met" for s in line.states.values()):
+            elif dx_mismatch or any(s == "not_met" for s in shown.values()):
                 decision, reasons, missing = LineDecision.DENY, ["DN_NOT_MEDICALLY_NECESSARY"], []
             elif missing:
                 decision, reasons = LineDecision.PEND, ["PD_MISSING_DOCUMENTATION"]
@@ -996,7 +998,7 @@ class ScenarioBuilder:
                 SLMLine(
                     line_no=outcome.line_no,
                     decision=decision,
-                    benefit_category=category,
+                    benefit_category=self._category(line, line_context),
                     criteria=results,
                     reasons=reasons,
                     missing_information=missing,
@@ -1015,7 +1017,11 @@ class ScenarioBuilder:
     def _complexity(slm_lines: list[SLMLine], rules: RulesOutcome, oon: bool) -> Complexity:
         decisions = {line.decision.value for line in slm_lines}
         decisions |= {"DENY" for o in rules.line_outcomes if o.outcome == "DENY"}
-        with_criteria = sum(1 for line in slm_lines if line.criteria)
+        with_criteria = sum(
+            1
+            for line in slm_lines
+            if any(c.status is not CriterionStatus.NOT_APPLICABLE for c in line.criteria)
+        )
         bypass = any("NCCI_BYPASS" in o.flags for o in rules.line_outcomes)
         exclusion = any("DN_CONDITIONAL_EXCLUSION" in line.reasons for line in slm_lines)
         if bypass or exclusion or len(decisions) > 1 or with_criteria >= 3:

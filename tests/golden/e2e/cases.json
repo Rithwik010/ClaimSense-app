@@ -1745,7 +1745,7 @@
               "criteria": [
                 {
                   "criterion_id": "POL-IMG-001.c1",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Symptoms written on the order (neck pain spreading into the arm with numbness) are the same ones described in today's exam."
                 }
               ],
@@ -2001,17 +2001,17 @@
               "criteria": [
                 {
                   "criterion_id": "POL-SURG-003.c1",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "R GSV varicosities w/ aching, swelling, heaviness; duplex: reflux."
                 },
                 {
                   "criterion_id": "POL-SURG-003.c2",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Sx persist after 3 mo compression, elevation, exercise."
                 },
                 {
                   "criterion_id": "POL-SURG-003.c3",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Treating GSV trunk, not spider veins."
                 }
               ],
@@ -2267,17 +2267,17 @@
               "criteria": [
                 {
                   "criterion_id": "POL-SURG-004.c2",
-                  "met": false,
+                  "status": "NOT_MET",
                   "evidence": "The patient reports worry, restlessness and poor sleep for several months."
                 },
                 {
                   "criterion_id": "POL-SURG-004.c3",
-                  "met": false,
+                  "status": "NOT_DOCUMENTED",
                   "evidence": "Not documented in the clinical notes."
                 },
                 {
                   "criterion_id": "POL-SURG-004.c4",
-                  "met": false,
+                  "status": "NOT_DOCUMENTED",
                   "evidence": "Not documented in the clinical notes."
                 }
               ],
@@ -2533,17 +2533,17 @@
               "criteria": [
                 {
                   "criterion_id": "POL-SURG-004.c2",
-                  "met": false,
+                  "status": "NOT_MET",
                   "evidence": "The patient has no vision complaints."
                 },
                 {
                   "criterion_id": "POL-SURG-004.c3",
-                  "met": false,
+                  "status": "NOT_MET",
                   "evidence": "Visual fields are full, with only 5 degrees of upper loss."
                 },
                 {
                   "criterion_id": "POL-SURG-004.c4",
-                  "met": false,
+                  "status": "NOT_MET",
                   "evidence": "The patient wants surgery to look less tired."
                 }
               ],
@@ -2811,7 +2811,7 @@
               "criteria": [
                 {
                   "criterion_id": "POL-CAR-002.c1",
-                  "met": false,
+                  "status": "NOT_MET",
                   "evidence": "There are no palpitations, fainting, dizziness or other rhythm symptoms; monitoring is requested before a routine sports physical."
                 }
               ],
@@ -3079,12 +3079,12 @@
               "criteria": [
                 {
                   "criterion_id": "POL-SURG-001.c1",
-                  "met": false,
+                  "status": "NOT_DOCUMENTED",
                   "evidence": "Not documented in the clinical notes."
                 },
                 {
                   "criterion_id": "POL-SURG-001.c2",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "The patient describes daily problems caused by the cataract, not only a finding on exam."
                 }
               ],
@@ -3347,7 +3347,7 @@
               "criteria": [
                 {
                   "criterion_id": "POL-SURG-002.c1",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "The patient has black, tarry stools."
                 }
               ],
@@ -3361,7 +3361,7 @@
               "criteria": [
                 {
                   "criterion_id": "POL-SURG-002.c1",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "The patient has black, tarry stools."
                 }
               ],
@@ -3706,17 +3706,17 @@
               "criteria": [
                 {
                   "criterion_id": "POL-REHAB-001.c1",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Exercises are progressed each session by the therapist based on the patient's response."
                 },
                 {
                   "criterion_id": "POL-REHAB-001.c2",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "A written plan of care from the evaluation sets goals: climb stairs without pain."
                 },
                 {
                   "criterion_id": "POL-REHAB-001.c3",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Function improved from 32 to 66 on the lower extremity function scale over 3 weeks, and more gains are expected."
                 }
               ],
@@ -4027,12 +4027,12 @@
               "criteria": [
                 {
                   "criterion_id": "POL-CAR-001.c1",
-                  "met": false,
+                  "status": "NOT_MET",
                   "evidence": "Blood pressure is high, but there are no heart symptoms and the heart exam is normal."
                 },
                 {
                   "criterion_id": "POL-CAR-001.c3",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "A treadmill stress test last month did not give a clear answer, and chest pressure with exertion continues."
                 }
               ],
@@ -4048,12 +4048,12 @@
               "criteria": [
                 {
                   "criterion_id": "POL-CAR-002.c2",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Monitoring is to look for a return of the irregular rhythm 11 weeks after a catheter ablation."
                 },
                 {
                   "criterion_id": "POL-CAR-002.c3",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "The episodes happen only about once every 10 days, too rarely to catch on a 48-hour recording."
                 }
               ],
@@ -4348,12 +4348,12 @@
               "criteria": [
                 {
                   "criterion_id": "POL-DX-003.c1",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Sneezing, itchy eyes and congestion return every summer, worse outdoors, pointing to an allergy to airborne allergens."
                 },
                 {
                   "criterion_id": "POL-DX-003.c3",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "The 37 allergens tested were chosen from the patient's exposures at home and work."
                 }
               ],
@@ -4610,12 +4610,12 @@
               "criteria": [
                 {
                   "criterion_id": "POL-CAR-002.c2",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Monitoring is to look for a return of the irregular rhythm 10 weeks after a catheter ablation."
                 },
                 {
                   "criterion_id": "POL-CAR-002.c3",
-                  "met": false,
+                  "status": "NOT_MET",
                   "evidence": "The episodes happen several times every day."
                 }
               ],
@@ -4876,7 +4876,7 @@
               "criteria": [
                 {
                   "criterion_id": "POL-SURG-002.c2",
-                  "met": false,
+                  "status": "NOT_DOCUMENTED",
                   "evidence": "Not documented in the clinical notes."
                 }
               ],
@@ -5149,22 +5149,22 @@
               "criteria": [
                 {
                   "criterion_id": "POL-SURG-004.c2",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "The patient says the eyelids block the upper vision, making reading and driving hard."
                 },
                 {
                   "criterion_id": "POL-SURG-004.c3",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Visual field testing with the lids taped up improves the upper field by 19 degrees."
                 },
                 {
                   "criterion_id": "POL-SURG-004.c4",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Surgery is to restore the upper field of vision, not to change appearance."
                 },
                 {
                   "criterion_id": "POL-ZZZ-001.c9",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "invented"
                 }
               ],
@@ -5909,12 +5909,12 @@
               "criteria": [
                 {
                   "criterion_id": "POL-IMG-001.c1",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Symptoms written on the order (daily headaches with nausea) are the same ones described in today's exam."
                 },
                 {
                   "criterion_id": "POL-IMG-001.c2",
-                  "met": true,
+                  "status": "MET",
                   "evidence": "Headaches have continued for 6 weeks without relief from sumatriptan, and exam shows slurred speech."
                 }
               ],

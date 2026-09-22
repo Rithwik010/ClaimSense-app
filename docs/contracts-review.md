@@ -1,7 +1,8 @@
 # Contracts review (task P1.4)
 
-`app/domain/contracts.py` is the draft for team review. After approval it is frozen (H11): later
-changes need a proposal and a `DECISIONS.md` entry.
+**Status: approved by the team on 2026-09-22 and frozen** (`DECISIONS.md`). Later changes need a
+proposal and a `DECISIONS.md` entry (H11). Changing the model output or the context shown to the
+model means regenerating the decision dataset and retraining.
 
 ## What to check (about 15 minutes)
 
@@ -23,6 +24,7 @@ changes need a proposal and a `DECISIONS.md` entry.
 | `RulesOutcome.line_outcomes` | Typed `LineRuleOutcome` with reason codes and flags (e.g. `NCCI_BYPASS`) | Line flags reach the model and the explanation |
 | `LineAmounts`, `CostBreakdown` | Every amount field ends in `_cents` | Makes the unit explicit (H2) |
 | `DecisionRecord` | Added `output_errors`, `line_decisions` (who decided each line), `review` | Needed for explanations and review |
+| `CriterionResult` | `status` (MET / NOT_MET / NOT_DOCUMENTED / NOT_APPLICABLE) instead of `met` true/false; added at approval | Retrieved criteria that do not apply to the claim, and "not documented" no longer depends on the evidence text |
 
 ## Validation built into the contracts
 

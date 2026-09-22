@@ -1,4 +1,5 @@
-"""Deterministic validation of the model output (§8.5; DECISIONS.md D3): every failure path."""
+"""Deterministic validation of the model output (§8.5; DECISIONS.md D3 and 2026-09-22): every
+failure path."""
 
 import json
 from datetime import date
@@ -89,8 +90,12 @@ def answer() -> dict:
                 "decision": "PEND",
                 "benefit_category": "ADVANCED_IMAGING",
                 "criteria": [
-                    {"criterion_id": "POL-IMG-001.c1", "met": True, "evidence": "Seen."},
-                    {"criterion_id": "POL-IMG-001.c2", "met": False, "evidence": "Not documented."},
+                    {"criterion_id": "POL-IMG-001.c1", "status": "MET", "evidence": "Seen."},
+                    {
+                        "criterion_id": "POL-IMG-001.c2",
+                        "status": "NOT_DOCUMENTED",
+                        "evidence": "Not documented in the clinical notes.",
+                    },
                 ],
                 "reasons": ["PD_MISSING_DOCUMENTATION"],
                 "missing_information": ["Duration of symptoms"],
@@ -162,10 +167,10 @@ def test_line_denied_by_rules_must_not_be_decided() -> None:
 def test_criterion_not_retrieved_for_the_line_is_invalid() -> None:
     payload = answer()
     payload["lines"][0]["criteria"] = [
-        {"criterion_id": "POL-IMG-001.c1", "met": True, "evidence": "x"}  # retrieved for line 2
+        {"criterion_id": "POL-IMG-001.c1", "status": "MET", "evidence": "x"}  # line 2's
     ]
     payload["lines"][1]["criteria"].append(
-        {"criterion_id": "POL-ZZZ-001.c9", "met": True, "evidence": "invented"}
+        {"criterion_id": "POL-ZZZ-001.c9", "status": "MET", "evidence": "invented"}
     )
 
     assert run(payload).errors == (
@@ -197,3 +202,36 @@ def test_pend_needs_missing_information() -> None:
     payload["lines"][1]["missing_information"] = []
 
     assert run(payload).errors == ("line 2: PEND needs the missing information",)
+
+
+def test_every_retrieved_criterion_must_be_listed() -> None:
+    payload = answer()
+    payload["lines"][1]["criteria"].pop()
+
+    assert run(payload).errors == ("line 2: criterion POL-IMG-001.c2 is missing from the output",)
+
+
+def test_a_criterion_listed_twice_is_invalid() -> None:
+    payload = answer()
+    payload["lines"][1]["criteria"].append(payload["lines"][1]["criteria"][0])
+
+    assert run(payload).errors == ("line 2: criterion POL-IMG-001.c1 appears 2 times",)
+
+
+@pytest.mark.parametrize("status", ["NOT_MET", "NOT_DOCUMENTED"])
+def test_approve_cannot_have_unmet_or_undocumented_criteria(status: str) -> None:
+    payload = answer()
+    line = payload["lines"][1]
+    line.update(decision="APPROVE", reasons=[], missing_information=[])
+    line["criteria"][1]["status"] = status
+
+    assert run(payload).errors == (f"line 2: APPROVE with criterion POL-IMG-001.c2 {status}",)
+
+
+def test_not_applicable_criteria_allow_approval() -> None:
+    payload = answer()
+    line = payload["lines"][1]
+    line.update(decision="APPROVE", reasons=[], missing_information=[])
+    line["criteria"][1].update(status="NOT_APPLICABLE", evidence="Does not apply to this service.")
+
+    assert run(payload).valid

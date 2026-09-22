@@ -125,7 +125,7 @@ def show_claim(http: httpx.Client, claim_id: str) -> None:
             {
                 "line": line["line_no"],
                 "criterion": c["criterion_id"],
-                "met": c["met"],
+                "status": c["status"],
                 "evidence": c["evidence"],
             }
             for line in output["lines"]

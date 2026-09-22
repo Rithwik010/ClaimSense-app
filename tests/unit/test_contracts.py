@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.domain.contracts import (
+    CriterionStatus,
     IntakeClaim,
     ReviewAction,
     SLMOutput,
@@ -201,11 +202,23 @@ def test_slm_output_rejects_money_fields() -> None:
 
 
 def test_criterion_ids_must_look_like_policy_criteria() -> None:
-    bad = [{"criterion_id": "c1", "met": True, "evidence": "notes"}]
+    bad = [{"criterion_id": "c1", "status": "MET", "evidence": "notes"}]
     with pytest.raises(ValidationError):
         SLMOutput.model_validate(slm_output(criteria=bad))
-    good = [{"criterion_id": "POL-IMG-001.c2", "met": True, "evidence": "notes"}]
+    good = [{"criterion_id": "POL-IMG-001.c2", "status": "MET", "evidence": "notes"}]
     SLMOutput.model_validate(slm_output(criteria=good))
+
+
+def test_criterion_status_has_four_values_and_no_boolean() -> None:
+    assert [s.value for s in CriterionStatus] == [
+        "MET",
+        "NOT_MET",
+        "NOT_DOCUMENTED",
+        "NOT_APPLICABLE",
+    ]
+    old = [{"criterion_id": "POL-IMG-001.c2", "met": True, "evidence": "notes"}]
+    with pytest.raises(ValidationError):
+        SLMOutput.model_validate(slm_output(criteria=old))
 
 
 # --- Review action -----------------------------------------------------------------------------

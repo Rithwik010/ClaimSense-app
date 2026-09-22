@@ -66,7 +66,7 @@ def test_leakage_and_label_errors_are_caught(built: dict) -> None:
     wrong = copy.deepcopy(record["messages"])
     target = json.loads(wrong[-1]["content"])
     target["lines"][0]["criteria"].append(
-        {"criterion_id": "POL-ZZZ-999.c1", "met": True, "evidence": "x"}
+        {"criterion_id": "POL-ZZZ-999.c1", "status": "MET", "evidence": "x"}
     )
     wrong[-1]["content"] = json.dumps(target)
     problems = check_record(record_inputs, wrong, curated)
