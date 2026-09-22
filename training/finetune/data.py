@@ -103,6 +103,12 @@ def warmup_steps(records: int, epochs: float, ratio: float = 0.03) -> int:
     return max(1, round(steps_per_epoch * epochs * ratio))
 
 
+def quantized_files(paths: list[Path], quantization: str) -> list[Path]:
+    """The final GGUF files among everything the export wrote (not the 16-bit intermediate)."""
+    wanted = quantization.lower().replace("-", "_")
+    return sorted(p for p in paths if p.suffix == ".gguf" and wanted in p.name.lower())
+
+
 def length_report(lengths: list[int], max_len: int) -> dict[str, Any]:
     ordered = sorted(lengths)
     return {

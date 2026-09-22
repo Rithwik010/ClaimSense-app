@@ -9,6 +9,7 @@ import pytest
 from training.finetune.data import (
     CONFIG,
     length_report,
+    quantized_files,
     supports_system_role,
     to_chat,
     token_count,
@@ -156,3 +157,17 @@ def test_token_count_uses_the_text_tokenizer_of_a_processor() -> None:
 def test_warmup_steps_replace_the_ratio() -> None:
     assert warmup_steps(2000, 2) == 15  # 250 steps per epoch x 2 epochs x 3%
     assert warmup_steps(50, 1) == 1
+
+
+def test_only_the_final_quantized_gguf_is_kept(tmp_path) -> None:  # noqa: ANN001
+    from pathlib import Path
+
+    written = [
+        Path("work/model-00001-of-00002.safetensors"),
+        Path("work_gguf/gemma-4-e2b-it.F16.gguf"),
+        Path("work_gguf/gemma-4-e2b-it.Q4_K_M.gguf"),
+        Path("work_gguf/config.json"),
+    ]
+
+    assert quantized_files(written, "q4_k_m") == [Path("work_gguf/gemma-4-e2b-it.Q4_K_M.gguf")]
+    assert quantized_files(written[:2], "q4_k_m") == []
