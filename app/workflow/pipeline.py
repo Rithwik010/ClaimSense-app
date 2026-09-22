@@ -260,7 +260,7 @@ def _calculate(
         raise PipelineError(str(exc)) from exc
 
 
-def _prompt_lookups(session: Session, claim: IntakeClaim) -> PromptLookups:
+def prompt_lookups(session: Session, claim: IntakeClaim) -> PromptLookups:
     first_day = min(line.date_of_service for line in claim.service_lines)
     codes = sorted({line.procedure_code for line in claim.service_lines})
     return PromptLookups(
@@ -330,10 +330,10 @@ def process_claim(
         if lookups.is_in_network(session, claim.billing_npi, member.plan_id)
         else Network.OUT_OF_NETWORK
     )
-    prompt_lookups = _prompt_lookups(session, claim)
+    claim_lookups = prompt_lookups(session, claim)
     try:
         context = assemble_context(
-            session, claim, rules, member.plan_id, network, prompt_lookups, retriever
+            session, claim, rules, member.plan_id, network, claim_lookups, retriever
         )
     except ContextError as exc:
         raise PipelineError(str(exc)) from exc
@@ -341,7 +341,7 @@ def process_claim(
         session, claim_id, EventType.CONTEXT_ASSEMBLED, _context_payload(context), versions
     )
 
-    user_message = render_user_message(claim, rules, context, prompt_lookups)
+    user_message = render_user_message(claim, rules, context, claim_lookups)
     model_started = time.perf_counter()
     text = model.complete(system_prompt(), user_message)
     model_ms = round((time.perf_counter() - model_started) * 1000, 1)

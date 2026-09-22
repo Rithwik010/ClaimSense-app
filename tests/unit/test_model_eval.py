@@ -1,0 +1,82 @@
+"""Model evaluation (P4.2 / P4.4) on a small generated test split with stub models.
+Skipped when data/raw/ is absent (CI)."""
+
+import json
+
+import pytest
+
+from app.db import raw
+
+pytestmark = pytest.mark.skipif(not raw.raw_available(), reason="data/raw/ not present")
+
+
+class Answers:
+    """Answers each record with its target (perfect) or with fixed text."""
+
+    def __init__(self, targets: dict[str, str] | None = None, text: str = "") -> None:
+        self.name = "stub"
+        self.targets = targets or {}
+        self.text = text
+        self.calls = 0
+
+    def complete(self, system: str, user: str) -> str:
+        self.calls += 1
+        return self.targets.get(user, self.text)
+
+
+@pytest.fixture(scope="module")
+def dataset(tmp_path_factory) -> tuple:  # noqa: ANN001
+    from training.generate.common import write_jsonl
+    from training.generate.decision_dataset import build_dataset
+
+    out = tmp_path_factory.mktemp("decision")
+    built = build_dataset(seed=3, sizes={"train": 3, "validation": 3, "test": 24})
+    records, inputs = built["splits"]["test"]
+    write_jsonl(out / "test.jsonl", records)
+    write_jsonl(out / "test_inputs.jsonl", inputs)
+    (out / "summary.json").write_text(json.dumps({"generator_version": "t", "seed": 3}))
+    targets = {r["messages"][1]["content"]: r["messages"][2]["content"] for r in records}
+    return out, targets, len(records)
+
+
+def test_a_perfect_model_scores_one_everywhere(dataset, tmp_path) -> None:  # noqa: ANN001
+    from training.evaluate.model import results_markdown, run
+
+    directory, targets, count = dataset
+    report = run(Answers(targets), "perfect", directory, tmp_path)
+
+    metrics = report["metrics"]
+    assert metrics["records"] == count
+    assert metrics["valid_output_rate"] == 1.0
+    assert metrics["decisions"]["accuracy"] == 1.0 and metrics["decisions"]["macro_f1"] == 1.0
+    assert metrics["criterion_status_accuracy"] == 1.0
+    assert metrics["evidence_quoted_rate"] in (1.0, None)
+    assert metrics["claim_decision_accuracy"] == 1.0
+    assert metrics["groups"]["unseen_policies"]["records"] == 8  # a third of the test split
+    assert "| perfect | stub |" in results_markdown(tmp_path)
+
+
+def test_invalid_answers_count_as_pend(dataset, tmp_path) -> None:  # noqa: ANN001
+    from training.evaluate.model import run
+
+    directory, _, count = dataset
+    report = run(Answers(text="I think it is fine."), "garbage", directory, tmp_path)
+
+    metrics = report["metrics"]
+    assert metrics["valid_output_rate"] == 0.0
+    confusion = metrics["decisions"]["confusion_matrix"]["rows_gold_columns_predicted"]
+    assert all(row[0] == 0 and row[2] == 0 for row in confusion)  # every line predicted PEND
+
+
+def test_a_stopped_run_resumes(dataset, tmp_path) -> None:  # noqa: ANN001
+    from training.evaluate.model import run
+
+    directory, targets, count = dataset
+    first = Answers(targets)
+    run(first, "resume", directory, tmp_path, limit=5)
+    second = Answers(targets)
+    report = run(second, "resume", directory, tmp_path)
+
+    assert (first.calls, second.calls) == (5, count - 5)
+    assert report["metrics"]["records"] == count
+    assert "5/" in (tmp_path / "resume.log").read_text()
