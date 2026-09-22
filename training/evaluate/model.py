@@ -13,7 +13,9 @@ the pipeline: an invalid answer turns every line into PEND. Metrics:
 
 Predictions are appended to `data/generated/eval/<label>.jsonl` as they arrive (a stopped run
 resumes); metrics go to `<label>.json` and `docs/results.md`. Follow progress with
-`tail -f data/generated/eval/<label>.log`.
+`tail -f data/generated/eval/<label>.log`. Every prediction records the Ollama version; a run does
+not resume on a different version (results would mix engines). A dropped connection is retried
+twice before the run stops.
 
     uv run python -m training.evaluate.model --model gemma4:e2b --label baseline-gemma4-e2b
 """
@@ -23,6 +25,7 @@ import json
 import statistics
 import time
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +39,7 @@ from app.domain.contracts import (
     LineDecision,
     RulesOutcome,
 )
-from app.ml.client import DecisionModel
+from app.ml.client import DecisionModel, ModelUnavailable
 from app.ml.validate import validate_output
 from app.workflow.decisions import derive_claim_decision, final_line_decisions
 from training.generate.common import GENERATED_DIR
@@ -45,6 +48,21 @@ DECISIONS = ["APPROVE", "PEND", "DENY"]
 EVAL_DIR = GENERATED_DIR / "eval"
 DATASET_DIR = GENERATED_DIR / "decision"
 RESULTS_MD = Path(__file__).resolve().parents[2] / "docs" / "results.md"
+RETRY_WAITS_SECONDS = (15, 45)
+
+
+def complete_with_retry(
+    model: DecisionModel, system: str, user: str, sleep: Callable[[float], None] = time.sleep
+) -> str:
+    """Transport failures only (the server restarting); the answer itself is never retried."""
+    for wait in (*RETRY_WAITS_SECONDS, None):
+        try:
+            return model.complete(system, user)
+        except ModelUnavailable:
+            if wait is None:
+                raise
+            sleep(wait)
+    raise AssertionError("unreachable")
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -245,6 +263,8 @@ def run(
     dataset_dir: Path = DATASET_DIR,
     out_dir: Path = EVAL_DIR,
     limit: int | None = None,
+    engine: str = "unknown",
+    sleep: Callable[[float], None] = time.sleep,
 ) -> dict[str, Any]:
     records = read_jsonl(dataset_dir / "test.jsonl")
     inputs = {i["record_id"]: i for i in read_jsonl(dataset_dir / "test_inputs.jsonl")}
@@ -258,6 +278,12 @@ def run(
         if predictions_path.exists()
         else {}
     )
+    engines = {p.get("engine") for p in done.values()}
+    if engines and engines != {engine}:
+        raise SystemExit(
+            f"{label}: earlier predictions used {sorted(map(str, engines))}, now {engine}; "
+            "use a new --label (results must not mix engines)"
+        )
     log = (out_dir / f"{label}.log").open("a", encoding="utf-8")
     started = time.perf_counter()
     with predictions_path.open("a", encoding="utf-8") as predictions:
@@ -267,10 +293,10 @@ def run(
                 continue
             system, user = record["messages"][0]["content"], record["messages"][1]["content"]
             t0 = time.perf_counter()
-            text = model.complete(system, user)
+            text = complete_with_retry(model, system, user, sleep)
             latency = round((time.perf_counter() - t0) * 1000, 1)
             scored = score_record(record, inputs[record_id], text)
-            row = {**scored, "latency_ms": latency, "output": text}
+            row = {**scored, "latency_ms": latency, "engine": engine, "output": text}
             predictions.write(json.dumps(row) + "\n")
             predictions.flush()
             done[record_id] = row
@@ -286,6 +312,7 @@ def run(
     report = {
         "label": label,
         "model": model.name,
+        "engine": engine,
         "dataset": {
             "generator_version": summary_meta.get("generator_version"),
             "prompt_version": summary_meta.get("prompt_version"),
@@ -303,15 +330,16 @@ def results_markdown(eval_dir: Path = EVAL_DIR) -> str:
     """docs/results.md from every evaluation report (aggregates only; no claim data)."""
     reports = [json.loads(p.read_text()) for p in sorted(eval_dir.glob("*.json"))]
     rows = [
-        "| Run | Model | Records | Valid output | Line accuracy | Macro-F1 | Criterion status "
-        "| Evidence quoted | Unseen-policy accuracy | Latency p50 (ms) |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        "| Run | Model | Engine | Records | Valid output | Line accuracy | Macro-F1 "
+        "| Criterion status | Evidence quoted | Unseen-policy accuracy | Latency p50 (ms) |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for r in reports:
         m = r["metrics"]
         unseen = m["groups"].get("unseen_policies", {}).get("line_accuracy")
         rows.append(
-            f"| {r['label']} | {r['model']} | {m['records']} | {m['valid_output_rate']} | "
+            f"| {r['label']} | {r['model']} | {r.get('engine', '-')} | {m['records']} | "
+            f"{m['valid_output_rate']} | "
             f"{m['decisions'].get('accuracy')} | {m['decisions'].get('macro_f1')} | "
             f"{m['criterion_status_accuracy']} | {m['evidence_quoted_rate']} | {unseen} | "
             f"{m['latency_ms']['p50']} |"
@@ -345,7 +373,15 @@ def main() -> None:
     parser.add_argument("--label", required=True)
     parser.add_argument("--limit", type=int)
     args = parser.parse_args()
-    report = run(OllamaDecisionModel(settings.ollama_url, args.model), args.label, limit=args.limit)
+    import httpx
+
+    version = httpx.get(f"{settings.ollama_url}/api/version", timeout=10).json()["version"]
+    report = run(
+        OllamaDecisionModel(settings.ollama_url, args.model),
+        args.label,
+        limit=args.limit,
+        engine=f"ollama {version}",
+    )
     RESULTS_MD.write_text(results_markdown(), encoding="utf-8")
     metrics = report["metrics"]
     print(
