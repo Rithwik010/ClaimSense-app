@@ -34,6 +34,9 @@ def dataset(tmp_path_factory) -> tuple:  # noqa: ANN001
     records, inputs = built["splits"]["test"]
     write_jsonl(out / "test.jsonl", records)
     write_jsonl(out / "test_inputs.jsonl", inputs)
+    validation_records, validation_inputs = built["splits"]["validation"]
+    write_jsonl(out / "validation.jsonl", validation_records)
+    write_jsonl(out / "validation_inputs.jsonl", validation_inputs)
     (out / "summary.json").write_text(json.dumps({"generator_version": "t", "seed": 3}))
     targets = {r["messages"][1]["content"]: r["messages"][2]["content"] for r in records}
     return out, targets, len(records)
@@ -54,6 +57,19 @@ def test_a_perfect_model_scores_one_everywhere(dataset, tmp_path) -> None:  # no
     assert metrics["claim_decision_accuracy"] == 1.0
     assert metrics["groups"]["unseen_policies"]["records"] == 8  # a third of the test split
     assert "| perfect | stub |" in results_markdown(tmp_path)
+    assert "| test |" in results_markdown(tmp_path)  # the split a run was measured on
+
+
+def test_the_validation_split_can_be_evaluated_as_a_diagnostic(dataset, tmp_path) -> None:  # noqa: ANN001
+    """P4.4: the same-template, seen-policy ceiling, to tell a wording gap from a policy one."""
+    from training.evaluate.model import results_markdown, run
+
+    directory, _, _ = dataset
+    report = run(Answers(text="nonsense"), "diagnostic", directory, tmp_path, split="validation")
+
+    assert report["split"] == "validation"
+    assert report["metrics"]["records"] == 3  # the validation split, not the 24 test records
+    assert "| validation |" in results_markdown(tmp_path)
 
 
 def test_invalid_answers_count_as_pend(dataset, tmp_path) -> None:  # noqa: ANN001
