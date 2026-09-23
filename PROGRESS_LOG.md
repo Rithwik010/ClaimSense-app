@@ -11,14 +11,16 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 
 ---
 
-## 1. Current status (2026-09-22 22:31 IST)
+## 1. Current status (2026-09-23 11:25 IST)
 
 | Area | State |
 |---|---|
-| **Fine-tuning** | **Running on Kaggle** (full run, started after 20:48; about 4.5 h). Notebook: Manideep3183's Kaggle account, private. Dataset: `manideep3183/claimsense` (private). |
+| **Fine-tuning (P4.3)** | **Done.** 500 steps / 2 epochs / 3 h 02 min on a Kaggle T4, best eval loss **0.001711** (checkpoint 500). GGUF in `data/generated/models/claimsense-decision-v1/` (not in git). |
+| **Model in Ollama (P4.5)** | **Done.** `claimsense-decision:v1` (3.4 GB Q4_K_M), Modelfile copies the base model's `RENDERER`/`PARSER gemma4`. |
+| **Evaluation (P4.4)** | **Done, target missed.** 300/300: valid output **94%** (was 73%), macro-F1 **0.672** (was 0.345), target is 0.90. See the timeline entry and `docs/results.md`. |
 | Baseline (P4.2) | **Done** (300/300, Ollama 0.34.1): valid output 73%, line accuracy 0.42, macro-F1 **0.345**, criterion status 0.63. See `docs/results.md`. |
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
-| Git | Local `main` is **48 commits ahead of `origin/main` (this log included): not pushed yet.** Teammates see none of this until a team member says "push". |
+| Git | Local `main` is **52 commits ahead of `origin/main`: not pushed yet.** Teammates see none of this until a team member says "push". |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
 | Tests | Last full run with all services up: 782 passed (CI-skipped tests need `data/raw/`, Postgres, the embedding model or a live model). |
 
@@ -29,7 +31,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | 1 Foundations | P1.1, P1.2, P1.3, P1.4 (contracts approved 2026-09-22), P1.5 | | |
 | 2 Rules and calculator | P2.2 | P2.1 (seed: curated, ICD-10, fees, reference; missing NCCI, MUE, POS), P2.3 (R05 only), P2.4 (in-network copay only), P2.5 (status table only) | |
 | 3 Knowledge and datasets | P3.1, P3.2, P3.3 (coverage_policies collection), P3.4, P3.5 (v2, real retrieval) | | |
-| 4 Model | P4.1, P4.2 | **P4.3 running** | P4.4, P4.5 |
+| 4 Model | P4.1, P4.2, P4.3, P4.5 | **P4.4 (measured; below the 0.90 target)** | |
 | 5 Integration | | P5.1 (digital PDF only), P5.2 (context with retrieval), P5.3 (tiers only), P5.5 (skeleton page), P5.6 (golden set written) | P5.4 |
 | 6 Evaluation and demo | | | P6.1, P6.2, P6.3 |
 
@@ -87,7 +89,9 @@ Pull before starting; tell the team which task you take (add a timeline entry).
 | Confirm the golden assumptions (`tests/golden/README.md`) and spot-check 10 rules + 10 calculator cases | team | `DECISIONS.md` |
 | AMA CPT license question (SOURCES.md) | team | `DECISIONS.md` |
 | Keep Ollama on 0.34.1 until the fine-tuned model is evaluated (decline the 0.34.2 update) | Manideep3183 | timeline |
-| After training: P4.5 import, P4.4 evaluation, retrieval ablation (eval mode not built yet) | next session | timeline |
+| **Decide how to close the P4.4 gap** (macro-F1 0.672 vs 0.90): more note-wording variety in the training split is the leading candidate, since the failures are MET -> NOT_DOCUMENTED on set-B wording | team | `DECISIONS.md` |
+| Fix the two output faults before any retrain: line 2 dropped on multi-line claims (11 records), runaway answers truncated at 12-15k characters (5 records) | next session | timeline |
+| Retrieval ablation, with and without the retrieved criteria (eval mode not built yet) | next session | timeline |
 | Record the exact Hugging Face revision of the base model in the training log (not done) | next session | `training/finetune/train.py` |
 | Rebuild the golden end-to-end model answers for prompt v2 and real retrieval (P5.6) | later | `tests/golden/e2e/` |
 
@@ -189,6 +193,14 @@ Kaggle copy for anything model-related.
 
 - 22:46 | Claude | P4.2 | **Baseline finished** (300/300, base `gemma4:e2b`, Ollama 0.34.1): valid output **73%**, line accuracy **0.422**, macro-F1 **0.345**, criterion status 0.633, evidence quoted 0.703, benefit category 1.00, complexity 0.279, claim decision 0.433, latency p50 9.6 s. Unseen policies score like seen ones (0.423 vs 0.422). Commonest failures: deciding a line that was denied by rules, and citing criteria that were not retrieved. Written to `docs/results.md`; this is the "before" number for P4.4 (target macro-F1 >= 0.90).
 - 22:48 | Claude | readiness | **Gate 9/9 automated checks pass** (dataset current, real retrieval, record checks, recall@3 0.978, train/live parity, no retrieval misses, lengths, blind review, baseline). Team review items remain open.
+
+### 2026-09-23
+
+- ~00:28 | Manideep3183 | **P4.3** | **Full fine-tuning run finished on Kaggle** (Save & Run All): 500 steps, 2 epochs, **3 h 02 min** on a Tesla T4 in float32, 21.9 s/step. Train loss 0.754 -> 0.001 (run average 0.029); eval loss **0.01617 -> 0.004891 -> 0.002308 -> 0.001711** at steps 125/250/375/500, so the best checkpoint is the last one and early stopping never triggered. Token lengths: train p50 1367 / max 2408, validation max 2370, **0 records over the 3072 limit**; the Gemma 4 template does take a system role (markers `<|turn>user` / `<|turn>model`). GGUF export wrote `gemma-4-e2b-it.Q4_K_M.gguf` (3.43 GB) and `gemma-4-e2b-it.F16-mmproj.gguf` (0.99 GB).
+- 10:24-10:38 | Manideep3183 | P4.3 | Downloaded both GGUF files, `training-log.json`, `lengths.json`, `config.json` and `pip-freeze.txt` into `data/generated/models/claimsense-decision-v1/` (git-ignored). Verified: GGUF headers correct, sizes match Kaggle byte for byte.
+- 10:40 | Claude | **P4.5** | Built the Modelfile (copies the base model's `TEMPLATE`, `RENDERER gemma4`, `PARSER gemma4`) and ran `ollama create claimsense-decision:v1`. Loads in ~1.1 s and answers. Ollama still **0.34.1**, the engine the baseline used.
+- 10:41-11:15 | Claude | P4.4 | Evaluation on the 300-record test split. The background shell was killed at record 288 when the session ended; the run is resumable, so rerunning the same command finished records 289-300 without repeating work. Lesson: the resume design paid for itself twice now.
+- ~11:20 | Claude | **P4.4** | **Fine-tuned model evaluated, 300/300, Ollama 0.34.1.** Every headline metric beats the baseline: valid output **0.73 -> 0.94**, line accuracy **0.422 -> 0.700**, macro-F1 **0.345 -> 0.672**, criterion status 0.633 -> 0.804, evidence quoted word for word 0.703 -> **0.981**, complexity 0.279 -> 0.720, claim decision 0.433 -> 0.680, benefit category stays 1.00, latency p50 9.6 s -> **5.5 s**. Unseen policies score like seen ones (0.691 vs 0.703), so policy generalisation holds. **The P4.4 target of macro-F1 >= 0.90 is not met (0.672).** DENY precision is **1.00** (it never wrongly denies) but recall is 0.575; PEND precision is 0.345, i.e. the model over-PENDs: 51 of 202 gold APPROVE lines and 44 of 120 gold DENY lines come back PEND. Root cause in the criterion statuses: **MET -> NOT_DOCUMENTED 47 times** (27 of them on the APPROVE-turned-PEND records), so it fails to recognise a criterion as documented when the test split's note templates (set B) word it differently from training (set A) - a wording-generalisation gap, not a policy one, which matches an eval loss of 0.0017 on same-template validation data. Two output faults remain: 11 records drop line 2 of a multi-line claim, and 5 records run away to 12-15k characters and get truncated (together the 6% invalid). Regressions worth noting: `approve_single` 0.939 -> 0.692, `rule_denied_line` 0.667 -> 0.400, `same_profile_multi` valid rate 0.913 -> 0.609. Big wins: `office_visit` 0.00 -> 1.00, `office_same_day` 0.154 -> 0.846, `office_plus_procedure` 0.125 -> 0.781, `deny_dx` 0.161 -> 0.903, `pend_missing` 0.167 -> 0.867. Written to `docs/results.md`.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
