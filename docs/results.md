@@ -7,6 +7,7 @@ counts as PEND on every line, as in the pipeline.
 | Run | Model | Engine | Records | Valid output | Line accuracy | Macro-F1 | Criterion status | Evidence quoted | Unseen-policy accuracy | Latency p50 (ms) |
 |---|---|---|---|---|---|---|---|---|---|---|
 | baseline-gemma4-e2b | gemma4:e2b | ollama 0.34.1 | 300 | 0.73 | 0.4223 | 0.3449 | 0.6329 | 0.7034 | 0.4228 | 9617 |
+| finetuned-v1 | claimsense-decision:v1 | ollama 0.34.1 | 300 | 0.94 | 0.6995 | 0.672 | 0.8041 | 0.9806 | 0.6911 | 5471 |
 
 Datasets:
 
