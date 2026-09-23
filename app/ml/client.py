@@ -15,6 +15,14 @@ from app.domain.contracts import SLMOutput
 MODEL_SEED = 20260921
 MODEL_TIMEOUT_SECONDS = 300.0
 
+# An answer that repeats itself never closes its JSON, so the schema alone does not stop it: the
+# P4.4 runs saw answers grow to 12-15k characters over 45-83 seconds before the server gave up,
+# and every one of them was invalid anyway. The longest valid answer measured across the baseline,
+# the fine-tuned model and the validation diagnostic is 3,080 characters (about 880 tokens), so
+# this cap is roughly twice the longest real answer: it ends a loop early without truncating any
+# answer that would have been usable.
+MAX_OUTPUT_TOKENS = 1536
+
 
 class ModelUnavailable(RuntimeError):
     """Ollama could not be reached or refused the request; the claim can be processed later."""
@@ -42,7 +50,11 @@ class OllamaDecisionModel:
                     {"role": "user", "content": user},
                 ],
                 format=SLMOutput.model_json_schema(),
-                options={"temperature": 0, "seed": MODEL_SEED},
+                options={
+                    "temperature": 0,
+                    "seed": MODEL_SEED,
+                    "num_predict": MAX_OUTPUT_TOKENS,
+                },
                 think=False,
             )
         except (ollama.ResponseError, httpx.HTTPError, ConnectionError) as exc:

@@ -60,6 +60,30 @@ def test_a_perfect_model_scores_one_everywhere(dataset, tmp_path) -> None:  # no
     assert "| test |" in results_markdown(tmp_path)  # the split a run was measured on
 
 
+def test_the_ablation_removes_only_the_retrieved_criteria(dataset, tmp_path) -> None:  # noqa: ANN001
+    """P4.4: what retrieval contributes. The claim, the rules result and the plan benefits stay."""
+    from training.evaluate.model import run, without_criteria
+
+    directory, _, _ = dataset
+    seen: list[str] = []
+
+    class Recorder(Answers):
+        def complete(self, system: str, user: str) -> str:
+            seen.append(user)
+            return super().complete(system, user)
+
+    report = run(Recorder(text="{}"), "ablated", directory, tmp_path, ablate_criteria=True)
+
+    assert report["context"] == "no retrieved criteria"
+    assert all("No criteria retrieved." in prompt for prompt in seen)
+    assert all("RULES_RESULT" in prompt and "PLAN_BENEFITS" in prompt for prompt in seen)
+
+    inputs = {"claim": {}, "rules_outcome": {}, "context": {"lines": [{"criteria": [1, 2]}]}}
+    stripped = without_criteria(inputs)
+    assert stripped["context"]["lines"] == [{"criteria": []}]
+    assert inputs["context"]["lines"][0]["criteria"] == [1, 2]  # the original is untouched
+
+
 def test_the_validation_split_can_be_evaluated_as_a_diagnostic(dataset, tmp_path) -> None:  # noqa: ANN001
     """P4.4: the same-template, seen-policy ceiling, to tell a wording gap from a policy one."""
     from training.evaluate.model import results_markdown, run

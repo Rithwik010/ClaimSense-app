@@ -103,6 +103,27 @@ def _decision_metrics(gold: list[str], predicted: list[str]) -> dict[str, Any]:
     }
 
 
+def without_criteria(inputs: dict[str, Any]) -> dict[str, Any]:
+    """The same record with no retrieved criteria (P4.4 ablation): the claim, the rules result and
+    the plan benefits stay, so the only thing removed is what retrieval contributed."""
+    context = {**inputs["context"]}
+    context["lines"] = [{**line, "criteria": []} for line in context["lines"]]
+    return {**inputs, "context": context}
+
+
+def ablated_user_message(inputs: dict[str, Any], lookups: Any) -> str:
+    """Re-render the prompt from the stripped context, so the wording matches the live pipeline."""
+    from app.domain.contracts import IntakeClaim
+    from app.ml.prompt import render_user_message
+
+    return render_user_message(
+        IntakeClaim.model_validate(inputs["claim"]),
+        RulesOutcome.model_validate(inputs["rules_outcome"]),
+        ContextPackage.model_validate(inputs["context"]),
+        lookups,
+    )
+
+
 def score_record(record: dict[str, Any], inputs: dict[str, Any], text: str) -> dict[str, Any]:
     """Compare one answer with the record's target, the way the pipeline would use it."""
     rules = RulesOutcome.model_validate(inputs["rules_outcome"])
@@ -266,9 +287,16 @@ def run(
     engine: str = "unknown",
     sleep: Callable[[float], None] = time.sleep,
     split: str = "test",
+    ablate_criteria: bool = False,
 ) -> dict[str, Any]:
     records = read_jsonl(dataset_dir / f"{split}.jsonl")
     inputs = {i["record_id"]: i for i in read_jsonl(dataset_dir / f"{split}_inputs.jsonl")}
+    lookups = None
+    if ablate_criteria:
+        from training.generate.decision_dataset import prompt_lookups
+
+        lookups = prompt_lookups()
+        inputs = {record_id: without_criteria(i) for record_id, i in inputs.items()}
     summary_meta = json.loads((dataset_dir / "summary.json").read_text())
     if limit:
         records = records[:limit]
@@ -293,6 +321,8 @@ def run(
             if record_id in done:
                 continue
             system, user = record["messages"][0]["content"], record["messages"][1]["content"]
+            if lookups is not None:
+                user = ablated_user_message(inputs[record_id], lookups)
             t0 = time.perf_counter()
             text = complete_with_retry(model, system, user, sleep)
             latency = round((time.perf_counter() - t0) * 1000, 1)
@@ -315,6 +345,7 @@ def run(
         "model": model.name,
         "engine": engine,
         "split": split,
+        "context": "no retrieved criteria" if ablate_criteria else "full",
         "dataset": {
             "generator_version": summary_meta.get("generator_version"),
             "prompt_version": summary_meta.get("prompt_version"),
@@ -332,16 +363,17 @@ def results_markdown(eval_dir: Path = EVAL_DIR) -> str:
     """docs/results.md from every evaluation report (aggregates only; no claim data)."""
     reports = [json.loads(p.read_text()) for p in sorted(eval_dir.glob("*.json"))]
     rows = [
-        "| Run | Model | Engine | Split | Records | Valid output | Line accuracy | Macro-F1 "
-        "| Criterion status | Evidence quoted | Unseen-policy accuracy | Latency p50 (ms) |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|",
+        "| Run | Model | Engine | Split | Context | Records | Valid output | Line accuracy "
+        "| Macro-F1 | Criterion status | Evidence quoted | Unseen-policy accuracy "
+        "| Latency p50 (ms) |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for r in reports:
         m = r["metrics"]
         unseen = m["groups"].get("unseen_policies", {}).get("line_accuracy")
         rows.append(
             f"| {r['label']} | {r['model']} | {r.get('engine', '-')} | "
-            f"{r.get('split', 'test')} | {m['records']} | "
+            f"{r.get('split', 'test')} | {r.get('context', 'full')} | {m['records']} | "
             f"{m['valid_output_rate']} | "
             f"{m['decisions'].get('accuracy')} | {m['decisions'].get('macro_f1')} | "
             f"{m['criterion_status_accuracy']} | {m['evidence_quoted_rate']} | {unseen} | "
@@ -358,6 +390,9 @@ def results_markdown(eval_dir: Path = EVAL_DIR) -> str:
             "",
             "Validation-split rows are diagnostics, not results: those records share the training",
             "split's note templates and policies, and they chose the best checkpoint.",
+            "",
+            "Rows with context `no retrieved criteria` are the retrieval ablation. Their criterion",
+            "and evidence columns are meaningless: the model was not given criteria to report on.",
             "",
             *rows,
             "",
@@ -384,6 +419,11 @@ def main() -> None:
         choices=("test", "validation"),
         help="validation is a diagnostic only: same note templates and policies as training",
     )
+    parser.add_argument(
+        "--ablate-criteria",
+        action="store_true",
+        help="remove the retrieved criteria from the prompt, to measure what retrieval contributes",
+    )
     args = parser.parse_args()
     import httpx
 
@@ -394,6 +434,7 @@ def main() -> None:
         limit=args.limit,
         engine=f"ollama {version}",
         split=args.split,
+        ablate_criteria=args.ablate_criteria,
     )
     RESULTS_MD.write_text(results_markdown(), encoding="utf-8")
     metrics = report["metrics"]

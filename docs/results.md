@@ -7,11 +7,15 @@ split**. An invalid answer counts as PEND on every line, as in the pipeline.
 Validation-split rows are diagnostics, not results: those records share the training
 split's note templates and policies, and they chose the best checkpoint.
 
-| Run | Model | Engine | Split | Records | Valid output | Line accuracy | Macro-F1 | Criterion status | Evidence quoted | Unseen-policy accuracy | Latency p50 (ms) |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| baseline-gemma4-e2b | gemma4:e2b | ollama 0.34.1 | test | 300 | 0.73 | 0.4223 | 0.3449 | 0.6329 | 0.7034 | 0.4228 | 9617 |
-| finetuned-v1-validation | claimsense-decision:v1 | ollama 0.34.1 | validation | 300 | 0.94 | 0.8462 | 0.8158 | 0.9216 | 1.0 | None | 5043 |
-| finetuned-v1 | claimsense-decision:v1 | ollama 0.34.1 | test | 300 | 0.94 | 0.6995 | 0.672 | 0.8041 | 0.9806 | 0.6911 | 5471 |
+Rows with context `no retrieved criteria` are the retrieval ablation. Their criterion
+and evidence columns are meaningless: the model was not given criteria to report on.
+
+| Run | Model | Engine | Split | Context | Records | Valid output | Line accuracy | Macro-F1 | Criterion status | Evidence quoted | Unseen-policy accuracy | Latency p50 (ms) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| baseline-gemma4-e2b | gemma4:e2b | ollama 0.34.1 | test | full | 300 | 0.73 | 0.4223 | 0.3449 | 0.6329 | 0.7034 | 0.4228 | 9617 |
+| finetuned-v1-no-criteria | claimsense-decision:v1 | ollama 0.34.1 | test | no retrieved criteria | 300 | 0.9133 | 0.5233 | 0.2962 | 0.0 | None | 0.4959 | 1455 |
+| finetuned-v1-validation | claimsense-decision:v1 | ollama 0.34.1 | validation | full | 300 | 0.94 | 0.8462 | 0.8158 | 0.9216 | 1.0 | None | 5043 |
+| finetuned-v1 | claimsense-decision:v1 | ollama 0.34.1 | test | full | 300 | 0.94 | 0.6995 | 0.672 | 0.8041 | 0.9806 | 0.6911 | 5471 |
 
 Datasets:
 

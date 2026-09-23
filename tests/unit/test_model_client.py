@@ -8,7 +8,12 @@ import httpx
 import pytest
 
 from app.domain.contracts import SLMOutput
-from app.ml.client import MODEL_SEED, ModelUnavailable, OllamaDecisionModel
+from app.ml.client import (
+    MAX_OUTPUT_TOKENS,
+    MODEL_SEED,
+    ModelUnavailable,
+    OllamaDecisionModel,
+)
 
 
 def model(handler) -> OllamaDecisionModel:
@@ -36,7 +41,11 @@ def test_request_carries_schema_and_deterministic_options() -> None:
     assert text == '{"lines": []}'
     assert seen["model"] == "gemma4:e2b"
     assert seen["format"] == SLMOutput.model_json_schema()
-    assert seen["options"] == {"temperature": 0, "seed": MODEL_SEED}
+    assert seen["options"] == {
+        "temperature": 0,
+        "seed": MODEL_SEED,
+        "num_predict": MAX_OUTPUT_TOKENS,  # a repeating answer is cut off, not left to run
+    }
     assert seen["think"] is False
     assert seen["stream"] is False
     assert [m["role"] for m in seen["messages"]] == ["system", "user"]
