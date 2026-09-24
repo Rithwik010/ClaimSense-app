@@ -153,48 +153,48 @@ Kaggle copy for anything model-related.
 
 ### 2026-09-21
 
-- 16:28 | Manideep3183 + Claude | repo | CLAUDE.md, INSTRUCTIONS.md (v1.0 spec), SETUP.md, first DECISIONS.md rows (`7ede1ff`).
-- 17:14 | team | process | No pull requests: local `p<phase>.<task>` branches merged into `main`, push only on request (`795aabe`, `7691fa2`). Laptop recorded: Apple M5, 16 GB, no NVIDIA GPU.
-- 17:45 | Claude | P1.1 | uv project, ruff, pytest, import-linter, pre-commit, GitHub Actions CI (`e409cb3`, `97ede6c`).
-- 17:57 | Claude | P1.2 | docker compose (Postgres, Qdrant), settings, structlog, `/health` (`8897f66`, `d0fd690`).
-- 21:49 | team | data | Public sources received into `data/raw/` and listed in SOURCES.md: ICD-10-CM FY2027, HCPCS Oct 2026, NCCI PTP v323r0, MUE, PFS RVU26A, MCD LCDs and articles, CARC/RARC, POS, NUCC 1500, SBC template (`9e90ba0`, `36d03d4`, `f6a707d`). CPT license question flagged.
-- 22:10 | team | decision | Curated data and golden cases synthesized by Claude, spot-checked by the team (`3b26d58`).
-- 22:31 | Claude | curated | Procedure scope (office visits + 17 LCD-based coverage policies, 60 codes), 5 fictional plans, benefits, exclusions, fee rule (D6), reason-code map (`76f83d7`).
-- 22:36 | Claude | P1.3 | SQLAlchemy models, Alembic migration 0001 (`a6a5be6`).
-- 22:39 | Claude | P1.4 | Draft contracts for review (`fc46147`).
-- 23:01 | Claude | P2.2 | Reference generator: 500 members, 100 providers, networks, 150 authorizations, other coverage, accumulators, visit usage (`b123da5`).
-- 23:10 | Claude | golden | 90 rules cases, 52 calculator cases with worked steps (`99848c3`).
-- 23:12 | Claude | P3.2 | SBC generator (`729dac8`).
-- 23:38 | Claude | P3.4 | Scenario engine, 230-claim corpus, digital PDF and scanned-form renderer (`f12a636`).
-- 23:40 | Claude | P3.5 | Decision dataset v1 (2000/300/300, simulated retrieval), leakage checks, data card (`7d2cb50`).
-- 23:47 | Claude | golden | 30 end-to-end cases, 50 RAG queries, 30 blind-review claims; 11 data-generation choices recorded in DECISIONS.md (`b3c7696`, `a9daf90`).
+- 16:28 | Manideep3183 + Claude | repo | CLAUDE.md, INSTRUCTIONS.md (v1.0 spec), SETUP.md, first DECISIONS.md rows (`365dea4`).
+- 17:14 | team | process | No pull requests: local `p<phase>.<task>` branches merged into `main`, push only on request (`36204cf`, `0a0078e`). Laptop recorded: Apple M5, 16 GB, no NVIDIA GPU.
+- 17:45 | Claude | P1.1 | uv project, ruff, pytest, import-linter, pre-commit, GitHub Actions CI (`c70a481`, `211b55d`).
+- 17:57 | Claude | P1.2 | docker compose (Postgres, Qdrant), settings, structlog, `/health` (`12d90de`, `af63323`).
+- 21:49 | team | data | Public sources received into `data/raw/` and listed in SOURCES.md: ICD-10-CM FY2027, HCPCS Oct 2026, NCCI PTP v323r0, MUE, PFS RVU26A, MCD LCDs and articles, CARC/RARC, POS, NUCC 1500, SBC template (`31b1643`, `9351b86`, `3518b35`). CPT license question flagged.
+- 22:10 | team | decision | Curated data and golden cases synthesized by Claude, spot-checked by the team (`c3cdfc1`).
+- 22:31 | Claude | curated | Procedure scope (office visits + 17 LCD-based coverage policies, 60 codes), 5 fictional plans, benefits, exclusions, fee rule (D6), reason-code map (`7831add`).
+- 22:36 | Claude | P1.3 | SQLAlchemy models, Alembic migration 0001 (`b7fbd79`).
+- 22:39 | Claude | P1.4 | Draft contracts for review (`0569665`).
+- 23:01 | Claude | P2.2 | Reference generator: 500 members, 100 providers, networks, 150 authorizations, other coverage, accumulators, visit usage (`e3deb28`).
+- 23:10 | Claude | golden | 90 rules cases, 52 calculator cases with worked steps (`3bf17f5`).
+- 23:12 | Claude | P3.2 | SBC generator (`d7af11d`).
+- 23:38 | Claude | P3.4 | Scenario engine, 230-claim corpus, digital PDF and scanned-form renderer (`57c3527`).
+- 23:40 | Claude | P3.5 | Decision dataset v1 (2000/300/300, simulated retrieval), leakage checks, data card (`ba3bcda`).
+- 23:47 | Claude | golden | 30 end-to-end cases, 50 RAG queries, 30 blind-review claims; 11 data-generation choices recorded in DECISIONS.md (`beb4a7c`, `001b779`).
 
 ### 2026-09-22
 
 - 16:59 | Manideep3183 | env | Ollama 0.34.1 with `gemma4:e2b` running (Ollama later offered 0.34.2; not installed).
-- 17:15 | Claude | P1.5 | Walking skeleton: JSON claim → R05 → context → base `gemma4:e2b` → validation → copay calculator → decision record → audit → Streamlit (`f874940`). Live run: 2.8 s; the base model invented a criterion ID, so validation set PEND and FULL review.
+- 17:15 | Claude | P1.5 | Walking skeleton: JSON claim → R05 → context → base `gemma4:e2b` → validation → copay calculator → decision record → audit → Streamlit (`107766b`). Live run: 2.8 s; the base model invented a criterion ID, so validation set PEND and FULL review.
 - ~17:40 | team | plan | Agreed: train the model **once**; freeze everything the model sees first; fine-tune on Kaggle (laptop has no NVIDIA GPU).
 - ~17:50 | Claude | finding | Real retrieval returns criteria of the covering policy that do not apply to the claim; with `met: true/false` they could only be "not documented" (wrong PEND). Proposed a four-value criterion status.
-- 18:10 | Claude | P3.1 | Coverage policy format checker; all 17 policies pass (`ba7ed2f`).
-- 18:15 | team | decision | **Contracts approved and frozen** with `CriterionResult.status` (MET / NOT_MET / NOT_DOCUMENTED / NOT_APPLICABLE); prompt `decision_v2` (list every retrieved criterion); stricter output validation (`bb3a59e`, DECISIONS.md 2026-09-22).
-- 18:21 | Claude | P3.3 | Retrieval shared by pipeline and generators (Qdrant, plan and date filters) (`4c159fd`).
-- 18:29 | Claude | P4 tooling | Model evaluation, Kaggle fine-tuning package, readiness gate, docs (`21ebef6`).
+- 18:10 | Claude | P3.1 | Coverage policy format checker; all 17 policies pass (`6d46dcc`).
+- 18:15 | team | decision | **Contracts approved and frozen** with `CriterionResult.status` (MET / NOT_MET / NOT_DOCUMENTED / NOT_APPLICABLE); prompt `decision_v2` (list every retrieved criterion); stricter output validation (`d2fbd92`, DECISIONS.md 2026-09-22).
+- 18:21 | Claude | P3.3 | Retrieval shared by pipeline and generators (Qdrant, plan and date filters) (`2e1b044`).
+- 18:29 | Claude | P4 tooling | Model evaluation, Kaggle fine-tuning package, readiness gate, docs (`6fb191c`).
 - 18:42 | Manideep3183 | env | Embedding model `bge-small-en-v1.5` downloaded (own terminal; the sandbox blocked it).
-- 18:45 | Claude | P3.3 | Measured on generated claims: top 3 over all policies missed a needed criterion in 27% of lines. Procedure-code filter + top 5: 100% of needed criteria, no other-policy noise, none for office visits. Golden recall@3 0.978 (target 0.85), recall@5 1.0 (`78bdfde`). `RAG_TOP_K` default 3 → 5 (needs team sign-off).
+- 18:45 | Claude | P3.3 | Measured on generated claims: top 3 over all policies missed a needed criterion in 27% of lines. Procedure-code filter + top 5: 100% of needed criteria, no other-policy noise, none for office visits. Golden recall@3 0.978 (target 0.85), recall@5 1.0 (`c90ff8b`). `RAG_TOP_K` default 3 → 5 (needs team sign-off).
 - 18:47 | Claude | P3.3 | Qdrant `coverage_policies` built: 57 criteria, knowledge version `36cfc77305a5`.
-- 18:48 | Claude | P3.5 | Dataset v2 regenerated with real retrieval: 2000/300/300, 0 check problems, 0 missed criteria, 100 unseen-policy test records, longest about 2,500 tokens; blind-review set and claim corpus regenerated (`91fd07a`).
+- 18:48 | Claude | P3.5 | Dataset v2 regenerated with real retrieval: 2000/300/300, 0 check problems, 0 missed criteria, 100 unseen-policy test records, longest about 2,500 tokens; blind-review set and claim corpus regenerated (`50d9286`).
 - ~18:52 | Claude | P4.2 | Baseline of base `gemma4:e2b` on the 300 test records started (about 8 s per record).
 - ~18:55 | Claude | readiness | Gate: 8/9 pass (parity, retrieval target, no misses, lengths, blind review); check 9 waits for the baseline.
 - ~19:00 | Manideep3183 | Kaggle | Private dataset `manideep3183/claimsense` uploaded; notebook imported.
 - ~19:05 | Manideep3183 | Kaggle | Smoke test 1 failed: model split across 2 GPUs (`cuda:0` vs `cuda:1`); token counts read as 1.
-- 19:16 | Claude | P4.3 | Fixes: one GPU, token counting via the text tokenizer, float32 explicit, warmup steps, smoke run prints a time estimate (`4cb559a`, `d5c0fb8`).
+- 19:16 | Claude | P4.3 | Fixes: one GPU, token counting via the text tokenizer, float32 explicit, warmup steps, smoke run prints a time estimate (`1c6c61d`, `654f2bb`).
 - 19:27 | Manideep3183 | Kaggle | Smoke test 2 passed: validation loss 0.46 → 0.24 in 7 steps; estimate 4.7 h.
 - 19:32 | Manideep3183 | env | Ollama app quit by mistake: baseline stopped at 226/300.
-- 19:34 | Claude | P4.2 | Evaluation records the Ollama version, refuses to mix versions, retries dropped connections (`a56d5e5`). Baseline resumed on 0.34.1; later paused at 237/300 when the laptop session ended (Docker also stopped).
+- 19:34 | Claude | P4.2 | Evaluation records the Ollama version, refuses to mix versions, retries dropped connections (`7f7a9bf`). Baseline resumed on 0.34.1; later paused at 237/300 when the laptop session ended (Docker also stopped).
 - 20:18 | Manideep3183 | Kaggle | Smoke test 3: training fine (27.8 s/step); GGUF export failed: needs 21.2 GB, `/kaggle/working` had 19 GB.
-- 20:21 | Claude | P4.3 | Export in `/tmp`, keep only the Q4_K_M file (`c7e1417`, `0bbe513`).
+- 20:21 | Claude | P4.3 | Export in `/tmp`, keep only the Q4_K_M file (`acb5a1e`, `7f2758a`).
 - 20:42 | Manideep3183 | Kaggle | Smoke test 4: GGUF export succeeded, `gemma-4-e2b-it.Q4_K_M.gguf` 3.43 GB. Whole Kaggle path verified.
-- 20:48 | Claude | P4.3 | Keep the `mmproj` GGUF as well, in case Ollama needs it (`588ba9a`); Manideep3183 uploaded the new `data.py`.
+- 20:48 | Claude | P4.3 | Keep the `mmproj` GGUF as well, in case Ollama needs it (`0d764d5`); Manideep3183 uploaded the new `data.py`.
 - ~21:00 | Manideep3183 | **P4.3** | **Full fine-tuning run started on Kaggle** (Save & Run All, Commit; about 4.5 h). Expected outputs in `claimsense/`: `gguf/*.Q4_K_M.gguf`, `gguf/*mmproj*.gguf`, `training-log.json`, `adapter/`.
 - 22:31 | Claude | docs | This progress log written.
 
