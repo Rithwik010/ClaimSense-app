@@ -11,7 +11,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 
 ---
 
-## 1. Current status (2026-09-23 11:25 IST)
+## 1. Current status (2026-09-24 IST)
 
 | Area | State |
 |---|---|
@@ -19,10 +19,12 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | **Model in Ollama (P4.5)** | **Done.** `claimsense-decision:v1` (3.4 GB Q4_K_M), Modelfile copies the base model's `RENDERER`/`PARSER gemma4`. |
 | **Evaluation (P4.4)** | **Done, target missed.** 300/300: valid output **94%** (was 73%), macro-F1 **0.672** (was 0.345), target is 0.90. See the timeline entry and `docs/results.md`. |
 | Baseline (P4.2) | **Done** (300/300, Ollama 0.34.1): valid output 73%, line accuracy 0.42, macro-F1 **0.345**, criterion status 0.63. See `docs/results.md`. |
+| **Why the target is missed** | Measured, not guessed: note register 0.144 of the 0.228 gap; the rest is the PEND bias (undiagnosed) and the dropped second line (**a decoding problem, not a training one**). |
+| **Retrieval (P3.3)** | **Ablation: worth 0.376 of macro-F1.** Without the retrieved criteria the model denies nothing at all (DENY F1 0.000) and invents policy ids. |
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
-| Git | Local `main` is **52 commits ahead of `origin/main`: not pushed yet.** Teammates see none of this until a team member says "push". |
+| Git | Local `main` is **58 commits ahead of `origin/main`: not pushed yet.** Teammates see none of this until a team member says "push". |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | Last full run with all services up: 782 passed (CI-skipped tests need `data/raw/`, Postgres, the embedding model or a live model). |
+| Tests | 770 pass, 19 skipped, **1 failing**: `test_ncci_pairs_include_known_edits`, because `data/raw/ncci-ptp/ccipra-v323r0-f1/` holds only the `.xlsx` and the pair (11042, 97597) lives in that file's `.txt`. Unrelated to the model work. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -88,6 +90,8 @@ Pull before starting; tell the team which task you take (add a timeline entry).
 | Sign off: prompt `decision_v2`; retrieval (code filter, top 5); max length 3072; visit limits out of v1; NCCI bypass modifiers XE/XP/XS/XU (59 and 25 not added) | team | `DECISIONS.md` |
 | Confirm the golden assumptions (`tests/golden/README.md`) and spot-check 10 rules + 10 calculator cases | team | `DECISIONS.md` |
 | AMA CPT license question (SOURCES.md) | team | `DECISIONS.md` |
+| Extract `ccipra-v323r0-f1.txt` into `data/raw/ncci-ptp/ccipra-v323r0-f1/` (only the `.xlsx` is there), which fixes the one failing test | Manideep3183 | timeline |
+| Decide whether the vector index stays for v1 now that the code filter is proven to determine the criteria on its own | team | `DECISIONS.md` |
 | Keep Ollama on 0.34.1 until the fine-tuned model is evaluated (decline the 0.34.2 update) | Manideep3183 | timeline |
 | **Decide how to close the P4.4 gap** (macro-F1 0.672 vs 0.90). Measured 2026-09-23: note register accounts for 0.144 of the 0.228 gap, so training on more registers is necessary but **not sufficient** - the remaining 0.084 is the PEND bias and multi-line handling, which are there on the training register too | team | `DECISIONS.md` |
 | Decide which note registers to train on, given that template B is the only held-out register we have: mixing B into training spends it | team | `DECISIONS.md` |
@@ -208,6 +212,10 @@ Kaggle copy for anything model-related.
 - ~13:05 | Claude | P4.4 | **Retrieval ablation** (`--ablate-criteria`: the retrieved criteria are removed from the context and the prompt is re-rendered, so COVERAGE_CRITERIA reads "No criteria retrieved." exactly as it does live when retrieval finds nothing; claim, rules result and plan benefits unchanged). Same model, same 300 test records: **macro-F1 0.672 -> 0.296**, line accuracy 0.700 -> 0.523, claim decision 0.680 -> 0.467, latency p50 5471 -> 1455 ms. **Without retrieval the model denies nothing at all**: DENY precision, recall and F1 are all 0.000, with all 120 gold DENY lines coming back APPROVE (82) or PEND (38), and it approves 95% of everything. Invented policy ids reappear as validation errors (`POL-MINOR-010.c1`, `POL-EXCL-010.c1`, `POL-A-101.c1` were never retrieved) - the base model's failure mode, which retrieval plus the validator exists to stop. Retrieval is worth 0.376 of macro-F1, more than fine-tuning's 0.327 gain over the base model; the two are complementary (retrieval supplies the facts, fine-tuning the discipline to use them).
 - ~13:20 | Claude | P4.4 | **The dropped second line is a decoding problem, not a data or training one.** All 16 affected records (11 test, 5 validation) are claims where both lines need an **identical answer block** - same criteria set, same statuses, same decision, same benefit category, differing only in `line_no`. The correlation is total: 0 drops when the benefit categories differ (0/54), when the gold decisions differ (0/58), or when line 2 has no criteria (0/32). Not data scarcity either: training contains 301 records with identical criteria on every line. Probes on the 16 records, in order: `repeat_penalty` 1.1 (Ollama's default) vs 1.0 - **0/16 both**, so not the repeat penalty; three different seeds - 0/16 each, but that probe was vacuous because seeds do nothing at temperature 0; **temperature 0.7 - 5/16 and 8/16 complete**. So the model can produce the second line and greedy decoding deterministically discards it at one token position. Retraining would not have fixed this. Proposal for the team (not implemented): keep the first attempt at temperature 0, and on an invalid answer only, retry with temperature 0.7 and a fixed seed - reproducibility is preserved because every attempt is seeded, and the decision record would say which attempt answered.
 - ~13:25 | Claude | P4.4 | **Runaway cap**: `num_predict = 1536` in `app/ml/client.py`. The longest valid answer across the baseline, the fine-tuned run and the validation diagnostic is 3,080 characters (about 880 tokens), so the cap is roughly twice the longest real answer and cannot truncate a usable one; it ends the 12-15k-character loops early instead of letting them run 45-83 s.
+
+### 2026-09-24
+
+- ~00:30 | Claude | P3.3 | **The retriever has two mechanisms, and only one of them is doing any work.** (1) An exact filter: keep a criterion only if its policy covers this procedure code, applies to this plan (or ALL) and was effective on or before the date of service - boolean, no ML. (2) Embedding similarity over whatever survives, keeping the top 5. Measured on the curated set: **no procedure code has more than 5 criteria** (12 policies have 3, four have 4, one has 5), so the top-5 limit **never truncates**, and the ranking cannot change *which* criteria reach the prompt - only the order they are listed in. A deterministic lookup keyed on procedure code would produce byte-identical prompts today. This does not mean the vector index is useless: it means the synthetic policy set is too small to exercise it, and ranking starts to matter as soon as one code maps to more than 5 criteria, which is what a real LCD corpus looks like. For the report, the honest phrasing is that retrieval supplies the criteria deterministically and the index is there for scale this corpus does not yet reach. Raised because a team member said retrieval was not important: the criteria are worth 0.376 of macro-F1, the embedding ranking is currently worth nothing, and both statements are true at once.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
