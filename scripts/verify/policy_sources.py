@@ -11,13 +11,20 @@ criterion (embedding similarity, triage only).
 
 Part 2 lists every item (paragraph or list item) of each cited LCD's coverage field and its
 Associated Information field (documentation requirements), minus background, definitions and
-abstracts, maps it to the criterion whose excerpt it contains, and otherwise classifies it.
+abstracts, maps it to the criterion whose excerpt it contains, and otherwise classifies it: a
+saved judgment (data/verification/B_completeness_classification.csv) first, else a keyword rule.
+The items that affect decisions or are rule candidates are grouped into FINDINGS, one proposed
+v2 change to one policy each; every such item must be in exactly one finding.
+
+The review sheet has two sittings for one reviewer: Part 1 flagged criteria, then Part 2 findings
+(WRONG CRITERION first, then the rest by impact). Everything else is in the full CSVs.
 
 LCD text is read from `data/raw/mcd/.../current_lcd.zip` (lcd.csv, latest version). Extraction
 only removes HTML tags and footnote-reference superscripts, decodes entities and collapses
 whitespace; excerpts must match that text word for word.
 
     uv run python -m scripts.verify.policy_sources --candidates POL-DX-002.c1   # pick excerpts
+    uv run python -m scripts.verify.policy_sources --save-judgments new.csv --force  # add/replace
     uv run python -m scripts.verify.policy_sources                              # reports
 """
 
@@ -43,6 +50,7 @@ LCD_ZIP = ROOT / "data" / "raw" / "mcd" / "2026-09-21" / "current_lcd.zip"
 SOURCES_CSV = ROOT / "data" / "curated" / "policy_sources.csv"
 POLICIES_DIR = ROOT / "data" / "curated" / "coverage_policies"
 DATASET_DIR = ROOT / "data" / "generated" / "decision"
+SPLITS = ("train", "validation", "test")
 OUT_DIR = ROOT / "data" / "generated" / "verification"
 # The Part 2 judgments are Claude-proposed, pending human review, and cannot be regenerated (the
 # code that first wrote them was lost with a session scratchpad), so they are tracked in git and
@@ -58,17 +66,18 @@ JOIN = " [...] "
 NOT_FOUND = "NOT FOUND"
 MIN_SIMILARITY = 0.9
 MINUTES_PER_ROW = 2
-CAP_MINUTES = 45
+ITEMS_PER_EXTRA_MINUTE = 4  # a finding takes a minute longer per 4 LCD items after the first
+SITTING_MINUTES = 35
 SEED = 42
-PART1_TITLE = (
-    "Part 1 rows: write MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE.\n"
-    "Part 2 rows: write ADD IN V2, NOT NEEDED or UNSURE."
-)
+PART1_VERDICTS = "MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE"
+PART2_VERDICTS = "ADD IN V2, NOT NEEDED or UNSURE"
 INDEPENDENCE = (
-    "The excerpts were selected by the same model that wrote the criteria, so the human review "
-    "of the flagged rows and the controls is the independent check."
+    "The excerpts were selected, and the items classified and grouped, by the same model that "
+    "wrote the criteria, so the human review of the flagged rows, the findings and the controls "
+    "is the independent check."
 )
 CLASSES = ("affects decisions", "rule candidate", "out of scope")
+GAP_CLASSES = CLASSES[:2]
 
 # --- LCD text ---------------------------------------------------------------------------------
 
@@ -527,6 +536,24 @@ def rule_classification(item: Item) -> tuple[str, str] | None:
     return None
 
 
+def classify(
+    mapping: Sequence[str],
+    judgment: "Judgment | None",
+    rule: tuple[str, str] | None,
+    needs_judgment: bool,
+) -> tuple[str, str, str, str] | None:
+    """(classification, reason, by, codes) of an item: the criterion whose excerpt covers it, else
+    its saved judgment (which overrides a keyword rule), else the keyword rule. None while an item
+    that needs a judgment has none."""
+    if mapping:
+        return "mapped", "the criterion's source excerpt covers this item", "source excerpt", ""
+    if judgment is not None:
+        return judgment.classification, judgment.reason, judgment.by, judgment.codes
+    if needs_judgment or rule is None:
+        return None
+    return rule[0], rule[1], "rule", ""
+
+
 @dataclass
 class Judgment:
     item_id: str
@@ -574,6 +601,714 @@ def save_judgments(
         path, [{k: getattr(j, k) for k in JUDGMENT_FIELDS} for j in judgments], JUDGMENT_FIELDS
     )
     return len(judgments)
+
+
+def merge_judgments(existing: Mapping[str, Judgment], new: Sequence[Judgment]) -> list[Judgment]:
+    """The existing judgments in their order, each replaced by a new one for the same item, then
+    the new judgments for items not judged before."""
+    replacements = {j.item_id: j for j in new}
+    merged = [replacements.pop(item_id, j) for item_id, j in existing.items()]
+    return merged + [j for j in new if j.item_id in replacements]
+
+
+# --- part 2: findings -------------------------------------------------------------------------
+
+WRONG = "WRONG CRITERION"  # our criterion says something the LCD contradicts
+MISSING = "MISSING CRITERION"  # the LCD has a condition our policy does not state
+RULE = "RULE CANDIDATE"  # checkable from claim codes, units, dates or history: a rule, not the SLM
+FINDING_KINDS = (WRONG, MISSING, RULE)
+
+
+@dataclass(frozen=True)
+class Finding:
+    """One proposed v2 change to one policy and the LCD items behind it (Claude-proposed, pending
+    human review)."""
+
+    finding_id: str  # "POL-SURG-004.F1"
+    kind: str
+    change: str
+    items: tuple[str, ...]  # item IDs without the LCD prefix: "cov-016"
+    criteria: tuple[str, ...] = ()  # WRONG CRITERION: the criteria the LCD contradicts
+    codes: tuple[str, ...] = ()  # WRONG CRITERION: the procedure codes the contradiction affects
+
+    @property
+    def policy_id(self) -> str:
+        return self.finding_id.rsplit(".", 1)[0]
+
+
+def _items(*spec: str) -> tuple[str, ...]:
+    """ "cov-107..110" -> ("cov-107", "cov-108", "cov-109", "cov-110")."""
+    out: list[str] = []
+    for s in spec:
+        tag, _, numbers = s.partition("-")
+        first, _, last = numbers.partition("..")
+        out += [f"{tag}-{n:03d}" for n in range(int(first), int(last or first) + 1)]
+    return tuple(out)
+
+
+FINDINGS: tuple[Finding, ...] = (
+    # POL-BH-001 (L34520)
+    Finding(
+        "POL-BH-001.F1",
+        MISSING,
+        "c2: add the LCD's other non-covered testing situations: the patient cannot take part "
+        "meaningfully; educational or vocational purposes; ongoing substance abuse or "
+        "intoxication; mental-status questions that belong in the psychiatric evaluation; "
+        "adjustment to nursing-home placement.",
+        _items("cov-033", "cov-034", "cov-038", "cov-040", "cov-041"),
+    ),
+    Finding(
+        "POL-BH-001.F2",
+        MISSING,
+        "Add: each test in a battery must be individually medically necessary.",
+        _items("cov-042"),
+    ),
+    Finding(
+        "POL-BH-001.F3",
+        RULE,
+        "Rule: testing hours billed above 8 need documented necessity for the extended testing.",
+        _items("cov-046"),
+    ),
+    # POL-CAR-001 (L37379)
+    Finding(
+        "POL-CAR-001.F1",
+        MISSING,
+        "c1: add the LCD's echocardiogram uses without heart symptoms: monitoring exposure to a "
+        "cardiotoxic agent (agent named in the record), cardiac donor evaluation, and a baseline "
+        "study soon after a prosthetic valve implant.",
+        _items("cov-017", "cov-019", "cov-023", "doc-005"),
+    ),
+    Finding(
+        "POL-CAR-001.F2",
+        MISSING,
+        "Add echocardiogram limitations: for chest pain in the emergency room only with findings "
+        "of myocardial dysfunction; as the first test for syncope only with documented findings of "
+        "valvular disease or obstructive cardiomyopathy.",
+        _items("cov-015", "doc-004", "doc-006"),
+    ),
+    Finding(
+        "POL-CAR-001.F3",
+        MISSING,
+        "c3: extend stress echo beyond suspected coronary disease (cardiomyopathy, hypertrophic "
+        "cardiomyopathy gradient, after heart transplant, valvular lesions, pre-operative risk "
+        "with a documented at-risk condition); add that it is not typically done in the acute "
+        "phase of a heart attack; state that a prior exercise stress test is not required.",
+        _items(
+            "cov-050", "cov-053", "cov-062", "cov-063", "cov-065", "cov-070", "cov-072", "doc-007"
+        ),
+    ),
+    Finding(
+        "POL-CAR-001.F4",
+        MISSING,
+        "Add stress echo test-selection documentation: pharmacologic stress only when exercise "
+        "cannot reach the target heart rate, with the reason documented; and the reason a stress "
+        "EKG could not be interpreted.",
+        _items("cov-074", "doc-002", "doc-003"),
+    ),
+    Finding(
+        "POL-CAR-001.F5",
+        RULE,
+        "Rule: a second stress imaging study (stress echo or nuclear) for the same assessment "
+        "(needs the patient's history across claims).",
+        _items("doc-010"),
+    ),
+    # POL-CAR-002 (L34636)
+    Finding(
+        "POL-CAR-002.F1",
+        WRONG,
+        "c2: limit the ejection fraction condition (40% or less) for heart attack survivors to "
+        "48-hour monitoring; the LCD's 30-day event monitoring list covers heart attack survivors "
+        "without it.",
+        _items("cov-030"),
+        ("POL-CAR-002.c2",),
+        ("93268",),
+    ),
+    Finding(
+        "POL-CAR-002.F2",
+        MISSING,
+        "c2: add acute and subacute forms of ischemic heart disease for 48-hour and 30-day "
+        "monitoring.",
+        _items("cov-017", "cov-031"),
+    ),
+    Finding(
+        "POL-CAR-002.F3",
+        MISSING,
+        "Add: a full workup in the past month, with continuing symptoms, before monitoring.",
+        _items("doc-003"),
+    ),
+    # POL-DX-001 (L35050)
+    Finding(
+        "POL-DX-001.F1",
+        MISSING,
+        "c2: state the home (out-of-center) sleep test conditions instead of referring to them: "
+        "high likelihood of moderate to severe apnea from documented symptoms and examination, no "
+        "contraindicating comorbidities, the situations where home testing fits, and documented "
+        "patient education on the device.",
+        _items("cov-107..113", "cov-120", "doc-021"),
+    ),
+    Finding(
+        "POL-DX-001.F2",
+        MISSING,
+        "Add the non-covered uses: chronic insomnia, insomnia related to depression, circadian "
+        "rhythm disorders, pre-operative evaluation for LAUP without suspected apnea, chronic lung "
+        "disease, seizure disorders not ruled out, typical parasomnias, epilepsy without sleep "
+        "complaints, and periodic limb movements or restless legs.",
+        _items("cov-079", "cov-086..093"),
+    ),
+    Finding(
+        "POL-DX-001.F3",
+        MISSING,
+        "c3: CPAP titration needs an apnea diagnosis meeting the LCD's AHI thresholds, and a "
+        "split-night study the LCD's conditions (titration over 3 hours, events eliminated).",
+        _items("cov-050", "cov-051", "cov-055..057"),
+    ),
+    Finding(
+        "POL-DX-001.F4",
+        MISSING,
+        "c3: follow-up studies are not routine for patients doing well on CPAP; add the follow-up "
+        "indications (substantial weight loss, or weight gain with returning symptoms).",
+        _items("cov-063..065"),
+    ),
+    Finding(
+        "POL-DX-001.F5",
+        MISSING,
+        "c1: add the parasomnia indication (seizure disorder ruled out, episodes causing harm), "
+        "and that sleep-related epilepsy usually needs no polysomnography.",
+        _items("cov-069..072"),
+    ),
+    Finding(
+        "POL-DX-001.F6",
+        MISSING,
+        "c1: narcolepsy testing needs documentation that the condition is severe enough to "
+        "interfere with well-being and health.",
+        _items("doc-018"),
+    ),
+    Finding(
+        "POL-DX-001.F7",
+        RULE,
+        "Rule: a home sleep test billed with a parasomnia diagnosis.",
+        _items("cov-068"),
+    ),
+    Finding(
+        "POL-DX-001.F8",
+        RULE,
+        "Rule: more than two nights of testing need documented necessity (needs the patient's "
+        "history across claims).",
+        _items("doc-019"),
+    ),
+    # POL-DX-002 (L34594)
+    Finding(
+        "POL-DX-002.F1",
+        MISSING,
+        "Add the EMG limitations: foot muscles alone for a proximal lesion; conclusions from "
+        "paraspinal EMG in surgically scarred regions; limited limb exams without paraspinal "
+        "testing for radiculopathy.",
+        _items("cov-062..064"),
+    ),
+    Finding(
+        "POL-DX-002.F2",
+        RULE,
+        "Rule: nerve conduction without needle EMG on the claim is usually not necessary, except "
+        "carpal tunnel syndrome with high pre-test probability (codes plus diagnosis).",
+        _items("cov-037"),
+    ),
+    Finding(
+        "POL-DX-002.F3",
+        RULE,
+        "Rule: nerve conduction is paid once per nerve, whatever the number of sites or methods "
+        "(units).",
+        _items("cov-053"),
+    ),
+    Finding(
+        "POL-DX-002.F4",
+        RULE,
+        "Rule: a separate paraspinal EMG code is not expected with the extremity EMG code for the "
+        "paraspinals of that extremity (codes billed together).",
+        _items("cov-061"),
+    ),
+    # POL-DX-003 (L33261)
+    Finding(
+        "POL-DX-003.F1",
+        WRONG,
+        "c1: remove foods from intradermal testing; the LCD covers foods by prick testing only and "
+        "calls intradermal food testing not recommended.",
+        _items("cov-058", "cov-080"),
+        ("POL-DX-003.c1",),
+        ("95024",),
+    ),
+    Finding(
+        "POL-DX-003.F2",
+        MISSING,
+        "Add: food allergy tests are inappropriate for chronic idiopathic urticaria or angioedema.",
+        _items("cov-059"),
+    ),
+    Finding(
+        "POL-DX-003.F3",
+        MISSING,
+        "c3: routine annual testing without a discernible indication is not acceptable.",
+        _items("cov-060"),
+    ),
+    # POL-IMG-001 (L37373)
+    Finding(
+        "POL-IMG-001.F1",
+        MISSING,
+        "c3: contrast after head trauma only when documented symptoms suggest intracranial "
+        "bleeding.",
+        _items("cov-029"),
+    ),
+    Finding(
+        "POL-IMG-001.F2",
+        RULE,
+        "Any same-day imaging rule must allow scans of different body areas on the same day.",
+        _items("cov-042"),
+    ),
+    # POL-IMG-002 (L33619)
+    Finding(
+        "POL-IMG-002.F1",
+        RULE,
+        "Rule: ultrasound of the same extremity more than twice in six months (needs the patient's "
+        "history across claims and laterality).",
+        _items("cov-021"),
+    ),
+    # POL-PAIN-001 (L33906); D-ESI-1 to D-ESI-7 already cover its other gaps
+    Finding(
+        "POL-PAIN-001.F1",
+        MISSING,
+        "Add: ESIs are given together with conservative treatment, with the patient in an active "
+        "rehabilitation, home exercise or functional restoration program.",
+        _items("cov-021", "cov-022"),
+    ),
+    Finding(
+        "POL-PAIN-001.F2",
+        MISSING,
+        "Add the investigational uses not named in D-ESI-4: complex regional pain syndrome, "
+        "widespread diffuse pain, neuropathy from other causes, cervicogenic headache.",
+        _items("cov-029"),
+    ),
+    Finding(
+        "POL-PAIN-001.F3",
+        MISSING,
+        "Add the contraindications: suspected or active spinal infection, significant systemic "
+        "infection, compressive lesions of the cord, conus or cauda equina, suspicion or major "
+        "risk factors for cancer.",
+        _items("cov-042"),
+    ),
+    Finding(
+        "POL-PAIN-001.F4",
+        MISSING,
+        "Add: no predetermined series of ESIs; continuing ESIs needs a documented rationale.",
+        _items("cov-035", "cov-040"),
+    ),
+    Finding(
+        "POL-PAIN-001.F5",
+        RULE,
+        "Rule: at most 4 ESI sessions per spinal region in a rolling 12 months, and the LCD's "
+        "conditions for treatment beyond 12 months (needs the patient's history across claims).",
+        _items("cov-030", "cov-037"),
+    ),
+    Finding(
+        "POL-PAIN-001.F6",
+        RULE,
+        "Rule: same-session levels from codes and units: transforaminal at most 2 levels; caudal "
+        "or interlaminar 1 level and not bilateral.",
+        _items("cov-032..034"),
+    ),
+    # POL-PAIN-002 (L33930)
+    Finding(
+        "POL-PAIN-002.F1",
+        MISSING,
+        "c4: add the relief thresholds: at least 80% relief from each diagnostic block before a "
+        "second block, a therapeutic injection or a first ablation; at least 50% for 3 months "
+        "before a repeat therapeutic injection, and for 6 months before a repeat ablation.",
+        _items("cov-028", "cov-032", "cov-033", "cov-038", "cov-039"),
+    ),
+    Finding(
+        "POL-PAIN-002.F2",
+        MISSING,
+        "Add: pain scores at baseline and after each diagnostic block on the same scale, and a "
+        "baseline disability scale.",
+        _items("cov-020"),
+    ),
+    Finding(
+        "POL-PAIN-002.F3",
+        MISSING,
+        "Add: therapeutic facet injections only with a documented reason why ablation cannot be "
+        "done.",
+        _items("cov-034", "cov-055"),
+    ),
+    Finding(
+        "POL-PAIN-002.F4",
+        MISSING,
+        "Add: intra-articular diagnostic blocks only when medial branch blocks are anatomically "
+        "impossible or a therapeutic intra-articular injection is planned.",
+        _items("cov-022"),
+    ),
+    Finding(
+        "POL-PAIN-002.F5",
+        MISSING,
+        "Add: facet procedures need CT or fluoroscopic guidance (not ultrasound, MRI or none).",
+        _items("cov-047"),
+    ),
+    Finding(
+        "POL-PAIN-002.F6",
+        MISSING,
+        "Add the facet cyst aspiration conditions: imaging confirming nerve-root compression by "
+        "the cyst, documented symptoms, and one repeat only after 50% improvement for 3 months.",
+        _items("cov-043..045"),
+    ),
+    Finding(
+        "POL-PAIN-002.F7",
+        MISSING,
+        "Add the limitations: generalized or centralized pain (such as fibromyalgia), after "
+        "anterior lumbar interbody fusion, non-thermal or low-temperature denervation, and repeat "
+        "diagnostic blocks when the source of recurrent pain is in question.",
+        _items("cov-054", "cov-056", "cov-060", "cov-062"),
+    ),
+    Finding(
+        "POL-PAIN-002.F8",
+        RULE,
+        "Rule: per spinal region in a rolling 12 months at most 4 diagnostic sessions, 4 "
+        "therapeutic sessions and 2 ablation sessions (needs the patient's history across claims).",
+        _items("cov-029", "cov-035", "cov-040"),
+    ),
+    Finding(
+        "POL-PAIN-002.F9",
+        RULE,
+        "Rule: one spinal region and at most 2 levels per session; other blocks on the same day "
+        "need their own documented necessity.",
+        _items("cov-050", "cov-051", "cov-053"),
+    ),
+    # POL-REHAB-001 (L34428)
+    Finding(
+        "POL-REHAB-001.F1",
+        WRONG,
+        "c2: an initial evaluation or re-evaluation can be covered even when it finds that "
+        "therapy is not needed, so the plan-of-care requirement applies to treatment only.",
+        _items("cov-112"),
+        ("POL-REHAB-001.c2",),
+        ("97161", "97162"),
+    ),
+    Finding(
+        "POL-REHAB-001.F2",
+        MISSING,
+        "c2: the patient is under the care of a physician or NPP, who certifies and recertifies "
+        "the plan.",
+        _items("cov-018", "doc-007", "doc-019"),
+    ),
+    Finding(
+        "POL-REHAB-001.F3",
+        MISSING,
+        "Add the evaluation documentation: the initial examination's components, functional "
+        "limitations in objective, measurable terms, and complexity factors that support the "
+        "evaluation level billed.",
+        _items("cov-021", "cov-107..111"),
+    ),
+    Finding(
+        "POL-REHAB-001.F4",
+        MISSING,
+        "Add: timed procedures need one-on-one direct patient contact.",
+        _items("cov-188"),
+    ),
+    Finding(
+        "POL-REHAB-001.F5",
+        MISSING,
+        "Add the therapeutic exercise indications: one of the listed documented conditions, with "
+        "objective measures.",
+        _items("cov-191..195"),
+    ),
+    Finding(
+        "POL-REHAB-001.F6",
+        MISSING,
+        "Add the manual therapy indications: documented restricted joint or soft-tissue motion or "
+        "painful spasm, or lymphedema for lymphatic drainage.",
+        _items("cov-232..244"),
+    ),
+    Finding(
+        "POL-REHAB-001.F7",
+        MISSING,
+        "Add the therapeutic activities indications: a need for a broad range of movement-based "
+        "techniques, clearly related to the condition treated.",
+        _items("cov-263", "cov-267"),
+    ),
+    Finding(
+        "POL-REHAB-001.F8",
+        MISSING,
+        "c3: documented objective progress toward goals, the rationale for continued treatment, "
+        "ongoing reassessment, and a justification for services more extensive than typical.",
+        _items("doc-015", "doc-025", "doc-026", "doc-028"),
+    ),
+    Finding(
+        "POL-REHAB-001.F9",
+        RULE,
+        "Rule: a progress report at least every 10 treatment days, and plan recertification (needs "
+        "the patient's visit and plan dates).",
+        _items("doc-012", "doc-016"),
+    ),
+    # POL-SURG-001 (L33558)
+    Finding(
+        "POL-SURG-001.F1",
+        MISSING,
+        "c3: add a high probability of cataract acceleration from a planned procedure or "
+        "irradiation.",
+        _items("cov-008"),
+    ),
+    Finding(
+        "POL-SURG-001.F2",
+        MISSING,
+        "Add: when both eyes are planned before the first surgery, each eye needs its own "
+        "documented necessity.",
+        _items("cov-014"),
+    ),
+    Finding(
+        "POL-SURG-001.F3",
+        MISSING,
+        "Add complex cataract criteria: the listed intra- or post-operative factors (miotic pupil "
+        "needing devices, weak or absent lens support, pediatric surgery, extreme post-operative "
+        "inflammation).",
+        _items("cov-017..021"),
+    ),
+    # POL-SURG-002 (L34005)
+    Finding(
+        "POL-SURG-002.F1",
+        MISSING,
+        "c1: add the missing covered indications: synchronous cancer or polyps, inflammatory "
+        "bowel disease when it changes management, intraoperative localization, colonic "
+        "ischemia, Streptococcus bovis endocarditis, refractory new-onset constipation, anorectal "
+        "adenomatous polyp, infectious colitis.",
+        _items("cov-014", "cov-022", "cov-024..026", "cov-032", "cov-033", "doc-001"),
+    ),
+    Finding(
+        "POL-SURG-002.F2",
+        MISSING,
+        "Add: excision of colonic polyps as the indication for polyp removal.",
+        _items("cov-029"),
+    ),
+    Finding(
+        "POL-SURG-002.F3",
+        MISSING,
+        "Add the LCD's limitations: chronic stable irritable bowel or abdominal pain, acute "
+        "diarrhea, hemorrhoids, metastatic cancer of unknown primary without colonic symptoms, "
+        "routine follow-up of inflammatory bowel disease, routine pre-operative examination, upper "
+        "GI bleeding with an upper source, fulminant colitis, possible perforation, acute severe "
+        "diverticulitis, diverticulosis.",
+        _items("cov-037..043", "cov-046..049"),
+    ),
+    # POL-SURG-003 (L34209)
+    Finding(
+        "POL-SURG-003.F1",
+        MISSING,
+        "c1: name the qualifying symptoms (one or more): pain or burning impairing mobility, "
+        "recurrent superficial phlebitis, non-healing ulcer, bleeding varicosity, stasis "
+        "dermatitis, refractory dependent edema.",
+        _items("cov-010..015"),
+    ),
+    Finding(
+        "POL-SURG-003.F2",
+        MISSING,
+        "Add the anatomical requirements for ablation: no aneurysm in the target segment, a "
+        "maximum vein diameter (12 mm radiofrequency, 20 mm laser), no thrombosis or tortuosity, "
+        "no significant arterial disease.",
+        _items("cov-017..020"),
+    ),
+    Finding(
+        "POL-SURG-003.F3",
+        MISSING,
+        "Add: the record documents the tests confirming the vascular pathology.",
+        _items("doc-002"),
+    ),
+    Finding(
+        "POL-SURG-003.F4",
+        RULE,
+        "Any same-day rule must allow stab phlebectomy of the same vein with ablation when the "
+        "criteria are met.",
+        _items("cov-028"),
+    ),
+    # POL-SURG-004 (L33944)
+    Finding(
+        "POL-SURG-004.F1",
+        WRONG,
+        "c2-c3: exempt the reconstructive conditions of the LCD's groups 2 and 3 (defects from "
+        "disease, palsy, trauma or tumor surgery; congenital ptosis) from the functional-complaint "
+        "and visual-field requirements.",
+        _items("cov-016", "cov-030", "cov-038"),
+        ("POL-SURG-004.c2", "POL-SURG-004.c3"),
+        ("15822", "15823", "67904"),
+    ),
+    Finding(
+        "POL-SURG-004.F2",
+        MISSING,
+        "Add the other reconstructive indications: prosthesis problems with an anophthalmic, "
+        "microphthalmic or enophthalmic socket (with the listed documentation), and chronic "
+        "dermatitis of pretarsal skin from redundant upper eyelid skin.",
+        _items("cov-029", "cov-040"),
+    ),
+    # POL-WOUND-001 (L38902)
+    Finding(
+        "POL-WOUND-001.F1",
+        MISSING,
+        "Add criteria that separate surgical from selective or non-selective debridement: "
+        "surgical only when tissue was excised to viable margins and the record supports it; "
+        "extensive eczematous or infected skin is not a localized debridement; the conditions "
+        "that may need extensive surgical debridement.",
+        _items("cov-057..062", "cov-080", "cov-088"),
+    ),
+    Finding(
+        "POL-WOUND-001.F2",
+        MISSING,
+        "Add the documentation requirements: wound status and response at each visit, "
+        "measurements, signs of infection, tissue removed and depth, and the procedure note.",
+        _items(
+            "doc-004..007",
+            "doc-009..011",
+            "doc-015",
+            "doc-016",
+            "doc-019",
+            "doc-020",
+            "doc-022",
+            "doc-024",
+        ),
+    ),
+    Finding(
+        "POL-WOUND-001.F3",
+        MISSING,
+        "c3: expect measurable healing (smaller wound, granulation); allow 30 days to set up the "
+        "plan; revise the plan when healing is not documented after 30 days; do not continue a "
+        "type of care that shows no improvement.",
+        _items("cov-082", "cov-093", "cov-112", "cov-113", "cov-117", "cov-118"),
+    ),
+    Finding(
+        "POL-WOUND-001.F4",
+        MISSING,
+        "Add: cleansing, dressing, paring of corns and the other listed services are not "
+        "debridement.",
+        _items("cov-097..099", "cov-102..108"),
+    ),
+    Finding(
+        "POL-WOUND-001.F5",
+        MISSING,
+        "Add: care for cosmetic purposes is excluded.",
+        _items("cov-094"),
+    ),
+    Finding(
+        "POL-WOUND-001.F6",
+        MISSING,
+        "Add an indication for multi-layer compression, particularly venous leg ulcers.",
+        _items("cov-076"),
+    ),
+    Finding(
+        "POL-WOUND-001.F7",
+        RULE,
+        "Rule: more than 12 surgical debridements (5 involving muscle, fascia or bone) in 360 "
+        "days is unusual (needs the patient's history across claims).",
+        _items("doc-033"),
+    ),
+)
+
+
+def group_findings(
+    rows: Sequence[Mapping[str, Any]],
+    findings: Sequence[Finding],
+    lcd_of: Mapping[str, str],
+    counts: Mapping[str, int],
+    codes_by_policy: Mapping[str, Sequence[str]],
+) -> list[dict[str, Any]]:
+    """One row per finding with its item IDs, codes and impact (decided dataset lines of those
+    codes). Every gap item ("affects decisions" or "rule candidate") must be in exactly one
+    finding, and a finding's items must be gap items of its policy and of its kind."""
+    gaps = {r["item_id"]: r for r in rows if r["classification"] in GAP_CLASSES}
+    seen: Counter[str] = Counter()
+    problems: list[str] = []
+    out = []
+    for f in findings:
+        ids = [f"{lcd_of.get(f.policy_id, '?')}-{i}" for i in f.items]
+        seen.update(ids)
+        expected = "rule candidate" if f.kind == RULE else "affects decisions"
+        codes: set[str] = set()
+        for item_id in ids:
+            row = gaps.get(item_id)
+            if row is None or row["policy_id"] != f.policy_id:
+                problems.append(f"{f.finding_id}: {item_id} is not a gap item of {f.policy_id}")
+                continue
+            if row["classification"] != expected:
+                problems.append(
+                    f"{f.finding_id}: {item_id} is {row['classification']!r}, not {expected!r}"
+                )
+            codes.update(row["codes"].split() or codes_by_policy.get(f.policy_id, []))
+        out.append(
+            {
+                "finding_id": f.finding_id,
+                "policy_id": f.policy_id,
+                "kind": f.kind,
+                "change": f.change,
+                "criteria": " ".join(f.criteria),
+                "affected_codes": " ".join(f.codes),
+                "items": " ".join(ids),
+                "n_items": len(ids),
+                "codes": " ".join(sorted(codes)),
+                "impact": sum(counts.get(c, 0) for c in codes),
+            }
+        )
+    problems += [f"{i}: in {n} findings" for i, n in seen.items() if n > 1]
+    problems += [f"{i}: not in any finding" for i in gaps if i not in seen]
+    if problems:
+        raise ValueError("findings table: " + "; ".join(sorted(problems)))
+    return out
+
+
+@dataclass(frozen=True)
+class DatasetLine:
+    split: str
+    code: str
+    decision: str  # gold line decision
+    criteria: Mapping[str, str]  # criterion ID -> gold status
+
+
+@dataclass
+class Usage:
+    lines: int = 0  # lines where a finding's criterion has a status other than NOT_APPLICABLE
+    on_codes: int = 0  # of those, lines of the codes the contradiction affects
+    decisions: Counter[str] = field(default_factory=Counter)  # gold decisions, on_codes lines
+    statuses: Counter[str] = field(default_factory=Counter)  # "c2 NOT_MET", on_codes lines
+
+
+def criterion_usage(finding: Finding, lines: Iterable[DatasetLine]) -> dict[str, Usage]:
+    """Per split: the decision-dataset lines that use a WRONG CRITERION finding's criteria."""
+    usage = {s: Usage() for s in SPLITS}
+    for line in lines:
+        used = {
+            cid: status
+            for cid, status in line.criteria.items()
+            if cid in finding.criteria and status != "NOT_APPLICABLE"
+        }
+        if not used:
+            continue
+        u = usage[line.split]
+        u.lines += 1
+        if line.code in finding.codes:
+            u.on_codes += 1
+            u.decisions[line.decision] += 1
+            for cid, status in sorted(used.items()):
+                u.statuses[f"{cid.rsplit('.', 1)[1]} {status}"] += 1
+    return usage
+
+
+def fill_sitting(
+    required: Sequence[Any], optional: Sequence[Any], minutes: Any, budget: int = SITTING_MINUTES
+) -> tuple[list[Any], list[Any], int]:
+    """(shown, left, minutes): every required row, then optional rows in their order while the
+    estimated time stays within the budget. Stops at the first row that does not fit, so a later
+    (lower-impact) row never jumps ahead of it."""
+    shown = list(required)
+    total = sum(minutes(r) for r in shown)
+    left = list(optional)
+    while left and total + minutes(left[0]) <= budget:
+        total += minutes(left[0])
+        shown.append(left.pop(0))
+    return shown, left, total
+
+
+def finding_minutes(n_items: int) -> int:
+    return MINUTES_PER_ROW + math.ceil((n_items - 1) / ITEMS_PER_EXTRA_MINUTE)
 
 
 # --- self-test --------------------------------------------------------------------------------
@@ -690,22 +1425,32 @@ def self_test() -> tuple[str, bool]:
 # --- run --------------------------------------------------------------------------------------
 
 
-def dataset_line_counts() -> Counter[str]:
-    counts: Counter[str] = Counter()
-    for split in ("train", "validation", "test"):
+def dataset_lines(directory: Path = DATASET_DIR) -> list[DatasetLine]:
+    """Every labelled line of the decision dataset: its code, gold decision and the gold criterion
+    statuses in the target."""
+    out = []
+    for split in SPLITS:
         inputs = {}
-        with (DATASET_DIR / f"{split}_inputs.jsonl").open(encoding="utf-8") as f:
+        with (directory / f"{split}_inputs.jsonl").open(encoding="utf-8") as f:
             for line in f:
                 i = json.loads(line)
                 inputs[i["record_id"]] = i
-        with (DATASET_DIR / f"{split}.jsonl").open(encoding="utf-8") as f:
+        with (directory / f"{split}.jsonl").open(encoding="utf-8") as f:
             for line in f:
                 r = json.loads(line)
                 claim = inputs[r["metadata"]["record_id"]]["claim"]
                 codes = {s["line_no"]: s["procedure_code"] for s in claim["service_lines"]}
+                target = {
+                    t["line_no"]: t for t in json.loads(r["messages"][-1]["content"])["lines"]
+                }
                 for label in r["metadata"]["line_labels"]:
-                    counts[codes[label["line_no"]]] += 1
-    return counts
+                    n = label["line_no"]
+                    statuses = {
+                        c["criterion_id"]: c["status"]
+                        for c in target.get(n, {}).get("criteria", [])
+                    }
+                    out.append(DatasetLine(split, codes[n], label["decision"], statuses))
+    return out
 
 
 def candidates(criterion: Criterion, lcd: Lcd, top: int = 6) -> list[tuple[float, str, str]]:
@@ -786,20 +1531,27 @@ def main() -> None:
         "--save-judgments",
         type=Path,
         metavar="CSV",
-        help=f"replace the judgments in {CLASSIFICATION_CSV.relative_to(ROOT)} with this file",
+        help=f"add the judgments in CSV to {CLASSIFICATION_CSV.relative_to(ROOT)}, replacing "
+        "any for the same items",
     )
     parser.add_argument(
-        "--force", action="store_true", help="allow --save-judgments to overwrite judgments"
+        "--force", action="store_true", help="allow --save-judgments to rewrite saved judgments"
     )
     args = parser.parse_args()
     if args.save_judgments:
         with args.save_judgments.open(encoding="utf-8", newline="") as f:
-            rows = [Judgment(**{k: r[k] for k in JUDGMENT_FIELDS}) for r in csv.DictReader(f)]
+            new = [Judgment(**{k: r[k] for k in JUDGMENT_FIELDS}) for r in csv.DictReader(f)]
+        existing = read_judgments()
+        merged = merge_judgments(existing, new)
         try:
-            n = save_judgments(rows, force=args.force)
+            n = save_judgments(merged, force=args.force)
         except JudgmentsExist as exc:
             raise SystemExit(str(exc)) from exc
-        print(f"saved {n} judgments to {CLASSIFICATION_CSV}")
+        replaced = sum(j.item_id in existing for j in new)
+        print(
+            f"saved {n} judgments to {CLASSIFICATION_CSV} "
+            f"({len(existing)} before; {replaced} replaced, {len(new) - replaced} added)"
+        )
         return
     criteria = load_criteria()
     lcds = load_lcds({c.lcd_id for c in criteria.values()})
@@ -895,20 +1647,6 @@ def _cell(text: Any) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ")
 
 
-def round_robin(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Highest impact first within each policy; policies take turns, highest impact first."""
-    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for row in sorted(rows, key=lambda r: (-r["impact"], r["item_id"])):
-        groups[row["policy_id"]].append(row)
-    order = sorted(groups, key=lambda p: (-groups[p][0]["impact"], p))
-    out = []
-    while any(groups[p] for p in order):
-        for p in order:
-            if groups[p]:
-                out.append(groups[p].pop(0))
-    return out
-
-
 ALREADY_DECIDED_POLICY = "POL-PAIN-001"  # V1a: D-ESI-1 to D-ESI-7 and the v2-bundle notes
 SEVERITY = (
     "NOT FOUND",
@@ -924,7 +1662,16 @@ def _severity(flags: Sequence[str]) -> int:
     return min((i for i, s in enumerate(SEVERITY) for f in flags if f.startswith(s)), default=99)
 
 
-def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noqa: ANN001, C901, PLR0912, PLR0915
+def _composite_only(flags: str) -> bool:
+    parts = [f for f in flags.split("; ") if f]
+    return bool(parts) and all(f.startswith("composite") for f in parts)
+
+
+def _counts(counter: Counter[str]) -> str:
+    return ", ".join(f"{k} {v}" for k, v in sorted(counter.items())) or "-"
+
+
+def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noqa: ANN001
     out.mkdir(parents=True, exist_ok=True)
     sources = read_sources()
     field_texts = {lid: {f: lcd.text(f) for f in SEARCH_FIELDS} for lid, lcd in lcds.items()}
@@ -971,8 +1718,10 @@ def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noq
     mapped_sims = [emb.cos(i.text, criteria[cid].text) for i in items for cid in mapping[i.item_id]]
     t_para = nearest_rank(mapped_sims, PARAPHRASE_PERCENTILE)
     judgments = read_judgments()
-    counts = dataset_line_counts()
+    lines = dataset_lines()
+    counts = Counter(line.code for line in lines)
     rows, queue = [], []
+    overridden = 0
     for i in items:
         sim, near = closest[i.item_id]
         rule = rule_classification(i)
@@ -1002,40 +1751,29 @@ def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noq
                     "judged": "yes" if i.item_id in judgments else "no",
                 }
             )
-        if mapping[i.item_id]:
-            row = {
-                **base,
-                "mapping": "; ".join(mapping[i.item_id]),
-                "classification": "mapped",
-                "reason": "the criterion's source excerpt covers this item",
-                "by": "source excerpt",
-                "codes": "",
-            }
-        elif needs_judgment and i.item_id in judgments:
-            j = judgments[i.item_id]
-            row = {
-                **base,
-                "mapping": "NOT IN POLICY"
-                if not j.classification.startswith(("covered by", "already decided"))
-                else "",
-                "classification": j.classification,
-                "reason": j.reason,
-                "by": j.by,
-                "codes": j.codes,
-            }
-        elif needs_judgment:
+        judgment = judgments.get(i.item_id)
+        result = classify(mapping[i.item_id], judgment, rule, needs_judgment)
+        if result is None:
             continue  # waiting for a judgment
-        else:
-            row = {
-                **base,
-                "mapping": "NOT IN POLICY",
-                "classification": rule[0],
-                "reason": rule[1],
-                "by": "rule",
-                "codes": "",
-            }
-        codes = row["codes"].split() or codes_by_policy.get(i.policy_id, [])
-        row["impact"] = sum(counts[c] for c in codes)
+        classification, reason, by, codes = result
+        if not mapping[i.item_id] and not needs_judgment and judgment is not None:
+            overridden += 1  # a saved judgment replaced the keyword rule's classification
+        row = {
+            **base,
+            "mapping": "; ".join(mapping[i.item_id])
+            if mapping[i.item_id]
+            else ""
+            if classification.startswith(("covered by", "already decided"))
+            else "NOT IN POLICY",
+            "classification": classification,
+            "reason": reason,
+            "by": by,
+            "rule_hit": rule[0] if rule else "",
+            "codes": codes,
+        }
+        row["impact"] = sum(
+            counts[c] for c in (codes.split() or codes_by_policy.get(i.policy_id, []))
+        )
         rows.append(row)
 
     queue_fields = [
@@ -1061,10 +1799,18 @@ def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noq
         f"part 2: {len(items)} items ({skipped} background blocks skipped); mapped "
         f"{sum(bool(v) for v in mapping.values())}; paraphrase threshold {t_para:.4f}; "
         f"classified {len(rows)}; needing judgment {len(queue)}, of which not yet judged "
-        f"{sum(q['judged'] == 'no' for q in queue)}"
+        f"{sum(q['judged'] == 'no' for q in queue)}; saved judgments overriding a keyword rule "
+        f"{overridden}"
     )
     if queue_only or any(q["judged"] == "no" for q in queue):
         return
+
+    # findings (raises when a gap item is in no finding or in two)
+    finding_rows = group_findings(rows, FINDINGS, policy_lcd, counts, codes_by_policy)
+    finding_of = {item_id: f["finding_id"] for f in finding_rows for item_id in f["items"].split()}
+    for r in rows:
+        r["finding"] = finding_of.get(r["item_id"], "")
+    usage = {f.finding_id: (f, criterion_usage(f, lines)) for f in FINDINGS if f.kind == WRONG}
 
     # full CSVs
     part1_fields = [
@@ -1112,6 +1858,8 @@ def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noq
         "classification",
         "reason",
         "by",
+        "rule_hit",
+        "finding",
         "codes",
         "impact",
         "closest_criterion",
@@ -1119,47 +1867,98 @@ def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noq
         "descriptors_omitted",
     ]
     _write_csv(out / "B_completeness_full.csv", rows, full_fields)
+    usage_rows = [
+        {
+            "finding_id": fid,
+            "criteria": " ".join(f.criteria),
+            "affected_codes": " ".join(f.codes),
+            "split": split,
+            "lines_using_criteria": u.lines,
+            "lines_on_affected_codes": u.on_codes,
+            "gold_decisions": _counts(u.decisions),
+            "criterion_statuses": _counts(u.statuses),
+        }
+        for fid, (f, by_split) in sorted(usage.items())
+        for split, u in by_split.items()
+    ]
+    _write_csv(out / "B_wrong_criterion_lines.csv", usage_rows, list(usage_rows[0]))
 
-    # review rows
+    # sitting 1: part 1
     rng = random.Random(SEED)
-    flagged = [r for r in part1_rows if r["status"] == "flagged"]
-    flagged.sort(key=lambda r: (_severity(r["flags"].split("; ")), r["criterion_id"]))
-    unflagged = [r for r in part1_rows if not r["flags"]]
+    flagged = sorted(
+        (r for r in part1_rows if r["status"] == "flagged"),
+        key=lambda r: (_severity(r["flags"].split("; ")), r["criterion_id"]),
+    )
+    composite_only = [r for r in flagged if _composite_only(r["flags"])]
+    samples = rng.sample(composite_only, min(2, len(composite_only)))
+    decided_rows = [r for r in part1_rows if r["policy_id"] == ALREADY_DECIDED_POLICY]
+    unflagged = [r for r in part1_rows if not r["flags"] and r not in decided_rows]
     controls1 = rng.sample(unflagged, min(2, len(unflagged)))
-    gaps = [r for r in rows if r["classification"] in ("affects decisions", "rule candidate")]
-    ordered_gaps = round_robin(gaps)
+    sitting1 = [
+        *[{**r, "why": f"flagged: {r['flags']}"} for r in flagged if r not in composite_only],
+        *[
+            {**r, "why": f"sample of {len(composite_only)} composite-only flags: {r['flags']}"}
+            for r in samples
+        ],
+        *[{**r, "why": "control (not flagged)"} for r in controls1],
+    ]
+    minutes1 = MINUTES_PER_ROW * len(sitting1)
+    decided_part1 = sum(r["status"].startswith("already") for r in part1_rows)
+
+    # sitting 2: findings
+    def by_impact(f: Mapping[str, Any]) -> tuple[int, str]:
+        return -f["impact"], f["finding_id"]
+
+    wrong = sorted((f for f in finding_rows if f["kind"] == WRONG), key=by_impact)
+    rest = sorted((f for f in finding_rows if f["kind"] != WRONG), key=by_impact)
     rule_out = [r for r in rows if r["by"] == "rule" and r["classification"] == "out of scope"]
     controls2 = rng.sample(rule_out, min(3, len(rule_out)))
-    cap_rows = CAP_MINUTES // MINUTES_PER_ROW
-    part1_review = [*flagged, *[{**c, "control": True} for c in controls1]]
-    part2_review = [*[{**c, "control": True} for c in controls2], *ordered_gaps]
-    room = max(0, cap_rows - len(part1_review))
-    part2_shown = part2_review[:room]
-    part1_shown = part1_review[:cap_rows]
-    left1 = len(part1_review) - len(part1_shown)
-    left2 = len(part2_review) - len(part2_shown)
 
+    def minutes2(entry: Mapping[str, Any]) -> int:
+        return finding_minutes(entry["n_items"]) if "finding_id" in entry else MINUTES_PER_ROW
+
+    shown2, left2, minutes_2 = fill_sitting([*wrong, *controls2], rest, minutes2)
+    sitting2 = [*wrong, *shown2[len(wrong) + len(controls2) :], *controls2]
+    in_review = {f["finding_id"] for f in sitting2 if "finding_id" in f}
+    for f in finding_rows:
+        f["in_review"] = "sitting 2" if f["finding_id"] in in_review else "full CSV only"
+    _write_csv(out / "B_findings_full.csv", finding_rows, list(finding_rows[0]))
+
+    # review sheet
     self_line, self_ok = self_test()
     flag_counts = Counter(
         f.split(" (")[0].split(" <")[0].split(" 0")[0] for r in part1 for f in r.flags
     )
     classes = Counter(r["classification"] for r in rows)
     by = Counter(r["by"] for r in rows)
+    kinds = Counter(f["kind"] for f in finding_rows)
     covered = sum(v for k, v in classes.items() if k.startswith("covered by"))
     decided = sum(v for k, v in classes.items() if k.startswith("already decided"))
     dist = sorted(meaning.values())
-    minutes = MINUTES_PER_ROW * (len(part1_shown) + len(part2_shown))
-    decided_part1 = sum(r["status"].startswith("already") for r in part1_rows)
-    lines = [
+    gap_items = sum(f["n_items"] for f in finding_rows)
+    left_items = sum(f["n_items"] for f in left2)
+    row_of = {r["item_id"]: r for r in rows}
+    text_of = {cid: c.text for cid, c in criteria.items()}
+    lines_out = [
         "# Policy source and completeness check (Task V1b): review sheet",
         "",
-        *PART1_TITLE.split("\n"),
+        f"For one reviewer, in two sittings of about {SITTING_MINUTES} minutes each. Sitting 1 "
+        f"verdicts: {PART1_VERDICTS}. Sitting 2 verdicts: {PART2_VERDICTS}.",
         "",
         f"- **{INDEPENDENCE}**",
+        f"- **Only in the full CSVs.** Part 1: {len(part1_rows) - len(sitting1)} of "
+        f"{len(part1_rows)} criteria are only in B_policy_sources_full.csv "
+        f"({len(composite_only) - len(samples)} composite-only flags not sampled, "
+        f"{len(unflagged) - len(controls1)} unflagged criteria, and the {len(decided_rows)} "
+        f"{ALREADY_DECIDED_POLICY} criteria, whose {decided_part1} flags were decided in V1a). "
+        f"Part 2: {len(left2)} of {len(finding_rows)} findings ({left_items} LCD items) are only "
+        f"in B_findings_full.csv, and the {len(rows) - gap_items} items that are in no finding "
+        f"(mapped, covered, already decided or out of scope), apart from the {len(controls2)} "
+        "controls, are only in B_completeness_full.csv.",
         f"- Criteria: {len(part1)}; flagged: {len(flagged) + decided_part1} "
-        f"({', '.join(f'{k} {v}' for k, v in sorted(flag_counts.items()))}); "
-        f"POL-PAIN-001 flags listed as already decided (D-ESI-1 to D-ESI-7), not reviewed again: "
-        f"{sum(r['status'].startswith('already') for r in part1_rows)}.",
+        f"({', '.join(f'{k} {v}' for k, v in sorted(flag_counts.items()))}); composite-only: "
+        f"{len(composite_only)}; POL-PAIN-001 flags already decided (D-ESI-1 to D-ESI-7), not "
+        f"reviewed again: {decided_part1}.",
         f"- Meaning similarity (criterion vs its excerpt, {emb.name} cosine, triage only): min "
         f"{dist[0]:.3f}, 10th percentile {nearest_rank(dist, 0.10):.3f}, "
         f"median {nearest_rank(dist, 0.5):.3f}, "
@@ -1173,48 +1972,95 @@ def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noq
         + ", ".join(f"{c} {classes[c]}" for c in CLASSES)
         + ".",
         f"- Classified by keyword rules: {by['rule']}; by section: {by['section']}; by item-level "
-        f"judgment: {by['judgment']}. Unmapped items at least {t_para:.3f} similar to a criterion "
-        "(5th percentile of mapped items) were judged by hand before any rule.",
+        f"judgment: {by['judgment']}, of which {overridden} replace a keyword rule that misfired. "
+        f"Unmapped items at least {t_para:.3f} similar to a criterion (5th percentile of mapped "
+        "items) were judged by hand before any rule.",
+        f"- Findings: {len(finding_rows)} ({', '.join(f'{k} {kinds[k]}' for k in FINDING_KINDS)})"
+        f", holding all {gap_items} items classified as affecting decisions or rule candidates, "
+        "each in exactly one finding. Impact = dataset lines (all splits) of the finding's codes.",
         f"- AMA CPT descriptor text: excerpts containing it {len(leaked)}; displayed items with it "
         f"replaced by {DESCRIPTOR_OMITTED}: {sum(1 for r in rows if r['descriptors_omitted'])}.",
-        f"- Estimated review time: {minutes} minutes ({MINUTES_PER_ROW} minutes per row; cap "
-        f"{CAP_MINUTES}). Rows not shown here: Part 1 {left1}, Part 2 {left2}; they are in "
-        "B_policy_sources_full.csv and B_completeness_full.csv.",
+        f"- Estimated time: sitting 1 {minutes1} minutes ({len(sitting1)} rows, "
+        f"{MINUTES_PER_ROW} minutes each); sitting 2 {minutes_2} minutes ({MINUTES_PER_ROW} "
+        f"minutes per finding plus 1 per {ITEMS_PER_EXTRA_MINUTE} LCD items after the first; "
+        f"{MINUTES_PER_ROW} per control).",
         "",
-        "## Part 1: source check",
+        f"## Sitting 1: source check (Part 1), about {minutes1} minutes",
         "",
-        "| # | Criterion ID | Our criterion text | Source file | Source text found (or NOT FOUND) "
-        "| Similarity | Differing values | Your verdict | Notes |",
+        "Does the source text say what our criterion says? Write "
+        f"{PART1_VERDICTS}. POL-PAIN-001 is left out (decided in V1a).",
+        "",
+        "| # | Criterion ID (why shown) | Our criterion text | Source file | Source text found (or "
+        "NOT FOUND) | Similarity | Differing values | Your verdict | Notes |",
         "|---|---|---|---|---|---|---|---|---|",
     ]
-    for n, r in enumerate(part1_shown, start=1):
-        label = (
-            f"{r['criterion_id']} ({'control' if r.get('control') else 'flagged: ' + r['flags']})"
-        )
-        lines.append(
-            f"| {n} | {_cell(label)} | {_cell(r['criterion_text'])} | {_cell(r['source_file'])} | "
+    for n, r in enumerate(sitting1, start=1):
+        lines_out.append(
+            f"| {n} | {_cell(r['criterion_id'] + ' (' + r['why'] + ')')} | "
+            f"{_cell(r['criterion_text'])} | {_cell(r['source_file'])} | "
             f"{_cell(r['source_text'])} | {r['similarity']} | "
             f"{_cell(r['differing_values'] or '-')} |  |  |"
         )
-    lines += [
+    lines_out += [
         "",
-        "## Part 2: completeness check",
+        f"## Sitting 2: completeness findings (Part 2), about {minutes_2} minutes",
         "",
-        "| # | Policy | LCD section and item | LCD text (word for word) | Classification | Reason "
-        "| Your verdict | Notes |",
+        "Each finding is one proposed v2 change to one policy, with the LCD items behind it. "
+        f"Write {PART2_VERDICTS}. WRONG CRITERION findings come first, then the others by impact; "
+        f"the last {len(controls2)} entries are controls (items a keyword rule classified as out "
+        "of scope: write ADD IN V2 if one should change a policy).",
+        "",
+        "Decision-dataset lines that use each WRONG CRITERION finding's criteria (status other "
+        "than NOT_APPLICABLE in the gold target), report only:",
+        "",
+        "| Finding | Criteria | Affected codes | Split | Lines using the criteria "
+        "| On affected codes | Gold decisions (affected codes) "
+        "| Criterion status (affected codes) |",
         "|---|---|---|---|---|---|---|---|",
     ]
-    for n, r in enumerate(part2_shown, start=1):
-        cls = f"{r['classification']} (control)" if r.get("control") else r["classification"]
-        where = f"{r['lcd']} {r['field']}: {r['section'] or '(top)'} > {r['item_id']}"
-        lines.append(
-            f"| {n} | {r['policy_id']} | {_cell(where)} | {_cell(r['text'])} | {_cell(cls)} | "
-            f"{_cell(r['reason'])} (impact {r['impact']} lines) |  |  |"
+    for u in usage_rows:
+        lines_out.append(
+            f"| {u['finding_id']} | {u['criteria']} | {u['affected_codes']} | {u['split']} | "
+            f"{u['lines_using_criteria']} | {u['lines_on_affected_codes']} | "
+            f"{u['gold_decisions']} | {u['criterion_statuses']} |"
         )
-    (out / "B_policy_sources_review.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    for n, entry in enumerate(sitting2, start=1):
+        lines_out.append("")
+        if "finding_id" in entry:
+            lines_out += [
+                f"### {n}. {entry['finding_id']}: {entry['kind']} (impact {entry['impact']} "
+                f"lines; about {finding_minutes(entry['n_items'])} minutes)",
+                "",
+                f"**Proposed v2 change:** {entry['change']}",
+                "",
+            ]
+            if entry["kind"] == WRONG:
+                for cid in entry["criteria"].split():
+                    lines_out += [f"**Our criterion now:** {cid}: {text_of[cid]}", ""]
+                lines_out += [f"Affected codes: {entry['affected_codes']}.", ""]
+            first = row_of[entry["items"].split()[0]]
+            lines_out.append(f"LCD {first['lcd']} items, word for word:")
+            lines_out.append("")
+            for item_id in entry["items"].split():
+                r = row_of[item_id]
+                lines_out.append(
+                    f"- `{item_id}` ({r['field']}; {r['section'] or '(top)'}): {r['text']}"
+                )
+        else:
+            lines_out += [
+                f"### {n}. Control: {entry['item_id']} ({entry['policy_id']})",
+                "",
+                f"Classified out of scope by a keyword rule: {entry['reason']}.",
+                "",
+                f"- `{entry['item_id']}` ({entry['field']}; {entry['section'] or '(top)'}): "
+                f"{entry['text']}",
+            ]
+        lines_out += ["", f"Your verdict ({PART2_VERDICTS}):", "", "Notes:"]
+    (out / "B_policy_sources_review.md").write_text("\n".join(lines_out) + "\n", encoding="utf-8")
     print(
-        f"review rows: part 1 {len(part1_shown)} (+{left1} in CSV), part 2 {len(part2_shown)} "
-        f"(+{left2} in CSV), {minutes} minutes; {self_line}"
+        f"findings {len(finding_rows)} ({_counts(kinds)}); sitting 1: {len(sitting1)} rows, "
+        f"{minutes1} min; sitting 2: {len(sitting2)} entries, {minutes_2} min; only in full CSVs: "
+        f"{len(left2)} findings; {self_line}"
     )
     if not self_ok:
         sys.exit(1)

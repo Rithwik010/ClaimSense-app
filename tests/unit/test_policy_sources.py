@@ -2,6 +2,7 @@
 text is extracted and mapped deterministically. In-memory LCDs only; no data/raw/ needed."""
 
 import csv
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -9,10 +10,17 @@ import pytest
 from scripts.verify.policy_sources import (
     ASSOCIATED_FIELD,
     COVERAGE_FIELD,
+    FINDING_KINDS,
+    FINDINGS,
     JOIN,
+    MISSING,
     NOT_FOUND,
+    RULE,
     SOURCES_CSV,
+    WRONG,
     Criterion,
+    DatasetLine,
+    Finding,
     Item,
     Judgment,
     JudgmentsExist,
@@ -21,19 +29,24 @@ from scripts.verify.policy_sources import (
     best_similarity,
     blocks,
     check_source,
+    classify,
     conditions,
+    criterion_usage,
     differing_values,
+    fill_sitting,
+    group_findings,
     items_of,
     load_criteria,
     mapped_criteria,
+    merge_judgments,
     planted_cases,
     planted_lcd,
     redact,
     resolve,
-    round_robin,
     rule_classification,
     run_planted,
     save_judgments,
+    scope_codes,
     self_test,
     values,
 )
@@ -164,14 +177,114 @@ def test_keyword_rules() -> None:
     assert rule_classification(item("Pain must be documented.")) is None
 
 
-def test_round_robin_orders_by_impact_then_policy_turns() -> None:
+def test_a_saved_judgment_overrides_a_keyword_rule() -> None:
+    """V1b: the billing keyword rule called "Bill type codes only apply to ... Part A" a rule
+    candidate; the saved judgment (out of scope) must win."""
+    rule = ("rule candidate", "coding or billing instruction checkable from claim codes")
+    judgment = Judgment("L1-cov-052", "out of scope", "Part A bill types", "", "judgment")
+
+    assert classify([], judgment, rule, needs_judgment=False) == (
+        "out of scope",
+        "Part A bill types",
+        "judgment",
+        "",
+    )
+    assert classify([], None, rule, needs_judgment=False) == (*rule, "rule", "")
+    assert classify([], None, None, needs_judgment=True) is None  # waits for a judgment
+    assert classify(["POL-P.c1"], judgment, rule, needs_judgment=False)[0] == "mapped"
+
+
+def test_added_judgments_replace_by_item_and_keep_order() -> None:
+    old = {
+        "a": Judgment("a", "out of scope", "r1"),
+        "b": Judgment("b", "rule candidate", "r2"),
+    }
+    merged = merge_judgments(
+        old, [Judgment("b", "out of scope", "fixed"), Judgment("c", "out of scope", "new")]
+    )
+    assert [(j.item_id, j.reason) for j in merged] == [("a", "r1"), ("b", "fixed"), ("c", "new")]
+
+
+def _gap(item_id: str, classification: str = "affects decisions", codes: str = "") -> dict:
+    return {
+        "item_id": item_id,
+        "policy_id": "POL-P",
+        "classification": classification,
+        "codes": codes,
+    }
+
+
+def test_findings_hold_every_gap_item_exactly_once() -> None:
     rows = [
-        {"item_id": "a1", "policy_id": "A", "impact": 50},
-        {"item_id": "a2", "policy_id": "A", "impact": 40},
-        {"item_id": "b1", "policy_id": "B", "impact": 45},
-        {"item_id": "c1", "policy_id": "C", "impact": 5},
+        _gap("L1-cov-001", codes="111"),
+        _gap("L1-cov-002", "rule candidate"),
+        _gap("L1-cov-003", "out of scope"),
     ]
-    assert [r["item_id"] for r in round_robin(rows)] == ["a1", "b1", "c1", "a2"]
+    findings = [
+        Finding("POL-P.F1", MISSING, "add it", ("cov-001",)),
+        Finding("POL-P.F2", RULE, "check it", ("cov-002",)),
+    ]
+    args = ({"POL-P": "L1"}, Counter({"111": 5, "222": 7}), {"POL-P": ["111", "222"]})
+
+    grouped = group_findings(rows, findings, *args)
+
+    assert [(g["finding_id"], g["codes"], g["impact"]) for g in grouped] == [
+        ("POL-P.F1", "111", 5),
+        ("POL-P.F2", "111 222", 12),  # no codes of its own: the policy's codes
+    ]
+    with pytest.raises(ValueError, match="L1-cov-002: not in any finding"):
+        group_findings(rows, findings[:1], *args)
+    with pytest.raises(ValueError, match="L1-cov-001: in 2 findings"):
+        group_findings(rows, [*findings, Finding("POL-P.F3", MISSING, "x", ("cov-001",))], *args)
+    with pytest.raises(ValueError, match="L1-cov-003 is not a gap item"):
+        group_findings(rows, [*findings, Finding("POL-P.F3", MISSING, "x", ("cov-003",))], *args)
+    with pytest.raises(ValueError, match="'rule candidate', not 'affects decisions'"):
+        group_findings(rows, [Finding("POL-P.F1", MISSING, "x", ("cov-001", "cov-002"))], *args)
+
+
+def test_the_findings_table_is_well_formed() -> None:
+    criteria = load_criteria()
+    codes = scope_codes()
+    ids = [f.finding_id for f in FINDINGS]
+
+    assert len(ids) == len(set(ids))
+    for f in FINDINGS:
+        assert f.kind in FINDING_KINDS and f.change and f.items, f.finding_id
+        assert f.policy_id in codes, f.finding_id
+        if f.kind == WRONG:
+            assert f.criteria and f.codes, f.finding_id
+            assert all(criteria[c].policy_id == f.policy_id for c in f.criteria)
+            assert set(f.codes) <= set(codes[f.policy_id])
+        else:
+            assert not f.criteria and not f.codes, f.finding_id
+
+
+def test_wrong_criterion_lines_are_counted_by_split_and_gold_decision() -> None:
+    finding = Finding("POL-P.F1", WRONG, "x", ("cov-001",), ("POL-P.c1",), ("95024",))
+    lines = [
+        DatasetLine("train", "95024", "DENY", {"POL-P.c1": "NOT_MET"}),
+        DatasetLine("train", "95024", "APPROVE", {"POL-P.c1": "MET", "POL-P.c2": "MET"}),
+        DatasetLine("train", "95004", "APPROVE", {"POL-P.c1": "MET"}),  # another code
+        DatasetLine("test", "95024", "PEND", {"POL-P.c1": "NOT_APPLICABLE"}),  # not used
+        DatasetLine("test", "95024", "PEND", {"POL-P.c2": "MET"}),  # another criterion
+    ]
+
+    usage = criterion_usage(finding, lines)
+
+    assert usage["train"].lines == 3 and usage["train"].on_codes == 2
+    assert usage["train"].decisions == Counter({"APPROVE": 1, "DENY": 1})
+    assert usage["train"].statuses == Counter({"c1 MET": 1, "c1 NOT_MET": 1})
+    assert usage["test"].lines == 0 and usage["validation"].lines == 0
+
+
+def test_a_sitting_keeps_required_rows_then_fills_in_order_within_the_budget() -> None:
+    def minutes(row: int) -> int:
+        return row
+
+    shown, left, total = fill_sitting([10, 10], [5, 20, 1], minutes, budget=30)
+    assert shown == [10, 10, 5] and left == [20, 1] and total == 25  # order kept: 1 is not pulled
+    shown, _, total = fill_sitting([40], [1], minutes, budget=30)
+    assert shown == [40] and total == 40  # required rows are always shown
 
 
 def test_descriptor_text_is_redacted() -> None:

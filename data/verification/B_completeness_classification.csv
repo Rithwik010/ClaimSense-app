@@ -909,3 +909,10 @@ L38902-doc-032,covered by POL-WOUND-001.c3 (paraphrase),same statement on interv
 L38902-doc-033,rule candidate,more than twelve surgical debridements is unusual: needs the patient's history of dates,11042,judgment
 L38902-doc-034,out of scope,low-frequency ultrasound uses a code outside our scope,,judgment
 L38902-doc-035,out of scope,general statement on medical review,,judgment
+L34005-cov-052,out of scope,bill type codes for institutional (Part A) billing; our claims are professional CMS-1500 claims (the billing keyword rule misfired),,judgment
+L34209-doc-000,out of scope,"general instruction to report an ICD-10-CM code on each claim; applies to every claim, not a criterion of this policy (the billing keyword rule misfired)",,judgment
+L34209-doc-004,out of scope,"points to the Correct Coding Initiative edits, which the project takes from its own NCCI PTP file, not from this policy (the billing keyword rule misfired)",,judgment
+L38902-cov-068,out of scope,"heading for low-frequency non-contact non-thermal ultrasound, a service whose code is not in procedure_scope.csv (the frequency keyword rule matched 'Low-Frequency')",,judgment
+L38902-cov-069,out of scope,"describes low-frequency non-contact non-thermal ultrasound, a service whose code is not in procedure_scope.csv (the frequency keyword rule matched 'frequency')",,judgment
+L38902-cov-119,out of scope,"only points to the Utilization Guidelines section, whose limit is item L38902-doc-033 (the frequency keyword rule matched 'frequency limitations')",,judgment
+L38902-doc-029,out of scope,"documentation for low-frequency non-contact ultrasound (MIST therapy), a service whose code is not in procedure_scope.csv (the frequency keyword rule matched 'frequency')",,judgment
