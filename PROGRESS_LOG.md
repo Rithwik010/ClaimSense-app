@@ -11,7 +11,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 
 ---
 
-## 1. Current status (2026-09-24 IST)
+## 1. Current status (2026-09-28 IST)
 
 | Area | State |
 |---|---|
@@ -22,10 +22,11 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | **Why the target is missed** | Fully measured, not guessed: note register 0.144 of the 0.228 gap; the model contradicting its own statuses 0.027 (fixable deterministically, no retraining); the NOT_APPLICABLE / NOT_DOCUMENTED boundary; and the dropped second line (**a decoding problem, not a training one**). |
 | **Retrieval (P3.3)** | **Ablation: worth 0.376 of macro-F1.** Without the retrieved criteria the model denies nothing at all (DENY F1 0.000) and invents policy ids. |
 | **Label verification (V1a)** | **Done, report only.** Checks 1-4 found no problems in 2,600 records; check 5 cannot verify most NOT_APPLICABLE labels automatically. ESI labels conflict with LCD L33906; fixing them would not close the gap to 0.90 (estimated test macro-F1 0.6732 -> 0.6677). Decisions for the v2 bundle are recorded (section 4). |
+| **Policy source check (V1b)** | **Done, report only; human review pending** (two sittings, section 4). All 57 criteria cite a word-for-word LCD excerpt (`data/curated/policy_sources.csv`); 72 findings against the LCDs (WRONG CRITERION 4, MISSING CRITERION 52, RULE CANDIDATE 16). The 4 wrong criteria change at most 6 v1 labels (all POL-REHAB-001 PENDs). D-RULE-1 and D-SCOPE-1 set the v2 scope. |
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
-| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` holds the V1a work and decisions as its own branch on GitHub, **not merged into `main`**. |
+| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` holds the V1a and V1b work and decisions as its own branch on GitHub, **not merged into `main`**. |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 770 pass, 19 skipped, **1 failing**: `test_ncci_pairs_include_known_edits`, because `data/raw/ncci-ptp/ccipra-v323r0-f1/` holds only the `.xlsx` and the pair (11042, 97597) lives in that file's `.txt`. Unrelated to the model work. |
+| Tests | 828 pass, 19 skipped, **1 failing**: `test_ncci_pairs_include_known_edits`, because `data/raw/ncci-ptp/ccipra-v323r0-f1/` holds only the `.xlsx` and the pair (11042, 97597) lives in that file's `.txt`. Unrelated to the model work. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -102,6 +103,8 @@ Pull before starting; tell the team which task you take (add a timeline entry).
 | **Decide the retry policy for invalid answers**: first attempt at temperature 0, and only when the answer is invalid, one seeded retry at temperature 0.7. Measured to recover 5-8 of the 16 dropped-line records per attempt; reproducibility is kept because every attempt is seeded | team | `DECISIONS.md` |
 | Record the exact Hugging Face revision of the base model in the training log (not done) | next session | `training/finetune/train.py` |
 | Rebuild the golden end-to-end model answers for prompt v2 and real retrieval (P5.6) | later | `tests/golden/e2e/` |
+| **Review V1b, sitting 1** (about 28 min): 14 Part 1 rows in `data/generated/verification/B_policy_sources_review.md`; write MATCHES / DIFFERENT MEANING / NOT IN SOURCE / UNSURE | one reviewer | timeline |
+| **Review V1b, sitting 2** (about 34 min): the 4 WRONG CRITERION findings, the 5 top-impact findings and 3 controls; write ADD IN V2 / NOT NEEDED / UNSURE. The other 63 findings are known gaps (D-SCOPE-1) | one reviewer | `DECISIONS.md` |
 
 ---
 
@@ -230,6 +233,20 @@ Kaggle copy for anything model-related.
   - **R14 affects 32 ESI lines** (24 in two_policy, 20 would become DENY); **21 two_policy records have contradictory notes**.
   - **New decisions:** D-GEN-1, D-GEN-2, D-DX-1 (R15, `DN_DX_NOT_SUPPORTED`), D-RAG-1. All are v2-bundle changes.
   - **History rewrite and force-push:** the Claude co-author line was removed from all 73 commits; the rewrite changed no file (`git diff 9d0900e 579e94d` is empty). Old `main` tip `9d0900e` (kept locally as `backup/pre-rewrite`), new tip `efb088f`, which adds `e33992a` updating 34 commit IDs in this log and nothing else. Force-pushed with a lease on `d0fd690`; `setup-docs` was already gone from GitHub. Pull request #1's pinned ref still shows 3 old commits; only GitHub Support can remove it. Harmless: those commits differ only by the co-author line; no action planned.
+
+### 2026-09-28
+
+- 12:52 | Manideep3183 | verification | **Policy source and completeness check V1b (branch `v1-data-verification`: `1d56f24`, `c6d8e0c` and the wrap-up commit); report only, no policy, label or generator changed.** Takeaway: the policies are simplified versions of their LCDs (72 findings), but the 4 wrong criteria change at most 6 v1 labels (all POL-REHAB-001 PENDs); the main label risk remains the NOT_APPLICABLE handling found in V1a. Checker `scripts/verify/policy_sources.py`; outputs in `data/generated/verification/` (git-ignored).
+  - **Sources (Part 1):** all 57 criteria cite an LCD excerpt in `data/curated/policy_sources.csv`; all 57 are word for word in the MCD text (similarity 1.0, none NOT FOUND) and none contains AMA CPT descriptor text. 30 flagged for review: composite 26 (17 composite only), differing values 7, low meaning similarity 5, outside the coverage field 1; the 3 POL-PAIN-001 flags were already decided in V1a.
+  - **Completeness (Part 2):** 1,060 LCD items (161 background blocks skipped): mapped to an excerpt 127, covered by a paraphrase 161, already decided 8, affects decisions 207, rule candidate 24, out of scope 533. The 917 item judgments (`data/verification/B_completeness_classification.csv`, tracked, overwrite-guarded) are **Claude-proposed and not yet reviewed**; 7 of them correct keyword-rule misfires.
+  - **Keyword rules misfire:** 7 of 23 rule classifications were wrong (30%), all among the 10 items the rules called rule candidates (billing keywords 3, frequency keywords 4). The 13 out-of-scope rule classifications are checked only through 3 review controls.
+  - **72 findings**, each one proposed v2 change to one policy and together holding all 231 gap items once: WRONG CRITERION 4, MISSING CRITERION 52, RULE CANDIDATE 16 (7 need a patient's earlier claims; 9 are single-claim, 2 of them limits on same-day rules).
+  - **Wrong criteria, lines the error could change** (codes: billing-article covered codes by ICD-10-CM FY2027 description): POL-SURG-004.F1 congenital ptosis or palsy **0** (18 codes, A56439); POL-DX-003.F1 food allergy on 95024 **0** (52 codes, A57531); 95024 is the only intradermal code in scope; POL-CAR-002.F1 c2 on 93268 **0**; POL-REHAB-001.F1 evaluation lines with c2 NOT_MET or NOT_DOCUMENTED **15** (train 13: DENY 8, PEND 5; validation 1 PEND; test 1 DENY), of which **6** (all `pend_missing` PENDs, e.g. DEC-TR-00916) could become APPROVE; the other 9 are diagnosis mismatches that R15 denies first.
+  - **Lost scratchpad scripts** (CLAUDE.md now requires such code under `scripts/`): `esi_impact.py`, `extra_records.py`, `judge.py`, `write_sources.py`. **No longer reproducible from code:**
+    - all of A_impact.md, including the V1a entry's numbers: 222 ESI lines (176 headline; 46 excluded: 21 contradictory notes, 25 diagnosis mismatch, 3 conflicting duration); 234 status labels and 95 decisions changed; 3 of 11 changed test decisions fix a model error; macro-F1 0.6732 -> 0.6677 (accuracy 0.6875) and 0.6692 (accuracy 0.6893); the pattern-agreement percentages; 391 diagnosis-mismatch lines (226 + 165 by scenario), 393 NOT_MET labels, 381 of 393 on the first applicable criterion, 183 of 393 (47%) off the indication criterion; R14 on 32 ESI lines (24 two_policy, 20 would become DENY);
+    - all of A_extra_records.md: 5 of 69 NOT_APPLICABLE c2/c3 lines with no previous injection (train 3, validation 1, test 1; the V1a entry's "5 first injections labelled like repeats"), the phrase counts (54, 44, 10, 8) and the explicit no-injection count (0);
+    - the 910 original judgments cannot be re-derived and the excerpt choice cannot be re-run; every V1b number is reproducible from the tracked files.
+  - **New decisions:** D-RULE-1, D-SCOPE-1. Checks pass except the known NCCI test (f1.txt not extracted).
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.

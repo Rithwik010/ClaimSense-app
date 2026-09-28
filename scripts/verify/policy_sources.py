@@ -40,7 +40,7 @@ import re
 import sys
 import zipfile
 from collections import Counter, defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -1261,6 +1261,9 @@ class DatasetLine:
     code: str
     decision: str  # gold line decision
     criteria: Mapping[str, str]  # criterion ID -> gold status
+    record_id: str = ""
+    diagnoses: tuple[str, ...] = ()  # the line's ICD-10-CM codes (through its diagnosis pointers)
+    scenario: str = ""  # the record's generator scenario type
 
 
 @dataclass
@@ -1290,6 +1293,156 @@ def criterion_usage(finding: Finding, lines: Iterable[DatasetLine]) -> dict[str,
             for cid, status in sorted(used.items()):
                 u.statuses[f"{cid.rsplit('.', 1)[1]} {status}"] += 1
     return usage
+
+
+@dataclass(frozen=True)
+class Refinement:
+    """The lines of a WRONG CRITERION finding whose label the error could change: lines of the
+    affected codes that use the finding's criteria and also meet this condition."""
+
+    condition: str
+    # A line diagnosis among the billing article's covered codes whose ICD-10-CM FY2027 description
+    # matches (a diagnosis the article does not cover is denied by R15 before the SLM sees it).
+    diagnosis_pattern: str = ""
+    diagnosis_exclude: str = ""
+    statuses: tuple[str, ...] = ()  # a gold status of one of the finding's criteria
+
+
+REFINEMENTS: dict[str, Refinement] = {
+    "POL-SURG-004.F1": Refinement(
+        "a congenital ptosis or palsy diagnosis (LCD L33944 items cov-030 and cov-038)",
+        diagnosis_pattern=r"congenital ptosis|palsy|paralytic",
+    ),
+    "POL-DX-003.F1": Refinement(
+        "a food-allergy diagnosis on the intradermal test line (LCD L33261 items cov-058 and "
+        "cov-080)",
+        diagnosis_pattern=r"\b(?:foods?|peanuts|milk|eggs?|shellfish|seafood|tree nuts|mammalian "
+        r"meats)\b",
+        diagnosis_exclude=r"contact dermatitis|except food",  # contact allergy: patch testing
+    ),
+    "POL-REHAB-001.F1": Refinement(
+        "c2 (plan of care) NOT_MET or NOT_DOCUMENTED on the evaluation line",
+        statuses=("NOT_MET", "NOT_DOCUMENTED"),
+    ),
+    "POL-CAR-002.F1": Refinement("none: every 30-day monitoring line that uses c2 counts"),
+}
+
+
+def diagnosis_codes(
+    refinement: Refinement, article_codes: Iterable[str], icd10: Mapping[str, str]
+) -> list[str]:
+    """The billing article's covered codes whose ICD-10-CM description matches the refinement."""
+    return sorted(
+        code
+        for code in set(article_codes)
+        if code in icd10
+        and re.search(refinement.diagnosis_pattern, icd10[code], re.IGNORECASE)
+        and not (
+            refinement.diagnosis_exclude
+            and re.search(refinement.diagnosis_exclude, icd10[code], re.IGNORECASE)
+        )
+    )
+
+
+@dataclass
+class RefinedCounts:
+    decisions: dict[str, Counter[str]]  # per split: gold decisions of the lines counted
+    supported: dict[str, int]  # per split: of those, lines whose diagnoses satisfy the billing
+    # article, so R15 (D-DX-1) would not deny them before the SLM sees them
+    scenarios: Counter[str]
+    examples: list[str]  # two record IDs, lines with a supported diagnosis first
+
+
+def refined_usage(
+    finding: Finding,
+    refinement: Refinement,
+    codes: Collection[str],
+    lines: Iterable[DatasetLine],
+    dx_supported: Callable[[DatasetLine], bool] | None = None,
+) -> RefinedCounts:
+    """The lines whose label the error could change: lines of the affected codes that use the
+    finding's criteria and meet the refinement's condition."""
+    counts = RefinedCounts({s: Counter() for s in SPLITS}, dict.fromkeys(SPLITS, 0), Counter(), [])
+    records = set()
+    for line in lines:
+        used = {
+            status
+            for cid, status in line.criteria.items()
+            if cid in finding.criteria and status != "NOT_APPLICABLE"
+        }
+        if line.code not in finding.codes or not used:
+            continue
+        if refinement.statuses and not used & set(refinement.statuses):
+            continue
+        if refinement.diagnosis_pattern and not set(line.diagnoses) & set(codes):
+            continue
+        supported = dx_supported is None or dx_supported(line)
+        counts.decisions[line.split][line.decision] += 1
+        counts.supported[line.split] += supported
+        counts.scenarios[line.scenario] += 1
+        records.add((not supported, SPLITS.index(line.split), line.record_id))
+    counts.examples = list(dict.fromkeys(record_id for *_, record_id in sorted(records)))[:2]
+    return counts
+
+
+def billing_article(policy_id: str, directory: Path = POLICIES_DIR) -> str:
+    """The policy file's billing_article (front matter), e.g. "A56439"."""
+    text = (directory / f"{policy_id}.md").read_text(encoding="utf-8")
+    found = re.search(r"^billing_article:\s*(A\d+)\s*$", text, re.MULTILINE)
+    return found.group(1) if found else ""
+
+
+@dataclass(frozen=True)
+class Refined:
+    refinement: Refinement
+    source: str  # where the diagnosis codes come from ("" when the refinement uses none)
+    codes: list[str]
+    counts: RefinedCounts
+
+
+def refine_wrong_criteria(
+    findings: Sequence[Finding], lines: Sequence[DatasetLine]
+) -> dict[str, Refined]:
+    """REFINEMENTS applied to the WRONG CRITERION findings. Diagnosis codes come from data/raw/:
+    the policy's billing article (current version, covered groups) and ICD-10-CM FY2027. Whether
+    a line's diagnoses satisfy its code's article rule uses the V1a check (label_checks)."""
+    from app.db.curated import load_curated
+    from app.db.raw import read_article_diagnoses, read_icd10_codes
+    from scripts.verify.label_checks import Support, supported
+
+    icd10 = read_icd10_codes()
+    support = {
+        code: Support(s.billing_article, s.alternatives)
+        for code, s in load_curated().diagnosis_support.items()
+    }
+    articles = read_article_diagnoses({s.article for s in support.values()})
+    covered_by_article = {a: dict(d.covered) for a, d in articles.items()}
+
+    def dx_supported(line: DatasetLine) -> bool:
+        rule = support.get(line.code)
+        return rule is None or supported(line.diagnoses, rule, covered_by_article)
+
+    out = {}
+    for f in findings:
+        refinement = REFINEMENTS[f.finding_id]
+        source, codes = "", []
+        if refinement.diagnosis_pattern:
+            article_id = billing_article(f.policy_id)
+            article = articles.get(article_id) or read_article_diagnoses({article_id})[article_id]
+            covered = {c for group in article.covered.values() for c in group}
+            codes = diagnosis_codes(refinement, covered, icd10)
+            source = (
+                f"billing article {article_id} v{article.version} covered codes whose ICD-10-CM "
+                f"FY2027 description matches /{refinement.diagnosis_pattern}/"
+                + (
+                    f" but not /{refinement.diagnosis_exclude}/"
+                    if refinement.diagnosis_exclude
+                    else ""
+                )
+            )
+        counts = refined_usage(f, refinement, set(codes), lines, dx_supported)
+        out[f.finding_id] = Refined(refinement, source, codes, counts)
+    return out
 
 
 def fill_sitting(
@@ -1426,8 +1579,8 @@ def self_test() -> tuple[str, bool]:
 
 
 def dataset_lines(directory: Path = DATASET_DIR) -> list[DatasetLine]:
-    """Every labelled line of the decision dataset: its code, gold decision and the gold criterion
-    statuses in the target."""
+    """Every labelled line of the decision dataset: its code, gold decision, the gold criterion
+    statuses in the target, its record and its diagnoses."""
     out = []
     for split in SPLITS:
         inputs = {}
@@ -1438,8 +1591,10 @@ def dataset_lines(directory: Path = DATASET_DIR) -> list[DatasetLine]:
         with (directory / f"{split}.jsonl").open(encoding="utf-8") as f:
             for line in f:
                 r = json.loads(line)
-                claim = inputs[r["metadata"]["record_id"]]["claim"]
-                codes = {s["line_no"]: s["procedure_code"] for s in claim["service_lines"]}
+                record_id = r["metadata"]["record_id"]
+                claim = inputs[record_id]["claim"]
+                letters = {chr(ord("A") + k): d for k, d in enumerate(claim["diagnoses"])}
+                service = {s["line_no"]: s for s in claim["service_lines"]}
                 target = {
                     t["line_no"]: t for t in json.loads(r["messages"][-1]["content"])["lines"]
                 }
@@ -1449,7 +1604,20 @@ def dataset_lines(directory: Path = DATASET_DIR) -> list[DatasetLine]:
                         c["criterion_id"]: c["status"]
                         for c in target.get(n, {}).get("criteria", [])
                     }
-                    out.append(DatasetLine(split, codes[n], label["decision"], statuses))
+                    diagnoses = tuple(
+                        letters[p] for p in service[n]["diagnosis_pointers"] if p in letters
+                    )
+                    out.append(
+                        DatasetLine(
+                            split,
+                            service[n]["procedure_code"],
+                            label["decision"],
+                            statuses,
+                            record_id,
+                            diagnoses,
+                            r["metadata"].get("scenario_type", ""),
+                        )
+                    )
     return out
 
 
@@ -1811,6 +1979,7 @@ def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noq
     for r in rows:
         r["finding"] = finding_of.get(r["item_id"], "")
     usage = {f.finding_id: (f, criterion_usage(f, lines)) for f in FINDINGS if f.kind == WRONG}
+    refined = refine_wrong_criteria([f for f, _ in usage.values()], lines)
 
     # full CSVs
     part1_fields = [
@@ -1877,6 +2046,14 @@ def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noq
             "lines_on_affected_codes": u.on_codes,
             "gold_decisions": _counts(u.decisions),
             "criterion_statuses": _counts(u.statuses),
+            "refined_condition": refined[fid].refinement.condition,
+            "refined_diagnosis_source": refined[fid].source,
+            "refined_diagnosis_codes": " ".join(refined[fid].codes),
+            "refined_lines": sum(refined[fid].counts.decisions[split].values()),
+            "refined_gold_decisions": _counts(refined[fid].counts.decisions[split]),
+            "refined_lines_dx_supported": refined[fid].counts.supported[split],
+            "refined_scenarios_all_splits": _counts(refined[fid].counts.scenarios),
+            "refined_examples": " ".join(refined[fid].counts.examples),
         }
         for fid, (f, by_split) in sorted(usage.items())
         for split, u in by_split.items()
@@ -2024,6 +2201,35 @@ def write_reports(criteria, lcds, out, queue_only: bool = False) -> None:  # noq
             f"{u['lines_using_criteria']} | {u['lines_on_affected_codes']} | "
             f"{u['gold_decisions']} | {u['criterion_statuses']} |"
         )
+    lines_out += [
+        "",
+        "Refined: only the lines where the error could change the label, i.e. lines of the "
+        "affected codes that use the criteria and also meet the condition below (gold decisions; "
+        'report only). "R15 would not deny first" counts the lines whose diagnoses satisfy the '
+        "billing article (the V1a check); the others are diagnosis mismatches that R15 (D-DX-1) "
+        "denies before the SLM sees them. Example records show those lines first.",
+        "",
+        "| Finding | Condition | Train | Validation | Test | R15 would not deny first "
+        "(train / validation / test) | Scenario types | Example records |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for fid, r in sorted(refined.items()):
+        c = r.counts
+        cells = [
+            f"{sum(c.decisions[s].values())} ({_counts(c.decisions[s])})" if c.decisions[s] else "0"
+            for s in SPLITS
+        ]
+        lines_out.append(
+            f"| {fid} | {_cell(r.refinement.condition)} | {' | '.join(cells)} | "
+            f"{' / '.join(str(c.supported[s]) for s in SPLITS)} | {_counts(c.scenarios)} | "
+            f"{', '.join(c.examples) or 'none'} |"
+        )
+    lines_out += ["", "Diagnosis codes used (ICD-10-CM, no dots):", ""]
+    lines_out += [
+        f"- {fid}: {' '.join(r.codes) or 'none'} ({r.source})"
+        for fid, r in sorted(refined.items())
+        if r.source
+    ]
     for n, entry in enumerate(sitting2, start=1):
         lines_out.append("")
         if "finding_id" in entry:

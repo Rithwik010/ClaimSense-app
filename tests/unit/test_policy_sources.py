@@ -15,6 +15,7 @@ from scripts.verify.policy_sources import (
     JOIN,
     MISSING,
     NOT_FOUND,
+    REFINEMENTS,
     RULE,
     SOURCES_CSV,
     WRONG,
@@ -25,6 +26,7 @@ from scripts.verify.policy_sources import (
     Judgment,
     JudgmentsExist,
     Lcd,
+    Refinement,
     SourceRow,
     best_similarity,
     blocks,
@@ -32,6 +34,7 @@ from scripts.verify.policy_sources import (
     classify,
     conditions,
     criterion_usage,
+    diagnosis_codes,
     differing_values,
     fill_sitting,
     group_findings,
@@ -42,6 +45,7 @@ from scripts.verify.policy_sources import (
     planted_cases,
     planted_lcd,
     redact,
+    refined_usage,
     resolve,
     rule_classification,
     run_planted,
@@ -275,6 +279,63 @@ def test_wrong_criterion_lines_are_counted_by_split_and_gold_decision() -> None:
     assert usage["train"].decisions == Counter({"APPROVE": 1, "DENY": 1})
     assert usage["train"].statuses == Counter({"c1 MET": 1, "c1 NOT_MET": 1})
     assert usage["test"].lines == 0 and usage["validation"].lines == 0
+
+
+def test_refined_diagnosis_codes_come_from_the_article_and_the_icd10_description() -> None:
+    icd10 = {
+        "Q100": "Congenital ptosis",
+        "G510": "Bell's palsy",
+        "H02431": "Paralytic ptosis of right eyelid",
+        "H02411": "Mechanical ptosis of right eyelid",
+        "L237": "Allergic contact dermatitis due to plants, except food",
+        "L236": "Allergic contact dermatitis due to food in contact with the skin",
+        "Z91010": "Allergy to peanuts",
+        "Z91018": "Allergy to other foods",
+    }
+    article = {"Q100", "G510", "H02431", "H02411", "L237", "L236", "Z91010"}  # not Z91018
+    ptosis, food = REFINEMENTS["POL-SURG-004.F1"], REFINEMENTS["POL-DX-003.F1"]
+
+    assert diagnosis_codes(ptosis, article, icd10) == ["G510", "H02431", "Q100"]
+    assert diagnosis_codes(food, article, icd10) == ["Z91010"]  # only codes the article covers
+    assert diagnosis_codes(food, article | {"Z91018"}, icd10) == ["Z91010", "Z91018"]  # "foods"
+
+
+def test_refined_lines_need_the_codes_the_criterion_and_the_condition() -> None:
+    finding = Finding("POL-P.F1", WRONG, "x", ("cov-001",), ("POL-P.c2",), ("97161", "97162"))
+    by_status = Refinement("c2 NOT_MET or NOT_DOCUMENTED", statuses=("NOT_MET", "NOT_DOCUMENTED"))
+    c2 = "POL-P.c2"
+    lines = [
+        DatasetLine("train", "97161", "DENY", {c2: "NOT_MET"}, "DEC-TR-2", ("X1",), "deny_dx"),
+        DatasetLine("train", "97161", "PEND", {c2: "NOT_DOCUMENTED"}, "DEC-TR-3", ("OK",), "pend"),
+        DatasetLine("train", "97161", "APPROVE", {c2: "MET"}, "DEC-TR-4", ("OK",)),
+        DatasetLine("train", "97110", "DENY", {c2: "NOT_MET"}, "DEC-TR-5", ("OK",)),  # other code
+        DatasetLine("test", "97162", "DENY", {c2: "NOT_MET"}, "DEC-TE-1", ("OK",), "deny"),
+    ]
+
+    counts = refined_usage(finding, by_status, set(), lines, lambda line: "OK" in line.diagnoses)
+
+    assert counts.decisions["train"] == Counter({"DENY": 1, "PEND": 1})
+    assert counts.decisions["test"] == Counter({"DENY": 1}) and not counts.decisions["validation"]
+    assert counts.supported == {"train": 1, "validation": 0, "test": 1}  # DEC-TR-2: R15 first
+    assert counts.scenarios == Counter({"deny_dx": 1, "pend": 1, "deny": 1})
+    assert counts.examples == ["DEC-TR-3", "DEC-TE-1"]  # lines R15 would not deny come first
+
+    by_diagnosis = Refinement("congenital ptosis", diagnosis_pattern="ptosis")
+    lines = [
+        DatasetLine("train", "97161", "APPROVE", {c2: "MET"}, "DEC-TR-5", ("Q100",)),
+        DatasetLine(
+            "train", "97161", "APPROVE", {c2: "NOT_APPLICABLE"}, "DEC-TR-6", ("Q100",)
+        ),  # the criterion is not used, so the error cannot change the label
+        DatasetLine("train", "97161", "APPROVE", {c2: "MET"}, "DEC-TR-7", ("H02411",)),
+    ]
+
+    counts = refined_usage(finding, by_diagnosis, {"Q100"}, lines)
+
+    assert counts.decisions["train"] == Counter({"APPROVE": 1}) and counts.examples == ["DEC-TR-5"]
+
+
+def test_every_wrong_criterion_finding_has_a_refinement() -> None:
+    assert set(REFINEMENTS) == {f.finding_id for f in FINDINGS if f.kind == WRONG}
 
 
 def test_a_sitting_keeps_required_rows_then_fills_in_order_within_the_budget() -> None:
