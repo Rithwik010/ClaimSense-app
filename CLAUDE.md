@@ -35,3 +35,4 @@ ClaimSense: CMS-1500 claims → deterministic rules → fine-tuned Gemma 4 SLM r
 - Branch: `p<phase>.<task>-<short-name>`. One task per session.
 - End with the task report format from `INSTRUCTIONS.md` §12.
 - Stop-and-ask triggers: `INSTRUCTIONS.md` §13.
+- Any code that produces data or report numbers must live under scripts/ and be committed; never keep it only in the session scratchpad.
