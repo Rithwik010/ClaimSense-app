@@ -18,6 +18,7 @@ from scripts.verify.model_disagreements import (
     line_groups,
     pair_criteria,
     record_disagreements,
+    review_samples,
     select_sample,
 )
 
@@ -208,3 +209,26 @@ def test_a_short_pool_is_taken_whole_and_reported() -> None:
         "NOT_MET -> NOT_DOCUMENTED": 2,
         "NOT_APPLICABLE / NOT_DOCUMENTED boundary": 2,
     }
+
+
+def test_the_extra_sample_takes_4_met_to_not_applicable_and_leaves_the_first_alone() -> None:
+    rows = _pool()  # holds 5 MET -> NOT_APPLICABLE rows in records with no known problem
+    rows += [_row(f"W{n:02d}", "MET", "NOT_APPLICABLE", (DX,)) for n in range(5)]  # excluded
+
+    first, extra, short = review_samples(rows)
+
+    assert [r.key for r in first] == [r.key for r in select_sample(rows, seed=42)[0]]
+    assert short == {} and len(extra) == 4
+    assert {r.error_type for r in extra} == {"MET -> NOT_APPLICABLE"}
+    assert not any(r.record_groups for r in extra)
+    assert {r.key for r in extra}.isdisjoint({r.key for r in first})
+    assert [r.key for r in review_samples(list(reversed(rows)))[1]] == [r.key for r in extra]
+
+
+def test_a_short_extra_pool_is_taken_whole_and_reported() -> None:
+    rows = [_row("V00", "MET", "NOT_APPLICABLE"), _row("V01", "MET", "NOT_APPLICABLE")]
+
+    _, extra, short = review_samples(rows)
+
+    assert {r.record_id for r in extra} == {"V00", "V01"}
+    assert short["MET -> NOT_APPLICABLE"] == 2

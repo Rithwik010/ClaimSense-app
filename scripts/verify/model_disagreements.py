@@ -15,6 +15,10 @@ the review sample (a record with any such line stays out entirely):
 - ESI lines (62321, 62323, 64483; D-ESI-1 to D-ESI-7);
 - POL-REHAB-001 evaluation lines (97161, 97162; V1b finding POL-REHAB-001.F1).
 
+The review sheet has two samples from records in no known-problem group: 8 rows (seed 42: 3
+MET -> NOT_DOCUMENTED, 3 NOT_MET -> NOT_DOCUMENTED, 2 from the NOT_APPLICABLE / NOT_DOCUMENTED
+boundary) and an extra 4 MET -> NOT_APPLICABLE (seed 43).
+
     uv run python -m scripts.verify.model_disagreements
 """
 
@@ -81,6 +85,11 @@ SAMPLE_QUOTA: tuple[tuple[str, tuple[str, ...], int], ...] = (
     ("MET -> NOT_DOCUMENTED", ("MET -> NOT_DOCUMENTED",), 3),
     ("NOT_MET -> NOT_DOCUMENTED", ("NOT_MET -> NOT_DOCUMENTED",), 3),
     (BOUNDARY, ("NOT_APPLICABLE -> NOT_DOCUMENTED", "NOT_DOCUMENTED -> NOT_APPLICABLE"), 2),
+)
+EXTRA_TITLE = "Extra sample: MET -> NOT_APPLICABLE"
+EXTRA_SEED = 43
+EXTRA_QUOTA: tuple[tuple[str, tuple[str, ...], int], ...] = (
+    ("MET -> NOT_APPLICABLE", ("MET -> NOT_APPLICABLE",), 4),
 )
 
 
@@ -274,6 +283,19 @@ def select_sample(
     return sample, short
 
 
+def review_samples(
+    rows: Iterable[Disagreement],
+) -> tuple[list[Disagreement], list[Disagreement], dict[str, int]]:
+    """(first sample, extra sample, shortfalls by pool). Each draw has its own seeded generator,
+    so the extra MET -> NOT_APPLICABLE sample (seed 43) cannot change the first one (seed 42)."""
+    rows = list(rows)
+    first, short = select_sample(rows, SEED, SAMPLE_QUOTA)
+    extra, extra_short = select_sample(rows, EXTRA_SEED, EXTRA_QUOTA)
+    if {r.key for r in first} & {r.key for r in extra}:
+        raise ValueError("the extra sample repeats a row of the first sample")
+    return first, extra, {**short, **extra_short}
+
+
 # --- inputs and self-checks -------------------------------------------------------------------
 
 
@@ -442,8 +464,23 @@ CSV_FIELDS = (
 )
 
 
+REVIEW_HEADER = (
+    "| # | Record ID | Criterion ID | Criterion text | Full clinical notes | My status | "
+    "Who is right? | Notes | Gold status | Model status |",
+    "|---|---|---|---|---|---|---|---|---|---|",
+)
+
+
 def _cell(text: Any) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ")
+
+
+def _shortfall(short: Mapping[str, int], quota: Sequence[tuple[str, tuple[str, ...], int]]) -> str:
+    """The 'Short pools' note for this quota's pools that ran short, or an empty string."""
+    names = [name for name, _, _ in quota if name in short]
+    if not names:
+        return ""
+    return " Short pools: " + ", ".join(f"{name} {short[name]} fewer" for name in names) + "."
 
 
 def build(out_dir: Path = OUT_DIR) -> None:
@@ -508,8 +545,8 @@ def build(out_dir: Path = OUT_DIR) -> None:
         check_contradictions(),
         check_dx_on_all_splits(check),
     ]
-    sample, short = select_sample(rows)
-    review_row = {r.key: n for n, r in enumerate(sample, start=1)}
+    sample, extra, short = review_samples(rows)
+    review_row = {r.key: n for n, r in enumerate([*sample, *extra], start=1)}
 
     out_dir.mkdir(parents=True, exist_ok=True)
     with (out_dir / "C_disagreements_full.csv").open("w", encoding="utf-8", newline="") as f:
@@ -549,8 +586,8 @@ def build(out_dir: Path = OUT_DIR) -> None:
         "",
         INSTRUCTION,
         "",
-        f"Estimated review time: {MINUTES_PER_ROW * len(sample)} minutes ({len(sample)} rows, "
-        f"{MINUTES_PER_ROW} minutes per row).",
+        f"Estimated review time: {MINUTES_PER_ROW * (len(sample) + len(extra))} minutes "
+        f"({len(sample) + len(extra)} rows, {MINUTES_PER_ROW} minutes per row).",
         "",
         f"Source: claimsense-decision:v1 on the {len(results)} test records "
         f"(`data/generated/eval/finetuned-v1.jsonl`): {valid} valid answers; {compared:,} "
@@ -610,28 +647,37 @@ def build(out_dir: Path = OUT_DIR) -> None:
         "Drawn: "
         + ", ".join(f"{wanted} from {name}" for name, _, wanted in SAMPLE_QUOTA)
         + "; the rows are shuffled, so their order says nothing about the error type."
-        + (
-            " Short pools: " + ", ".join(f"{name} {n} fewer" for name, n in short.items()) + "."
-            if short
-            else ""
-        ),
+        + _shortfall(short, SAMPLE_QUOTA),
         "",
-        "| # | Record ID | Criterion ID | Criterion text | Full clinical notes | My status | "
-        "Who is right? | Notes | Gold status | Model status |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        *REVIEW_HEADER,
     ]
-    for n, r in enumerate(sample, start=1):
-        lines_md.append(
+
+    def review_table(picked: Sequence[Disagreement], start: int) -> list[str]:
+        return [
             f"| {n} | {r.record_id}, line {r.line_no} ({r.code}) | {r.criterion_id} | "
             f"{_cell(clean(criterion_text.get(r.criterion_id, '')))} | "
             f"{_cell(clean(notes[r.record_id]))} |  |  |  | {r.gold} | {r.model} |"
-        )
+            for n, r in enumerate(picked, start=start)
+        ]
+
+    lines_md += review_table(sample, 1)
+    lines_md += [
+        "",
+        f"## {EXTRA_TITLE}",
+        "",
+        f"Drawn: {sum(wanted for _, _, wanted in EXTRA_QUOTA)} from MET -> NOT_APPLICABLE (seed "
+        f"{EXTRA_SEED}, records in no known-problem group); the rows are shuffled."
+        + _shortfall(short, EXTRA_QUOTA),
+        "",
+        *REVIEW_HEADER,
+        *review_table(extra, len(sample) + 1),
+    ]
     (out_dir / "C_disagreements_review.md").write_text("\n".join(lines_md) + "\n", encoding="utf-8")
 
     print(
         f"{len(results)} records ({valid} valid): {len(rows)} disagreements ({len(statuses)} "
         f"statuses, {len(decisions)} decisions); in a known-problem group {len(in_group)}; "
-        f"sample {len(sample)}; CPT descriptor text replaced {redacted}"
+        f"sample {len(sample)} + extra {len(extra)}; CPT descriptor text replaced {redacted}"
     )
     for line in checks:
         print(line)
