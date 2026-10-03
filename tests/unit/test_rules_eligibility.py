@@ -73,13 +73,19 @@ def test_skeleton_engine_matches_golden_without_h5(case: dict) -> None:
     assert outcome.flags == expected["flags"]
 
 
-def test_fields_used_name_only_the_uncovered_dates() -> None:
+def test_failing_result_uses_every_date_of_service() -> None:
+    """G1 H5 mapping (P2.3a): every date, not only the uncovered ones, so a low-confidence date on
+    any line rejects the claim instead of denying it (the cautious reading)."""
     case = next(c for c in CASES if c["case_id"] == "R05-04")  # line 2 is after coverage ends
     claim = intake(case).claim
 
     result = check_eligibility(claim, MEMBERS[claim.member_id])
 
-    assert result.fields_used == ["member_id", "service_lines.1.date_of_service"]
+    assert result.fields_used == [
+        "member_id",
+        "service_lines.0.date_of_service",
+        "service_lines.1.date_of_service",
+    ]
 
 
 def test_passing_result_uses_every_date_of_service() -> None:
