@@ -25,18 +25,19 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | **Policy source check (V1b)** | **Done, report only; reviewed in V1d.** All 57 criteria cite a word-for-word LCD excerpt (`data/curated/policy_sources.csv`); 72 findings against the LCDs (WRONG CRITERION 4, MISSING CRITERION 52, RULE CANDIDATE 16). The 4 wrong criteria change at most 6 v1 labels (all POL-REHAB-001 PENDs). D-RULE-1 and D-SCOPE-1 set the v2 scope. |
 | **Data verification (V1)** | **Complete (2026-10-02).** V1a labels, V1b policy sources and completeness, V1c model disagreements, V1d review verdicts (filled sheets and summary in `data/verification/reviews/`). D-V2-1, D-V2-2, D-GEN-3, D-GEN-4, D-REV-1 and D-LIM-1 feed the v2 bundle; v1 data and model unchanged. |
 | **Golden tests (G1-G2)** | **Spot-checked (2026-10-03).** Automatic checks: 0 violations on 52 calculator and 90 rules cases. The spot-check (10 rules, 9 calculator cases) agrees with every expected value (Claude recomputation in a separate chat, accepted by the reviewer). 5 rules cases conflict with R15 (D-GOLD-1); new cases to add (D-GOLD-2). |
-| **Raw data** | 62 files listed with size and SHA-256 in `data/raw_manifest.csv`; a test fails on a missing or changed file (D-DATA-1). NCCI part f1 is read from its official `.xlsx` (the `.txt` was lost; SOURCES.md). Regenerating the decision dataset reproduces the v1 fingerprints exactly. |
+| **Rules engine (P2.3a)** | **v1 rules built (2026-10-03).** R01–R13, duplicates, H5, `RULES_VERSION` 1.0.0. All 90 golden rules cases pass; 0 differences from the generator's rule mirror on all 2,600 dataset records. The pipeline still runs R05 only (rules version 0.1.0) until P2.1 loads NCCI, MUE, place of service and the full code table. |
+| **Raw data** | 63 files listed with size and SHA-256 in `data/raw_manifest.csv`; a test fails on a missing or changed file (D-DATA-1). NCCI part f1 was restored from the original download (2026-10-03) and is read from its `.txt` again; the `.xlsx` fallback stays (SOURCES.md). Regenerating the decision dataset reproduces the v1 fingerprints exactly (checked in G2). |
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
-| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). |
+| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 906 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. The NCCI test passes since G2 read part f1 from its `.xlsx`. Without Docker, the database and Qdrant tests are skipped. |
+| Tests | 1,071 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. Without Docker, the database and Qdrant tests are skipped. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
 | Phase | Done | Partly done | Not started |
 |---|---|---|---|
 | 1 Foundations | P1.1, P1.2, P1.3, P1.4 (contracts approved 2026-09-22), P1.5 | | |
-| 2 Rules and calculator | P2.2 | P2.1 (seed: curated, ICD-10, fees, reference; missing NCCI, MUE, POS), P2.3 (R05 only), P2.4 (in-network copay only), P2.5 (status table only) | |
+| 2 Rules and calculator | P2.2 | P2.1 (seed: curated, ICD-10, fees, reference; missing NCCI, MUE, POS), P2.3 (P2.3a v1 rules done; P2.3b R14, R15 and the D-RULE-1 rules not started; pipeline still on R05), P2.4 (in-network copay only), P2.5 (status table only) | |
 | 3 Knowledge and datasets | P3.1, P3.2, P3.3 (coverage_policies collection), P3.4, P3.5 (v2, real retrieval) | | |
 | 4 Model | P4.1, P4.2, P4.3, P4.5 | **P4.4 (measured; below the 0.90 target)** | |
 | 5 Integration | | P5.1 (digital PDF only), P5.2 (context with retrieval), P5.3 (tiers only), P5.5 (skeleton page), P5.6 (golden set written) | P5.4 |
@@ -69,9 +70,9 @@ These do not touch the frozen items above.
 
 | Task | Notes |
 |---|---|
-| P2.3 rules R01–R13, duplicates, H5 | 90 golden cases in `tests/golden/rules/`. Line flags must match the generator's mirror (`training/generate/codebook.py`, `line_rule_outcomes`) |
+| P2.3b rules R14, R15 and the D-RULE-1 single-claim rules | v2 rules (D-ESI-3, D-DX-1, D-RULE-1); new golden cases first (D-GOLD-2). P2.3a (R01–R13, duplicates, H5) is done |
 | P2.4 full calculator | 52 golden cases in `tests/golden/calculator/`; extend `app/calculator/engine.py` |
-| P2.1 remaining loaders | NCCI, MUE, place of service into Postgres; `app/db/seed.py` |
+| P2.1 remaining loaders | NCCI, MUE, place of service and the full code table into Postgres; `app/db/seed.py`. Then the pipeline can switch to the full rules engine (section 4) |
 | P2.5 workflow | `app/workflow/states.py` has the status table |
 | P5.1 scanned-form intake (OCR) | `app/intake/layout.py`, `app/intake/digital_pdf.py` exist |
 | P5.4 explanations | Jinja2 from the decision record; also the `plan_documents`, `code_reference`, `carc_rarc` collections |
@@ -88,7 +89,7 @@ Pull before starting; tell the team which task you take (add a timeline entry).
 
 | Item | Owner | Where to record |
 |---|---|---|
-| **Build the v2 bundle (decided, not built):** D-ESI-1 to D-ESI-7 (ESI criteria, R14, limitation-5 exclusion, consistent two_policy notes, criterion types), D-GEN-1 and D-GEN-2 (notes must carry the evidence their labels claim; NOT_MET never chosen by retrieval rank), D-DX-1 (R15, `DN_DX_NOT_SUPPORTED`), D-RAG-1 (no top-k cap), D-V2-1 and D-V2-2 (policy text fixes and findings from the V1b review), D-GEN-3 (exclusion criteria are never MET), D-GEN-4 (notes consistent across the lines of a claim). Regenerate the dataset and retrain once, together; model v1 and its data stay frozen until then. Also: POL-PAIN-001 c5 must include the LCD's path for a repeat ESI after a poor first response (after 14 days, different approach, level or medication, rationale documented); R14 must not treat add-on level codes or bilateral use of the same code as another block. | team | `DECISIONS.md` |
+| **Build the v2 bundle (decided, not built):** D-ESI-1 to D-ESI-7 (ESI criteria, R14, limitation-5 exclusion, consistent two_policy notes, criterion types), D-GEN-1 and D-GEN-2 (notes must carry the evidence their labels claim; NOT_MET never chosen by retrieval rank), D-DX-1 (R15, `DN_DX_NOT_SUPPORTED`), D-RAG-1 (no top-k cap), D-V2-1 and D-V2-2 (policy text fixes and findings from the V1b review), D-GEN-3 (exclusion criteria are never MET), D-GEN-4 (notes consistent across the lines of a claim), D-GEN-5 (every reference a generated claim makes exists in the reference data; parity extended to Groups A and B). Regenerate the dataset and retrain once, together; model v1 and its data stay frozen until then. Also: POL-PAIN-001 c5 must include the LCD's path for a repeat ESI after a poor first response (after 14 days, different approach, level or medication, rationale documented); R14 must not treat add-on level codes or bilateral use of the same code as another block. | team | `DECISIONS.md` |
 | Read the 20-record review packet (`data/generated/readiness/sample-records.md`; contains CPT codes: share privately, never commit) | team | `DECISIONS.md` |
 | Spot-check 3 coverage policies against their LCDs | team | `DECISIONS.md` |
 | Fill in the blind-review sheet before seeing model output | team | `tests/golden/blind_review/review_sheet.csv` |
@@ -109,6 +110,10 @@ Pull before starting; tell the team which task you take (add a timeline entry).
 | **Golden updates (decided, not done):** the five L97419 rules cases get a diagnosis A58565 covers, and R15 gets its own cases, when R15 is built in P2.3 (D-GOLD-1); new cases for a deductible split across two lines, a second copay capped by the allowed amount and a second primary-paid-at-least-allowed COB case (P2.4), and for R14, R15 and the single-claim D-RULE-1 rules (P2.3), each accepted only after an independent check (D-GOLD-2) | team | `DECISIONS.md` |
 | ~~**Review V1b, sitting 1** (about 28 min): 14 Part 1 rows in `data/generated/verification/B_policy_sources_review.md`; write MATCHES / DIFFERENT MEANING / NOT IN SOURCE / UNSURE~~ **Closed: reviewed in V1d** (`data/verification/reviews/`, D-V2-1). | — | timeline |
 | ~~**Review V1b, sitting 2** (about 34 min): the 4 WRONG CRITERION findings, the 5 top-impact findings and 3 controls; write ADD IN V2 / NOT NEEDED / UNSURE. The other 63 findings are known gaps (D-SCOPE-1)~~ **Closed: reviewed in V1d** (`data/verification/reviews/`, D-V2-2). | — | `DECISIONS.md` |
+| Switch the pipeline from the R05-only path (rules version 0.1.0) to the full v1 engine after P2.1 loads NCCI, MUE, place of service and the full code table. | team | timeline |
+| R02: check HCPCS termination dates against the date of service (1,322 terminated codes currently count as valid); candidate v2 refinement. | team | `DECISIONS.md` |
+| R10 matches on member, provider, code and date, not on the claim's prior-authorization number (2 dataset claims pass with an unknown number); v2 question. | team | `DECISIONS.md` |
+| Dates of service before 2026-10-01 raise `MissingReference` (only FY2027 ICD-10 is loaded); P2.1 must load FY2026 or handle this explicitly before the pipeline switches to the full engine. | team | timeline |
 
 ---
 
@@ -279,6 +284,14 @@ Kaggle copy for anything model-related.
   - **Raw-data manifest (D-DATA-1):** `data/raw_manifest.csv` lists the 62 files in `data/raw/` (409,804,716 bytes) with size and SHA-256 (macOS `.DS_Store` excluded); a test fails if a listed file is missing or changed and reports unlisted files; `scripts/verify/raw_manifest.py --update` rewrites it (first written 2026-10-03).
   - **Reproducibility confirmed:** the full suite passes with Docker and Qdrant running (906 passed, 1 skipped: the opt-in live-model test; 0 failed), including `test_ncci_pairs_include_known_edits` (the long-standing failure is fixed) and the blind-review test (all 30 claims identical to `claims.json`). The readiness gate's train/live parity check found 0 differences on 75 sampled records (25 per split). The decision dataset regenerated into a temporary folder has exactly the section 2 fingerprints (train `295cc6b1d3af`, validation `6478d11211a2`, test `afaa098ffc72`) and identical inputs files.
   - **New decisions:** D-GOLD-1 to D-GOLD-5, D-DATA-1.
+- 20:22 | Manideep3183 | P2.3a | **Rules engine, v1 rules (branch `p2.3a-rules-engine`, `2b38bad`..`07b7aeb`; merged into `main`).** Group A (R01–R04, duplicates; contract errors map to R01/R02/R03, A-R8), Group B (R05–R10, all evaluated, REJECT > DENY > PEND, D8), Group C (R11–R13, the generator's mirror algorithm; bypass modifiers XE/XP/XS/XU, 59 is v2 per D-GOLD-3), H5 with the G1 mapping plus member_id on R07 and R09 (D-GOLD-4, D-GOLD-5); every rule result lists its `fields_used`. `RULES_VERSION` 1.0.0. R14, R15 and the D-RULE-1 rules are P2.3b.
+  - **Golden:** 90 of 90 rules cases pass (outcome, status, failures, line outcomes, flags); no case changed.
+  - **Parity (frozen for model v1):** 0 differences on 2,600 train/validation/test records in claim outcome, OON flag, line outcomes and the prompt's RULES_RESULT text (`scripts/verify/rules_parity.py`, `tests/unit/test_rules_parity.py`).
+  - **Full engine on the dataset (report only):** 1,072 of 2,600 claims would stop at R10 (DN_NO_AUTH): 996 carry a prior-authorization number not in the reference data, 76 a number belonging to another member's authorization (numbering reused from the claim corpus). No member or provider is missing. D-GEN-5.
+  - **R05** now names every date of service (G1 mapping): the cautious reading, more REJECTs and fewer wrong denials. **Code table** for R02: PFS RVU26A ∪ HCPCS October 2026 (20,591 codes).
+  - **Pipeline:** unchanged in behaviour (R05 only), now recorded as rules version 0.1.0 until it switches to the full engine.
+  - **NCCI part f1 restored:** the team supplied the original f1 download. Its `.xlsx` is byte-identical (SHA-256) to the one in `data/raw/`, and its `.TXT` parses to exactly the same 675,157 edit records, including (11042, 97597). The `.TXT` was moved into `data/raw/ncci-ptp/ccipra-v323r0-f1/` (not committed) and the copy in the repository root removed; `data/raw_manifest.csv` was rewritten deliberately with `--update` (D-DATA-1): 63 files, 460,751,103 bytes, the f1 `.TXT` added and nothing else changed. f1 is read from its `.txt` again; the `.xlsx` fallback stays (SOURCES.md). With Docker running, the NCCI tests (the `.xlsx` gives the same edits as the `.txt` for f1–f4), the blind-review reproducibility test and dataset parity pass.
+  - **Tests:** 1,071 pass, 1 skipped. New decision: D-GEN-5.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.

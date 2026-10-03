@@ -34,6 +34,7 @@ MUE_CSV = RAW_DIR / "mue" / "2026-10" / "MCR_MUE_PractitionerServices_Eff_10-01-
 MUE_EFFECTIVE = date(2026, 10, 1)
 MCD_ARTICLES_ZIP = RAW_DIR / "mcd" / "2026-09-21" / "current_article.zip"
 POS_PDF = RAW_DIR / "pos" / "2024-05-02" / "Website_POS_database__5_2_24 (kmk).pdf"
+HCPCS_TXT = RAW_DIR / "hcpcs" / "2026-10" / "HCPC2026_OCT_ANWEB_v2.txt"
 
 # PFS RVU file columns (the file has a ten-row header; see RVU26AR.pdf for the layout).
 PFS_HCPCS, PFS_MOD, PFS_STATUS, PFS_NONFACILITY_TOTAL, PFS_CONVERSION_FACTOR = 0, 1, 3, 11, 25
@@ -120,9 +121,29 @@ def read_pfs(codes: set[str]) -> dict[str, PfsEntry]:
     return entries
 
 
+PROCEDURE_CODE = re.compile(r"[0-9]{4}[0-9A-Z]|[A-Z][0-9]{4}")
+HCPCS_PROCEDURE_RECORD = "3"  # record identification code (column 11): a procedure's first line
+
+
+def read_procedure_code_table() -> frozenset[str]:
+    """The procedure code table for R02 (golden case R02-03): every code in the PFS RVU26A file and
+    every procedure code in the HCPCS October 2026 file (HCPC2026_recordlayout.txt: code in
+    columns 1-5, record identification code in column 11). Codes only (H10)."""
+    codes = set()
+    with PFS_CSV.open(encoding="latin-1", newline="") as f:
+        for row in csv.reader(f):
+            if row and PROCEDURE_CODE.fullmatch(row[PFS_HCPCS]):
+                codes.add(row[PFS_HCPCS])
+    with HCPCS_TXT.open(encoding="latin-1") as f:
+        for line in f:
+            if line[10:11] == HCPCS_PROCEDURE_RECORD and PROCEDURE_CODE.fullmatch(line[:5]):
+                codes.add(line[:5])
+    return frozenset(codes)
+
+
 def _ncci_files() -> list[Path]:
     """One file per part of the PTP edit table: its .txt, or the official .xlsx from the same CMS
-    zip when the .txt is missing (f1: the .txt was lost; SOURCES.md)."""
+    zip when the .txt is missing (the fallback G2 used while f1's .txt was lost; SOURCES.md)."""
     files = []
     for part in sorted(p for p in NCCI_DIR.glob(f"{NCCI_VERSION}-f*") if p.is_dir()):
         by_suffix = {p.suffix.lower(): p for p in part.iterdir() if p.stem == part.name}

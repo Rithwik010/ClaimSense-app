@@ -17,7 +17,7 @@ from app.db.seed import seed_curated
 from app.domain.contracts import DecisionRecord
 from app.ml.client import ModelUnavailable
 from app.ml.prompt import PROMPT_VERSION, system_prompt
-from app.rules import RULES_VERSION
+from app.rules import SKELETON_RULES_VERSION
 from tests.e2e.support import E2E_CASES, StubModel
 
 
@@ -62,7 +62,7 @@ def test_office_visit_runs_end_to_end(api, load_case_reference) -> None:
     assert record.review_tier.value == recommendation["review_tier"]
     assert record.amounts.model_dump() == recommendation["amounts"]
     assert record.versions.model_dump() == {
-        "rules_version": RULES_VERSION,
+        "rules_version": SKELETON_RULES_VERSION,
         "model_name": "stub-model",
         "prompt_version": PROMPT_VERSION,
         "policy_versions": {},
