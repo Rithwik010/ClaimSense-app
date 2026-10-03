@@ -287,7 +287,7 @@ no network calls other than the database.
 1. **Group A (data integrity)**: R01–R04. If any fails → claim outcome **REJECT**; stop.
 2. **Group B (hard requirements)**: R05–R10. Evaluate **all**, record every failure.
    Outcome precedence: DENY over PEND. Any failure → claim stops with that outcome.
-3. **Group C (line level)**: R11–R12. A failing line is denied; the claim continues with the
+3. **Group C (line level)**: R11–R13. A failing line is denied; the claim continues with the
    remaining lines. If every line is denied → claim outcome DENY.
 4. **H5 conversion**: if a failing rule's `fields_used` includes a field below the confidence
    threshold → outcome becomes **REJECT** with reason `RJ_LOW_CONFIDENCE_FIELD`.
