@@ -6,7 +6,7 @@ If one looks wrong, stop and ask.
 
 | Folder | Cases | Tested by |
 |---|---|---|
-| `rules/` | 90 | P2.3 rules engine |
+| `rules/` | 90 | P2.3 rules engine (`tests/unit/test_rules_golden.py`) |
 | `calculator/` | 52 | P2.4 calculator |
 | `e2e/` | 30 | P5.6 end-to-end pipeline |
 | `rag/` | 50 queries | P3.3 retrieval (recall@3) |
@@ -33,13 +33,18 @@ Each file holds `{"cases": [...]}`. A case has:
 Plans, benefits, exclusions, NCCI, MUE, ICD-10-CM and place-of-service codes come from the loaded
 curated and raw data.
 
-### Rules assumptions (to be confirmed by the team)
+### Rules assumptions (confirmed by the team in G1-G2)
+
+Reviewed in the G1-G2 golden-test spot-check (`data/verification/reviews/G_summary.md`): every
+rules assumption was accepted except A-R3, which changes in v2 (D-GOLD-3, below). The engine
+(P2.3a) implements them as written here. Its H5 field mapping is the G1 mapping with `member_id`
+added to R07 and R09 (D-GOLD-4, D-GOLD-5); each rule's fields are in its `fields_used`.
 
 | ID | Assumption |
 |---|---|
 | A-R1 | Network status comes from the billing NPI's `provider_networks` row for the member's plan; no row means out of network. |
 | A-R2 | R06 checks the billing NPI and every rendering NPI. Rules that need a provider record (R07–R10) skip a provider that is not found. |
-| A-R3 | R11 applies to two lines with the same date of service. A bypass modifier on either line counts. Bypass modifiers are `data/curated/ncci_bypass_modifiers.csv` (XE, XP, XS, XU). |
+| A-R3 | R11 applies to two lines with the same date of service. A bypass modifier on either line counts. Bypass modifiers are `data/curated/ncci_bypass_modifiers.csv` (XE, XP, XS, XU). **Changes in v2 (D-GOLD-3):** modifier 59 is added after checking the full list in the NCCI Policy Manual; v1 keeps XE, XP, XS and XU (frozen for model v1). No golden rules case uses modifier 59. |
 | A-R4 | R12 adds the units of the same code on the same date of service (every in-scope code has MUE adjudication indicator 2 or 3, a date-of-service edit) and denies every line of that code and date. |
 | A-R5 | R09 (provider type) and R10 (authorization provider) use each line's rendering NPI. |
 | A-R6 | Duplicate key: member, billing NPI, date of service, procedure code. Existing claims with status REJECTED are ignored. |
@@ -57,7 +62,10 @@ benefit category, and other coverage. `expected.amounts` is a `CostBreakdown`;
 `expected.accumulators_after` holds the working accumulators after the claim (stored accumulators
 change only at finalization, §8.6).
 
-### Calculator assumptions (to be confirmed by the team)
+### Calculator assumptions (confirmed by the team in G1-G2)
+
+Accepted in the G1-G2 spot-check (`data/verification/reviews/G_summary.md`), A2 and A6 with a note
+to consider in v2 (one copay per visit; crediting only what the member actually paid).
 
 | ID | Assumption |
 |---|---|
