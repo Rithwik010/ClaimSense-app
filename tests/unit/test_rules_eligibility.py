@@ -1,7 +1,7 @@
 """Rule R05 (member eligible on every date of service) against the golden rules cases.
 
-The walking skeleton (P1.5) runs R05 only; P2.3 adds the other rules and the H5 conversion, and then
-runs every golden rules case through the full engine.
+Also tests the walking skeleton's R05-only path, which the pipeline runs until it switches to the
+full engine. The full engine runs every golden rules case in test_rules_golden.py.
 """
 
 import json
@@ -11,9 +11,9 @@ from pathlib import Path
 import pytest
 
 from app.domain.contracts import IntakeClaim, IntakeResult, RuleOutcomeValue, SourceFormat
-from app.rules import RULES_VERSION
+from app.rules import RULES_VERSION, SKELETON_RULES_VERSION
 from app.rules.eligibility import check_eligibility
-from app.rules.engine import evaluate
+from app.rules.engine import evaluate_eligibility_only
 from app.rules.reference import MemberRef
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "rules"
@@ -57,7 +57,7 @@ def test_r05_matches_golden(case: dict) -> None:
 @pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
 def test_skeleton_engine_matches_golden_without_h5(case: dict) -> None:
     result = intake(case)
-    outcome = evaluate(result, MEMBERS[result.claim.member_id])
+    outcome = evaluate_eligibility_only(result, MEMBERS[result.claim.member_id])
     expected = case["expected"]
     if "H5" in case["rules"]:
         # H5 (P2.3) turns this DENY into REJECT; R05 must already name the low-confidence field.
@@ -97,5 +97,7 @@ def test_passing_result_uses_every_date_of_service() -> None:
     assert result.fields_used == ["member_id", "service_lines.0.date_of_service"]
 
 
-def test_rules_version_is_set() -> None:
-    assert RULES_VERSION
+def test_rules_versions() -> None:
+    """v1 rules (P2.3a); the pipeline's R05-only path keeps the walking skeleton's version."""
+    assert RULES_VERSION == "1.0.0"
+    assert SKELETON_RULES_VERSION == "0.1.0"

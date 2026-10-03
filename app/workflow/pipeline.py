@@ -51,8 +51,8 @@ from app.ml.prompt import PROMPT_VERSION, PromptLookups, render_user_message, sy
 from app.ml.validate import ValidationResult, validate_output
 from app.rag.retrieve import Retriever
 from app.review.tiers import review_tier
-from app.rules import RULES_VERSION
-from app.rules.engine import evaluate
+from app.rules import SKELETON_RULES_VERSION
+from app.rules.engine import evaluate_eligibility_only
 from app.rules.reference import MemberRef
 from app.workflow.decisions import derive_claim_decision, final_line_decisions
 from app.workflow.states import InvalidTransition, check_transition
@@ -294,11 +294,11 @@ def process_claim(
     if member is None:
         raise PipelineError(f"member {claim.member_id} not found (rule R04 is in P2.3)")
 
-    rules = evaluate(
+    rules = evaluate_eligibility_only(
         intake,
         MemberRef(member.member_id, member.plan_id, member.coverage_start, member.coverage_end),
     )
-    versions = Versions(rules_version=RULES_VERSION)
+    versions = Versions(rules_version=SKELETON_RULES_VERSION)
     record_event(session, claim_id, EventType.RULES_EVALUATED, _rules_payload(rules), versions)
     timestamps = Timestamps(received=claim.received_date, processed=datetime.now(UTC))
 
@@ -347,7 +347,7 @@ def process_claim(
     model_ms = round((time.perf_counter() - model_started) * 1000, 1)
     result = validate_output(text, rules, context)
     versions = Versions(
-        rules_version=RULES_VERSION,
+        rules_version=SKELETON_RULES_VERSION,
         model_name=model.name,
         prompt_version=PROMPT_VERSION,
         policy_versions={

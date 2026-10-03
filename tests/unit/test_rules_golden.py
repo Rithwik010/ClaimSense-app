@@ -11,12 +11,14 @@ from typing import Any
 
 import pytest
 
+from app.core.settings import Settings
 from app.db import raw
 from app.db.curated import load_curated
 from app.db.rules_reference import CodeTables, build_reference, load_code_tables
 from app.domain.contracts import RuleResult
-from app.rules.engine import claim_outcome
+from app.rules.engine import claim_outcome, evaluate
 from app.rules.integrity import check_group_a
+from app.rules.line_edits import check_line_edits
 from app.rules.reference import RulesReference
 from app.rules.requirements import check_group_b
 
@@ -30,7 +32,9 @@ CASES = [
 ]
 GROUP_A = frozenset({"R01", "R02", "R03", "R04", "DUP"})
 GROUP_B = frozenset({"R05", "R06", "R07", "R08", "R09", "R10"})
+GROUP_C = frozenset({"R11", "R12", "R13"})
 LOW_CONFIDENCE = "RJ_LOW_CONFIDENCE_FIELD"
+CONFIDENCE_MIN = 0.85  # A-R9: EXTRACTION_CONFIDENCE_MIN, which the expected values assume
 
 pytestmark = pytest.mark.skipif(not raw.raw_available(), reason="data/raw/ not present")
 
@@ -83,11 +87,17 @@ def expected_in(case: dict[str, Any], group: frozenset[str]) -> list[dict[str, A
 
 
 B_CASES = [case for case in CASES if not expected_in(case, GROUP_A)]
+C_CASES = [case for case in B_CASES if not expected_in(case, GROUP_B)]
+H5_CASES = [case for case in CASES if case["given"]["field_confidences"]]
 
 
 def test_there_are_90_cases() -> None:
     assert len(CASES) == 90
     assert len({case["case_id"] for case in CASES}) == 90
+
+
+def test_the_cases_threshold_is_the_settings_default() -> None:
+    assert Settings.model_fields["extraction_confidence_min"].default == CONFIDENCE_MIN
 
 
 @pytest.mark.parametrize("case", CASES, ids=[case["case_id"] for case in CASES])
@@ -113,3 +123,36 @@ def test_group_b_finds_the_golden_group_b_failures_and_flags(case: dict[str, Any
     assert flags == case["expected"]["flags"]
     if expected and all(f["reason_code"] != LOW_CONFIDENCE for f in expected):
         assert claim_outcome(results).value == case["expected"]["claim_outcome"]
+
+
+@pytest.mark.parametrize("case", C_CASES, ids=[case["case_id"] for case in C_CASES])
+def test_group_c_finds_the_golden_line_outcomes(case: dict[str, Any]) -> None:
+    """Group C on every case that passes Groups A and B: its failures and, unless H5 rejects the
+    claim, every line's outcome, reasons in rule order and flags."""
+    reference = reference_for(case)
+    claim, _ = check_group_a(case["given"]["claim"], reference)
+    assert claim is not None
+    plan = reference.plans[reference.members[claim.member_id].plan_id]
+
+    results, outcomes = check_line_edits(claim, plan, reference)
+
+    assert_failures(failures(results), expected_in(case, GROUP_C))
+    if case["expected"]["line_outcomes"] is not None:
+        assert [o.model_dump() for o in outcomes] == case["expected"]["line_outcomes"]
+
+
+@pytest.mark.parametrize("case", H5_CASES, ids=[case["case_id"] for case in H5_CASES])
+def test_h5_cases_through_the_engine(case: dict[str, Any]) -> None:
+    """Every case with a field read below 1.0: the full engine's failures (after H5) and claim
+    outcome."""
+    given, expected = case["given"], case["expected"]
+
+    outcome = evaluate(
+        given["claim"],
+        given["field_confidences"],
+        reference_for(case),
+        confidence_min=CONFIDENCE_MIN,
+    )
+
+    assert failures(outcome.rule_results) == expected["failures"]
+    assert outcome.claim_outcome.value == expected["claim_outcome"]
