@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from pathlib import Path
+from xml.etree import ElementTree
 
 import pymupdf
 
@@ -120,30 +121,99 @@ def read_pfs(codes: set[str]) -> dict[str, PfsEntry]:
 
 
 def _ncci_files() -> list[Path]:
-    return sorted(
-        path for path in NCCI_DIR.glob(f"{NCCI_VERSION}-f*/*") if path.suffix.lower() == ".txt"
-    )
+    """One file per part of the PTP edit table: its .txt, or the official .xlsx from the same CMS
+    zip when the .txt is missing (f1: the .txt was lost; SOURCES.md)."""
+    files = []
+    for part in sorted(p for p in NCCI_DIR.glob(f"{NCCI_VERSION}-f*") if p.is_dir()):
+        by_suffix = {p.suffix.lower(): p for p in part.iterdir() if p.stem == part.name}
+        chosen = by_suffix.get(".txt") or by_suffix.get(".xlsx")
+        if chosen is not None:
+            files.append(chosen)
+    return files
+
+
+XLSX = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+XLSX_REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+PACKAGE_REL = "{http://schemas.openxmlformats.org/package/2006/relationships}"
+NcciRecord = tuple[str, str, str, str, str]  # column 1, column 2, effective, deletion, modifier
+
+
+def _xlsx_rows(path: Path) -> Iterator[list[str]]:
+    """The first sheet's rows as text, one item per column from A, with the standard library
+    (the CMS .xlsx stores every value as a shared string)."""
+    with zipfile.ZipFile(path) as archive:
+        workbook = ElementTree.fromstring(archive.read("xl/workbook.xml"))
+        first = next(workbook.iter(f"{XLSX}sheet")).get(f"{XLSX_REL}id")
+        rels = ElementTree.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+        target = next(r for r in rels.iter(f"{PACKAGE_REL}Relationship") if r.get("Id") == first)
+        sheet = "xl/" + target.get("Target", "").removeprefix("/xl/").removeprefix("/")
+        strings = []
+        if "xl/sharedStrings.xml" in archive.namelist():
+            table = ElementTree.fromstring(archive.read("xl/sharedStrings.xml"))
+            strings = ["".join(t.text or "" for t in si.iter(f"{XLSX}t")) for si in table]
+        with archive.open(sheet) as f:
+            parent = None
+            for event, element in ElementTree.iterparse(f, events=("start", "end")):
+                if event == "start":
+                    if element.tag == f"{XLSX}sheetData":
+                        parent = element
+                    continue
+                if element.tag != f"{XLSX}row":
+                    continue
+                cells: dict[int, str] = {}
+                for cell in element.iterfind(f"{XLSX}c"):
+                    kind, value = cell.get("t"), cell.find(f"{XLSX}v")
+                    if kind == "s" and value is not None and value.text:
+                        text = strings[int(value.text)]
+                    elif kind == "inlineStr":
+                        text = "".join(t.text or "" for t in cell.iter(f"{XLSX}t"))
+                    else:
+                        text = value.text or "" if value is not None else ""
+                    letters = (cell.get("r") or "").rstrip("0123456789")
+                    column = 0
+                    for letter in letters:
+                        column = column * 26 + ord(letter) - ord("A") + 1
+                    cells[column - 1] = text
+                yield [cells.get(i, "") for i in range(max(cells, default=-1) + 1)]
+                if parent is not None:
+                    parent.remove(element)  # keeps memory flat over a 200 MB sheet
+
+
+def _txt_rows(path: Path) -> Iterator[list[str]]:
+    with path.open(encoding="latin-1") as f:
+        for line in f:
+            yield line.rstrip("\n").split("\t")
+
+
+def read_ncci_records(path: Path) -> Iterator[NcciRecord]:
+    """Every edit row of one part of the PTP table, from its .txt or its .xlsx, as published:
+    (column 1, column 2, effective date, deletion date or "*", modifier indicator). Header rows
+    are skipped: an edit row has both codes and an eight-digit effective date."""
+    rows = _xlsx_rows(path) if path.suffix.lower() == ".xlsx" else _txt_rows(path)
+    for parts in rows:
+        if len(parts) < 6:
+            continue
+        column1, column2, effective, deletion, modifier = (
+            parts[i].strip() for i in (0, 1, 3, 4, 5)
+        )
+        if column1 and column2 and re.fullmatch(r"[0-9]{8}", effective):
+            yield column1, column2, effective, deletion, modifier
 
 
 def read_ncci_pairs(codes: set[str]) -> list[NcciPair]:
     """Practitioner PTP edits where both codes are in `codes` (all dates; filter with active_on)."""
     pairs = []
     for path in _ncci_files():
-        with path.open(encoding="latin-1") as f:
-            for line in f:
-                parts = line.rstrip("\n").split("\t")
-                if len(parts) < 6 or parts[0] not in codes or parts[1] not in codes:
-                    continue
-                effective = _yyyymmdd(parts[3])
-                if effective is None:
-                    continue
+        for column1, column2, effective, deletion, modifier in read_ncci_records(path):
+            effective_date = _yyyymmdd(effective)
+            if column1 in codes and column2 in codes and effective_date is not None:
                 pairs.append(
                     NcciPair(
-                        column1=parts[0],
-                        column2=parts[1],
-                        effective_date=effective,
-                        deletion_date=_yyyymmdd(parts[4]),
-                        modifier_indicator=parts[5].strip(),
+                        column1=column1,
+                        column2=column2,
+                        effective_date=effective_date,
+                        deletion_date=_yyyymmdd(deletion),
+                        modifier_indicator=modifier,
                         source_file=path.name,
                     )
                 )
@@ -197,16 +267,49 @@ def read_article_diagnoses(article_ids: set[str]) -> dict[str, ArticleDiagnoses]
     }
 
 
+POS_ROW = re.compile(r"[0-9]{2}(?:-[0-9]{2})?")  # a code, or a range of unassigned codes
+POS_NAME_X = (130.0, 262.0)  # the PDF's name column (points); descriptions start at 262
+
+
+def _pos_name(words: list[tuple]) -> str:
+    """Words of one name cell in reading order. A line that ends in a hyphenated word continues
+    without a space ("On Campus-" + "Outpatient Hospital"); a lone dash keeps its spaces."""
+    lines: list[list[tuple]] = []
+    for word in sorted(words, key=lambda w: w[1]):
+        if lines and abs(word[1] - lines[-1][0][1]) <= 3:
+            lines[-1].append(word)
+        else:
+            lines.append([word])
+    name = ""
+    for line in lines:
+        for word in sorted(line, key=lambda w: w[0]):
+            text = word[4]
+            glued = name.endswith("-") and len(name.split()[-1]) > 1
+            name += text if not name or glued else f" {text}"
+    return name
+
+
 def read_place_of_service_codes() -> dict[str, str]:
-    """Assigned place-of-service codes with their names (unassigned ranges are skipped)."""
-    lines = []
+    """Assigned place-of-service codes with their names (unassigned ranges are skipped). A name
+    can wrap onto several lines of the PDF's name column, so it is every word in that column from
+    its code's row down to the next code's row."""
+    codes = {}
     with pymupdf.open(POS_PDF) as doc:
         for page in doc:
-            lines.extend(line.strip() for line in page.get_text().splitlines())
-    codes = {}
-    for index, line in enumerate(lines[:-1]):
-        if re.fullmatch(r"[0-9]{2}", line):
-            name = lines[index + 1]
-            if name and not name.lower().startswith("unassigned"):
-                codes[line] = name
+            words = page.get_text("words")
+            rows = sorted(
+                (w for w in words if w[0] < POS_NAME_X[0] and POS_ROW.fullmatch(w[4])),
+                key=lambda w: w[1],
+            )
+            for k, row in enumerate(rows):
+                bottom = rows[k + 1][1] - 2 if k + 1 < len(rows) else page.rect.height
+                name = _pos_name(
+                    [
+                        w
+                        for w in words
+                        if POS_NAME_X[0] <= w[0] < POS_NAME_X[1] and row[1] - 2 <= w[1] < bottom
+                    ]
+                )
+                if "-" not in row[4] and name and not name.lower().startswith("unassigned"):
+                    codes[row[4]] = name
     return codes

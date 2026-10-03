@@ -11,6 +11,7 @@ from scripts.verify.golden_checks import (
     INSTRUCTIONS_MD,
     SITUATIONS,
     Finding,
+    Reference,
     blind_view,
     candidate_reviews,
     check_calculator_case,
@@ -18,6 +19,7 @@ from scripts.verify.golden_checks import (
     cob_total_differs,
     decision_conflicts,
     parse_instructions,
+    render_rules_case,
     sample_calculator,
     sample_rules,
     shown_cases,
@@ -450,3 +452,24 @@ def test_findings_on_sampled_cases_are_counted_not_named() -> None:
 
     assert shown == f"R11-02 (line 1), R10-01, 1 in this sheet's sample (named in {CHECKS_FILE})"
     assert shown_cases([], hidden=set()) == "-"
+
+
+def test_the_clean_claim_case_does_not_reveal_its_outcome() -> None:
+    """Regression (G2): the sheet said "a claim meant to pass them all" for P-01."""
+    curated = load_curated()
+    ref = Reference({}, {}, {}, [], [], curated, {}, {}, [], frozenset(), {})
+    view = {
+        "case_id": "P-01",
+        "rules": ["R01-R13"],
+        "given": {
+            "claim": {"member_id": "MBR-X", "service_lines": []},
+            "source_format": "JSON",
+            "field_confidences": {},
+            "reference_additions": {},
+        },
+    }
+
+    text = "\n".join(render_rules_case(7, view, ref, SPEC))
+
+    assert "Every rule in the section 8.3 table." in text
+    assert "meant to pass" not in text

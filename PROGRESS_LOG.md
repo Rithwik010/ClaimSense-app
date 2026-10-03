@@ -11,7 +11,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 
 ---
 
-## 1. Current status (2026-10-02 IST)
+## 1. Current status (2026-10-03 IST)
 
 | Area | State |
 |---|---|
@@ -24,10 +24,12 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | **Label verification (V1a)** | **Done, report only.** Checks 1-4 found no problems in 2,600 records; check 5 cannot verify most NOT_APPLICABLE labels automatically. ESI labels conflict with LCD L33906; fixing them would not close the gap to 0.90 (estimated test macro-F1 0.6732 -> 0.6677). Decisions for the v2 bundle are recorded (section 4). |
 | **Policy source check (V1b)** | **Done, report only; reviewed in V1d.** All 57 criteria cite a word-for-word LCD excerpt (`data/curated/policy_sources.csv`); 72 findings against the LCDs (WRONG CRITERION 4, MISSING CRITERION 52, RULE CANDIDATE 16). The 4 wrong criteria change at most 6 v1 labels (all POL-REHAB-001 PENDs). D-RULE-1 and D-SCOPE-1 set the v2 scope. |
 | **Data verification (V1)** | **Complete (2026-10-02).** V1a labels, V1b policy sources and completeness, V1c model disagreements, V1d review verdicts (filled sheets and summary in `data/verification/reviews/`). D-V2-1, D-V2-2, D-GEN-3, D-GEN-4, D-REV-1 and D-LIM-1 feed the v2 bundle; v1 data and model unchanged. |
+| **Golden tests (G1-G2)** | **Spot-checked (2026-10-03).** Automatic checks: 0 violations on 52 calculator and 90 rules cases. The spot-check (10 rules, 9 calculator cases) agrees with every expected value (Claude recomputation in a separate chat, accepted by the reviewer). 5 rules cases conflict with R15 (D-GOLD-1); new cases to add (D-GOLD-2). |
+| **Raw data** | 62 files listed with size and SHA-256 in `data/raw_manifest.csv`; a test fails on a missing or changed file (D-DATA-1). NCCI part f1 is read from its official `.xlsx` (the `.txt` was lost; SOURCES.md). Regenerating the decision dataset reproduces the v1 fingerprints exactly. |
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
-| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. |
+| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 845 pass, 19 skipped, **1 failing**: `test_ncci_pairs_include_known_edits`, because `data/raw/ncci-ptp/ccipra-v323r0-f1/` holds only the `.xlsx` and the pair (11042, 97597) lives in that file's `.txt`. Unrelated to the model work. |
+| Tests | 906 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. The NCCI test passes since G2 read part f1 from its `.xlsx`. Without Docker, the database and Qdrant tests are skipped. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -91,9 +93,9 @@ Pull before starting; tell the team which task you take (add a timeline entry).
 | Spot-check 3 coverage policies against their LCDs | team | `DECISIONS.md` |
 | Fill in the blind-review sheet before seeing model output | team | `tests/golden/blind_review/review_sheet.csv` |
 | Sign off: prompt `decision_v2`; retrieval (code filter, top 5); max length 3072; visit limits out of v1; NCCI bypass modifiers XE/XP/XS/XU (59 and 25 not added) | team | `DECISIONS.md` |
-| Confirm the golden assumptions (`tests/golden/README.md`) and spot-check 10 rules + 10 calculator cases | team | `DECISIONS.md` |
+| ~~Confirm the golden assumptions (`tests/golden/README.md`) and spot-check 10 rules + 10 calculator cases~~ **Closed: G1-G2** (`data/verification/reviews/`; D-GOLD-3 to D-GOLD-5). | — | `DECISIONS.md` |
 | AMA CPT license question (SOURCES.md) | team | `DECISIONS.md` |
-| Extract `ccipra-v323r0-f1.txt` into `data/raw/ncci-ptp/ccipra-v323r0-f1/` (only the `.xlsx` is there), which fixes the one failing test | Manideep3183 | timeline |
+| ~~Extract `ccipra-v323r0-f1.txt` into `data/raw/ncci-ptp/ccipra-v323r0-f1/` (only the `.xlsx` is there), which fixes the one failing test~~ **Closed: G2.** The `.txt` could not be restored (CMS download blocked); part f1 is read from its official `.xlsx`, shown equal to the `.txt` on f2-f4 (SOURCES.md); the test passes. | — | timeline |
 | v1 unchanged (frozen). From v2, decision criteria come from exact lookup with no cap (D-RAG-1); vector search is used for the explanation collections (P5.4). | team | `DECISIONS.md` |
 | Keep Ollama on 0.34.1 until the fine-tuned model is evaluated (decline the 0.34.2 update) | Manideep3183 | timeline |
 | **Decide how to close the P4.4 gap** (macro-F1 0.672 vs 0.90). Measured 2026-09-23: note register accounts for 0.144 of the 0.228 gap, so training on more registers is necessary but **not sufficient** - the remaining 0.084 is the PEND bias and multi-line handling, which are there on the training register too | team | `DECISIONS.md` |
@@ -104,6 +106,7 @@ Pull before starting; tell the team which task you take (add a timeline entry).
 | **Decide the retry policy for invalid answers**: first attempt at temperature 0, and only when the answer is invalid, one seeded retry at temperature 0.7. Measured to recover 5-8 of the 16 dropped-line records per attempt; reproducibility is kept because every attempt is seeded | team | `DECISIONS.md` |
 | Record the exact Hugging Face revision of the base model in the training log (not done) | next session | `training/finetune/train.py` |
 | Rebuild the golden end-to-end model answers for prompt v2 and real retrieval (P5.6) | later | `tests/golden/e2e/` |
+| **Golden updates (decided, not done):** the five L97419 rules cases get a diagnosis A58565 covers, and R15 gets its own cases, when R15 is built in P2.3 (D-GOLD-1); new cases for a deductible split across two lines, a second copay capped by the allowed amount and a second primary-paid-at-least-allowed COB case (P2.4), and for R14, R15 and the single-claim D-RULE-1 rules (P2.3), each accepted only after an independent check (D-GOLD-2) | team | `DECISIONS.md` |
 | ~~**Review V1b, sitting 1** (about 28 min): 14 Part 1 rows in `data/generated/verification/B_policy_sources_review.md`; write MATCHES / DIFFERENT MEANING / NOT IN SOURCE / UNSURE~~ **Closed: reviewed in V1d** (`data/verification/reviews/`, D-V2-1). | — | timeline |
 | ~~**Review V1b, sitting 2** (about 34 min): the 4 WRONG CRITERION findings, the 5 top-impact findings and 3 controls; write ADD IN V2 / NOT NEEDED / UNSURE. The other 63 findings are known gaps (D-SCOPE-1)~~ **Closed: reviewed in V1d** (`data/verification/reviews/`, D-V2-2). | — | `DECISIONS.md` |
 
@@ -141,6 +144,10 @@ Kaggle copy for anything model-related.
   mix Ollama versions; keep Ollama on 0.34.1 until the baseline and the fine-tuned evaluation are done.
 - **Docker Desktop can stop** (laptop sleep, restarts): database tests then *skip* locally (CI
   requires them). Run `open -a Docker && docker compose up -d --wait`.
+- **A raw file can vanish without anything failing.** The NCCI part f1 `.txt` disappeared from
+  `data/raw/` on 2026-09-22 and was only noticed in G2, when the blind-review reproducibility test
+  ran with Docker up. Since then `data/raw_manifest.csv` (D-DATA-1) lists every raw file with its
+  SHA-256, and a test fails when one is missing or changed. Keep a backup of `data/raw/`.
 - **Large Hugging Face downloads stall inside Claude Code's sandbox;** run them in your own terminal.
 - **zsh:** do not type `<` and `>` around placeholders (`--kaggle-user manideep3183`, not
   `<manideep3183>`).
@@ -257,6 +264,21 @@ Kaggle copy for anything model-related.
   - **Review counts:** A (5): REAL ERROR 5 (all POL-PAIN-001.c2 on repeat ESIs, as D-ESI-1 expects). B sitting 1 (14): MATCHES 8, DIFFERENT MEANING 4 (CAR-002.c1, CAR-002.c3, PAIN-002.c4, SURG-002.c2), NOT IN SOURCE 1 (FOOT-001.c3), UNSURE 1 (CAR-001.c1); both controls MATCHES. B sitting 2 (12): ADD IN V2 8, NOT NEEDED 4 (WOUND-001.F5 and the 3 controls, so the keyword rule's out-of-scope calls held). C (12): LABEL RIGHT 5, MODEL RIGHT 4, UNSURE 3. By error type: MET -> NOT_DOCUMENTED 3 of 3 LABEL RIGHT; NOT_MET -> NOT_DOCUMENTED 2 of 3 LABEL RIGHT, 1 UNSURE; NA/ND boundary 1 MODEL RIGHT, 1 UNSURE; MET -> NOT_APPLICABLE 3 of 4 MODEL RIGHT, 1 UNSURE.
   - **Conclusions:** the V1c sample shows MET -> NOT_DOCUMENTED and NOT_MET -> NOT_DOCUMENTED errors are mostly the model's (note wording), while MET -> NOT_APPLICABLE errors are mostly a label convention problem (exclusion criteria labelled MET; D-GEN-3). The sample is small (3, 3 and 4 rows).
   - **New decisions:** D-V2-1, D-V2-2, D-GEN-3, D-GEN-4, D-REV-1, D-LIM-1. Known limitations (D-LIM-1): V1b sitting 1 row 12 (CAR-001.c1); V1c rows 4 (DEC-TE-00044), 6 (DEC-TE-00177, contradictory notes) and 11 (DEC-TE-00138). Checks pass except the known NCCI test.
+
+### 2026-10-03
+
+- 17:06 | Manideep3183 | verification | **Golden-test spot-check G1 and G2 (branch `g1-golden-spotcheck`: `f4bb9fd` and the G2 commit; merged into `main`).** Report only: no golden case, rules code or calculator code changed. Scripts `scripts/verify/golden_checks.py` (checks and spot-check sheet) and `scripts/verify/golden_compare.py` (answers and comparison); the filled sheet and `G_summary.md` are tracked in `data/verification/reviews/`.
+  - **Automatic checks on every golden case** (52 calculator, 90 rules): **0 violations** of the cost-share rules (plan pays + member pays = max(0, allowed − primary paid), allowed ≤ billed, the remaining deductible and out-of-pocket maximum, copay ≤ allowed, denied and pended lines pay 0, whole cents, totals and accumulators) or of section 8.3 (one outcome, group order with D8, H5). INSTRUCTIONS.md section 8.3 item 3 now says Group C is R11–R13.
+  - **R15 conflicts:** 6 lines in 5 rules cases (R11-02, R11-03 lines 1 and 2, R11-07, R11-08, X-02) bill 11042 or 97597 with L97419, which billing article A58565 does not cover, so R15 (D-DX-1) would deny them (D-GOLD-1). No R14 conflicts. 9 cases carry codes a D-RULE-1 candidate covers (PAIN-001.F6: 8 ESI cases; PAIN-002.F9: X-01), to review when those rules are built.
+  - **Coverage gaps:** no golden case for R14, R15 or the 9 single-claim D-RULE-1 rules; no calculator case splits the deductible across two lines, and only one each caps a copay at the allowed amount or has the primary paying at least the allowed amount (D-GOLD-2). Thin: H5 on a Group C rule (1 case), REJECT winning in Group B (1).
+  - **Spot-check:** 10 rules and 9 calculator cases (no case exists for a deductible spanning lines). **10 of 10 rules cases agree** on outcome, reason codes and flags (9 of 9 independent) and **all 66 calculator amounts agree**, exact to the cent; no golden case is wrong. The spot-check answers were computed by a separate Claude chat from the sheet's text only, without access to the repository or the answers file, and accepted by the reviewer. This is a Claude recomputation, not a blind human check, and not independent of the golden cases' author (also Claude). P-01 is not independent (the sheet leaked its outcome; fixed in G2). The rules sample is only partly blind, because the sheet names the rule each case exercises; the calculator cases show no expected values but list the assumptions each case relies on (C19 and C21 name A4, the out-of-pocket cap).
+  - **Reviewer verdicts:** golden assumptions ACCEPT 19, CHANGE 1 (A-R3: add modifier 59 in v2, D-GOLD-3); H5 mapping ACCEPT 12, CHANGE 2 (R07 and R09 also use member_id, D-GOLD-4 and D-GOLD-5). Neither change affects any golden rules case (re-checked in G2).
+  - **Fixed in G2:** the sheet's wording gave away P-01's outcome; `app/db/raw.read_place_of_service_codes` cut 40 of 52 place-of-service names at the PDF's first line break (22 read "On Campus-") and now reads the name column whole (the generator loads these names but never uses them).
+  - **Reproducibility failure found:** with Docker and Qdrant running, `test_blind_review_is_reproducible` failed: 17 of the 30 blind-review claims regenerated differently (CLM-BLIND-001 lost its NCCI_BYPASS flag; claims 015–030 diverged). Cause: the NCCI part f1 `.txt` (`ccipra-v323r0-f1.TXT`) had been missing from `data/raw/` since 2026-09-22, so the generator found no edit whose column-1 code is below 25405 (such as 11042/97597). G2's changes were not the cause: the test failed the same way with the original reader.
+  - **f1 read from its official `.xlsx`:** the `.txt` could not be restored (no copy in the repository, ~/Downloads, ~/Desktop or ~/Documents; ~/claimsense-backups does not exist; the CMS download was blocked, access denied), so `app/db/raw.py` reads a part from its official `.xlsx` (same CMS release) when its `.txt` is missing; recorded in SOURCES.md. For f2–f4 the `.xlsx` gives exactly the `.txt`'s edit records (code pairs, modifier indicators, effective and deletion dates; 1,962,488 records together); f1's `.xlsx` has 675,157 records (the CMS page's count) and contains (11042, 97597); f1–f4 total 2,637,645, as in SOURCES.md.
+  - **Raw-data manifest (D-DATA-1):** `data/raw_manifest.csv` lists the 62 files in `data/raw/` (409,804,716 bytes) with size and SHA-256 (macOS `.DS_Store` excluded); a test fails if a listed file is missing or changed and reports unlisted files; `scripts/verify/raw_manifest.py --update` rewrites it (first written 2026-10-03).
+  - **Reproducibility confirmed:** the full suite passes with Docker and Qdrant running (906 passed, 1 skipped: the opt-in live-model test; 0 failed), including `test_ncci_pairs_include_known_edits` (the long-standing failure is fixed) and the blind-review test (all 30 claims identical to `claims.json`). The readiness gate's train/live parity check found 0 differences on 75 sampled records (25 per split). The decision dataset regenerated into a temporary folder has exactly the section 2 fingerprints (train `295cc6b1d3af`, validation `6478d11211a2`, test `afaa098ffc72`) and identical inputs files.
+  - **New decisions:** D-GOLD-1 to D-GOLD-5, D-DATA-1.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.

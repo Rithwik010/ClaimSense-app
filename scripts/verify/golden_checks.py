@@ -487,7 +487,12 @@ def derived_outcome(
     return "PASS"
 
 
-def check_rules_case(case: Mapping[str, Any], spec: Spec) -> list[Finding]:
+def check_rules_case(
+    case: Mapping[str, Any],
+    spec: Spec,
+    fields_used: Mapping[str, tuple[str, ...]] = FIELDS_USED,
+) -> list[Finding]:
+    """Every rules check on one case; `fields_used` is the H5 field mapping."""
     case_id, expected = case["case_id"], case["expected"]
     found: list[Finding] = []
 
@@ -536,7 +541,7 @@ def check_rules_case(case: Mapping[str, Any], spec: Spec) -> list[Finding]:
     confidences = case["given"].get("field_confidences") or {}
     low = [path for path, value in confidences.items() if value < CONFIDENCE_MIN]
     for f in failures:
-        patterns = FIELDS_USED.get(f["rule_id"])
+        patterns = fields_used.get(f["rule_id"])
         if not patterns:
             continue
         uses = any(
@@ -939,7 +944,7 @@ def render_rules_case(
     if H5 in targets:
         out += [f"> 4. {spec.h5}", ""]
     if ALL_RULES in targets:
-        out += ["Every rule in the section 8.3 table (a claim meant to pass them all).", ""]
+        out += ["Every rule in the section 8.3 table.", ""]
 
     out += [f"**Claim** (source format {given.get('source_format')}):", ""]
     out += ["| Field | Value |", "|---|---|"]
@@ -1245,18 +1250,14 @@ def render_calculator_case(
 
 
 def _ncci_unavailable(codes: Iterable[str]) -> set[str]:
-    """Codes before the first loaded NCCI file's first column-1 code, when file f1 is absent."""
+    """Codes before the first loaded NCCI part's first column-1 code, when part f1 is absent (as a
+    .txt and as an .xlsx)."""
     from app.db import raw
 
-    files = sorted(
-        p for p in raw.NCCI_DIR.glob(f"{raw.NCCI_VERSION}-f*/*") if p.suffix.lower() == ".txt"
-    )
-    if not files or any(f"{raw.NCCI_VERSION}-f1" in str(p) for p in files):
+    files = raw._ncci_files()
+    if not files or files[0].stem == f"{raw.NCCI_VERSION}-f1":
         return set()
-    with files[0].open(encoding="latin-1") as f:
-        first = next(
-            (line.split("\t")[0] for line in f if re.match(r"^[0-9A-Z]\d{3}[0-9A-Z]\t", line)), ""
-        )
+    first = next(raw.read_ncci_records(files[0]), ("",))[0]
     return {c for c in codes if first and c < first}
 
 

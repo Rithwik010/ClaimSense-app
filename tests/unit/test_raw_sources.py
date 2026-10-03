@@ -1,6 +1,7 @@
 """Readers for data/raw/ (skipped when the public files are not present, for example in CI)."""
 
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -51,7 +52,57 @@ def test_every_policy_code_is_supported_by_its_article_groups() -> None:
                 assert article.covered[group] & icd10.keys(), (code, group)
 
 
+def _part_files(part: str) -> dict[str, Path]:
+    folder = raw.NCCI_DIR / f"{raw.NCCI_VERSION}-{part}"
+    return {p.suffix.lower(): p for p in folder.iterdir() if p.stem == folder.name}
+
+
+@pytest.mark.parametrize("part", ["f2", "f3", "f4"])
+def test_ncci_xlsx_gives_the_same_edits_as_the_txt(part: str) -> None:
+    """G2: the official .xlsx of each part, from the same CMS zip, is read with the same results
+    as its .txt: code pairs, modifier indicators, effective and deletion dates, record count."""
+    files = _part_files(part)
+    from_txt = list(raw.read_ncci_records(files[".txt"]))
+    from_xlsx = list(raw.read_ncci_records(files[".xlsx"]))
+
+    assert len(from_txt) == len(from_xlsx) > 600_000
+    differing = [
+        (n, a, b) for n, (a, b) in enumerate(zip(from_txt, from_xlsx, strict=True)) if a != b
+    ]
+    assert not differing, differing[:5]
+
+
+def test_ncci_f1_is_read_from_its_xlsx_with_the_cms_counts() -> None:
+    """G2: the f1 .txt was lost (SOURCES.md); its official .xlsx has CMS's 675,157 edit records,
+    and f1 to f4 total SOURCES.md's 2,637,645 pairs."""
+    files = raw._ncci_files()
+    f1 = files[0]
+    records = list(raw.read_ncci_records(f1))
+
+    assert f1.name == f"{raw.NCCI_VERSION}-f1.xlsx"
+    assert len(records) == 675_157
+    assert any(r[0] == "11042" and r[1] == "97597" for r in records)
+    assert (
+        len(records) + sum(sum(1 for _ in raw.read_ncci_records(path)) for path in files[1:])
+        == 2_637_645
+    )
+
+
 def test_place_of_service_codes() -> None:
     codes = raw.read_place_of_service_codes()
     assert codes["11"] == "Office"
     assert "00" not in codes and "35" not in codes
+
+
+def test_place_of_service_names_that_wrap_in_the_pdf_are_read_whole() -> None:
+    """Regression (G2): a name was cut at the PDF's first line break ("On Campus-")."""
+    codes = raw.read_place_of_service_codes()
+
+    assert len(codes) == 52
+    assert codes["22"] == "On Campus-Outpatient Hospital"
+    assert codes["19"] == "Off Campus-Outpatient Hospital"
+    assert codes["23"] == "Emergency Room – Hospital"
+    assert codes["07"] == "Tribal 638 Free-standing Facility"
+    assert codes["72"] == "Rural Health Clinic"  # the next row is an unassigned range
+    assert codes["27"] == "Outreach Site/ Street"
+    assert not any(name.endswith("Unassigned") for name in codes.values())
