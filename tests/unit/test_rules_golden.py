@@ -16,11 +16,8 @@ from app.db import raw
 from app.db.curated import load_curated
 from app.db.rules_reference import CodeTables, build_reference, load_code_tables
 from app.domain.contracts import RuleResult
-from app.rules.engine import claim_outcome, evaluate
-from app.rules.integrity import check_group_a
-from app.rules.line_edits import check_line_edits
+from app.rules.engine import evaluate
 from app.rules.reference import RulesReference
-from app.rules.requirements import check_group_b
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "rules"
 SHARED = json.loads((GOLDEN / "reference.json").read_text(encoding="utf-8"))
@@ -30,10 +27,13 @@ CASES = [
     if path.name != "reference.json"
     for case in json.loads(path.read_text(encoding="utf-8"))["cases"]
 ]
-GROUP_A = frozenset({"R01", "R02", "R03", "R04", "DUP"})
-GROUP_B = frozenset({"R05", "R06", "R07", "R08", "R09", "R10"})
-GROUP_C = frozenset({"R11", "R12", "R13"})
-LOW_CONFIDENCE = "RJ_LOW_CONFIDENCE_FIELD"
+# The claim status a rules outcome leads to (pipeline RULE_STATUS; A-R10: a pass stays RECEIVED).
+STATUS = {
+    "PASS": "RECEIVED",
+    "REJECT": "REJECTED",
+    "DENY": "DENIED_BY_RULE",
+    "PEND": "PENDED_BY_RULE",
+}
 CONFIDENCE_MIN = 0.85  # A-R9: EXTRACTION_CONFIDENCE_MIN, which the expected values assume
 
 pytestmark = pytest.mark.skipif(not raw.raw_available(), reason="data/raw/ not present")
@@ -59,6 +59,8 @@ def reference_for(case: dict[str, Any]) -> RulesReference:
 
 
 def failures(results: list[RuleResult]) -> list[dict[str, Any]]:
+    """Every failing rule as the cases list it: Group A and B in rule order, then Group C by line
+    and rule order."""
     return [
         {
             "rule_id": r.rule_id,
@@ -71,26 +73,6 @@ def failures(results: list[RuleResult]) -> list[dict[str, Any]]:
     ]
 
 
-def assert_failures(found: list[dict[str, Any]], expected: list[dict[str, Any]]) -> None:
-    """Until H5 is in (checkpoint 3), a failure the case expects as RJ_LOW_CONFIDENCE_FIELD is
-    compared by rule and line only."""
-    assert [(f["rule_id"], f["line_no"]) for f in found] == [
-        (f["rule_id"], f["line_no"]) for f in expected
-    ]
-    for got, want in zip(found, expected, strict=True):
-        if want["reason_code"] != LOW_CONFIDENCE:
-            assert got == want
-
-
-def expected_in(case: dict[str, Any], group: frozenset[str]) -> list[dict[str, Any]]:
-    return [f for f in case["expected"]["failures"] if f["rule_id"] in group]
-
-
-B_CASES = [case for case in CASES if not expected_in(case, GROUP_A)]
-C_CASES = [case for case in B_CASES if not expected_in(case, GROUP_B)]
-H5_CASES = [case for case in CASES if case["given"]["field_confidences"]]
-
-
 def test_there_are_90_cases() -> None:
     assert len(CASES) == 90
     assert len({case["case_id"] for case in CASES}) == 90
@@ -101,50 +83,7 @@ def test_the_cases_threshold_is_the_settings_default() -> None:
 
 
 @pytest.mark.parametrize("case", CASES, ids=[case["case_id"] for case in CASES])
-def test_group_a_finds_the_golden_group_a_failures(case: dict[str, Any]) -> None:
-    """Group A alone, on every case."""
-    _, results = check_group_a(case["given"]["claim"], reference_for(case))
-
-    assert_failures(failures(results), expected_in(case, GROUP_A))
-
-
-@pytest.mark.parametrize("case", B_CASES, ids=[case["case_id"] for case in B_CASES])
-def test_group_b_finds_the_golden_group_b_failures_and_flags(case: dict[str, Any]) -> None:
-    """Group B on every case that passes Group A: its failures, the claim flags and, when Group B
-    stops the claim without H5, the claim outcome (D8)."""
-    reference = reference_for(case)
-    claim, _ = check_group_a(case["given"]["claim"], reference)
-    assert claim is not None
-
-    results, flags = check_group_b(claim, reference.members[claim.member_id], reference)
-
-    expected = expected_in(case, GROUP_B)
-    assert_failures(failures(results), expected)
-    assert flags == case["expected"]["flags"]
-    if expected and all(f["reason_code"] != LOW_CONFIDENCE for f in expected):
-        assert claim_outcome(results).value == case["expected"]["claim_outcome"]
-
-
-@pytest.mark.parametrize("case", C_CASES, ids=[case["case_id"] for case in C_CASES])
-def test_group_c_finds_the_golden_line_outcomes(case: dict[str, Any]) -> None:
-    """Group C on every case that passes Groups A and B: its failures and, unless H5 rejects the
-    claim, every line's outcome, reasons in rule order and flags."""
-    reference = reference_for(case)
-    claim, _ = check_group_a(case["given"]["claim"], reference)
-    assert claim is not None
-    plan = reference.plans[reference.members[claim.member_id].plan_id]
-
-    results, outcomes = check_line_edits(claim, plan, reference)
-
-    assert_failures(failures(results), expected_in(case, GROUP_C))
-    if case["expected"]["line_outcomes"] is not None:
-        assert [o.model_dump() for o in outcomes] == case["expected"]["line_outcomes"]
-
-
-@pytest.mark.parametrize("case", H5_CASES, ids=[case["case_id"] for case in H5_CASES])
-def test_h5_cases_through_the_engine(case: dict[str, Any]) -> None:
-    """Every case with a field read below 1.0: the full engine's failures (after H5) and claim
-    outcome."""
+def test_golden_rules_case(case: dict[str, Any]) -> None:
     given, expected = case["given"], case["expected"]
 
     outcome = evaluate(
@@ -154,5 +93,11 @@ def test_h5_cases_through_the_engine(case: dict[str, Any]) -> None:
         confidence_min=CONFIDENCE_MIN,
     )
 
-    assert failures(outcome.rule_results) == expected["failures"]
     assert outcome.claim_outcome.value == expected["claim_outcome"]
+    assert STATUS[outcome.claim_outcome.value] == expected["status"]
+    assert failures(outcome.rule_results) == expected["failures"]
+    if expected["line_outcomes"] is None:
+        assert outcome.line_outcomes == []
+    else:
+        assert [o.model_dump() for o in outcome.line_outcomes] == expected["line_outcomes"]
+    assert outcome.flags == expected["flags"]
