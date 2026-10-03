@@ -143,7 +143,7 @@ def read_procedure_code_table() -> frozenset[str]:
 
 def _ncci_files() -> list[Path]:
     """One file per part of the PTP edit table: its .txt, or the official .xlsx from the same CMS
-    zip when the .txt is missing (f1: the .txt was lost; SOURCES.md)."""
+    zip when the .txt is missing (the fallback G2 used while f1's .txt was lost; SOURCES.md)."""
     files = []
     for part in sorted(p for p in NCCI_DIR.glob(f"{NCCI_VERSION}-f*") if p.is_dir()):
         by_suffix = {p.suffix.lower(): p for p in part.iterdir() if p.stem == part.name}

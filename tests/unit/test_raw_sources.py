@@ -57,10 +57,11 @@ def _part_files(part: str) -> dict[str, Path]:
     return {p.suffix.lower(): p for p in folder.iterdir() if p.stem == folder.name}
 
 
-@pytest.mark.parametrize("part", ["f2", "f3", "f4"])
+@pytest.mark.parametrize("part", ["f1", "f2", "f3", "f4"])
 def test_ncci_xlsx_gives_the_same_edits_as_the_txt(part: str) -> None:
-    """G2: the official .xlsx of each part, from the same CMS zip, is read with the same results
-    as its .txt: code pairs, modifier indicators, effective and deletion dates, record count."""
+    """G2 (f2-f4) and P2.3a (f1, restored): the official .xlsx of each part, from the same CMS zip,
+    is read with the same results as its .txt: code pairs, modifier indicators, effective and
+    deletion dates, record count."""
     files = _part_files(part)
     from_txt = list(raw.read_ncci_records(files[".txt"]))
     from_xlsx = list(raw.read_ncci_records(files[".xlsx"]))
@@ -72,14 +73,14 @@ def test_ncci_xlsx_gives_the_same_edits_as_the_txt(part: str) -> None:
     assert not differing, differing[:5]
 
 
-def test_ncci_f1_is_read_from_its_xlsx_with_the_cms_counts() -> None:
-    """G2: the f1 .txt was lost (SOURCES.md); its official .xlsx has CMS's 675,157 edit records,
-    and f1 to f4 total SOURCES.md's 2,637,645 pairs."""
+def test_ncci_f1_is_read_from_its_txt_with_the_cms_counts() -> None:
+    """P2.3a: the f1 .txt was restored (SOURCES.md) and is read again; it has CMS's 675,157 edit
+    records, and f1 to f4 total SOURCES.md's 2,637,645 pairs."""
     files = raw._ncci_files()
     f1 = files[0]
     records = list(raw.read_ncci_records(f1))
 
-    assert f1.name == f"{raw.NCCI_VERSION}-f1.xlsx"
+    assert f1.name == f"{raw.NCCI_VERSION}-f1.TXT"
     assert len(records) == 675_157
     assert any(r[0] == "11042" and r[1] == "97597" for r in records)
     assert (
