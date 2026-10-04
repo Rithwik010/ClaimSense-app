@@ -7,6 +7,7 @@ from decimal import Decimal
 import pytest
 
 from app.calculator.engine import (
+    Accumulators,
     CalcLine,
     CalculationError,
     CostShare,
@@ -15,6 +16,8 @@ from app.calculator.engine import (
     NetworkTerms,
     adjustments,
     allowed_amount,
+    calculate,
+    cap_to_out_of_pocket,
     cost_share,
 )
 from app.calculator.money import apply_bps, round_half_up
@@ -116,3 +119,70 @@ def test_out_of_network_uses_deductible_and_coinsurance_even_for_a_copay_categor
 def test_a_copay_category_without_a_copay_amount_is_an_error() -> None:
     with pytest.raises(CalculationError, match="copay"):
         cost_share(11899, Network.IN_NETWORK, CostShareTerms(CostShareRule.COPAY, None), TERMS, 0)
+
+
+# --- Step 4: the out-of-pocket cap, filled deductible, copay, coinsurance (A4, A5) --------------
+
+
+@pytest.mark.parametrize(
+    ("share", "remaining", "capped"),
+    [
+        (CostShare(10000, 0, 5924), 11000, CostShare(10000, 0, 1000)),  # coinsurance cut first
+        (CostShare(20000, 0, 4905), 15000, CostShare(15000, 0, 0)),  # cap inside the deductible
+        (CostShare(0, 5000, 0), 1000, CostShare(0, 1000, 0)),
+        (CostShare(0, 3000, 0), 0, CostShare(0, 0, 0)),
+        (CostShare(10000, 0, 2885), 12885, CostShare(10000, 0, 2885)),  # exactly the remainder
+        (CostShare(10000, 0, 2885), 300000, CostShare(10000, 0, 2885)),
+    ],
+)
+def test_the_cap_keeps_deductible_then_copay_then_coinsurance(
+    share: CostShare, remaining: int, capped: CostShare
+) -> None:
+    assert cap_to_out_of_pocket(share, remaining) == capped
+
+
+# --- Step 7: working accumulators across the lines of one claim --------------------------------
+
+IMAGING = CostShareTerms(CostShareRule.DEDUCTIBLE_COINSURANCE, None)
+FEES = {"70551": FeeEntry(24425, 19540), "70553": FeeEntry(39621, 31697), "99213": FEE}
+
+
+def imaging(line_no: int, code: str, billed: int) -> CalcLine:
+    return CalcLine(line_no, code, 1, billed, LineDecision.APPROVE, "ADVANCED_IMAGING")
+
+
+def test_a_deductible_split_across_two_lines_carries_over() -> None:
+    lines = [imaging(1, "70551", 39000), imaging(2, "70553", 60000)]
+    before = Accumulators(deductible_met_cents=20000, oop_met_cents=20000)
+
+    result = calculate(
+        lines, Network.IN_NETWORK, TERMS, {"ADVANCED_IMAGING": IMAGING}, FEES, before
+    )
+
+    first, second = result.amounts.lines
+    # remaining 30000: line 1 all deductible (24425); line 2 the last 5575, then 20% of 34046
+    assert (first.deductible_cents, first.coinsurance_cents) == (24425, 0)
+    assert (second.deductible_cents, second.coinsurance_cents) == (5575, 6809)  # 6809.2
+    assert result.accumulators_after == Accumulators(50000, 20000 + 24425 + 5575 + 6809)
+    assert before == Accumulators(20000, 20000)  # stored accumulators are never written
+
+
+def test_the_cap_reached_on_one_line_leaves_nothing_for_the_next() -> None:
+    lines = [
+        imaging(1, "70553", 60000),
+        CalcLine(2, "99213", 1, 19000, LineDecision.APPROVE, "OFFICE_VISIT_PCP"),
+    ]
+    before = Accumulators(deductible_met_cents=50000, oop_met_cents=295000)
+    benefits = {"ADVANCED_IMAGING": IMAGING, "OFFICE_VISIT_PCP": COPAY}
+
+    result = calculate(lines, Network.IN_NETWORK, TERMS, benefits, FEES, before)
+
+    first, second = result.amounts.lines
+    # remaining 5000: coinsurance 7924 (39621 x 20% = 7924.2) is cut to 5000; the copay to 0
+    assert (first.coinsurance_cents, first.member_pays_cents, first.plan_pays_cents) == (
+        5000,
+        5000,
+        34621,
+    )
+    assert (second.copay_cents, second.member_pays_cents, second.plan_pays_cents) == (0, 0, 11899)
+    assert result.accumulators_after == Accumulators(50000, 300000)

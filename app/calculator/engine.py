@@ -121,6 +121,18 @@ def cost_share(
     return CostShare(deductible, 0, apply_bps(allowed_cents - deductible, terms.coinsurance_bps))
 
 
+def cap_to_out_of_pocket(share: CostShare, remaining_cents: int) -> CostShare:
+    """Step 4: the member's cost share is capped at the remaining out-of-pocket amount, filled in
+    order deductible, copay, coinsurance, so the part above the cap comes off the last components
+    first (A4). Deductible, copays and coinsurance all count (A5)."""
+    room = max(remaining_cents, 0)
+    deductible = min(share.deductible_cents, room)
+    room -= deductible
+    copay = min(share.copay_cents, room)
+    room -= copay
+    return CostShare(deductible, copay, min(share.coinsurance_cents, room))
+
+
 def _billed_only(line: CalcLine) -> LineAmounts:
     return LineAmounts(
         line_no=line.line_no,
@@ -170,14 +182,18 @@ def calculate(
             raise CalculationError(f"line {line.line_no}: no fee for {line.procedure_code}")
         allowed = allowed_amount(line, network, fees[line.procedure_code])
         contractual, balance_bill = adjustments(line.billed_cents, allowed, network)
-        share = cost_share(
-            allowed, network, benefits[line.benefit_category], terms, deductible_remaining
+        share = cap_to_out_of_pocket(
+            cost_share(
+                allowed, network, benefits[line.benefit_category], terms, deductible_remaining
+            ),
+            oop_remaining,
         )
-        copay = min(share.copay_cents, oop_remaining)  # the skeleton's cap; P2.4 step 4 next
-        share = CostShare(share.deductible_cents, copay, share.coinsurance_cents)
+        # Step 7: working accumulators for the later lines of this claim (stored ones are not
+        # touched; they change when a reviewer finalizes the claim).
+        deductible_remaining -= share.deductible_cents
         oop_remaining -= share.total_cents
-        oop_added += share.total_cents
         deductible_added += share.deductible_cents
+        oop_added += share.total_cents
         results.append(
             LineAmounts(
                 line_no=line.line_no,

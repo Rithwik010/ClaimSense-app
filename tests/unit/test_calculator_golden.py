@@ -31,8 +31,6 @@ CASES = [
 ]
 # Cases needing a step a later P2.4 checkpoint adds; strict, so each must still fail until then.
 NOT_YET = {
-    # checkpoint 3: the out-of-pocket cap (A4) and working accumulators across lines
-    *("C19", "C20", "C22", "C25", "C33", "C56", "C23", "C53"),
     # checkpoint 4: coordination of benefits (A6)
     *("C36", "C37", "C38", "C39", "C40", "C41", "C55"),
 }
