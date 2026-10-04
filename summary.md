@@ -42,7 +42,7 @@ recorded decision, never from the model's free text. **All data is synthetic**: 
 | AI model fine-tuned and running locally | ✅ Done: `claimsense-decision:v1` in Ollama |
 | AI model accuracy | 🟡 **Big improvement, target missed**: macro-F1 **0.672** (base model 0.345, target 0.90) |
 | Rules engine | 🟡 1 of 13 rules built (R05 eligibility); 90 test cases already written for the rest |
-| Calculator | 🟡 Copay path only; 52 test cases already written for the rest |
+| Calculator | 🟡 Copay path only; 56 test cases already written for the rest |
 | Human review, explanations, scanned-form OCR | 🟡 / ⬜ Partly started or not started |
 | Evaluation report and demo (Phase 6) | ⬜ Not started |
 | Data verification (V1a labels, V1b policy sources) | 🟡 Reports done on the `v1-data-verification` branch; human review pending; not merged |
@@ -392,7 +392,7 @@ any code that produces data or report numbers to live under `scripts/` and be co
 | **5 Integration** | | P5.1 intake (digital PDF only) · P5.2 context in pipeline · P5.3 review (tiers only) · P5.5 UI (one page) · P5.6 end-to-end golden set (written) | P5.4 explanations |
 | **6 Evaluation + demo** | | | P6.1 metrics report · P6.2 demo script · P6.3 README + limitations |
 
-Test assets already written and waiting for code: **90 rules cases**, **52 calculator cases** (each
+Test assets already written and waiting for code: **90 rules cases**, **56 calculator cases** (each
 with worked steps), **30 end-to-end claims**, **50 retrieval queries**, **30 blind-review claims**.
 
 ---
@@ -404,7 +404,7 @@ with worked steps), **30 end-to-end claims**, **50 retrieval queries**, **30 bli
 | Task | Notes |
 |---|---|
 | P2.3 Rules R01–R13, duplicates, low-confidence conversion | 90 golden cases; line flags must match the generator's rule mirror in `training/generate/codebook.py` |
-| P2.4 Full calculator | 52 golden cases; extend `app/calculator/engine.py` |
+| P2.4 Full calculator | 56 golden cases; extend `app/calculator/engine.py` |
 | P2.1 Remaining loaders | NCCI, MUE and place-of-service tables into Postgres |
 | P2.5 Workflow | Automatic rule outcomes with audit events |
 | P5.1 Scanned-form OCR | `app/intake/layout.py` already defines the box coordinates |

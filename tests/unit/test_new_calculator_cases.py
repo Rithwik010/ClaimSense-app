@@ -71,11 +71,19 @@ def test_the_worked_steps_reproduce_the_golden_wording() -> None:
     assert not differing
 
 
-def test_the_drafts_take_the_next_free_case_ids() -> None:
+def test_the_drafts_are_the_last_golden_case_ids() -> None:
+    """Accepted in G3: C53-C56 follow C01-C52 with no gap."""
     numbers = sorted(int(case["case_id"][1:]) for case in GOLDEN_CASES)
 
-    assert [draft.case_id for draft in DRAFTS] == [f"C{numbers[-1] + k}" for k in range(1, 5)]
-    assert numbers == list(range(1, numbers[-1] + 1))
+    assert numbers == list(range(1, 57))
+    assert [draft.case_id for draft in DRAFTS] == ["C53", "C54", "C55", "C56"]
+
+
+@requires_raw
+def test_the_script_still_drafts_exactly_the_accepted_golden_cases() -> None:
+    golden = {case["case_id"]: case for case in GOLDEN_CASES}
+
+    assert [golden[case["case_id"]] for case in _drafted()] == list(_drafted())
 
 
 @requires_raw

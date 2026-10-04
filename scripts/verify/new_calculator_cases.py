@@ -20,6 +20,11 @@ Outputs, in data/generated/verification/ (not committed):
   amount cells, and the assumptions A1-A9 listed once.
 It also prints the golden_checks invariants on the drafted cases (report only).
 
+Accepted in G3 (2026-10-04, scripts/verify/g3_compare.py): a separate Claude chat's answers from
+the sheet agreed on all 48 amounts, and C53-C56 are now in tests/golden/calculator/. Once they are
+there the script stops instead of overwriting the filled sheet; the tests check that it still
+drafts exactly those cases.
+
     uv run python -m scripts.verify.new_calculator_cases
 """
 
@@ -48,6 +53,7 @@ OUT_DIR = ROOT / "data" / "generated" / "verification"
 STAGING = OUT_DIR / "new_golden"
 CASES_FILE = STAGING / "calculator_new_cases.json"
 SHEET_FILE = OUT_DIR / "G3_new_cases_sheet.md"
+GOLDEN_CALCULATOR = ROOT / "tests" / "golden" / "calculator"
 SOURCES = [
     "data/curated/plans.yaml",
     "data/curated/benefits.yaml",
@@ -494,6 +500,14 @@ def invariant_report(cases: Sequence[Mapping[str, Any]], curated: Any) -> str:
 def main() -> None:
     from app.db.curated import load_curated
 
+    golden = {
+        case["case_id"]
+        for path in sorted(GOLDEN_CALCULATOR.glob("*.json"))
+        for case in json.loads(path.read_text(encoding="utf-8"))["cases"]
+    }
+    accepted = sorted(golden & {draft.case_id for draft in DRAFTS})
+    if accepted:
+        raise SystemExit(f"already in the golden set (G3): {accepted}; nothing written")
     curated = load_curated()
     fees = load_fees({line.procedure_code for d in DRAFTS for line in d.lines}, curated)
     cases = [build_case(draft, curated, fees) for draft in DRAFTS]

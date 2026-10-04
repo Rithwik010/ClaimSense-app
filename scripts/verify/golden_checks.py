@@ -2,7 +2,7 @@
 sheet for one reviewer. Report only: no golden case, rules code or calculator code is changed.
 
 Checks on every case:
-- calculator (52 cases), per line and in total: plan pays + member pays = max(0, allowed -
+- calculator (every case), per line and in total: plan pays + member pays = max(0, allowed -
   primary paid); allowed <= billed; no negative amounts; integer cents only; deductible applied
   <= the remaining deductible and member pays <= the remaining out-of-pocket maximum (working
   totals, line by line); copay <= allowed; denied and pended lines pay 0; totals = sum of lines
