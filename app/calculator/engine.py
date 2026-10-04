@@ -27,10 +27,6 @@ from app.domain.contracts import (
 )
 
 
-class UnsupportedCalculation(ValueError):
-    """A calculation the walking skeleton does not cover yet (P2.4)."""
-
-
 class CalculationError(ValueError):
     """The inputs cannot be calculated: an approved line without a benefit category or a fee, or a
     COPAY benefit without a copay amount."""
@@ -197,6 +193,10 @@ def calculate(
         if line.benefit_category is None:
             raise CalculationError(
                 f"line {line.line_no}: an approved line needs a benefit category"
+            )
+        if line.benefit_category not in benefits:
+            raise CalculationError(
+                f"line {line.line_no}: no benefit {line.benefit_category} on the plan"
             )
         if line.procedure_code not in fees:
             raise CalculationError(f"line {line.line_no}: no fee for {line.procedure_code}")

@@ -107,6 +107,65 @@ def test_audit_events_are_append_only(migrated: Engine) -> None:
     assert rows == ["system"]
 
 
+def test_a_failed_calculation_can_be_audited_and_unknown_event_types_cannot(
+    migrated: Engine,
+) -> None:
+    """Migration 0002 (P2.4): CALCULATION_FAILED joins the audit event types."""
+    with migrated.begin() as conn:
+        insert_claim(conn, "CLM-TEST-CALC")
+        conn.execute(
+            text(
+                "INSERT INTO audit_events (claim_id, event_type, actor, payload) "
+                "VALUES ('CLM-TEST-CALC', 'CALCULATION_FAILED', 'system', '{}')"
+            )
+        )
+    with (
+        pytest.raises(DBAPIError, match="ck_audit_events_event_type_allowed"),
+        migrated.begin() as conn,
+    ):
+        conn.execute(
+            text(
+                "INSERT INTO audit_events (claim_id, event_type, actor, payload) "
+                "VALUES ('CLM-TEST-CALC', 'NOT_AN_EVENT', 'system', '{}')"
+            )
+        )
+
+
+def test_downgrading_0002_keeps_audited_calculation_failures(db_url: str) -> None:
+    """The audit trail is append-only, so going back to 0001 keeps CALCULATION_FAILED rows; the
+    old event-type check applies to new rows only."""
+    config = alembic_config(db_url)
+    command.upgrade(config, "head")
+    engine = create_engine(db_url)
+    with engine.begin() as conn:
+        insert_claim(conn, "CLM-TEST-DOWN")
+        conn.execute(
+            text(
+                "INSERT INTO audit_events (claim_id, event_type, actor, payload) "
+                "VALUES ('CLM-TEST-DOWN', 'CALCULATION_FAILED', 'system', '{}')"
+            )
+        )
+
+    command.downgrade(config, "0001")
+
+    with engine.connect() as conn:
+        kept = conn.execute(text("SELECT event_type FROM audit_events")).scalars().all()
+    with (
+        pytest.raises(DBAPIError, match="ck_audit_events_event_type_allowed"),
+        engine.begin() as conn,
+    ):
+        conn.execute(
+            text(
+                "INSERT INTO audit_events (claim_id, event_type, actor, payload) "
+                "VALUES ('CLM-TEST-DOWN', 'CALCULATION_FAILED', 'system', '{}')"
+            )
+        )
+    engine.dispose()
+    command.downgrade(config, "base")
+
+    assert kept == ["CALCULATION_FAILED"]
+
+
 def test_claim_status_must_be_a_known_value(migrated: Engine) -> None:
     with pytest.raises(DBAPIError, match="ck_claims_status_allowed"), migrated.begin() as conn:
         conn.execute(

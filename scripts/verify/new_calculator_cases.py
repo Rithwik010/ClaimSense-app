@@ -503,7 +503,7 @@ def main() -> None:
     golden = {
         case["case_id"]
         for path in sorted(GOLDEN_CALCULATOR.glob("*.json"))
-        for case in json.loads(path.read_text(encoding="utf-8"))["cases"]
+        for case in json.loads(path.read_text(encoding="utf-8")).get("cases", [])
     }
     accepted = sorted(golden & {draft.case_id for draft in DRAFTS})
     if accepted:

@@ -113,7 +113,7 @@ def expected_cases() -> list[dict[str, Any]]:
     golden = {
         case["case_id"]: case
         for path in sorted(GOLDEN_CALCULATOR.glob("*.json"))
-        for case in json.loads(path.read_text(encoding="utf-8"))["cases"]
+        for case in json.loads(path.read_text(encoding="utf-8")).get("cases", [])
     }
     return [golden[draft.case_id] for draft in DRAFTS]
 
@@ -173,7 +173,7 @@ def _golden_cases() -> list[dict[str, Any]]:
     return [
         case
         for path in sorted(GOLDEN_CALCULATOR.glob("*.json"))
-        for case in json.loads(path.read_text(encoding="utf-8"))["cases"]
+        for case in json.loads(path.read_text(encoding="utf-8")).get("cases", [])
     ]
 
 

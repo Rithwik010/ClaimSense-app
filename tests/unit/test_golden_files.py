@@ -16,6 +16,7 @@ from app.calculator.fee_schedule import allowed_amounts
 from app.db import raw
 from app.db.curated import load_curated
 from app.domain.contracts import CostBreakdown, IntakeClaim, npi_is_valid
+from scripts.verify import calculator_fixture
 from scripts.verify.rules_fixture import raw_in_use, read_fixture
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden"
@@ -151,16 +152,23 @@ def test_calculator_case_is_consistent(case: dict[str, Any]) -> None:
         assert getattr(breakdown.totals, field) == sum(getattr(a, field) for a in breakdown.lines)
 
 
-@requires_raw
+@cache
+def _rvus() -> dict[str, Decimal]:
+    """Non-facility total RVUs: from data/raw/ or, without it (CI), from the golden calculator
+    fixture, which holds every code the cases give a fee for (D-CI-2)."""
+    if raw_in_use():
+        codes = {code for case in CALC_CASES for code in case["given"]["fee_schedule"]}
+        return {code: e.nonfacility_total_rvu for code, e in raw.read_pfs(codes).items()}
+    return calculator_fixture.rvus(calculator_fixture.read_fixture())
+
+
 @pytest.mark.parametrize("case", CALC_CASES, ids=ids(CALC_CASES))
 def test_calculator_fee_inputs_match_the_fee_schedule_rule(case: dict[str, Any]) -> None:
     curated = load_curated()
     fee = curated.fee_rule
-    pfs = raw.read_pfs(set(case["given"]["fee_schedule"]))
     for code, amounts in case["given"]["fee_schedule"].items():
-        entry = pfs[code]
         inn, oon = allowed_amounts(
-            entry.nonfacility_total_rvu,
+            _rvus()[code],
             Decimal(fee.conversion_factor),
             fee.in_network_bps,
             fee.out_of_network_bps,

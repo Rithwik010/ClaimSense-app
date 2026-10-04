@@ -19,6 +19,7 @@ import streamlit as st
 API_URL = os.environ.get("CLAIMSENSE_API_URL", "http://localhost:8000")
 SAMPLE = Path(__file__).parent / "sample_claim.json"
 TIMEOUT_SECONDS = 330.0  # the model call may take minutes on a laptop
+CALCULATION_FAILED = "CALCULATION_FAILED:"  # an output_errors entry from the calculator (P2.4)
 
 
 def dollars(cents: int) -> str:
@@ -81,10 +82,17 @@ def show_claim(http: httpx.Client, claim_id: str) -> None:
     columns[2].metric("Review tier", record["review_tier"] or "-")
     columns[3].metric("Plan pays", dollars(totals["plan_pays_cents"]) if totals else "-")
     columns[4].metric("Member pays", dollars(totals["member_pays_cents"]) if totals else "-")
-    if record["output_errors"]:
+    calculation_errors = [e for e in record["output_errors"] if e.startswith(CALCULATION_FAILED)]
+    model_errors = [e for e in record["output_errors"] if not e.startswith(CALCULATION_FAILED)]
+    if model_errors:
         st.warning(
             "The model output failed validation, so every model line is PEND "
-            "(MODEL_OUTPUT_INVALID):\n\n" + "\n".join(f"- {e}" for e in record["output_errors"])
+            "(MODEL_OUTPUT_INVALID):\n\n" + "\n".join(f"- {e}" for e in model_errors)
+        )
+    if calculation_errors:
+        st.warning(
+            "The amounts could not be calculated, so the claim needs FULL review:\n\n"
+            + "\n".join(f"- {e}" for e in calculation_errors)
         )
 
     st.markdown("**Rule checks**")

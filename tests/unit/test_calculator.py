@@ -303,3 +303,17 @@ def test_totals_are_sums_over_every_line() -> None:
     for field, total in totals.items():
         assert total == sum(getattr(line, field) for line in result.amounts.lines), field
     assert totals["billed_cents"] == 39000 + 19000 + 19000
+
+
+def test_an_approved_line_without_a_fee_or_a_plan_benefit_is_a_calculation_error() -> None:
+    no_fee = CalcLine(1, "99999", 1, 19000, LineDecision.APPROVE, "OFFICE_VISIT_PCP")
+    no_benefit = CalcLine(1, "99213", 1, 19000, LineDecision.APPROVE, "OFFICE_VISIT_PCP")
+    no_category = CalcLine(1, "99213", 1, 19000, LineDecision.APPROVE, None)
+    benefits = {"OFFICE_VISIT_PCP": COPAY}
+
+    with pytest.raises(CalculationError, match="no fee for 99999"):
+        calculate([no_fee], Network.IN_NETWORK, TERMS, benefits, FEES, Accumulators(0, 0))
+    with pytest.raises(CalculationError, match="no benefit OFFICE_VISIT_PCP"):
+        calculate([no_benefit], Network.IN_NETWORK, TERMS, {}, FEES, Accumulators(0, 0))
+    with pytest.raises(CalculationError, match="needs a benefit category"):
+        calculate([no_category], Network.IN_NETWORK, TERMS, benefits, FEES, Accumulators(0, 0))
