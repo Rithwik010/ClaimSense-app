@@ -68,6 +68,23 @@ class CalculationResult:
     accumulators_after: Accumulators  # working accumulators; stored ones change at finalization
 
 
+# --- the steps of §8.6 ---------------------------------------------------------------------------
+
+
+def allowed_amount(line: CalcLine, network: Network, fee: FeeEntry) -> int:
+    """Step 1: min(billed, fee for the network x units). The fee is per unit (A1)."""
+    per_unit = fee.inn_allowed_cents if network is Network.IN_NETWORK else fee.oon_allowed_cents
+    return min(line.billed_cents, per_unit * line.units)
+
+
+def adjustments(billed_cents: int, allowed_cents: int, network: Network) -> tuple[int, int]:
+    """Step 2: (contractual adjustment, balance-bill exposure). Billed minus allowed is a
+    contractual adjustment in network and a balance-bill exposure out of network (A9); neither is
+    paid by anyone."""
+    difference = billed_cents - allowed_cents
+    return (difference, 0) if network is Network.IN_NETWORK else (0, difference)
+
+
 def _billed_only(line: CalcLine) -> LineAmounts:
     return LineAmounts(
         line_no=line.line_no,
@@ -117,7 +134,8 @@ def calculate(
             raise UnsupportedCalculation(
                 f"line {line.line_no}: {benefit.cost_share_rule.value} is not supported yet (P2.4)"
             )
-        allowed = min(line.billed_cents, fees[line.procedure_code].inn_allowed_cents * line.units)
+        allowed = allowed_amount(line, network, fees[line.procedure_code])
+        contractual, balance_bill = adjustments(line.billed_cents, allowed, network)
         copay = min(benefit.copay_cents, allowed, oop_remaining)  # A2, A4
         oop_remaining -= copay
         oop_added += copay
@@ -126,14 +144,14 @@ def calculate(
                 line_no=line.line_no,
                 billed_cents=line.billed_cents,
                 allowed_cents=allowed,
-                contractual_adjustment_cents=line.billed_cents - allowed,
+                contractual_adjustment_cents=contractual,
                 deductible_cents=0,
                 copay_cents=copay,
                 coinsurance_cents=0,
                 cob_primary_paid_cents=0,
                 plan_pays_cents=allowed - copay,
                 member_pays_cents=copay,
-                balance_bill_exposure_cents=0,
+                balance_bill_exposure_cents=balance_bill,
             )
         )
     return CalculationResult(
