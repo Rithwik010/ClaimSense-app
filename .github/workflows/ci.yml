@@ -9,7 +9,7 @@ on:
 jobs:
   checks:
     name: Lint, import checks and tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned: GitHub moves ubuntu-latest to Ubuntu 26 on 2026-10-19
     services:
       postgres:
         image: postgres:18-alpine
