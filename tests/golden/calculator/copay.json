@@ -951,6 +951,89 @@
         "data/curated/fee_schedule.yaml (D6)",
         "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
       ]
+    },
+    {
+      "case_id": "C54",
+      "title": "Copay capped by the allowed amount; billed and fee both below the copay",
+      "assumptions": [],
+      "given": {
+        "plan_id": "PLN-EPO",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 30000,
+          "oop_met_cents": 30000
+        },
+        "fee_schedule": {
+          "99211": {
+            "inn_allowed_cents": 3048,
+            "oon_allowed_cents": 2438
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "99211",
+            "units": 1,
+            "billed_cents": 2800,
+            "decision": "APPROVE",
+            "benefit_category": "OFFICE_VISIT_SPECIALIST"
+          }
+        ],
+        "other_coverage": null
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 2800,
+              "allowed_cents": 2800,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 2800,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 2800,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 2800,
+            "allowed_cents": 2800,
+            "contractual_adjustment_cents": 0,
+            "deductible_cents": 0,
+            "copay_cents": 2800,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 2800,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 30000,
+          "oop_met_cents": 32800
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-EPO, IN_NETWORK: deductible 100000, coinsurance 2500 bps, OOP max 450000.",
+        "Accumulators before: deductible met 30000 -> remaining 70000; OOP met 30000 -> remaining 420000.",
+        "Line 1 99211 x1: fee 99211: RVU 0.73 x CF 33.4009 = 24.382657 -> national 2438; in-network 2438 x 1.25 = 3047.50 -> 3048; out-of-network 2438.",
+        "  fee for line = 3048 x 1 units = 3048 (A1); allowed = min(billed 2800, 3048) = 2800.",
+        "  contractual adjustment = 0; balance-bill exposure = 0 (A9).",
+        "  OFFICE_VISIT_SPECIALIST COPAY 6000: copay = min(6000, 2800) = 2800; no deductible.",
+        "  OOP: cost share 2800 <= remaining 420000 -> no cap.",
+        "  plan pays = 2800 - 2800 = 0; member pays = 2800.",
+        "  working accumulators: deductible remaining 70000, OOP remaining 417200.",
+        "Totals: plan pays 0, member pays 2800. Working accumulators after (IN_NETWORK): deductible met 30000, OOP met 32800 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
     }
   ]
 }

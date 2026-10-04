@@ -591,6 +591,131 @@
         "data/curated/fee_schedule.yaml (D6)",
         "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
       ]
+    },
+    {
+      "case_id": "C55",
+      "title": "COB: primary paid more than the allowed amount on line 1; line 2 not paid by the primary",
+      "assumptions": [
+        "A6"
+      ],
+      "given": {
+        "plan_id": "PLN-HDHP",
+        "network": "IN_NETWORK",
+        "accumulators": {
+          "deductible_met_cents": 300000,
+          "oop_met_cents": 300000
+        },
+        "fee_schedule": {
+          "93306": {
+            "inn_allowed_cents": 24591,
+            "oon_allowed_cents": 19673
+          },
+          "99214": {
+            "inn_allowed_cents": 16951,
+            "oon_allowed_cents": 13561
+          }
+        },
+        "lines": [
+          {
+            "line_no": 1,
+            "procedure_code": "93306",
+            "units": 1,
+            "billed_cents": 41000,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS"
+          },
+          {
+            "line_no": 2,
+            "procedure_code": "99214",
+            "units": 1,
+            "billed_cents": 27000,
+            "decision": "APPROVE",
+            "benefit_category": "OFFICE_VISIT_SPECIALIST"
+          }
+        ],
+        "other_coverage": {
+          "payer_name": "Northwind Health Plan",
+          "primary_paid": [
+            {
+              "line_no": 1,
+              "paid_cents": 30000
+            }
+          ]
+        }
+      },
+      "expected": {
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 41000,
+              "allowed_cents": 24591,
+              "contractual_adjustment_cents": 16409,
+              "deductible_cents": 20000,
+              "copay_cents": 0,
+              "coinsurance_cents": 459,
+              "cob_primary_paid_cents": 30000,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            },
+            {
+              "line_no": 2,
+              "billed_cents": 27000,
+              "allowed_cents": 16951,
+              "contractual_adjustment_cents": 10049,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 1695,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 15256,
+              "member_pays_cents": 1695,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 68000,
+            "allowed_cents": 41542,
+            "contractual_adjustment_cents": 26458,
+            "deductible_cents": 20000,
+            "copay_cents": 0,
+            "coinsurance_cents": 2154,
+            "cob_primary_paid_cents": 30000,
+            "plan_pays_cents": 15256,
+            "member_pays_cents": 1695,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "deductible_met_cents": 320000,
+          "oop_met_cents": 322154
+        }
+      },
+      "worked_steps": [
+        "Plan PLN-HDHP, IN_NETWORK: deductible 320000, coinsurance 1000 bps, OOP max 650000.",
+        "Accumulators before: deductible met 300000 -> remaining 20000; OOP met 300000 -> remaining 350000.",
+        "Line 1 93306 x1: fee 93306: RVU 5.89 x CF 33.4009 = 196.731301 -> national 19673; in-network 19673 x 1.25 = 24591.25 -> 24591; out-of-network 19673.",
+        "  fee for line = 24591 x 1 units = 24591 (A1); allowed = min(billed 41000, 24591) = 24591.",
+        "  contractual adjustment = 16409; balance-bill exposure = 0 (A9).",
+        "  DIAGNOSTIC_TESTS DEDUCTIBLE_COINSURANCE: deductible = min(remaining 20000, 24591) = 20000; coinsurance = (24591 - 20000) x 1000 / 10000 = 459.1 -> 459.",
+        "  OOP: cost share 20459 <= remaining 350000 -> no cap.",
+        "  COB: primary paid 30000; normal plan payment 24591 - 20459 = 4132; plan pays = min(4132, 24591 - 30000) = 0 (not below 0); member pays = 24591 - 30000 - 0 = 0 (not below 0) (A6).",
+        "  working accumulators: deductible remaining 0, OOP remaining 329541.",
+        "Line 2 99214 x1: fee 99214: RVU 4.06 x CF 33.4009 = 135.607654 -> national 13561; in-network 13561 x 1.25 = 16951.25 -> 16951; out-of-network 13561.",
+        "  fee for line = 16951 x 1 units = 16951 (A1); allowed = min(billed 27000, 16951) = 16951.",
+        "  contractual adjustment = 10049; balance-bill exposure = 0 (A9).",
+        "  OFFICE_VISIT_SPECIALIST DEDUCTIBLE_COINSURANCE: deductible = min(remaining 0, 16951) = 0; coinsurance = (16951 - 0) x 1000 / 10000 = 1695.1 -> 1695.",
+        "  OOP: cost share 1695 <= remaining 329541 -> no cap.",
+        "  plan pays = 16951 - 1695 = 15256; member pays = 1695.",
+        "  working accumulators: deductible remaining 0, OOP remaining 327846.",
+        "Totals: plan pays 15256, member pays 1695. Working accumulators after (IN_NETWORK): deductible met 320000, OOP met 322154 (A5)."
+      ],
+      "sources": [
+        "data/curated/plans.yaml",
+        "data/curated/benefits.yaml",
+        "data/curated/fee_schedule.yaml (D6)",
+        "data/raw/pfs/rvu26a PPRRVU2026_Jan_nonQPP.csv"
+      ]
     }
   ]
 }

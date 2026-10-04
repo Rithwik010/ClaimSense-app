@@ -2,7 +2,7 @@
 sheet for one reviewer. Report only: no golden case, rules code or calculator code is changed.
 
 Checks on every case:
-- calculator (52 cases), per line and in total: plan pays + member pays = max(0, allowed -
+- calculator (every case), per line and in total: plan pays + member pays = max(0, allowed -
   primary paid); allowed <= billed; no negative amounts; integer cents only; deductible applied
   <= the remaining deductible and member pays <= the remaining out-of-pocket maximum (working
   totals, line by line); copay <= allowed; denied and pended lines pay 0; totals = sum of lines
@@ -1150,8 +1150,14 @@ def render_rules_case(
 
 
 def render_calculator_case(
-    number: int, view: Mapping[str, Any], curated: Any, spec: Spec
+    number: int,
+    view: Mapping[str, Any],
+    curated: Any,
+    spec: Spec,
+    name_assumptions: bool = True,
 ) -> list[str]:
+    """One calculator case for a review sheet: inputs and the quoted section 8.6 steps, with blank
+    amount cells. `name_assumptions=False` leaves out the assumptions the case names (G3)."""
     given = view["given"]
     plan = curated.plans[given["plan_id"]]
     network = given["network"]
@@ -1187,8 +1193,9 @@ def render_calculator_case(
     out += ["Steps it exercises (INSTRUCTIONS.md section 8.6, word for word):", ""]
     for step in steps:
         out += [f"> {step}", ""]
-    named = ", ".join(view.get("assumptions") or []) or "none named"
-    out += [f"Assumptions the case names (tests/golden/README.md): {named}", ""]
+    if name_assumptions:
+        named = ", ".join(view.get("assumptions") or []) or "none named"
+        out += [f"Assumptions the case names (tests/golden/README.md): {named}", ""]
     out.append(
         f"- Plan {plan.plan_id} ({plan.plan_type}), {network}: deductible "
         f"{terms.deductible_cents}, "
