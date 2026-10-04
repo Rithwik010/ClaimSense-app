@@ -1,7 +1,7 @@
 """Calculator against the golden copay cases (in-network COPAY lines, §8.6).
 
-The walking skeleton (P1.5) supports in-network COPAY lines only; P2.4 runs every golden calculator
-file and removes the "unsupported" checks at the end of this file.
+Every golden calculator file runs in test_calculator_golden.py (P2.4); this file keeps the copay
+checks of the walking skeleton.
 """
 
 import json
@@ -15,7 +15,6 @@ from app.calculator.engine import (
     CostShareTerms,
     FeeEntry,
     NetworkTerms,
-    UnsupportedCalculation,
     calculate,
 )
 from app.db.curated import load_curated
@@ -85,15 +84,3 @@ def test_copay_is_capped_at_the_remaining_out_of_pocket_maximum() -> None:
     line = result.amounts.lines[0]
     assert (line.copay_cents, line.member_pays_cents, line.plan_pays_cents) == (1000, 1000, 10899)
     assert result.accumulators_after == Accumulators(50000, 300000)
-
-
-def test_skeleton_rejects_what_p2_4_adds() -> None:
-    given = json.loads(json.dumps(CASES[0]["given"]))
-    given["lines"][0]["benefit_category"] = "ADVANCED_IMAGING"  # DEDUCTIBLE_COINSURANCE
-    with pytest.raises(UnsupportedCalculation, match="DEDUCTIBLE_COINSURANCE"):
-        calculate(**inputs(given))
-
-    given = json.loads(json.dumps(CASES[0]["given"]))
-    given["network"] = "OUT_OF_NETWORK"
-    with pytest.raises(UnsupportedCalculation, match="out-of-network"):
-        calculate(**inputs(given))

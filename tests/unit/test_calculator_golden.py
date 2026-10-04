@@ -31,16 +31,10 @@ CASES = [
 ]
 # Cases needing a step a later P2.4 checkpoint adds; strict, so each must still fail until then.
 NOT_YET = {
-    case["case_id"]
-    for case in CASES
-    if case["given"]["network"] != "IN_NETWORK"
-    or case["given"]["other_coverage"]
-    or any(
-        load_curated().benefit(case["given"]["plan_id"], line["benefit_category"]).cost_share_rule
-        != "COPAY"
-        for line in case["given"]["lines"]
-        if line["decision"] == "APPROVE"
-    )
+    # checkpoint 3: the out-of-pocket cap (A4) and working accumulators across lines
+    *("C19", "C20", "C22", "C25", "C33", "C56", "C23", "C53"),
+    # checkpoint 4: coordination of benefits (A6)
+    *("C36", "C37", "C38", "C39", "C40", "C41", "C55"),
 }
 
 
