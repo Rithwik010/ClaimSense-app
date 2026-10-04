@@ -29,11 +29,6 @@ CASES = [
     for path in sorted(GOLDEN.glob("*.json"))
     for case in json.loads(path.read_text(encoding="utf-8")).get("cases", [])
 ]
-# Cases needing a step a later P2.4 checkpoint adds; strict, so each must still fail until then.
-NOT_YET = {
-    # checkpoint 4: coordination of benefits (A6)
-    *("C36", "C37", "C38", "C39", "C40", "C41", "C55"),
-}
 
 
 def inputs(given: dict[str, Any]) -> dict[str, Any]:
@@ -91,19 +86,7 @@ def test_allowed_amount_and_adjustments(case: dict[str, Any]) -> None:
         )
 
 
-@pytest.mark.parametrize(
-    "case",
-    [
-        pytest.param(
-            case,
-            id=case["case_id"],
-            marks=[pytest.mark.xfail(strict=True, reason="later P2.4 checkpoint")]
-            if case["case_id"] in NOT_YET
-            else [],
-        )
-        for case in CASES
-    ],
-)
+@pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
 def test_golden_calculator_case(case: dict[str, Any]) -> None:
     result = calculate(**inputs(case["given"]))
 

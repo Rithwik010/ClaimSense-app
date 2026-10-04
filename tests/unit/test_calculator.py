@@ -18,10 +18,11 @@ from app.calculator.engine import (
     allowed_amount,
     calculate,
     cap_to_out_of_pocket,
+    coordinate,
     cost_share,
 )
 from app.calculator.money import apply_bps, round_half_up
-from app.domain.contracts import CostShareRule, LineDecision, Network
+from app.domain.contracts import CostShareRule, LineDecision, Network, OtherCoverage
 
 FEE = FeeEntry(inn_allowed_cents=11899, oon_allowed_cents=9519)
 TERMS = NetworkTerms(deductible_cents=50000, coinsurance_bps=2000, oop_max_cents=300000)
@@ -186,3 +187,119 @@ def test_the_cap_reached_on_one_line_leaves_nothing_for_the_next() -> None:
     )
     assert (second.copay_cents, second.member_pays_cents, second.plan_pays_cents) == (0, 0, 11899)
     assert result.accumulators_after == Accumulators(50000, 300000)
+
+
+# --- Step 6: our plan pays as secondary (A6) ---------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("primary", "plan", "member"),
+    [
+        (0, 9399, 2500),  # no primary payment: the normal split
+        (1000, 9399, 1500),  # min(9399, 10899) = 9399; 11899 - 1000 - 9399
+        (5000, 6899, 0),  # min(9399, 6899) = 6899; 11899 - 5000 - 6899 = 0
+        (11899, 0, 0),  # primary paid exactly the allowed amount
+        (12000, 0, 0),  # primary paid more: min(9399, -101) -> 0; -101 -> 0
+    ],
+)
+def test_secondary_pays_the_lesser_of_its_normal_payment_and_what_is_left(
+    primary: int, plan: int, member: int
+) -> None:
+    # allowed 11899, member cost share 2500, normal plan payment 9399
+    assert coordinate(11899, 2500, primary) == (plan, member)
+
+
+def test_cob_keeps_the_normal_cost_share_and_the_accumulators_grow_by_it() -> None:
+    """A6: line 1 is fully paid by the primary, yet its deductible counts, so line 2 takes none."""
+    lines = [imaging(1, "70551", 39000), imaging(2, "70553", 60000)]
+    other = OtherCoverage.model_validate(
+        {"payer_name": "Northwind", "primary_paid": [{"line_no": 1, "paid_cents": 30000}]}
+    )
+    before = Accumulators(deductible_met_cents=30000, oop_met_cents=30000)
+
+    result = calculate(
+        lines, Network.IN_NETWORK, TERMS, {"ADVANCED_IMAGING": IMAGING}, FEES, before, other
+    )
+
+    first, second = result.amounts.lines
+    # line 1: allowed 24425, deductible 20000, coinsurance 4425 x 20% = 885, normal plan 3540;
+    # primary 30000 > allowed -> plan 0, member 0
+    assert (first.deductible_cents, first.coinsurance_cents) == (20000, 885)
+    assert (first.cob_primary_paid_cents, first.plan_pays_cents, first.member_pays_cents) == (
+        30000,
+        0,
+        0,
+    )
+    # line 2: deductible left 0; coinsurance 39621 x 20% = 7924.2 -> 7924
+    assert (second.deductible_cents, second.coinsurance_cents, second.member_pays_cents) == (
+        0,
+        7924,
+        7924,
+    )
+    assert second.cob_primary_paid_cents == 0
+    assert result.accumulators_after == Accumulators(50000, 30000 + 20885 + 7924)
+
+
+# --- Denied and pended lines (A7) and totals (A8) ----------------------------------------------
+
+
+def _visit(decision: LineDecision, line_no: int = 1, category: str | None = None) -> CalcLine:
+    return CalcLine(line_no, "99213", 1, 19000, decision, category)
+
+
+@pytest.mark.parametrize("decision", [LineDecision.DENY, LineDecision.PEND])
+def test_denied_and_pended_lines_report_billed_only(decision: LineDecision) -> None:
+    result = calculate([_visit(decision)], Network.IN_NETWORK, TERMS, {}, FEES, Accumulators(0, 0))
+
+    line = result.amounts.lines[0].model_dump()
+    assert (line.pop("line_no"), line.pop("billed_cents")) == (1, 19000)
+    assert set(line.values()) == {0}
+    assert result.accumulators_after == Accumulators(0, 0)
+
+
+def test_a_denied_line_between_approved_lines_changes_no_working_total() -> None:
+    lines = [
+        _visit(LineDecision.APPROVE, 1, "OFFICE_VISIT_PCP"),
+        _visit(LineDecision.DENY, 2),
+        _visit(LineDecision.APPROVE, 3, "OFFICE_VISIT_PCP"),
+    ]
+    before = Accumulators(deductible_met_cents=0, oop_met_cents=296000)
+
+    result = calculate(lines, Network.IN_NETWORK, TERMS, {"OFFICE_VISIT_PCP": COPAY}, FEES, before)
+
+    copays = [line.copay_cents for line in result.amounts.lines]
+    assert copays == [2500, 0, 1500]  # remaining 4000: 2500, then the last 1500
+    assert result.accumulators_after == Accumulators(0, 300000)
+
+
+def test_copay_is_capped_at_the_remaining_out_of_pocket_maximum() -> None:
+    before = Accumulators(deductible_met_cents=50000, oop_met_cents=299000)
+
+    result = calculate(
+        [_visit(LineDecision.APPROVE, 1, "OFFICE_VISIT_PCP")],
+        Network.IN_NETWORK,
+        TERMS,
+        {"OFFICE_VISIT_PCP": COPAY},
+        FEES,
+        before,
+    )
+
+    line = result.amounts.lines[0]
+    assert (line.copay_cents, line.member_pays_cents, line.plan_pays_cents) == (1000, 1000, 10899)
+    assert result.accumulators_after == Accumulators(50000, 300000)
+
+
+def test_totals_are_sums_over_every_line() -> None:
+    lines = [
+        imaging(1, "70551", 39000),
+        _visit(LineDecision.DENY, 2),
+        _visit(LineDecision.APPROVE, 3, "OFFICE_VISIT_PCP"),
+    ]
+    benefits = {"ADVANCED_IMAGING": IMAGING, "OFFICE_VISIT_PCP": COPAY}
+
+    result = calculate(lines, Network.IN_NETWORK, TERMS, benefits, FEES, Accumulators(0, 0))
+
+    totals = result.amounts.totals.model_dump()
+    for field, total in totals.items():
+        assert total == sum(getattr(line, field) for line in result.amounts.lines), field
+    assert totals["billed_cents"] == 39000 + 19000 + 19000

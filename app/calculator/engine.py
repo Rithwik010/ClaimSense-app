@@ -1,10 +1,15 @@
 """Claim cost calculation (INSTRUCTIONS.md §8.6; assumptions A1–A9 in tests/golden/README.md).
 
-Walking skeleton (P1.5): in-network lines in COPAY benefit categories only, with the out-of-pocket
-cap. Anything else an approved line needs (deductible and coinsurance, out-of-network, coordination
-of benefits) raises `UnsupportedCalculation` until P2.4.
+The full calculator (P2.4). Per approved line, in service-line order: allowed amount (step 1, A1),
+contractual adjustment or balance-bill exposure (step 2, A9), member cost share by the benefit's
+rule, out-of-network lines always by deductible and coinsurance (step 3, A3), the out-of-pocket
+cap (step 4, A4, A5), plan pays (step 5) and, with another plan primary, the secondary split
+(step 6, A6); then the working accumulators move on to the next line (step 7). Denied and pended
+lines report the billed amount only (A7); totals are sums over every line (A8).
 
-Pure functions over integer cents. Denied and pended lines report the billed amount only (A7).
+Pure functions over integer cents; percentages go through `money.apply_bps` (Decimal,
+ROUND_HALF_UP). The working accumulators after the claim are returned; the stored accumulators
+change only when a reviewer finalizes the claim (P5.3).
 """
 
 from collections.abc import Mapping
@@ -133,6 +138,18 @@ def cap_to_out_of_pocket(share: CostShare, remaining_cents: int) -> CostShare:
     return CostShare(deductible, copay, min(share.coinsurance_cents, room))
 
 
+def coordinate(
+    allowed_cents: int, cost_share_cents: int, primary_paid_cents: int
+) -> tuple[int, int]:
+    """Step 6, our plan secondary (traditional COB, DECISIONS.md): (plan pays, member pays). Plan
+    pays = min(normal plan payment, allowed - primary paid), not below 0; member pays = allowed -
+    primary paid - plan pays, not below 0 (A6). With no primary payment this is the normal split
+    (step 5: plan pays = allowed - member cost share)."""
+    normal = allowed_cents - cost_share_cents
+    plan_pays = max(0, min(normal, allowed_cents - primary_paid_cents))
+    return plan_pays, max(0, allowed_cents - primary_paid_cents - plan_pays)
+
+
 def _billed_only(line: CalcLine) -> LineAmounts:
     return LineAmounts(
         line_no=line.line_no,
@@ -164,8 +181,11 @@ def calculate(
     accumulators: Accumulators,
     other_coverage: OtherCoverage | None = None,
 ) -> CalculationResult:
-    if other_coverage is not None and other_coverage.primary_paid:
-        raise UnsupportedCalculation("coordination of benefits is not supported yet (P2.4)")
+    primary_paid = (
+        {payment.line_no: payment.paid_cents for payment in other_coverage.primary_paid}
+        if other_coverage
+        else {}
+    )
     oop_remaining = max(terms.oop_max_cents - accumulators.oop_met_cents, 0)
     deductible_remaining = max(terms.deductible_cents - accumulators.deductible_met_cents, 0)
     oop_added = deductible_added = 0
@@ -188,6 +208,8 @@ def calculate(
             ),
             oop_remaining,
         )
+        primary = primary_paid.get(line.line_no, 0)
+        plan_pays, member_pays = coordinate(allowed, share.total_cents, primary)
         # Step 7: working accumulators for the later lines of this claim (stored ones are not
         # touched; they change when a reviewer finalizes the claim).
         deductible_remaining -= share.deductible_cents
@@ -203,9 +225,9 @@ def calculate(
                 deductible_cents=share.deductible_cents,
                 copay_cents=share.copay_cents,
                 coinsurance_cents=share.coinsurance_cents,
-                cob_primary_paid_cents=0,
-                plan_pays_cents=allowed - share.total_cents,
-                member_pays_cents=share.total_cents,
+                cob_primary_paid_cents=primary,
+                plan_pays_cents=plan_pays,
+                member_pays_cents=member_pays,
                 balance_bill_exposure_cents=balance_bill,
             )
         )
