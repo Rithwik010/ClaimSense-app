@@ -30,7 +30,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
 | Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 1,071 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. Without Docker, the database and Qdrant tests are skipped. |
+| Tests | 1,166 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. Without Docker, the database and Qdrant tests are skipped. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -292,6 +292,7 @@ Kaggle copy for anything model-related.
   - **Pipeline:** unchanged in behaviour (R05 only), now recorded as rules version 0.1.0 until it switches to the full engine.
   - **NCCI part f1 restored:** the team supplied the original f1 download. Its `.xlsx` is byte-identical (SHA-256) to the one in `data/raw/`, and its `.TXT` parses to exactly the same 675,157 edit records, including (11042, 97597). The `.TXT` was moved into `data/raw/ncci-ptp/ccipra-v323r0-f1/` (not committed) and the copy in the repository root removed; `data/raw_manifest.csv` was rewritten deliberately with `--update` (D-DATA-1): 63 files, 460,751,103 bytes, the f1 `.TXT` added and nothing else changed. f1 is read from its `.txt` again; the `.xlsx` fallback stays (SOURCES.md). With Docker running, the NCCI tests (the `.xlsx` gives the same edits as the `.txt` for f1–f4), the blind-review reproducibility test and dataset parity pass.
   - **Tests:** 1,071 pass, 1 skipped. New decision: D-GEN-5.
+- 20:48 | Manideep3183 | P2.3a-ci | **Golden rules cases run in CI (branch `p2.3a-ci-fixture`, `fb02580`..`f485e34`; merged into `main`).** `scripts/verify/rules_fixture.py` writes `tests/golden/rules/raw_subset.json`, the raw rows the 90 cases need: 8 ICD-10-CM, 16 procedure and 2 place-of-service codes, 11 NCCI edits, 16 MUE limits; codes, dates, indicators and limits only, and codes missing from the real tables (99999, M541, POS 00) stay absent. Where `data/raw/` is present every case runs with both the raw tables and the fixture, and a freshness test requires the fixture to equal a fresh extraction; without it (CI, or `CLAIMSENSE_IGNORE_RAW=1`) the cases run on the fixture alone. The rules "codes exist" check in `test_golden_files.py` uses the fixture too, so it also runs in CI; the calculator consistency check still needs `data/raw/` (P2.4). Checked in a worktree with no `data/raw/`: all 90 pass. Tests: 1,166 pass, 1 skipped. New decision: D-CI-1.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.

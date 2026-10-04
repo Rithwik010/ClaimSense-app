@@ -16,6 +16,7 @@ from app.calculator.fee_schedule import allowed_amounts
 from app.db import raw
 from app.db.curated import load_curated
 from app.domain.contracts import CostBreakdown, IntakeClaim, npi_is_valid
+from scripts.verify.rules_fixture import raw_in_use, read_fixture
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden"
 STATUS = {
@@ -103,10 +104,13 @@ def test_reference_fixture_npis_are_valid() -> None:
 
 @cache
 def _icd10() -> frozenset[str]:
-    return frozenset(raw.read_icd10_codes())
+    """FY2027 billable codes: from data/raw/ or, without it (CI), from the golden rules fixture,
+    which holds every case diagnosis that is in the real table (D-CI-1)."""
+    if raw_in_use():
+        return frozenset(raw.read_icd10_codes())
+    return frozenset(read_fixture()["icd10_codes"][str(raw.ICD10_FISCAL_YEAR)])
 
 
-@requires_raw
 @pytest.mark.parametrize("case", RULE_CASES, ids=ids(RULE_CASES))
 def test_rules_case_codes_exist_unless_r02(case: dict[str, Any]) -> None:
     if any(f["rule_id"] in CONTRACT_RULES for f in case["expected"]["failures"]):
