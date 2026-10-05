@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
+from app.db.models import Claim
 from app.domain.contracts import RetrievedCriterion
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden"
@@ -57,3 +58,27 @@ class StubRetriever:
     ):  # noqa: ANN001, ANN201
         self.queries.append(query)
         return list(self.criteria)
+
+
+def claim_on_file(row: dict[str, Any]) -> Claim:
+    """A claim already on file, from a golden `existing_claims` row (one line), for the duplicate
+    check (A-R6)."""
+    return Claim(
+        claim_id=row["claim_id"],
+        member_id=row["member_id"],
+        received_date=date.fromisoformat(row["date_of_service"]),
+        source_format="JSON",
+        status=row["status"],
+        intake={
+            "member_id": row["member_id"],
+            "billing_npi": row["billing_npi"],
+            "service_lines": [
+                {
+                    "line_no": 1,
+                    "date_of_service": row["date_of_service"],
+                    "procedure_code": row["procedure_code"],
+                }
+            ],
+        },
+        field_confidences={},
+    )

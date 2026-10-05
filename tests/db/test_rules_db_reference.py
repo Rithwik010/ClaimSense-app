@@ -20,7 +20,6 @@ from sqlalchemy.orm import Session
 
 from app.db import raw
 from app.db.curated import load_curated
-from app.db.models import Claim
 from app.db.rules_reference import reference_for_claim
 from app.db.seed import (
     GENERATED_DIR,
@@ -36,6 +35,7 @@ from app.rules.reference import NcciEdit
 from scripts.verify.rules_parity import DECISION_DIR, dataset_reference, db_differences
 from scripts.verify.rules_parity import load_records as load_dataset
 from tests.database import alembic_config, fresh_database
+from tests.e2e.support import claim_on_file
 from tests.rule_tables import fixture_rule_tables
 from tests.unit.rules_support import reference as file_reference
 from tests.unit.test_rules_golden import (
@@ -121,28 +121,7 @@ def golden_database(request: pytest.FixtureRequest) -> Iterator[tuple[str, Engin
 
 def _add_case_records(session: Session, additions: dict[str, Any]) -> None:
     load_reference(session, {"authorizations": additions.get("authorizations", [])})
-    for existing in additions.get("existing_claims", []):
-        session.add(
-            Claim(
-                claim_id=existing["claim_id"],
-                member_id=existing["member_id"],
-                received_date=date.fromisoformat(existing["date_of_service"]),
-                source_format="JSON",
-                status=existing["status"],
-                intake={
-                    "member_id": existing["member_id"],
-                    "billing_npi": existing["billing_npi"],
-                    "service_lines": [
-                        {
-                            "line_no": 1,
-                            "date_of_service": existing["date_of_service"],
-                            "procedure_code": existing["procedure_code"],
-                        }
-                    ],
-                },
-                field_confidences={},
-            )
-        )
+    session.add_all(claim_on_file(row) for row in additions.get("existing_claims", []))
     session.flush()
 
 

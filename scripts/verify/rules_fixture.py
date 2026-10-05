@@ -1,8 +1,9 @@
 """Task P2.3a-ci: the raw rows the golden rules cases need, as a committed fixture, so CI (which has
-no data/raw/, H9) runs all 90 golden rules cases.
+no data/raw/, H9) runs all 90 golden rules cases. Since P2.1 it also covers the 30 golden
+end-to-end claims, whose database the fixture loads in CI.
 
 tests/golden/rules/raw_subset.json holds only what the rules engine reads from data/raw/ for the
-codes the cases use:
+codes the cases and claims use:
 - ICD-10-CM FY2027 billable codes, procedure codes (the R02 code table) and place-of-service
   codes: the cases' codes that are in the real table. A code the real table lacks (99999, M541,
   POS 00) stays absent, so R02 decides exactly as with the full tables;
@@ -37,11 +38,13 @@ from app.rules.reference import NcciEdit
 
 ROOT = Path(__file__).resolve().parents[2]
 GOLDEN_RULES = ROOT / "tests" / "golden" / "rules"
+E2E_CASES = ROOT / "tests" / "golden" / "e2e" / "cases.json"
 FIXTURE = GOLDEN_RULES / "raw_subset.json"
 IGNORE_RAW_ENV = "CLAIMSENSE_IGNORE_RAW"
 NOTE = (
-    "Derived from data/raw/ by scripts/verify/rules_fixture.py for the golden rules cases: codes, "
-    "dates, modifier indicators and unit limits only (D-CI-1). Do not edit by hand."
+    "Derived from data/raw/ by scripts/verify/rules_fixture.py for the golden rules cases and the "
+    "golden end-to-end claims: codes, dates, modifier indicators and unit limits only (D-CI-1). "
+    "Do not edit by hand."
 )
 KEYS = (
     "note",
@@ -66,6 +69,13 @@ def load_cases(folder: Path = GOLDEN_RULES) -> list[dict[str, Any]]:
         for path in sorted(folder.glob("*.json"))
         for case in json.loads(path.read_text(encoding="utf-8")).get("cases", [])
     ]
+
+
+def fixture_cases() -> list[dict[str, Any]]:
+    """The cases whose codes the fixture covers: every golden rules case and every golden
+    end-to-end claim (P2.1)."""
+    e2e = json.loads(E2E_CASES.read_text(encoding="utf-8"))["cases"]
+    return [*load_cases(), *e2e]
 
 
 @dataclass(frozen=True)
@@ -136,7 +146,7 @@ def raw_sources() -> list[str]:
 def fresh_fixture() -> dict[str, Any]:
     """The fixture extracted from data/raw/ now (slow: reads the NCCI table)."""
     tables = load_code_tables(frozenset(load_curated().scope))
-    return extract(load_cases(), tables, raw_sources())
+    return extract(fixture_cases(), tables, raw_sources())
 
 
 def code_tables(fixture: Mapping[str, Any]) -> CodeTables:

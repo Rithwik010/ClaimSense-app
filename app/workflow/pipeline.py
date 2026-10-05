@@ -1,16 +1,27 @@
 """Claim processing (INSTRUCTIONS.md §5). Synchronous (DECISIONS.md 2026-09-21).
 
-Walking skeleton (P1.5): JSON intake -> rule R05 -> context -> model -> output validation ->
-calculator (the full §8.6 calculator since P2.4) -> decision record -> audit events. Rule failures
-are final (AUTO_OUTCOME); a rules-passed claim waits for review. Claims the skeleton cannot handle
-yet raise `PipelineError` and stay RECEIVED, with nothing written but the intake. A calculation that
-fails (CalculationError: an approved line whose code has no fee, or out-of-network care on a plan
-with no out-of-network terms) does not stop the claim: it is audited as CALCULATION_FAILED and the
-claim waits for FULL review without amounts.
+Intake -> the v1 rules engine (R01-R13, duplicates, H5; RULES_VERSION, P2.5) on the database
+reference -> context -> model -> output validation -> calculator (§8.6, P2.4) -> decision record
+-> audit events.
+
+- Intake stores a claim that fails the contract when every error is one R01, R02 or R03 reports
+  (A-R8), with the errors in INTAKE_COMPLETED; the rules then reject it. A claim without a claim
+  ID, member ID or received date, or with another validation error, is refused (`IntakeRefused`).
+- A rule failure is final: REJECTED, DENIED_BY_RULE or PENDED_BY_RULE with its reason codes, an
+  AUTO_OUTCOME event and every rule result (with its fields_used) in the decision record. Only a
+  passing claim reaches context and the model; Group C line denials and flags pass through.
+- Reference data the rules need but the database lacks (an ICD-10-CM fiscal year not loaded)
+  leaves the claim RECEIVED with nothing written (`ReferenceDataUnavailable`, retry once loaded).
+- A calculation that fails (CalculationError: an approved line whose code has no fee, or
+  out-of-network care on a plan with no out-of-network terms) is audited as CALCULATION_FAILED and
+  the claim waits for FULL review without amounts.
+- Anything else the pipeline cannot do raises `PipelineError`; the claim stays RECEIVED.
 """
 
 import time
-from datetime import UTC, datetime
+from collections.abc import Mapping
+from datetime import UTC, date, datetime
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -34,6 +45,7 @@ from app.core.settings import Settings
 from app.db import lookups
 from app.db.curated import load_curated
 from app.db.models import Claim, DecisionRecordRow, Member
+from app.db.rules_reference import reference_for_claim
 from app.domain.contracts import (
     ClaimStatus,
     ContextPackage,
@@ -56,9 +68,10 @@ from app.ml.prompt import PROMPT_VERSION, PromptLookups, render_user_message, sy
 from app.ml.validate import ValidationResult, validate_output
 from app.rag.retrieve import Retriever
 from app.review.tiers import review_tier
-from app.rules import SKELETON_RULES_VERSION
-from app.rules.engine import evaluate_eligibility_only
-from app.rules.reference import MemberRef
+from app.rules import RULES_VERSION
+from app.rules.engine import evaluate
+from app.rules.integrity import InvalidClaimData, contract_failures
+from app.rules.reference import MissingReference
 from app.workflow.decisions import derive_claim_decision, final_line_decisions
 from app.workflow.states import InvalidTransition, check_transition
 
@@ -72,7 +85,17 @@ RULE_STATUS = {
 
 
 class PipelineError(ValueError):
-    """The walking skeleton cannot process this claim yet; it stays RECEIVED."""
+    """The pipeline cannot process this claim; it stays RECEIVED."""
+
+
+class IntakeRefused(ValueError):
+    """The claim cannot be filed: no claim ID, member ID or received date, or a validation error
+    that rules R01 to R03 do not report (A-R8)."""
+
+
+class ReferenceDataUnavailable(RuntimeError):
+    """The rules need reference data the database does not hold yet; the claim stays RECEIVED
+    and can run once it is loaded."""
 
 
 class ClaimNotFound(LookupError):
@@ -87,43 +110,105 @@ def low_confidence_fields(intake: IntakeResult, threshold: float) -> list[str]:
     return sorted(path for path, value in intake.field_confidences.items() if value < threshold)
 
 
-def intake_claim(session: Session, intake: IntakeResult, threshold: float) -> None:
-    """Store a received claim (status RECEIVED) and write INTAKE_COMPLETED."""
-    claim = intake.claim
-    if session.get(Claim, claim.claim_id) is not None:
-        raise DuplicateClaim(f"claim {claim.claim_id} already exists")
+def _filing_fields(data: Mapping[str, Any]) -> tuple[str, str, date]:
+    """Claim ID, member ID and received date: what filing a claim needs (P2.5 decision 3)."""
+    claim_id, member_id, received = (
+        data.get("claim_id"),
+        data.get("member_id"),
+        data.get("received_date"),
+    )
+    if not isinstance(claim_id, str) or not claim_id.strip() or len(claim_id) > 48:
+        raise IntakeRefused("a claim needs a claim_id (1 to 48 characters)")
+    if not isinstance(member_id, str) or not member_id.strip() or len(member_id) > 32:
+        raise IntakeRefused("a claim needs a member_id (1 to 32 characters)")
+    try:
+        received_date = date.fromisoformat(received)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        raise IntakeRefused("a claim needs a received_date (YYYY-MM-DD)") from None
+    return claim_id, member_id, received_date
+
+
+def intake_claim_data(
+    session: Session,
+    data: Mapping[str, Any],
+    field_confidences: Mapping[str, float],
+    source_format: SourceFormat,
+    threshold: float,
+) -> tuple[IntakeResult | None, list[str]]:
+    """Store a received claim (status RECEIVED) and write INTAKE_COMPLETED. Returns the validated
+    claim, or None for a claim that fails the contract, and its contract errors. Such a claim is
+    stored as received when every error is one R01, R02 or R03 reports (A-R8), so the rules
+    reject it; otherwise it is refused."""
+    claim_id, member_id, received_date = _filing_fields(data)
+    if any(not 0.0 <= value <= 1.0 for value in field_confidences.values()):
+        raise IntakeRefused("field confidences must be between 0 and 1")
+    try:
+        claim, failures = contract_failures(data)
+    except InvalidClaimData as exc:
+        raise IntakeRefused(str(exc)) from exc
+    errors = [f"{failure.rule_id}: {failure.detail}" for failure in failures]
+    if session.get(Claim, claim_id) is not None:
+        raise DuplicateClaim(f"claim {claim_id} already exists")
     session.add(
         Claim(
-            claim_id=claim.claim_id,
-            member_id=claim.member_id,
-            received_date=claim.received_date,
-            source_format=intake.source_format.value,
+            claim_id=claim_id,
+            member_id=member_id,
+            received_date=received_date,
+            source_format=source_format.value,
             status=ClaimStatus.RECEIVED.value,
-            intake=claim.model_dump(mode="json"),
-            field_confidences=dict(intake.field_confidences),
+            intake=claim.model_dump(mode="json") if claim else dict(data),
+            field_confidences=dict(field_confidences),
         )
     )
     try:
         session.flush()
     except IntegrityError as exc:
         session.rollback()
-        raise DuplicateClaim(f"claim {claim.claim_id} already exists") from exc
+        raise DuplicateClaim(f"claim {claim_id} already exists") from exc
+    lines = data.get("service_lines")
     record_event(
         session,
-        claim.claim_id,
+        claim_id,
         EventType.INTAKE_COMPLETED,
         {
-            "source_format": intake.source_format.value,
-            "service_lines": len(claim.service_lines),
-            "low_confidence_fields": low_confidence_fields(intake, threshold),
+            "source_format": source_format.value,
+            "service_lines": len(lines) if isinstance(lines, list) else 0,
+            "low_confidence_fields": sorted(
+                path for path, value in field_confidences.items() if value < threshold
+            ),
+            "contract_errors": errors,
         },
     )
     session.commit()
+    result = (
+        IntakeResult(
+            claim=claim, field_confidences=dict(field_confidences), source_format=source_format
+        )
+        if claim
+        else None
+    )
+    return result, errors
 
 
-def load_intake(row: Claim) -> IntakeResult:
+def intake_claim(session: Session, intake: IntakeResult, threshold: float) -> None:
+    """Store a claim that passed the contract (status RECEIVED) and write INTAKE_COMPLETED."""
+    intake_claim_data(
+        session,
+        intake.claim.model_dump(mode="json"),
+        intake.field_confidences,
+        intake.source_format,
+        threshold,
+    )
+
+
+def load_intake(row: Claim) -> IntakeResult | None:
+    """The stored claim as an IntakeResult, or None when it failed the contract at intake."""
+    try:
+        claim = IntakeClaim.model_validate(row.intake)
+    except ValueError:
+        return None
     return IntakeResult(
-        claim=IntakeClaim.model_validate(row.intake),
+        claim=claim,
         field_confidences=row.field_confidences,
         source_format=SourceFormat(row.source_format),
     )
@@ -290,19 +375,21 @@ def process_claim(
         raise ClaimNotFound(f"claim {claim_id} not found")
     if row.status != ClaimStatus.RECEIVED.value:
         raise InvalidTransition(f"claim {claim_id} is {row.status}; only RECEIVED claims run")
-    intake = load_intake(row)
-    claim = intake.claim
-    member = lookups.get_member(session, claim.member_id)
-    if member is None:
-        raise PipelineError(f"member {claim.member_id} not found (rule R04 is in P2.3)")
-
-    rules = evaluate_eligibility_only(
-        intake,
-        MemberRef(member.member_id, member.plan_id, member.coverage_start, member.coverage_end),
-    )
-    versions = Versions(rules_version=SKELETON_RULES_VERSION)
+    try:
+        rules = evaluate(
+            row.intake,
+            row.field_confidences,
+            reference_for_claim(session, row.intake),
+            confidence_min=settings.extraction_confidence_min,
+        )
+    except MissingReference as exc:
+        log.warning("reference_data_unavailable", claim_id=claim_id, missing=str(exc))
+        raise ReferenceDataUnavailable(f"reference data not loaded: {exc}") from exc
+    except InvalidClaimData as exc:  # intake refuses such claims; one stored before P2.5 may not
+        raise PipelineError(f"claim {claim_id} cannot be checked: {exc}") from exc
+    versions = Versions(rules_version=RULES_VERSION)
     record_event(session, claim_id, EventType.RULES_EVALUATED, _rules_payload(rules), versions)
-    timestamps = Timestamps(received=claim.received_date, processed=datetime.now(UTC))
+    timestamps = Timestamps(received=row.received_date, processed=datetime.now(UTC))
 
     if rules.claim_outcome is not RuleOutcomeValue.PASS:
         status = RULE_STATUS[rules.claim_outcome]
@@ -325,8 +412,11 @@ def process_claim(
         log.info("claim_processed", claim_id=claim_id, status=status.value)
         return record
 
-    if lookups.get_provider(session, claim.billing_npi) is None:
-        raise PipelineError(f"billing provider {claim.billing_npi} not found (rule R06 is in P2.3)")
+    intake = load_intake(row)  # the claim passed Group A, so it passes the contract
+    member = lookups.get_member(session, row.member_id)  # and R04 found the member
+    if intake is None or member is None:
+        raise PipelineError(f"claim {claim_id} passed the rules without a valid claim and member")
+    claim = intake.claim
     network = (
         Network.IN_NETWORK
         if lookups.is_in_network(session, claim.billing_npi, member.plan_id)
@@ -349,7 +439,7 @@ def process_claim(
     model_ms = round((time.perf_counter() - model_started) * 1000, 1)
     result = validate_output(text, rules, context)
     versions = Versions(
-        rules_version=SKELETON_RULES_VERSION,
+        rules_version=RULES_VERSION,
         model_name=model.name,
         prompt_version=PROMPT_VERSION,
         policy_versions={

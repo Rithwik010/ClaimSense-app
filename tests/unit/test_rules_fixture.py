@@ -16,6 +16,7 @@ from scripts.verify.rules_fixture import (
     case_codes,
     code_tables,
     extract,
+    fixture_cases,
     fresh_fixture,
     load_cases,
     raw_in_use,
@@ -75,7 +76,7 @@ def test_codes_the_real_tables_lack_stay_absent() -> None:
 
 def test_the_fixture_is_the_scripts_output_for_its_own_tables() -> None:
     """Not edited by hand: extracting from the fixture's tables writes the same file."""
-    again = extract(load_cases(), code_tables(DATA), DATA["sources"])
+    again = extract(fixture_cases(), code_tables(DATA), DATA["sources"])
 
     assert render(again) == FIXTURE.read_text(encoding="utf-8")
 

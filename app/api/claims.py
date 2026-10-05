@@ -1,5 +1,6 @@
-"""Claim endpoints (INSTRUCTIONS.md §8.10). Walking skeleton (P1.5): JSON intake, processing, the
-decision record and the audit trail.
+"""Claim endpoints (INSTRUCTIONS.md §8.10): JSON intake, processing, the decision record and the
+audit trail. A JSON claim that fails the contract is still filed when rules R01 to R03 report every
+error (A-R8); processing then rejects it (P2.5).
 
 Not yet: file upload (P5.1), the rendered explanation (P5.4), review (P5.3) and the role header.
 """
@@ -7,7 +8,7 @@ Not yet: file upload (P5.1), the rendered explanation (P5.4), review (P5.3) and 
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -18,7 +19,6 @@ from app.db.models import Claim
 from app.domain.contracts import (
     ClaimStatus,
     DecisionRecord,
-    IntakeClaim,
     IntakeResult,
     SourceFormat,
 )
@@ -27,8 +27,10 @@ from app.rag.retrieve import RetrievalUnavailable, Retriever
 from app.workflow.pipeline import (
     ClaimNotFound,
     DuplicateClaim,
+    IntakeRefused,
     PipelineError,
-    intake_claim,
+    ReferenceDataUnavailable,
+    intake_claim_data,
     latest_record,
     load_intake,
     process_claim,
@@ -44,8 +46,18 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 class ClaimView(BaseModel):
     claim_id: str
     status: ClaimStatus
-    intake: IntakeResult
+    intake: IntakeResult | None  # None when the claim failed the contract at intake
+    received: dict[str, Any]  # the claim as stored at intake
     record: DecisionRecord | None
+
+
+class FiledWithErrors(BaseModel):
+    """A claim filed although it fails the contract; the rules will reject it (A-R8)."""
+
+    claim_id: str
+    status: ClaimStatus
+    source_format: SourceFormat
+    contract_errors: list[str]
 
 
 class AuditEventView(BaseModel):
@@ -68,14 +80,27 @@ def _claim_row(session: Session, claim_id: str) -> Claim:
 
 
 @router.post("/intake", status_code=status.HTTP_201_CREATED)
-def intake(claim: IntakeClaim, session: SessionDep, settings: SettingsDep) -> IntakeResult:
-    """A JSON claim: every field has confidence 1.0, so no field is listed (§8.2)."""
-    result = IntakeResult(claim=claim, field_confidences={}, source_format=SourceFormat.JSON)
+def intake(
+    claim: Annotated[dict[str, Any], Body()], session: SessionDep, settings: SettingsDep
+) -> IntakeResult | FiledWithErrors:
+    """A JSON claim: every field has confidence 1.0, so no field is listed (§8.2). A claim that
+    fails the contract is filed with its errors when rules R01 to R03 report them all."""
     try:
-        intake_claim(session, result, settings.extraction_confidence_min)
+        result, errors = intake_claim_data(
+            session, claim, {}, SourceFormat.JSON, settings.extraction_confidence_min
+        )
+    except IntakeRefused as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     except DuplicateClaim as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
-    return result
+    if result is not None:
+        return result
+    return FiledWithErrors(
+        claim_id=claim["claim_id"],
+        status=ClaimStatus.RECEIVED,
+        source_format=SourceFormat.JSON,
+        contract_errors=errors,
+    )
 
 
 @router.post("/{claim_id}/process")
@@ -95,7 +120,7 @@ def process(
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     except PipelineError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
-    except (ModelUnavailable, RetrievalUnavailable) as exc:
+    except (ModelUnavailable, RetrievalUnavailable, ReferenceDataUnavailable) as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
 
 
@@ -106,6 +131,7 @@ def get_claim(claim_id: str, session: SessionDep) -> ClaimView:
         claim_id=row.claim_id,
         status=ClaimStatus(row.status),
         intake=load_intake(row),
+        received=row.intake,
         record=latest_record(session, claim_id),
     )
 
