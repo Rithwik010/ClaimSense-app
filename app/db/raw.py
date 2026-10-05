@@ -221,6 +221,25 @@ def read_ncci_records(path: Path) -> Iterator[NcciRecord]:
             yield column1, column2, effective, deletion, modifier
 
 
+NcciEditRow = tuple[str, str, date, date | None, str]
+
+
+def read_ncci_edits() -> Iterator[NcciEditRow]:
+    """Every practitioner PTP edit, part f1 to f4 in file order: (column 1, column 2, effective
+    date, deletion date or None, modifier indicator). The order decides which of a pair's edits
+    active on a date applies first."""
+    for path in _ncci_files():
+        for column1, column2, effective, deletion, modifier in read_ncci_records(path):
+            effective_date = _yyyymmdd(effective)
+            if effective_date is not None:
+                yield column1, column2, effective_date, _yyyymmdd(deletion), modifier
+
+
+def ncci_sources() -> list[Path]:
+    """The NCCI part files read_ncci_edits reads, in order."""
+    return _ncci_files()
+
+
 def read_ncci_pairs(codes: set[str]) -> list[NcciPair]:
     """Practitioner PTP edits where both codes are in `codes` (all dates; filter with active_on)."""
     pairs = []
@@ -241,13 +260,26 @@ def read_ncci_pairs(codes: set[str]) -> list[NcciPair]:
     return pairs
 
 
-def read_mue(codes: set[str]) -> dict[str, MueEntry]:
+def read_mue(codes: set[str] | None = None) -> dict[str, MueEntry]:
+    """Practitioner MUE limits for the given codes, or for every code in the file (None)."""
     entries = {}
     with MUE_CSV.open(encoding="latin-1", newline="") as f:
         for row in csv.reader(f):
-            if len(row) >= 3 and row[0] in codes:
+            if len(row) < 3 or not PROCEDURE_CODE.fullmatch(row[0]) or not row[1].isdigit():
+                continue  # header and notice rows
+            if codes is None or row[0] in codes:
                 entries[row[0]] = MueEntry(row[0], int(row[1]), row[2])
     return entries
+
+
+MANIFEST_CSV = RAW_DIR.parent / "raw_manifest.csv"
+
+
+def manifest_sha256() -> dict[str, str]:
+    """SHA-256 of every file in data/raw/ as data/raw_manifest.csv lists it (D-DATA-1), keyed by
+    the path relative to data/raw/."""
+    with MANIFEST_CSV.open(encoding="utf-8", newline="") as f:
+        return {row["path"]: row["sha256"] for row in csv.DictReader(f)}
 
 
 def _article_rows(archive: zipfile.ZipFile, name: str) -> Iterator[dict[str, str]]:
