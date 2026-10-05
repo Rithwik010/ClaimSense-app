@@ -23,8 +23,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from app.db.curated import load_curated
-from app.db.rules_reference import build_reference, load_code_tables
+from app.db.curated import CuratedData, load_curated
+from app.db.rules_reference import build_reference, load_code_tables, reference_for_claim
 from app.domain.contracts import IntakeClaim, RuleOutcomeValue, RuleResult, RulesOutcome
 from app.ml.prompt import _rule_line
 from app.rules.engine import evaluate
@@ -147,6 +147,34 @@ def differences(record: Record, reference: RulesReference) -> list[str]:
             found.append(f"{len(engine_lines)} line outcomes != {len(stored_lines)}")
     if rules_block(view) != prompt_block(record.user_message):
         found.append("the prompt's RULES_RESULT block differs from the engine's")
+    return found
+
+
+# --- The database-backed reference (P2.1) -------------------------------------------------------
+
+
+def db_differences(
+    records: Iterable[Record],
+    session: Any,
+    file_reference: RulesReference,
+    curated: CuratedData | None = None,
+) -> dict[str, list[str]]:
+    """For every record: the full engine with the database-backed reference
+    (app.db.rules_reference.reference_for_claim) against the file-backed one (every rule result,
+    reason, flag and line outcome), and the database-backed reference against the generator's
+    rule mirror and the prompt's RULES_RESULT text (`differences`). `session` is on a database
+    the seed loaded (rule tables from data/raw/, the generated reference, no claims on file)."""
+    curated = curated or load_curated()
+    found: dict[str, list[str]] = {}
+    for record in records:
+        db_reference = reference_for_claim(session, record.claim, curated)
+        mine = evaluate(record.claim, {}, db_reference, confidence_min=CONFIDENCE_MIN)
+        theirs = evaluate(record.claim, {}, file_reference, confidence_min=CONFIDENCE_MIN)
+        diff = differences(record, db_reference)
+        if mine != theirs:
+            diff.insert(0, f"database {mine.model_dump()} != files {theirs.model_dump()}")
+        if diff:
+            found[record.record_id] = diff
     return found
 
 
