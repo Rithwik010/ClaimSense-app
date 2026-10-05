@@ -119,7 +119,7 @@ def check_codes(claim: IntakeClaim, reference: RulesReference) -> RuleResult:
     problems = []
     for year in sorted({icd10_fiscal_year(line.date_of_service) for line in claim.service_lines}):
         if year not in reference.icd10_codes:
-            raise MissingReference(f"no ICD-10-CM code set loaded for FY{year}")
+            raise MissingReference(f"ICD-10-CM FY{year}")
         valid = reference.icd10_codes[year]
         problems += [
             f"diagnosis {code} (FY{year})" for code in claim.diagnoses if code not in valid

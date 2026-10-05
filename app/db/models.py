@@ -16,6 +16,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
@@ -300,16 +301,26 @@ class PlaceOfServiceCode(Base):
 
 
 class NcciPtpEdit(Base):
+    """One NCCI procedure-to-procedure edit row as published (column 2 is bundled into column 1).
+
+    The published table repeats a (column 1, column 2, effective date) key in 261 rows (same-day
+    deletions), so a row has a surrogate id. `source_order` is the row's position in the published
+    files, part f1 to f4: among a pair's edits active on a date, the first in that order applies,
+    as in the file-backed reference (P2.1, migration 0003)."""
+
     __tablename__ = "ncci_ptp_edits"
     __table_args__ = (
         CheckConstraint("modifier_indicator IN ('0', '1', '9')", name="modifier_indicator_allowed"),
+        Index("ix_ncci_ptp_edits_pair", "column1_code", "column2_code"),
     )
 
-    column1_code: Mapped[str] = mapped_column(String(5), primary_key=True)
-    column2_code: Mapped[str] = mapped_column(String(5), primary_key=True)
-    effective_date: Mapped[date] = mapped_column(Date, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    column1_code: Mapped[str] = mapped_column(String(5))
+    column2_code: Mapped[str] = mapped_column(String(5))
+    effective_date: Mapped[date] = mapped_column(Date)
     deletion_date: Mapped[date | None] = mapped_column(Date)
     modifier_indicator: Mapped[str] = mapped_column(String(1))
+    source_order: Mapped[int] = mapped_column(Integer)
 
 
 class MueLimit(Base):
@@ -320,6 +331,19 @@ class MueLimit(Base):
     effective_date: Mapped[date] = mapped_column(Date, primary_key=True)
     max_units: Mapped[int] = mapped_column(Integer)
     adjudication_indicator: Mapped[str] = mapped_column(Text)
+
+
+class ReferenceSource(Base):
+    """Where a loaded reference table came from (P2.1): each source file with its SHA-256, as
+    listed in data/raw_manifest.csv (D-DATA-1) or computed for a committed fixture."""
+
+    __tablename__ = "reference_sources"
+
+    table_name: Mapped[str] = mapped_column(String(64), primary_key=True)
+    source_path: Mapped[str] = mapped_column(Text, primary_key=True)
+    sha256: Mapped[str] = mapped_column(String(64))
+    row_count: Mapped[int] = mapped_column(Integer)
+    loaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class ReasonCode(Base):

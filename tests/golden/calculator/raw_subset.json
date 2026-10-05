@@ -1,15 +1,26 @@
 {
-  "note": "Derived from data/raw/ by scripts/verify/calculator_fixture.py for the golden calculator cases: procedure codes and national non-facility total RVUs only (D-CI-2). Do not edit by hand.",
+  "note": "Derived from data/raw/ by scripts/verify/calculator_fixture.py for the golden calculator cases and the golden end-to-end claims: procedure codes and national non-facility total RVUs only (D-CI-2). Do not edit by hand.",
   "sources": [
     "pfs/rvu26a/PPRRVU2026_Jan_nonQPP.csv"
   ],
   "nonfacility_total_rvu": {
+    "11042": "3.97",
+    "15822": "14.12",
+    "15823": "18.95",
+    "36475": "31.62",
     "45378": "11.32",
+    "45380": "14.37",
     "45385": "14.97",
+    "62323": "8.18",
+    "64635": "13.92",
+    "66982": "18.88",
     "66984": "13.85",
     "70450": "3.19",
     "70551": "5.85",
     "70553": "9.49",
+    "72141": "5.71",
+    "93224": "2.11",
+    "93241": "8.36",
     "93306": "5.89",
     "93308": "3.03",
     "93350": "5.55",
@@ -18,7 +29,10 @@
     "96130": "3.71",
     "97110": "0.87",
     "97530": "1.05",
+    "99202": "2.25",
+    "99203": "3.52",
     "99211": "0.73",
+    "99212": "1.78",
     "99213": "2.85",
     "99214": "4.06"
   }

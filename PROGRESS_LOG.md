@@ -25,20 +25,21 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | **Policy source check (V1b)** | **Done, report only; reviewed in V1d.** All 57 criteria cite a word-for-word LCD excerpt (`data/curated/policy_sources.csv`); 72 findings against the LCDs (WRONG CRITERION 4, MISSING CRITERION 52, RULE CANDIDATE 16). The 4 wrong criteria change at most 6 v1 labels (all POL-REHAB-001 PENDs). D-RULE-1 and D-SCOPE-1 set the v2 scope. |
 | **Data verification (V1)** | **Complete (2026-10-02).** V1a labels, V1b policy sources and completeness, V1c model disagreements, V1d review verdicts (filled sheets and summary in `data/verification/reviews/`). D-V2-1, D-V2-2, D-GEN-3, D-GEN-4, D-REV-1 and D-LIM-1 feed the v2 bundle; v1 data and model unchanged. |
 | **Golden tests (G1-G2)** | **Spot-checked (2026-10-03).** Automatic checks: 0 violations on 52 calculator and 90 rules cases. The spot-check (10 rules, 9 calculator cases) agrees with every expected value (Claude recomputation in a separate chat, accepted by the reviewer). 5 rules cases conflict with R15 (D-GOLD-1); new cases to add (D-GOLD-2). G3 (2026-10-04): C53-C56 added after a separate Claude chat's answers agreed on all 48 amounts; 56 calculator cases. |
-| **Rules engine (P2.3a)** | **v1 rules built (2026-10-03).** R01–R13, duplicates, H5, `RULES_VERSION` 1.0.0. All 90 golden rules cases pass; 0 differences from the generator's rule mirror on all 2,600 dataset records. The pipeline still runs R05 only (rules version 0.1.0) until P2.1 loads NCCI, MUE, place of service and the full code table. |
+| **Rules engine (P2.3a)** | **v1 rules built (2026-10-03).** R01–R13, duplicates, H5, `RULES_VERSION` 1.0.0. All 90 golden rules cases pass; 0 differences from the generator's rule mirror on all 2,600 dataset records. The pipeline runs it since P2.5, on a database-backed reference. |
+| **Rule tables (P2.1)** | Place of service, procedure codes (20,591), ICD-10-CM FY2027, MUE and NCCI loaded in full with provenance (`reference_sources`). |
 | **Calculator (P2.4)** | Full §8.6 calculator built (2026-10-04); all 56 golden cases and 5,000 random claims pass; the pipeline uses it (`CALCULATOR_VERSION` 1.0.0). |
 | **Raw data** | 63 files listed with size and SHA-256 in `data/raw_manifest.csv`; a test fails on a missing or changed file (D-DATA-1). NCCI part f1 was restored from the original download (2026-10-03) and is read from its `.txt` again; the `.xlsx` fallback stays (SOURCES.md). Regenerating the decision dataset reproduces the v1 fingerprints exactly (checked in G2). |
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
 | Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 1,391 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. Without Docker, the database and Qdrant tests are skipped. |
+| Tests | 1,608 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. Without Docker, the database and Qdrant tests are skipped. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
 | Phase | Done | Partly done | Not started |
 |---|---|---|---|
 | 1 Foundations | P1.1, P1.2, P1.3, P1.4 (contracts approved 2026-09-22), P1.5 | | |
-| 2 Rules and calculator | P2.2, P2.4 | P2.1 (seed: curated, ICD-10, fees, reference; missing NCCI, MUE, POS), P2.3 (P2.3a v1 rules done; P2.3b R14, R15 and the D-RULE-1 rules not started; pipeline still on R05), P2.5 (status table only) | |
+| 2 Rules and calculator | P2.1, P2.2, P2.4, P2.5 | P2.3 (P2.3a v1 rules done and running in the pipeline; P2.3b R14, R15 and the D-RULE-1 rules not started) | |
 | 3 Knowledge and datasets | P3.1, P3.2, P3.3 (coverage_policies collection), P3.4, P3.5 (v2, real retrieval) | | |
 | 4 Model | P4.1, P4.2, P4.3, P4.5 | **P4.4 (measured; below the 0.90 target)** | |
 | 5 Integration | | P5.1 (digital PDF only), P5.2 (context with retrieval), P5.3 (tiers only), P5.5 (skeleton page), P5.6 (golden set written) | P5.4 |
@@ -72,8 +73,6 @@ These do not touch the frozen items above.
 | Task | Notes |
 |---|---|
 | P2.3b rules R14, R15 and the D-RULE-1 single-claim rules | v2 rules (D-ESI-3, D-DX-1, D-RULE-1); new golden cases first (D-GOLD-2). P2.3a (R01–R13, duplicates, H5) is done |
-| P2.1 remaining loaders | NCCI, MUE, place of service and the full code table into Postgres; `app/db/seed.py`. Then the pipeline can switch to the full rules engine (section 4) |
-| P2.5 workflow | `app/workflow/states.py` has the status table |
 | P5.1 scanned-form intake (OCR) | `app/intake/layout.py`, `app/intake/digital_pdf.py` exist |
 | P5.4 explanations | Jinja2 from the decision record; also the `plan_documents`, `code_reference`, `carc_rarc` collections |
 | Team review (section 4) | Needed before the model is accepted |
@@ -110,11 +109,13 @@ Pull before starting; tell the team which task you take (add a timeline entry).
 | **Golden updates (decided, not done):** the five L97419 rules cases get a diagnosis A58565 covers, and R15 gets its own cases, when R15 is built in P2.3 (D-GOLD-1); ~~new calculator cases for a deductible split across two lines, a second copay capped by the allowed amount and a second primary-paid-at-least-allowed COB case (P2.4)~~ **done in G3** (C53-C56); new cases for R14, R15 and the single-claim D-RULE-1 rules (P2.3b), each accepted only after an independent check (D-GOLD-2) | team | `DECISIONS.md` |
 | ~~**Review V1b, sitting 1** (about 28 min): 14 Part 1 rows in `data/generated/verification/B_policy_sources_review.md`; write MATCHES / DIFFERENT MEANING / NOT IN SOURCE / UNSURE~~ **Closed: reviewed in V1d** (`data/verification/reviews/`, D-V2-1). | — | timeline |
 | ~~**Review V1b, sitting 2** (about 34 min): the 4 WRONG CRITERION findings, the 5 top-impact findings and 3 controls; write ADD IN V2 / NOT NEEDED / UNSURE. The other 63 findings are known gaps (D-SCOPE-1)~~ **Closed: reviewed in V1d** (`data/verification/reviews/`, D-V2-2). | — | `DECISIONS.md` |
-| Switch the pipeline from the R05-only path (rules version 0.1.0) to the full v1 engine after P2.1 loads NCCI, MUE, place of service and the full code table. | team | timeline |
+| ~~Switch the pipeline from the R05-only path (rules version 0.1.0) to the full v1 engine after P2.1 loads NCCI, MUE, place of service and the full code table.~~ **Closed: P2.1/P2.5.** | — | timeline |
 | R02: check HCPCS termination dates against the date of service (1,322 terminated codes currently count as valid); candidate v2 refinement. | team | `DECISIONS.md` |
 | R10 matches on member, provider, code and date, not on the claim's prior-authorization number (2 dataset claims pass with an unknown number); v2 question. | team | `DECISIONS.md` |
-| Dates of service before 2026-10-01 raise `MissingReference` (only FY2027 ICD-10 is loaded); P2.1 must load FY2026 or handle this explicitly before the pipeline switches to the full engine. | team | timeline |
+| ~~Dates of service before 2026-10-01 raise `MissingReference` (only FY2027 ICD-10 is loaded); P2.1 must load FY2026 or handle this explicitly before the pipeline switches to the full engine.~~ **Closed: P2.5** (a 503, the claim stays RECEIVED; loading FY2026 is the item below). | — | timeline |
 | Propose an optional `calculator_version` on the `Versions` contract plus a `decision_records` migration column (recorded in the CALCULATED audit event until then); a dedicated field for a calculation-failure reason could join it (today an `output_errors` entry prefixed `CALCULATION_FAILED:`) | team | `DECISIONS.md` |
+| Load ICD-10-CM FY2026 (add the CMS file to data/raw/ and the manifest, D-DATA-1, then the seed) so claims with a date of service before 2026-10-01 can run; until then they get a 503 and stay RECEIVED | team | timeline |
+| Before measuring end-to-end metrics on dataset claims (P6.1), resolve D-GEN-5: 1,072 of the 2,600 dataset claims refer to authorizations missing from the reference data and would be denied by R10 before the model. Fixed by the v2 regeneration; if P6 measures model v1 end to end, add the missing authorizations to the reference data first (a data fix, not a label change). | team | `DECISIONS.md` |
 
 ---
 
@@ -312,6 +313,11 @@ Kaggle copy for anything model-related.
   - **CI fixture (D-CI-2):** `tests/golden/calculator/raw_subset.json` (17 codes and their PFS RVUs) lets the golden fee-consistency check run without `data/raw/`; a freshness test keeps it current.
   - **Pipeline:** switched from the copay-only path to the full calculator (the database holds plans, benefits, fees and accumulators; the claim carries the primary payments). `calculator_version` is recorded in the CALCULATED audit event. A calculation error is audited as CALCULATION_FAILED and the claim goes to FULL review with the reason in `output_errors` and no amounts: an approved line whose code has no fee, or out-of-network care on a plan with no out-of-network terms (both with an end-to-end test); migration 0002 adds the event type, and INSTRUCTIONS.md §8.9 lists it.
   - **Tests:** 1,391 pass, 1 skipped. New decision: D-CI-2.
+- 11:14 | Manideep3183 | P2.1, P2.5 | **Rule tables in the database; the pipeline runs the full v1 rules engine (branch `p2.1-rules-data-pipeline`, `915f058`..`67353c8` and the final commit; merged into `main`).** Migration 0003 keys NCCI rows by a surrogate id with their published order (`source_order`; the PTP table repeats a key in 261 rows) and adds `reference_sources`. The seed loads place of service (52), the full procedure code table (20,591), ICD-10-CM FY2027 (74,879), MUE (15,212) and NCCI (2,637,645) in full, each with its source files' SHA-256 from the manifest; 5.4 s, NCCI 305 MB; loading again changes nothing.
+  - **Database-backed reference** (`reference_for_claim`, per claim; the rules stay pure): 0 differences from the file-backed reference on the 90 golden rules cases (fixture and raw) and on all 2,600 dataset records, which still match the generator's rule mirror and the RULES_RESULT text.
+  - **Pipeline (P2.5):** `RULES_VERSION` 1.0.0; a rule failure is final (REJECTED, DENIED_BY_RULE, PENDED_BY_RULE) with an AUTO_OUTCOME event and every rule result's `fields_used`, and never reaches the model; Group C denials and flags pass through. A JSON claim failing the contract is filed when R01-R03 report every error (errors in INTAKE_COMPLETED) and is then rejected; one without a claim ID, member ID or received date is refused. A date of service before FY2027 (none in any data set, blind review counted by dates only) gets a 503 and stays RECEIVED. R08 now denies out-of-network care on a plan without out-of-network cover before the calculator. The review page handles both intake responses and shows a claim's contract errors (tested against the real API).
+  - **All 30 golden end-to-end claims** pass through the pipeline with every expected value unchanged; their database comes from the committed fixtures, extended to the end-to-end claims (D-CI-3), so they run in CI.
+  - **Tests:** 1,608 pass, 1 skipped. New decision: D-CI-3.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.

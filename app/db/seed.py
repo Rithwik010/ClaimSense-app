@@ -1,26 +1,33 @@
-"""Load reference data into the database. Walking skeleton (P1.5); P2.1 adds the NCCI, MUE,
-place-of-service and full HCPCS tables and reports row counts against the source files.
+"""Load reference data into the database (P1.5, P2.1).
 
 Loads, in order:
 1. Curated data (committed): plans, benefits, exclusions, referral rules, reason codes, and the
    in-scope procedure codes with team-written descriptions.
-2. Public code files, when `data/raw/` is present: ICD-10-CM FY2027 and the fee schedule for the
-   in-scope codes (D6).
+2. Public code files, when `data/raw/` is present: the fee schedule for the in-scope codes (D6)
+   and the rule tables (P2.1): place-of-service codes, the full procedure code table (PFS RVU26A
+   and HCPCS October 2026; codes outside the scope get no description, H10), ICD-10-CM FY2027,
+   and the practitioner MUE limits and NCCI PTP edits in full. Each rule table records its
+   source files and their SHA-256 from data/raw_manifest.csv in `reference_sources` (D-DATA-1).
 3. Generated reference data, when present: `data/generated/reference/*.jsonl` and the extra
    authorizations the claim corpus needs (`data/generated/claims/authorizations_extra.jsonl`).
 
-Rows are upserted by primary key, so running it again is safe.
+Running it again is safe: rows are upserted by primary key, and the NCCI table is replaced in one
+transaction (TRUNCATE, then COPY in the published order).
 
     uv run python -m app.db.seed
 """
 
 import argparse
+import hashlib
 import json
+import time
+from collections.abc import Callable, Iterable, Iterator, Mapping
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Date, func, select, text
+from sqlalchemy import Date, delete, func, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -35,7 +42,10 @@ from app.db.models import (
     FeeScheduleEntry,
     Icd10Code,
     Member,
+    MueLimit,
+    NcciPtpEdit,
     OtherCoverage,
+    PlaceOfServiceCode,
     Plan,
     PlanExclusion,
     PlanReferralRule,
@@ -43,11 +53,13 @@ from app.db.models import (
     Provider,
     ProviderNetwork,
     ReasonCode,
+    ReferenceSource,
     VisitUsage,
 )
 from app.db.session import get_engine
 
-GENERATED_DIR = Path(__file__).resolve().parents[2] / "data" / "generated"
+ROOT = Path(__file__).resolve().parents[2]
+GENERATED_DIR = ROOT / "data" / "generated"
 ICD10_FISCAL_YEAR = 2027  # DECISIONS.md R1
 CHUNK_ROWS = 5000
 
@@ -232,18 +244,183 @@ def seed_curated(session: Session, curated: CuratedData | None = None) -> dict[s
     }
 
 
+# --- Rule tables (P2.1) -------------------------------------------------------------------------
+
+NCCI_COLUMNS = (
+    "column1_code",
+    "column2_code",
+    "effective_date",
+    "deletion_date",
+    "modifier_indicator",
+    "source_order",
+)
+RULE_TABLES = (
+    PlaceOfServiceCode,
+    ProcedureCode,
+    Icd10Code,
+    MueLimit,
+    NcciPtpEdit,
+)
+
+
+@dataclass(frozen=True)
+class Source:
+    path: str  # relative to the repository root
+    sha256: str
+
+
+@dataclass(frozen=True)
+class RuleTableData:
+    """The rule tables' rows and their sources: from data/raw/ (`raw_rule_tables`) or, in tests
+    and CI, from a committed fixture of the rows the golden cases need (D-CI-1)."""
+
+    place_of_service: Mapping[str, str]  # code -> name
+    procedure_codes: Iterable[str]
+    icd10: Mapping[int, Mapping[str, str]]  # fiscal year -> code -> description
+    mue: Mapping[str, tuple[int, str]]  # code -> (maximum units, adjudication indicator)
+    mue_effective: date
+    ncci_rows: Callable[[], Iterator[raw.NcciEditRow]]  # in the published order
+    sources: Mapping[str, tuple[Source, ...]]  # table name -> source files
+
+
+def code_system(code: str) -> str:
+    """Level II HCPCS codes start with a letter; CPT codes (categories I to III) with a digit."""
+    return "HCPCS" if code[0].isalpha() else "CPT"
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def raw_sources(paths: Iterable[Path]) -> tuple[Source, ...]:
+    """The files with their SHA-256 from data/raw_manifest.csv; a file that differs from the
+    manifest is not loaded (D-DATA-1)."""
+    listed = raw.manifest_sha256()
+    sources = []
+    for path in paths:
+        key = path.relative_to(raw.RAW_DIR).as_posix()
+        if key not in listed:
+            raise ValueError(f"{key} is not in {raw.MANIFEST_CSV.name}")
+        if file_sha256(path) != listed[key]:
+            raise ValueError(f"{key} differs from {raw.MANIFEST_CSV.name} (D-DATA-1)")
+        sources.append(Source(path.relative_to(ROOT).as_posix(), listed[key]))
+    return tuple(sources)
+
+
+def raw_rule_tables() -> RuleTableData:
+    mue = raw.read_mue()
+    return RuleTableData(
+        place_of_service=raw.read_place_of_service_codes(),
+        procedure_codes=raw.read_procedure_code_table(),
+        icd10={ICD10_FISCAL_YEAR: raw.read_icd10_codes()},
+        mue={code: (entry.max_units, entry.adjudication_indicator) for code, entry in mue.items()},
+        mue_effective=raw.MUE_EFFECTIVE,
+        ncci_rows=raw.read_ncci_edits,
+        sources={
+            "place_of_service_codes": raw_sources([raw.POS_PDF]),
+            "procedure_codes": raw_sources([raw.PFS_CSV, raw.HCPCS_TXT]),
+            "icd10_codes": raw_sources([raw.ICD10_ZIP]),
+            "mue_limits": raw_sources([raw.MUE_CSV]),
+            "ncci_ptp_edits": raw_sources(raw.ncci_sources()),
+        },
+    )
+
+
+def copy_ncci(session: Session, rows: Iterable[raw.NcciEditRow]) -> int:
+    """Replace every NCCI edit with `rows`, numbered in order, in the session's transaction."""
+    session.execute(text("TRUNCATE ncci_ptp_edits RESTART IDENTITY"))
+    driver = session.connection().connection.driver_connection
+    count = 0
+    statement = f"COPY ncci_ptp_edits ({', '.join(NCCI_COLUMNS)}) FROM STDIN"
+    with driver.cursor() as cursor, cursor.copy(statement) as copy:
+        for count, row in enumerate(rows, start=1):
+            copy.write_row((*row, count - 1))
+    return count
+
+
+def load_rule_tables(session: Session, data: RuleTableData) -> dict[str, int]:
+    """Load the rule tables and record their provenance. Procedure codes already on file (the
+    curated in-scope codes) keep their description."""
+    counts = {
+        "place_of_service_codes": upsert(
+            session,
+            PlaceOfServiceCode,
+            [{"code": code, "name": name} for code, name in sorted(data.place_of_service.items())],
+        )
+    }
+    codes = sorted(data.procedure_codes)
+    insert_new = pg_insert(ProcedureCode).on_conflict_do_nothing(index_elements=["code"])
+    for start in range(0, len(codes), CHUNK_ROWS):
+        session.execute(
+            insert_new,
+            [
+                {
+                    "code": code,
+                    "code_system": code_system(code),
+                    "description": None,
+                    "in_scope": False,
+                }
+                for code in codes[start : start + CHUNK_ROWS]
+            ],
+        )
+    counts["procedure_codes"] = len(codes)
+    counts["icd10_codes"] = upsert(
+        session,
+        Icd10Code,
+        [
+            {"code": code, "fiscal_year": year, "description": description}
+            for year, entries in sorted(data.icd10.items())
+            for code, description in sorted(entries.items())
+        ],
+    )
+    counts["mue_limits"] = upsert(
+        session,
+        MueLimit,
+        [
+            {
+                "procedure_code": code,
+                "effective_date": data.mue_effective,
+                "max_units": units,
+                "adjudication_indicator": indicator,
+            }
+            for code, (units, indicator) in sorted(data.mue.items())
+        ],
+    )
+    counts["ncci_ptp_edits"] = copy_ncci(session, data.ncci_rows())
+    session.execute(delete(ReferenceSource).where(ReferenceSource.table_name.in_(data.sources)))
+    session.add_all(
+        ReferenceSource(
+            table_name=table,
+            source_path=source.path,
+            sha256=source.sha256,
+            row_count=counts[table],
+        )
+        for table, sources in data.sources.items()
+        for source in sources
+    )
+    session.flush()
+    return counts
+
+
+def table_sizes(session: Session) -> dict[str, int]:
+    """Bytes on disk per rule table, indexes included."""
+    return {
+        model.__tablename__: session.scalar(
+            text("SELECT pg_total_relation_size(:table)"), {"table": model.__tablename__}
+        )
+        for model in RULE_TABLES
+    }
+
+
 def seed(session: Session, reference_dir: Path | None) -> dict[str, int]:
     counts = seed_curated(session)
     if raw.raw_available():
         counts["fee_schedule"] = upsert(session, FeeScheduleEntry, fee_rows(load_curated()))
-        counts["icd10_codes"] = upsert(
-            session,
-            Icd10Code,
-            [
-                {"code": code, "fiscal_year": ICD10_FISCAL_YEAR, "description": description}
-                for code, description in raw.read_icd10_codes().items()
-            ],
-        )
+        counts |= load_rule_tables(session, raw_rule_tables())
     if reference_dir is not None and reference_dir.exists():
         counts |= load_reference(session, reference_records(reference_dir))
     return counts
@@ -254,13 +431,17 @@ def main() -> None:
     parser.add_argument("--reference-dir", type=Path, default=GENERATED_DIR / "reference")
     parser.add_argument("--no-reference", action="store_true", help="skip generated data")
     args = parser.parse_args()
+    started = time.perf_counter()
     with Session(get_engine()) as session:
         counts = seed(session, None if args.no_reference else args.reference_dir)
         session.commit()
+        sizes = table_sizes(session)
     if not raw.raw_available():
-        print("data/raw/ not found: fee schedule and ICD-10-CM codes not loaded")
+        print("data/raw/ not found: fee schedule and rule tables not loaded")
     for table, count in counts.items():
-        print(f"{table:24} {count:>7}")
+        size = f"  {sizes[table] / 1e6:8.1f} MB" if table in sizes else ""
+        print(f"{table:24} {count:>9,}{size}")
+    print(f"seeded in {time.perf_counter() - started:.1f} s")
 
 
 if __name__ == "__main__":

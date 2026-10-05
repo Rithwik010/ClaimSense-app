@@ -2,27 +2,20 @@
 all evaluated, REJECT over DENY over PEND, any failure stops; Group C (R11–R13) per line, every line
 denied → DENY. The H5 conversion applies to every failure. A claim stopped before Group C has no
 line outcomes; a claim that reaches it has one outcome per line.
-
-`evaluate_eligibility_only` is the walking skeleton's R05-only path (rules version
-SKELETON_RULES_VERSION), which the pipeline runs until P2.1 loads NCCI, MUE, place of service and
-the full code table into the database.
 """
 
 from collections.abc import Mapping
 from typing import Any
 
 from app.domain.contracts import (
-    IntakeResult,
-    LineRuleOutcome,
     RuleOutcomeValue,
     RuleResult,
     RulesOutcome,
 )
 from app.rules.confidence import apply_h5
-from app.rules.eligibility import check_eligibility
 from app.rules.integrity import check_group_a
 from app.rules.line_edits import check_line_edits
-from app.rules.reference import MemberRef, RulesReference
+from app.rules.reference import RulesReference
 from app.rules.requirements import check_group_b
 
 # D8: REJECT over DENY over PEND.
@@ -78,20 +71,4 @@ def evaluate(
         rule_results=results,
         line_outcomes=line_outcomes,
         flags=flags,
-    )
-
-
-def evaluate_eligibility_only(intake: IntakeResult, member: MemberRef) -> RulesOutcome:
-    """The walking skeleton (P1.5): R05 only, no H5."""
-    claim = intake.claim
-    results = [check_eligibility(claim, member)]
-    outcome = claim_outcome(results)
-    if outcome is not RuleOutcomeValue.PASS:
-        return RulesOutcome(claim_outcome=outcome, rule_results=results, line_outcomes=[])
-    return RulesOutcome(
-        claim_outcome=outcome,
-        rule_results=results,
-        line_outcomes=[
-            LineRuleOutcome(line_no=line.line_no, outcome="PASS") for line in claim.service_lines
-        ],
     )

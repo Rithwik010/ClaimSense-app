@@ -1,25 +1,30 @@
-"""P1.5 walking skeleton, end to end through the API with the model stubbed.
+"""The pipeline end to end through the API with the model stubbed (P1.5 walking skeleton; the full
+v1 rules engine since P2.5, the full calculator since P2.4).
 
-Golden cases the skeleton covers: E2E-14 (office visit approved, QUICK review) and E2E-05 (not
-eligible, R05 DENY). Each claim goes in through POST /v1/claims/intake and is processed through
-POST /v1/claims/{id}/process on a fresh database. Expected values are the golden ones; the review
-and finalization parts of the cases are checked in P5.6.
+Golden cases used here: E2E-14 (office visit approved, QUICK review), E2E-05 (not eligible, R05
+DENY) and E2E-15. Each claim goes in through POST /v1/claims/intake and is processed through
+POST /v1/claims/{id}/process on a fresh database. Expected values are the golden ones; every
+golden end-to-end case runs in test_e2e_golden.py.
 """
 
+import copy
 import json
 from typing import Any
 
+import pytest
 from sqlalchemy import Engine, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.calculator import CALCULATOR_VERSION
-from app.db.models import FeeScheduleEntry, Plan, ProviderNetwork
+from app.calculator.engine import CalculationError
+from app.db.models import FeeScheduleEntry, Member, Plan, ProviderNetwork
 from app.db.seed import seed_curated, upsert
-from app.domain.contracts import DecisionRecord
+from app.domain.contracts import DecisionRecord, IntakeClaim, Network
 from app.ml.client import ModelUnavailable
 from app.ml.prompt import PROMPT_VERSION, system_prompt
-from app.rules import SKELETON_RULES_VERSION
-from tests.e2e.support import E2E_CASES, StubModel, golden_fee_rows
+from app.rules import RULES_VERSION
+from app.workflow.pipeline import _calculate
+from tests.e2e.support import E2E_CASES, StubModel, e2e_fee_rows
 
 
 def line_decisions(record: DecisionRecord) -> list[dict[str, Any]]:
@@ -63,7 +68,7 @@ def test_office_visit_runs_end_to_end(api, load_case_reference) -> None:
     assert record.review_tier.value == recommendation["review_tier"]
     assert record.amounts.model_dump() == recommendation["amounts"]
     assert record.versions.model_dump() == {
-        "rules_version": SKELETON_RULES_VERSION,
+        "rules_version": RULES_VERSION,
         "model_name": "stub-model",
         "prompt_version": PROMPT_VERSION,
         "policy_versions": {},
@@ -117,7 +122,8 @@ def test_ineligible_member_is_denied_by_rule_without_the_model(api, load_case_re
 
 
 def new_claim(case_id: str, claim_id: str) -> dict[str, Any]:
-    return {**E2E_CASES[case_id]["given"]["claim"], "claim_id": claim_id}
+    """A copy of a golden case's claim under a new claim ID (deep: tests change lines)."""
+    return {**copy.deepcopy(E2E_CASES[case_id]["given"]["claim"]), "claim_id": claim_id}
 
 
 def test_a_calculation_error_sends_the_claim_to_full_review(
@@ -139,7 +145,7 @@ def test_a_calculation_error_sends_the_claim_to_full_review(
         processed = client.post("/v1/claims/CLM-CALC-FAILED/process")
     finally:
         with Session(engine) as session:
-            upsert(session, FeeScheduleEntry, golden_fee_rows())
+            upsert(session, FeeScheduleEntry, e2e_fee_rows())
             session.commit()
 
     assert processed.status_code == 200, processed.text
@@ -161,39 +167,50 @@ def test_a_calculation_error_sends_the_claim_to_full_review(
     assert events[-1]["payload"] == {"error": error, "calculator_version": CALCULATOR_VERSION}
 
 
-def test_out_of_network_care_on_a_plan_without_out_of_network_terms_goes_to_full_review(
+def test_out_of_network_care_on_a_plan_without_out_of_network_cover_is_denied_by_r08(
     api, load_case_reference, engine: Engine
 ) -> None:
-    """P2.4: an out-of-network claim on a plan with no out-of-network terms (EPO) cannot be
-    calculated. Like any CalculationError it is audited as CALCULATION_FAILED with the reason and
-    the claim waits for FULL review, instead of stopping the pipeline."""
+    """P2.5: with the full rules engine, R08 denies out-of-network care on a plan that does not
+    cover it (EPO) before the claim reaches the model or the calculator. (In P2.4, without R08,
+    such a claim reached the calculator; that guard is checked directly below.)"""
     case = E2E_CASES["E2E-15"]
     load_case_reference(case)
-    claim = new_claim("E2E-15", "CLM-CALC-OON")
-    key = (claim["billing_npi"], "PLN-EPO")
+    claim = new_claim("E2E-15", "CLM-RULE-OON")
     with Session(engine) as session:
-        session.get(ProviderNetwork, key).in_network = False
+        session.get(ProviderNetwork, (claim["billing_npi"], "PLN-EPO")).in_network = False
         session.commit()
-    try:
-        client = api(StubModel(json.dumps(case["given"]["model_answer"])))
-        client.post("/v1/claims/intake", json=claim)
-        processed = client.post("/v1/claims/CLM-CALC-OON/process")
-    finally:
-        with Session(engine) as session:
-            session.get(ProviderNetwork, key).in_network = True
-            session.commit()
+    model = StubModel(json.dumps(case["given"]["model_answer"]))
+    client = api(model)
+
+    client.post("/v1/claims/intake", json=claim)
+    processed = client.post("/v1/claims/CLM-RULE-OON/process")
 
     assert processed.status_code == 200, processed.text
     record = DecisionRecord.model_validate(processed.json())
-    error = "plan PLN-EPO has no out-of-network terms"
-    assert record.status.value == "AWAITING_REVIEW"
-    assert record.review_tier.value == "FULL"
-    assert record.amounts is None
-    assert f"CALCULATION_FAILED: {error}" in record.output_errors
-    events = client.get("/v1/claims/CLM-CALC-OON/audit").json()
-    assert events[-1]["event_type"] == "CALCULATION_FAILED"
-    assert events[-1]["payload"] == {"error": error, "calculator_version": CALCULATOR_VERSION}
-    assert "CALCULATED" not in [e["event_type"] for e in events]
+    assert record.status.value == "DENIED_BY_RULE"
+    assert [
+        (r.rule_id, r.reason_code) for r in record.rules_outcome.rule_results if not r.passed
+    ] == [("R08", "DN_OUT_OF_NETWORK")]
+    assert audit_types(client, "CLM-RULE-OON") == [
+        "INTAKE_COMPLETED",
+        "RULES_EVALUATED",
+        "AUTO_OUTCOME",
+    ]
+    assert model.prompts == []
+
+
+def test_the_calculator_guard_for_a_plan_without_out_of_network_terms(
+    load_case_reference, engine: Engine
+) -> None:
+    """P2.4: should out-of-network care on a plan without out-of-network terms ever reach the
+    calculation, it is a CalculationError (CALCULATION_FAILED, FULL review), not a crash."""
+    case = E2E_CASES["E2E-15"]
+    load_case_reference(case)
+    claim = IntakeClaim.model_validate(case["given"]["claim"])
+    with Session(engine) as session:
+        member = session.get(Member, claim.member_id)
+        with pytest.raises(CalculationError, match="plan PLN-EPO has no out-of-network terms"):
+            _calculate(session, claim, member, Network.OUT_OF_NETWORK, [])
 
 
 def test_invalid_model_output_pends_the_claim_for_full_review(api, load_case_reference) -> None:
@@ -238,20 +255,103 @@ def test_request_errors(api, load_case_reference) -> None:
     assert client.get("/v1/claims/CLM-NOPE").status_code == 404
     assert client.get("/v1/claims/CLM-NOPE/audit").status_code == 404
     assert client.post("/v1/claims/intake", json={"claim_id": "x"}).status_code == 422
+    no_member = {key: value for key, value in claim.items() if key != "member_id"}
+    assert client.post("/v1/claims/intake", json=no_member).status_code == 422
+    zero_units = {**claim, "claim_id": "CLM-SKEL-UNITS"}
+    zero_units["service_lines"] = [{**claim["service_lines"][0], "units": 0}]
+    refused = client.post("/v1/claims/intake", json=zero_units)
+    assert refused.status_code == 422 and "units" in refused.json()["detail"]
+    assert client.get("/v1/claims/CLM-SKEL-UNITS").status_code == 404  # nothing filed
 
 
-def test_unsupported_claim_stays_received_with_only_the_intake_event(api) -> None:
-    client = api(StubModel("unused"))
+def test_an_unknown_member_is_rejected_by_r04_without_the_model(api) -> None:
+    model = StubModel("unused")
+    client = api(model)
     claim = new_claim("E2E-14", "CLM-SKEL-UNKNOWN")
     claim["member_id"] = "MBR-NOT-LOADED"
 
     client.post("/v1/claims/intake", json=claim)
     response = client.post("/v1/claims/CLM-SKEL-UNKNOWN/process")
 
-    assert response.status_code == 422
-    assert "R04" in response.json()["detail"]
-    assert client.get("/v1/claims/CLM-SKEL-UNKNOWN").json()["status"] == "RECEIVED"
-    assert audit_types(client, "CLM-SKEL-UNKNOWN") == ["INTAKE_COMPLETED"]
+    assert response.status_code == 200, response.text
+    record = DecisionRecord.model_validate(response.json())
+    assert record.status.value == "REJECTED"
+    assert [
+        (r.rule_id, r.reason_code) for r in record.rules_outcome.rule_results if not r.passed
+    ] == [("R04", "RJ_MEMBER_NOT_FOUND")]
+    assert audit_types(client, "CLM-SKEL-UNKNOWN") == [
+        "INTAKE_COMPLETED",
+        "RULES_EVALUATED",
+        "AUTO_OUTCOME",
+    ]
+    assert model.prompts == []
+
+
+def test_a_claim_failing_the_contract_is_filed_and_rejected_by_the_rules(
+    api, load_case_reference
+) -> None:
+    """P2.5 decision 3: the contract errors go into INTAKE_COMPLETED, R01 rejects the claim, and it
+    never reaches context or the model."""
+    case = E2E_CASES["E2E-14"]
+    load_case_reference(case)
+    model = StubModel(json.dumps(case["given"]["model_answer"]))
+    client = api(model)
+    claim = new_claim("E2E-14", "CLM-SKEL-CONTRACT")
+    del claim["service_lines"][0]["procedure_code"]
+
+    received = client.post("/v1/claims/intake", json=claim)
+    processed = client.post("/v1/claims/CLM-SKEL-CONTRACT/process")
+
+    errors = ["R01: Required field missing: service_lines.0.procedure_code."]
+    assert received.status_code == 201
+    assert received.json() == {
+        "claim_id": "CLM-SKEL-CONTRACT",
+        "status": "RECEIVED",
+        "source_format": "JSON",
+        "contract_errors": errors,
+    }
+    assert processed.status_code == 200, processed.text
+    record = DecisionRecord.model_validate(processed.json())
+    assert record.status.value == "REJECTED"
+    assert [
+        (r.rule_id, r.reason_code) for r in record.rules_outcome.rule_results if not r.passed
+    ] == [("R01", "RJ_MISSING_FIELD")]
+    events = client.get("/v1/claims/CLM-SKEL-CONTRACT/audit").json()
+    assert [e["event_type"] for e in events] == [
+        "INTAKE_COMPLETED",
+        "RULES_EVALUATED",
+        "AUTO_OUTCOME",
+    ]
+    assert events[0]["payload"]["contract_errors"] == errors
+    assert events[-1]["payload"] == {"status": "REJECTED", "reason_codes": ["RJ_MISSING_FIELD"]}
+    assert model.prompts == []
+    view = client.get("/v1/claims/CLM-SKEL-CONTRACT").json()
+    assert view["intake"] is None and "procedure_code" not in view["received"]["service_lines"][0]
+
+
+def test_a_date_of_service_before_fy2027_leaves_the_claim_received_with_a_503(
+    api, load_case_reference
+) -> None:
+    """P2.5 decision 2: only ICD-10-CM FY2027 is loaded, so a date of service before 2026-10-01
+    cannot be checked. Nothing is written, the claim stays RECEIVED and can run once FY2026 is
+    loaded."""
+    case = E2E_CASES["E2E-14"]
+    load_case_reference(case)
+    model = StubModel(json.dumps(case["given"]["model_answer"]))
+    client = api(model)
+    claim = new_claim("E2E-14", "CLM-SKEL-FY2026")
+    claim["service_lines"][0]["date_of_service"] = "2026-09-15"
+
+    client.post("/v1/claims/intake", json=claim)
+    first = client.post("/v1/claims/CLM-SKEL-FY2026/process")
+    again = client.post("/v1/claims/CLM-SKEL-FY2026/process")
+
+    for response in (first, again):
+        assert response.status_code == 503
+        assert response.json()["detail"] == "reference data not loaded: ICD-10-CM FY2026"
+    assert client.get("/v1/claims/CLM-SKEL-FY2026").json()["status"] == "RECEIVED"
+    assert audit_types(client, "CLM-SKEL-FY2026") == ["INTAKE_COMPLETED"]
+    assert model.prompts == []
 
 
 def test_model_unavailable_returns_503_and_the_claim_can_run_later(api, load_case_reference):

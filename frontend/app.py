@@ -42,6 +42,12 @@ def submit(http: httpx.Client, claim: dict[str, Any]) -> str | None:
     if response.status_code != 201:
         show_error(response, "Intake")
         return None
+    contract_errors = response.json().get("contract_errors")
+    if contract_errors:  # filed although it fails the contract; the rules will reject it (P2.5)
+        st.warning(
+            "Filed with contract errors; the rules will reject it:\n\n"
+            + "\n".join(f"- {e}" for e in contract_errors)
+        )
     with st.spinner("Running the rules, the model and the calculator..."):
         response = http.post(f"/v1/claims/{claim_id}/process")
     if response.status_code != 200:
@@ -193,9 +199,9 @@ def main() -> None:
     st.set_page_config(page_title="ClaimSense", layout="wide")
     st.title("ClaimSense")
     st.caption(
-        "Walking skeleton (P1.5): JSON claim → rule R05 → base model → copay calculator → "
-        "decision record → audit trail. Synthetic data only; every recommendation goes to a "
-        "human reviewer."
+        "JSON claim → rules R01–R13 → model → calculator → decision record → audit trail. "
+        "A rule failure is final; every model recommendation goes to a human reviewer. "
+        "Synthetic data only."
     )
     api_url = st.sidebar.text_input("API URL", API_URL)
     with httpx.Client(base_url=api_url, timeout=TIMEOUT_SECONDS) as http:
@@ -204,7 +210,12 @@ def main() -> None:
         with st.expander("Submit a claim", expanded="claim_id" not in st.session_state):
             text = st.text_area("Claim JSON (IntakeClaim)", SAMPLE.read_text(), height=400)
             new_id = st.toggle(
-                "Use a new claim ID", value=True, help="Claim IDs are unique; resubmits need one"
+                "Use a new claim ID",
+                value=True,
+                help=(
+                    "Claim IDs are unique, so a resubmit needs a new one; the duplicate rule then "
+                    "rejects it unless the earlier claim was rejected (A-R6)."
+                ),
             )
             if st.button("Submit and process", type="primary"):
                 try:
