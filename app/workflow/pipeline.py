@@ -4,8 +4,9 @@ Walking skeleton (P1.5): JSON intake -> rule R05 -> context -> model -> output v
 calculator (the full §8.6 calculator since P2.4) -> decision record -> audit events. Rule failures
 are final (AUTO_OUTCOME); a rules-passed claim waits for review. Claims the skeleton cannot handle
 yet raise `PipelineError` and stay RECEIVED, with nothing written but the intake. A calculation that
-fails (CalculationError, for example an approved line whose code has no fee) does not stop the
-claim: it is audited as CALCULATION_FAILED and the claim waits for FULL review without amounts.
+fails (CalculationError: an approved line whose code has no fee, or out-of-network care on a plan
+with no out-of-network terms) does not stop the claim: it is audited as CALCULATION_FAILED and the
+claim waits for FULL review without amounts.
 """
 
 import time
@@ -221,7 +222,8 @@ def _calculate(
         or plan.oon_coinsurance_bps is None
         or plan.oon_oop_max_cents is None
     ):
-        raise PipelineError("the plan does not cover out-of-network care (rule R08 is in P2.3)")
+        # Not a pipeline stop: the claim goes to FULL review like any CalculationError.
+        raise CalculationError(f"plan {plan.plan_id} has no out-of-network terms")
     else:
         terms = NetworkTerms(
             plan.oon_deductible_cents, plan.oon_coinsurance_bps, plan.oon_oop_max_cents

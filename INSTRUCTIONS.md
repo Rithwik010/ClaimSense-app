@@ -426,8 +426,11 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
   rules_version, model_name, prompt_version, policy_versions, created_at. **Insert only**; no
   update or delete code paths.
 - Event types: `INTAKE_COMPLETED`, `RULES_EVALUATED`, `CONTEXT_ASSEMBLED`, `SLM_RECOMMENDED`,
-  `OUTPUT_INVALID`, `CALCULATED`, `EXPLANATION_BUILT`, `REVIEW_ACCEPTED`, `REVIEW_OVERRIDDEN`,
-  `FINALIZED`, `AUTO_OUTCOME`.
+  `OUTPUT_INVALID`, `CALCULATED`, `CALCULATION_FAILED`, `EXPLANATION_BUILT`, `REVIEW_ACCEPTED`,
+  `REVIEW_OVERRIDDEN`, `FINALIZED`, `AUTO_OUTCOME`.
+- `CALCULATION_FAILED` (P2.4) is written instead of `CALCULATED` when the calculator cannot run
+  (for example no fee for an approved line, or out-of-network care on a plan without out-of-network
+  terms); the claim then waits for FULL review without amounts.
 - Logs (structlog, JSON): IDs, route, duration, versions. **Never** names, addresses, dates of
   birth or clinical notes.
 

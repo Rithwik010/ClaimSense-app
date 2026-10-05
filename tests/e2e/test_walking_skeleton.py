@@ -13,7 +13,7 @@ from sqlalchemy import Engine, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.calculator import CALCULATOR_VERSION
-from app.db.models import FeeScheduleEntry, Plan
+from app.db.models import FeeScheduleEntry, Plan, ProviderNetwork
 from app.db.seed import seed_curated, upsert
 from app.domain.contracts import DecisionRecord
 from app.ml.client import ModelUnavailable
@@ -159,6 +159,41 @@ def test_a_calculation_error_sends_the_claim_to_full_review(
         "CALCULATION_FAILED",
     ]
     assert events[-1]["payload"] == {"error": error, "calculator_version": CALCULATOR_VERSION}
+
+
+def test_out_of_network_care_on_a_plan_without_out_of_network_terms_goes_to_full_review(
+    api, load_case_reference, engine: Engine
+) -> None:
+    """P2.4: an out-of-network claim on a plan with no out-of-network terms (EPO) cannot be
+    calculated. Like any CalculationError it is audited as CALCULATION_FAILED with the reason and
+    the claim waits for FULL review, instead of stopping the pipeline."""
+    case = E2E_CASES["E2E-15"]
+    load_case_reference(case)
+    claim = new_claim("E2E-15", "CLM-CALC-OON")
+    key = (claim["billing_npi"], "PLN-EPO")
+    with Session(engine) as session:
+        session.get(ProviderNetwork, key).in_network = False
+        session.commit()
+    try:
+        client = api(StubModel(json.dumps(case["given"]["model_answer"])))
+        client.post("/v1/claims/intake", json=claim)
+        processed = client.post("/v1/claims/CLM-CALC-OON/process")
+    finally:
+        with Session(engine) as session:
+            session.get(ProviderNetwork, key).in_network = True
+            session.commit()
+
+    assert processed.status_code == 200, processed.text
+    record = DecisionRecord.model_validate(processed.json())
+    error = "plan PLN-EPO has no out-of-network terms"
+    assert record.status.value == "AWAITING_REVIEW"
+    assert record.review_tier.value == "FULL"
+    assert record.amounts is None
+    assert f"CALCULATION_FAILED: {error}" in record.output_errors
+    events = client.get("/v1/claims/CLM-CALC-OON/audit").json()
+    assert events[-1]["event_type"] == "CALCULATION_FAILED"
+    assert events[-1]["payload"] == {"error": error, "calculator_version": CALCULATOR_VERSION}
+    assert "CALCULATED" not in [e["event_type"] for e in events]
 
 
 def test_invalid_model_output_pends_the_claim_for_full_review(api, load_case_reference) -> None:
