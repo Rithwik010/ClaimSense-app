@@ -9,16 +9,17 @@ and finalization parts of the cases are checked in P5.6.
 import json
 from typing import Any
 
-from sqlalchemy import Engine, func, select
+from sqlalchemy import Engine, delete, func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import Plan
-from app.db.seed import seed_curated
+from app.calculator import CALCULATOR_VERSION
+from app.db.models import FeeScheduleEntry, Plan, ProviderNetwork
+from app.db.seed import seed_curated, upsert
 from app.domain.contracts import DecisionRecord
 from app.ml.client import ModelUnavailable
 from app.ml.prompt import PROMPT_VERSION, system_prompt
 from app.rules import SKELETON_RULES_VERSION
-from tests.e2e.support import E2E_CASES, StubModel
+from tests.e2e.support import E2E_CASES, StubModel, golden_fee_rows
 
 
 def line_decisions(record: DecisionRecord) -> list[dict[str, Any]]:
@@ -84,9 +85,11 @@ def test_office_visit_runs_end_to_end(api, load_case_reference) -> None:
         "SLM_RECOMMENDED",
         "CALCULATED",
     ]
-    payloads = json.dumps([e["payload"] for e in client.get(f"/v1/claims/{claim_id}/audit").json()])
+    events = client.get(f"/v1/claims/{claim_id}/audit").json()
+    payloads = json.dumps([e["payload"] for e in events])
     assert claim["patient"]["last_name"] not in payloads
     assert claim["clinical_notes"][:30] not in payloads
+    assert events[-1]["payload"]["calculator_version"] == CALCULATOR_VERSION
 
 
 def test_ineligible_member_is_denied_by_rule_without_the_model(api, load_case_reference) -> None:
@@ -115,6 +118,82 @@ def test_ineligible_member_is_denied_by_rule_without_the_model(api, load_case_re
 
 def new_claim(case_id: str, claim_id: str) -> dict[str, Any]:
     return {**E2E_CASES[case_id]["given"]["claim"], "claim_id": claim_id}
+
+
+def test_a_calculation_error_sends_the_claim_to_full_review(
+    api, load_case_reference, engine: Engine
+) -> None:
+    """P2.4: an approved line whose code has no fee cannot be calculated. The claim is not lost:
+    CALCULATION_FAILED is audited with the error and the claim waits for FULL review, with the
+    reason in the decision record and no amounts."""
+    case = E2E_CASES["E2E-14"]
+    load_case_reference(case)
+    claim = new_claim("E2E-14", "CLM-CALC-FAILED")
+    code = claim["service_lines"][0]["procedure_code"]
+    with Session(engine) as session:
+        session.execute(delete(FeeScheduleEntry).where(FeeScheduleEntry.procedure_code == code))
+        session.commit()
+    try:
+        client = api(StubModel(json.dumps(case["given"]["model_answer"])))
+        client.post("/v1/claims/intake", json=claim)
+        processed = client.post("/v1/claims/CLM-CALC-FAILED/process")
+    finally:
+        with Session(engine) as session:
+            upsert(session, FeeScheduleEntry, golden_fee_rows())
+            session.commit()
+
+    assert processed.status_code == 200, processed.text
+    record = DecisionRecord.model_validate(processed.json())
+    error = f"line 1: no fee for {code}"
+    assert record.status.value == "AWAITING_REVIEW"
+    assert record.review_tier.value == "FULL"
+    assert record.amounts is None
+    assert record.output_errors == [f"CALCULATION_FAILED: {error}"]
+    assert line_decisions(record) == case["expected"]["recommendation"]["line_decisions"]
+    events = client.get("/v1/claims/CLM-CALC-FAILED/audit").json()
+    assert [e["event_type"] for e in events] == [
+        "INTAKE_COMPLETED",
+        "RULES_EVALUATED",
+        "CONTEXT_ASSEMBLED",
+        "SLM_RECOMMENDED",
+        "CALCULATION_FAILED",
+    ]
+    assert events[-1]["payload"] == {"error": error, "calculator_version": CALCULATOR_VERSION}
+
+
+def test_out_of_network_care_on_a_plan_without_out_of_network_terms_goes_to_full_review(
+    api, load_case_reference, engine: Engine
+) -> None:
+    """P2.4: an out-of-network claim on a plan with no out-of-network terms (EPO) cannot be
+    calculated. Like any CalculationError it is audited as CALCULATION_FAILED with the reason and
+    the claim waits for FULL review, instead of stopping the pipeline."""
+    case = E2E_CASES["E2E-15"]
+    load_case_reference(case)
+    claim = new_claim("E2E-15", "CLM-CALC-OON")
+    key = (claim["billing_npi"], "PLN-EPO")
+    with Session(engine) as session:
+        session.get(ProviderNetwork, key).in_network = False
+        session.commit()
+    try:
+        client = api(StubModel(json.dumps(case["given"]["model_answer"])))
+        client.post("/v1/claims/intake", json=claim)
+        processed = client.post("/v1/claims/CLM-CALC-OON/process")
+    finally:
+        with Session(engine) as session:
+            session.get(ProviderNetwork, key).in_network = True
+            session.commit()
+
+    assert processed.status_code == 200, processed.text
+    record = DecisionRecord.model_validate(processed.json())
+    error = "plan PLN-EPO has no out-of-network terms"
+    assert record.status.value == "AWAITING_REVIEW"
+    assert record.review_tier.value == "FULL"
+    assert record.amounts is None
+    assert f"CALCULATION_FAILED: {error}" in record.output_errors
+    events = client.get("/v1/claims/CLM-CALC-OON/audit").json()
+    assert events[-1]["event_type"] == "CALCULATION_FAILED"
+    assert events[-1]["payload"] == {"error": error, "calculator_version": CALCULATOR_VERSION}
+    assert "CALCULATED" not in [e["event_type"] for e in events]
 
 
 def test_invalid_model_output_pends_the_claim_for_full_review(api, load_case_reference) -> None:

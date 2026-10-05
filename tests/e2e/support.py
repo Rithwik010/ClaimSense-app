@@ -18,7 +18,7 @@ def golden_fee_rows() -> list[dict[str, Any]]:
     `data/raw/` (absent in CI)."""
     fees: dict[str, dict[str, int]] = {}
     for path in sorted((GOLDEN / "calculator").glob("*.json")):
-        for case in json.loads(path.read_text())["cases"]:
+        for case in json.loads(path.read_text()).get("cases", []):
             fees |= case["given"]["fee_schedule"]
     return [
         {

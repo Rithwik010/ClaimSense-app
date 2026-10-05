@@ -1,9 +1,12 @@
 """Claim processing (INSTRUCTIONS.md §5). Synchronous (DECISIONS.md 2026-09-21).
 
 Walking skeleton (P1.5): JSON intake -> rule R05 -> context -> model -> output validation ->
-calculator (in-network COPAY lines) -> decision record -> audit events. Rule failures are final
-(AUTO_OUTCOME); a rules-passed claim waits for review. Claims the skeleton cannot handle yet raise
-`PipelineError` and stay RECEIVED, with nothing written but the intake.
+calculator (the full §8.6 calculator since P2.4) -> decision record -> audit events. Rule failures
+are final (AUTO_OUTCOME); a rules-passed claim waits for review. Claims the skeleton cannot handle
+yet raise `PipelineError` and stay RECEIVED, with nothing written but the intake. A calculation that
+fails (CalculationError: an approved line whose code has no fee, or out-of-network care on a plan
+with no out-of-network terms) does not stop the claim: it is audited as CALCULATION_FAILED and the
+claim waits for FULL review without amounts.
 """
 
 import time
@@ -14,14 +17,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.audit.events import EventType, record_event
+from app.calculator import CALCULATOR_VERSION
 from app.calculator.engine import (
     Accumulators,
     CalcLine,
+    CalculationError,
     CalculationResult,
     CostShareTerms,
     FeeEntry,
     NetworkTerms,
-    UnsupportedCalculation,
     calculate,
 )
 from app.context.assemble import ContextError, assemble_context
@@ -40,6 +44,7 @@ from app.domain.contracts import (
     IntakeResult,
     LineDecision,
     Network,
+    ReviewTier,
     RuleOutcomeValue,
     RulesOutcome,
     SourceFormat,
@@ -217,7 +222,8 @@ def _calculate(
         or plan.oon_coinsurance_bps is None
         or plan.oon_oop_max_cents is None
     ):
-        raise PipelineError("the plan does not cover out-of-network care (rule R08 is in P2.3)")
+        # Not a pipeline stop: the claim goes to FULL review like any CalculationError.
+        raise CalculationError(f"plan {plan.plan_id} has no out-of-network terms")
     else:
         terms = NetworkTerms(
             plan.oon_deductible_cents, plan.oon_coinsurance_bps, plan.oon_oop_max_cents
@@ -238,9 +244,8 @@ def _calculate(
         )
         if decision.decision is LineDecision.APPROVE and line.procedure_code not in fees:
             fee = lookups.get_fee(session, line.procedure_code, line.date_of_service)
-            if fee is None:
-                raise PipelineError(f"no fee schedule entry for {line.procedure_code}")
-            fees[line.procedure_code] = FeeEntry(fee.inn_allowed_cents, fee.oon_allowed_cents)
+            if fee is not None:  # a missing fee is the calculator's CalculationError
+                fees[line.procedure_code] = FeeEntry(fee.inn_allowed_cents, fee.oon_allowed_cents)
     first_day = min(line.date_of_service for line in claim.service_lines)
     stored = lookups.get_accumulator(
         session, member.member_id, lookups.benefit_year_start(first_day), network.value
@@ -254,10 +259,7 @@ def _calculate(
         category: CostShareTerms(CostShareRule(b.cost_share_rule), b.copay_cents)
         for category, b in lookups.get_benefits(session, member.plan_id).items()
     }
-    try:
-        return calculate(lines, network, terms, benefits, fees, accumulators, claim.other_coverage)
-    except UnsupportedCalculation as exc:
-        raise PipelineError(str(exc)) from exc
+    return calculate(lines, network, terms, benefits, fees, accumulators, claim.other_coverage)
 
 
 def prompt_lookups(session: Session, claim: IntakeClaim) -> PromptLookups:
@@ -365,19 +367,42 @@ def process_claim(
     )
 
     decisions = final_line_decisions(rules, result)
-    calculation = _calculate(session, claim, member, network, decisions)
-    record_event(
-        session,
-        claim_id,
-        EventType.CALCULATED,
-        {"network": network.value, "totals": calculation.amounts.totals.model_dump()},
-        versions,
-    )
-    tier = review_tier(
-        result,
-        calculation.amounts.totals.allowed_cents,
-        low_confidence_fields(intake, settings.extraction_confidence_min),
-        settings.review_high_dollar_cents,
+    output_errors = list(result.errors)
+    try:
+        calculation: CalculationResult | None = _calculate(
+            session, claim, member, network, decisions
+        )
+    except CalculationError as exc:
+        calculation = None
+        output_errors.append(f"CALCULATION_FAILED: {exc}")
+        record_event(
+            session,
+            claim_id,
+            EventType.CALCULATION_FAILED,
+            {"error": str(exc), "calculator_version": CALCULATOR_VERSION},
+            versions,
+        )
+    else:
+        record_event(
+            session,
+            claim_id,
+            EventType.CALCULATED,
+            {
+                "network": network.value,
+                "totals": calculation.amounts.totals.model_dump(),
+                "calculator_version": CALCULATOR_VERSION,
+            },
+            versions,
+        )
+    tier = (
+        ReviewTier.FULL
+        if calculation is None
+        else review_tier(
+            result,
+            calculation.amounts.totals.allowed_cents,
+            low_confidence_fields(intake, settings.extraction_confidence_min),
+            settings.review_high_dollar_cents,
+        )
     )
     record = DecisionRecord(
         claim_id=claim_id,
@@ -385,10 +410,10 @@ def process_claim(
         rules_outcome=rules,
         context_refs=context,
         slm_output=result.output,
-        output_errors=list(result.errors),
+        output_errors=output_errors,
         line_decisions=decisions,
         claim_decision=derive_claim_decision(decisions),
-        amounts=calculation.amounts,
+        amounts=calculation.amounts if calculation else None,
         review_tier=tier,
         versions=versions,
         timestamps=timestamps,

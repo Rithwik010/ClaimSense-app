@@ -7,7 +7,7 @@ If one looks wrong, stop and ask.
 | Folder | Cases | Tested by |
 |---|---|---|
 | `rules/` | 90 | P2.3 rules engine (`tests/unit/test_rules_golden.py`) |
-| `calculator/` | 56 | P2.4 calculator |
+| `calculator/` | 56 | P2.4 calculator (`tests/unit/test_calculator_golden.py`) |
 | `e2e/` | 30 | P5.6 end-to-end pipeline |
 | `rag/` | 50 queries | P3.3 retrieval (recall@3) |
 | `blind_review/` | 30 claims | P6.1 reviewer agreement |

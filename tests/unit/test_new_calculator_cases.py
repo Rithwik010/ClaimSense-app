@@ -31,7 +31,7 @@ GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "calculator"
 GOLDEN_CASES = [
     case
     for path in sorted(GOLDEN.glob("*.json"))
-    for case in json.loads(path.read_text(encoding="utf-8"))["cases"]
+    for case in json.loads(path.read_text(encoding="utf-8")).get("cases", [])
 ]
 requires_raw = pytest.mark.skipif(not raw.raw_available(), reason="data/raw/ not present")
 
