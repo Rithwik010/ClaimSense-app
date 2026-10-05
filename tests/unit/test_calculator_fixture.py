@@ -13,6 +13,7 @@ from scripts.verify.calculator_fixture import (
     NOTE,
     extract,
     fee_codes,
+    fixture_codes,
     fresh_fixture,
     load_cases,
     read_fixture,
@@ -35,14 +36,15 @@ def test_the_fixture_holds_only_codes_and_rvus() -> None:
     assert all(RVU.fullmatch(value) for value in DATA["nonfacility_total_rvu"].values())
 
 
-def test_the_fixture_covers_every_code_a_golden_case_gives_a_fee_for() -> None:
-    assert list(DATA["nonfacility_total_rvu"]) == fee_codes(load_cases())
+def test_the_fixture_covers_the_golden_fee_codes_and_the_e2e_claims() -> None:
+    assert list(DATA["nonfacility_total_rvu"]) == fixture_codes()
+    assert set(fee_codes(load_cases())) <= set(fixture_codes())
     assert len(load_cases()) == 56
 
 
 def test_the_fixture_is_the_scripts_output_for_its_own_values() -> None:
     """Not edited by hand: extracting from the fixture's values writes the same file."""
-    again = extract(fee_codes(load_cases()), rvus(DATA))
+    again = extract(fixture_codes(), rvus(DATA))
 
     assert render(again) == FIXTURE.read_text(encoding="utf-8")
 

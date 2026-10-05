@@ -17,7 +17,7 @@ from app.db.seed import load_reference, load_rule_tables, seed_curated, upsert
 from app.db.session import get_engine
 from app.ml.client import DecisionModel
 from tests.database import alembic_config, fresh_database
-from tests.e2e.support import StubRetriever, claim_on_file, golden_fee_rows
+from tests.e2e.support import StubRetriever, claim_on_file, e2e_fee_rows
 from tests.rule_tables import fixture_rule_tables
 
 
@@ -32,7 +32,7 @@ def engine() -> Iterator[Engine]:
         with Session(engine) as session:
             seed_curated(session)
             load_rule_tables(session, fixture_rule_tables())
-            upsert(session, FeeScheduleEntry, golden_fee_rows())
+            upsert(session, FeeScheduleEntry, e2e_fee_rows())
             session.commit()
         yield engine
         engine.dispose()

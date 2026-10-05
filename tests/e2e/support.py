@@ -33,6 +33,33 @@ def golden_fee_rows() -> list[dict[str, Any]]:
     ]
 
 
+def e2e_fee_rows() -> list[dict[str, Any]]:
+    """The end-to-end database's fee schedule (D6) for every code in the calculator fixture (the
+    golden calculator codes and the end-to-end claims' in-scope codes), computed as the seed does
+    from data/raw/ (app.db.seed.fee_rows), so the tests need no data/raw/ (D-CI-2)."""
+    from app.calculator.fee_schedule import allowed_amounts
+    from app.db.curated import load_curated
+    from scripts.verify.calculator_fixture import read_fixture, rvus
+
+    rule = load_curated().fee_rule
+    rows = []
+    for code, rvu in sorted(rvus(read_fixture()).items()):
+        inn, oon = allowed_amounts(
+            rvu, rule.conversion_factor, rule.in_network_bps, rule.out_of_network_bps
+        )
+        rows.append(
+            {
+                "procedure_code": code,
+                "modifier": "",
+                "effective_date": rule.effective_date.isoformat(),
+                "inn_allowed_cents": inn,
+                "oon_allowed_cents": oon,
+                "source": "tests/golden/calculator/raw_subset.json (D6)",
+            }
+        )
+    return rows
+
+
 class StubModel:
     """Returns a fixed answer and records the prompts it was given."""
 

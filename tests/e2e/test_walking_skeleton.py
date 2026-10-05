@@ -24,7 +24,7 @@ from app.ml.client import ModelUnavailable
 from app.ml.prompt import PROMPT_VERSION, system_prompt
 from app.rules import RULES_VERSION
 from app.workflow.pipeline import _calculate
-from tests.e2e.support import E2E_CASES, StubModel, golden_fee_rows
+from tests.e2e.support import E2E_CASES, StubModel, e2e_fee_rows
 
 
 def line_decisions(record: DecisionRecord) -> list[dict[str, Any]]:
@@ -145,7 +145,7 @@ def test_a_calculation_error_sends_the_claim_to_full_review(
         processed = client.post("/v1/claims/CLM-CALC-FAILED/process")
     finally:
         with Session(engine) as session:
-            upsert(session, FeeScheduleEntry, golden_fee_rows())
+            upsert(session, FeeScheduleEntry, e2e_fee_rows())
             session.commit()
 
     assert processed.status_code == 200, processed.text

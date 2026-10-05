@@ -2,9 +2,11 @@
 has no data/raw/, H9) runs the golden fee-consistency check (tests/unit/test_golden_files.py).
 
 tests/golden/calculator/raw_subset.json holds, for every procedure code a golden calculator case
-has a fee for, its national non-facility total RVU from the PFS RVU26A file (D6), as the decimal
-text the file gives. Codes and numbers only: no descriptions are read or written (H10). The
-conversion factor and the network percentages come from data/curated/fee_schedule.yaml.
+has a fee for and every in-scope code a golden end-to-end claim bills (P2.5: the end-to-end
+database's fee schedule comes from it in CI), its national non-facility total RVU from the PFS
+RVU26A file (D6), as the decimal text the file gives. Codes and numbers only: no descriptions
+are read or written (H10). The conversion factor and the network percentages come from
+data/curated/fee_schedule.yaml.
 
 tests/unit/test_calculator_fixture.py checks the fixture holds nothing but codes and RVUs and,
 wherever data/raw/ is in use, that it equals a fresh extraction (D-CI-2).
@@ -24,11 +26,12 @@ from app.db import raw
 
 ROOT = Path(__file__).resolve().parents[2]
 GOLDEN_CALCULATOR = ROOT / "tests" / "golden" / "calculator"
+E2E_CASES = ROOT / "tests" / "golden" / "e2e" / "cases.json"
 FIXTURE = GOLDEN_CALCULATOR / "raw_subset.json"
 NOTE = (
     "Derived from data/raw/ by scripts/verify/calculator_fixture.py for the golden calculator "
-    "cases: procedure codes and national non-facility total RVUs only (D-CI-2). Do not edit by "
-    "hand."
+    "cases and the golden end-to-end claims: procedure codes and national non-facility total RVUs "
+    "only (D-CI-2). Do not edit by hand."
 )
 KEYS = ("note", "sources", "nonfacility_total_rvu")
 
@@ -40,6 +43,21 @@ def load_cases(folder: Path = GOLDEN_CALCULATOR) -> list[dict[str, Any]]:
         for path in sorted(folder.glob("*.json"))
         for case in json.loads(path.read_text(encoding="utf-8")).get("cases", [])
     ]
+
+
+def fixture_codes() -> list[str]:
+    """The codes the fixture covers: every code a golden calculator case gives a fee for, and every
+    in-scope code a golden end-to-end claim bills (the fee schedule covers the scope, D6)."""
+    from app.db.curated import load_curated
+
+    scope = set(load_curated().scope)
+    e2e = json.loads(E2E_CASES.read_text(encoding="utf-8"))["cases"]
+    billed = {
+        line.get("procedure_code")
+        for case in e2e
+        for line in case["given"]["claim"].get("service_lines") or []
+    }
+    return sorted(set(fee_codes(load_cases())) | (billed & scope))
 
 
 def fee_codes(cases: Iterable[Mapping[str, Any]]) -> list[str]:
@@ -55,7 +73,7 @@ def extract(codes: Iterable[str], rvus: Mapping[str, Decimal]) -> dict[str, Any]
 
 
 def fresh_fixture() -> dict[str, Any]:
-    codes = fee_codes(load_cases())
+    codes = fixture_codes()
     pfs = raw.read_pfs(set(codes))
     return extract(codes, {code: entry.nonfacility_total_rvu for code, entry in pfs.items()})
 
