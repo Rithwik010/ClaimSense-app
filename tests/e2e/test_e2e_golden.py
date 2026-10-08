@@ -8,54 +8,26 @@ JSON claims go through POST /v1/claims/intake; scanned and digital-PDF claims th
 retrieval, so the stub retriever returns, for a line's procedure code, the curated criteria the
 case's answer cites for that line (P5.6 rebuilds the cases for real retrieval). Each case runs on a
 fresh database with its reference additions and claims on file.
+
+The 18 cases with a review action then go through POST /v1/claims/{id}/review (P5.3): the final
+status, claim decision, line decisions, amounts and accumulators are the golden ones, for every
+final status.
 """
 
 import json
+from datetime import date
 from typing import Any
 
 import pytest
 from sqlalchemy.orm import Session
 
-from app.db.curated import load_curated
-from app.domain.contracts import DecisionRecord, RetrievedCriterion, SourceFormat
+from app.db.models import Accumulator
+from app.domain.contracts import DecisionRecord, SourceFormat
 from app.workflow.pipeline import intake_claim_data
-from tests.e2e.support import E2E_CASES, StubModel, StubRetriever
+from tests.e2e.support import E2E_CASES, REVIEWER, CaseRetriever, StubModel, audit
 
 CASES = sorted(E2E_CASES.values(), key=lambda case: case["case_id"])
-
-
-class CaseRetriever(StubRetriever):
-    """For a line's procedure code, the curated criteria the case's answer cites for that line."""
-
-    def __init__(self, case: dict[str, Any]) -> None:
-        super().__init__()
-        curated = load_curated()
-        criteria = curated.criteria()
-        codes = {
-            line["line_no"]: line.get("procedure_code")
-            for line in case["given"]["claim"]["service_lines"]
-        }
-        self.by_code: dict[str, list[RetrievedCriterion]] = {}
-        for line in (case["given"].get("model_answer") or {}).get("lines", []):
-            found = self.by_code.setdefault(codes.get(line["line_no"]), [])
-            for cited in line.get("criteria", []):
-                criterion_id = cited["criterion_id"]
-                policy = curated.policies.get(criterion_id.split(".")[0])
-                if criterion_id in criteria and policy is not None:
-                    found.append(
-                        RetrievedCriterion(
-                            criterion_id=criterion_id,
-                            policy_id=policy.policy_id,
-                            policy_title=policy.title,
-                            text=criteria[criterion_id].text,
-                            source=criteria[criterion_id].source,
-                            effective_date=policy.effective_date,
-                        )
-                    )
-
-    def retrieve(self, query, plan_id, day, procedure_code=None, exclude_policies=()):  # noqa: ANN001, ANN201
-        self.queries.append(query)
-        return list(self.by_code.get(procedure_code, []))
+REVIEWED = [case for case in CASES if case["given"].get("review_action")]
 
 
 def _failures(record: DecisionRecord) -> list[dict[str, Any]]:
@@ -123,6 +95,59 @@ def differences(record: DecisionRecord, expected: dict[str, Any]) -> list[str]:
     return found
 
 
+def final_differences(
+    record: DecisionRecord,
+    finalized: dict[str, Any],
+    stored: dict[str, int],
+    expected: dict[str, Any],
+) -> list[str]:
+    """Every expected final value (golden `final`) the finalized claim does not match."""
+    found = []
+
+    def check(name: str, got: Any, want: Any) -> None:
+        if got != want:
+            found.append(f"{name}: got {got!r}, expected {want!r}")
+
+    check("final status", record.status.value, expected["status"])
+    check("final claim_decision", record.claim_decision.value, expected["claim_decision"])
+    check(
+        "final line_decisions",
+        [
+            line.model_dump(mode="json", include={"line_no", "decision", "source", "reason_codes"})
+            for line in record.line_decisions
+        ],
+        expected["line_decisions"],
+    )
+    check("final amounts", record.amounts.model_dump(mode="json"), expected["amounts"])
+    after = {k: v for k, v in expected["accumulators_after"].items() if k != "network"}
+    accumulators = finalized["accumulators"]
+    check(
+        "accumulators network", accumulators["network"], expected["accumulators_after"]["network"]
+    )
+    check("accumulators after (FINALIZED)", accumulators["after"], after)
+    check("accumulators after (stored)", stored, after)
+    return found
+
+
+def stored_accumulators(engine, member_id: str, finalized: dict[str, Any]) -> dict[str, int]:  # noqa: ANN001
+    accumulators = finalized["accumulators"]
+    key = (member_id, date.fromisoformat(accumulators["period_start"]), accumulators["network"])
+    with Session(engine) as session:
+        row = session.get(Accumulator, key)
+    if row is None:
+        return {"deductible_met_cents": 0, "oop_met_cents": 0}
+    return {"deductible_met_cents": row.deductible_met_cents, "oop_met_cents": row.oop_met_cents}
+
+
+def test_the_golden_review_cases_cover_every_final_status() -> None:
+    statuses = {case["expected"]["final"]["status"] for case in REVIEWED}
+
+    assert len(REVIEWED) == 18
+    assert statuses == {"FINAL_APPROVED", "FINAL_DENIED", "FINAL_PENDED", "FINAL_PARTIAL"}
+    rule_outcomes = [c["expected"] for c in CASES if c not in REVIEWED]
+    assert all(e["final"]["status"] == e["status_after_processing"] for e in rule_outcomes)
+
+
 @pytest.mark.parametrize("case", CASES, ids=[case["case_id"] for case in CASES])
 def test_golden_end_to_end_case(api, load_case_reference, engine, case: dict[str, Any]) -> None:  # noqa: ANN001
     given = case["given"]
@@ -150,3 +175,25 @@ def test_golden_end_to_end_case(api, load_case_reference, engine, case: dict[str
     assert differences(record, case["expected"]) == [], record.output_errors
     if case["expected"]["recommendation"] is None:
         assert model.prompts == []  # a rule outcome never reaches the model
+    action = given.get("review_action")
+    if action is None:  # a rule outcome: final as processed, never reviewed (§8.8)
+        accept = {
+            "claim_id": claim["claim_id"],
+            "reviewer_id": "reviewer-golden",
+            "action": "ACCEPT",
+            "timestamp": "2026-12-20T10:00:00Z",
+        }
+        refused = client.post(
+            f"/v1/claims/{claim['claim_id']}/review", json=accept, headers=REVIEWER
+        )
+        assert refused.status_code == 409
+        return
+
+    reviewed = client.post(f"/v1/claims/{claim['claim_id']}/review", json=action, headers=REVIEWER)
+
+    assert reviewed.status_code == 200, reviewed.text
+    final = DecisionRecord.model_validate(reviewed.json())
+    finalized = audit(client, claim["claim_id"])[-1]
+    assert finalized["event_type"] == "FINALIZED"
+    stored = stored_accumulators(engine, claim["member_id"], finalized["payload"])
+    assert final_differences(final, finalized["payload"], stored, case["expected"]["final"]) == []

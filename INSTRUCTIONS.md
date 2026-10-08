@@ -260,6 +260,7 @@ Frozen after task P1.4. Minimum content:
 | `CostBreakdown` | lines, totals |
 | `DecisionRecord` | claim_id, status, rules_outcome, context_refs, slm_output, claim_decision (derived), amounts, review_tier, versions, timestamps |
 | `ReviewAction` | claim_id, reviewer_id, action (ACCEPT / OVERRIDE), line_overrides, reason, timestamp |
+| `LineOverride` | line_no, decision (APPROVE / PEND / DENY), reason (required, not blank), benefit_category (optional; APPROVE only, one of the line's candidate categories; D-REV-4) |
 
 The **claim-level decision is derived by code** from line decisions (§8.5), never produced by the SLM.
 
@@ -419,6 +420,12 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 - On finalization: status → `FINAL_*`, accumulators updated for approved lines, audit event written.
 - Rule-failure claims (`REJECTED`, `DENIED_BY_RULE`, `PENDED_BY_RULE`) are **not** in this queue.
   They are listed read-only in the UI for visibility.
+- An override changes a line's decision, its benefit category, or both (D-REV-4); lines denied by
+  R11–R13 cannot be overridden (D-REV-2). Finalization recomputes the amounts against the stored
+  accumulators under a claim-then-member lock (D-REV-3) and counts the approved lines of every
+  final claim, `FINAL_PENDED` included (D-REV-7), and one visit per date of service of approved
+  lines in a visit-limited category (D-REV-8); a calculation that fails refuses the review
+  (D-REV-5).
 
 ### 8.9 Audit and logging (`app/audit/`, `app/core/logging.py`)
 
@@ -426,11 +433,18 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
   rules_version, model_name, prompt_version, policy_versions, created_at. **Insert only**; no
   update or delete code paths.
 - Event types: `INTAKE_COMPLETED`, `RULES_EVALUATED`, `CONTEXT_ASSEMBLED`, `SLM_RECOMMENDED`,
-  `OUTPUT_INVALID`, `CALCULATED`, `CALCULATION_FAILED`, `EXPLANATION_BUILT`, `REVIEW_ACCEPTED`,
-  `REVIEW_OVERRIDDEN`, `FINALIZED`, `AUTO_OUTCOME`.
+  `OUTPUT_INVALID`, `CALCULATED`, `CALCULATION_FAILED`, `EXPLANATION_BUILT`, `REVIEW_OPENED`,
+  `REVIEW_ACCEPTED`, `REVIEW_OVERRIDDEN`, `FINALIZED`, `AUTO_OUTCOME`.
 - `CALCULATION_FAILED` (P2.4) is written instead of `CALCULATED` when the calculator cannot run
   (for example no fee for an approved line, or out-of-network care on a plan without out-of-network
   terms); the claim then waits for FULL review without amounts.
+- `REVIEW_OPENED` (P5.3, migration 0004) is written when a reviewer opens a claim awaiting review,
+  with the reviewer as actor. `REVIEW_ACCEPTED` / `REVIEW_OVERRIDDEN` carry the reviewer, the
+  action time, the overall reason, each overridden line's reason with its decision and category
+  before and after, and the review time from the acting reviewer's latest `REVIEW_OPENED` (D-REV-6).
+  `FINALIZED` carries the final status and totals, the accumulators and visit usage before and
+  after, whether the amounts changed since review, and the calculator version. Override reasons
+  are free text and stay in the audit trail; logs carry IDs only.
 - Logs (structlog, JSON): IDs, route, duration, versions. **Never** names, addresses, dates of
   birth or clinical notes.
 
@@ -443,8 +457,9 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 | POST | `/v1/claims/{id}/process` | Rules → context → SLM → calculator → explanation; returns `DecisionRecord` |
 | GET | `/v1/claims/{id}` | Decision record + rendered explanation |
 | GET | `/v1/claims/{id}/audit` | Audit events in order |
-| GET | `/v1/review/queue` | Claims awaiting review, optional `tier` filter |
-| POST | `/v1/claims/{id}/review` | `ReviewAction` → final decision |
+| GET | `/v1/review/queue` | Claims awaiting review, optional `tier` filter and `sort` (`tier` or `processed`); reviewer role |
+| POST | `/v1/claims/{id}/review/open` | `{reviewer_id}` → records `REVIEW_OPENED`, the start of the review time (D-REV-6); 409 unless `AWAITING_REVIEW`; reviewer role |
+| POST | `/v1/claims/{id}/review` | `ReviewAction` → finalized `DecisionRecord`; 409 if already final or busy, 422 if refused; reviewer role |
 | GET | `/v1/plans/{plan_id}` | Plan configuration |
 
 Authentication: a simple role header (`provider`, `reviewer`, `admin`) checked by a dependency.

@@ -1,11 +1,15 @@
-"""Helpers for the end-to-end tests: golden cases, fee rows, a stub model and a stub retriever."""
+"""Helpers for the end-to-end tests: golden cases, fee rows, a stub model and a stub retriever, and
+the review helpers (the reviewer role header, the audit trail, the stored accumulators)."""
 
 import json
 from datetime import date
 from pathlib import Path
 from typing import Any
 
-from app.db.models import Claim
+from sqlalchemy import Engine
+from sqlalchemy.orm import Session
+
+from app.db.models import Accumulator, Claim
 from app.domain.contracts import RetrievedCriterion
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden"
@@ -109,3 +113,74 @@ def claim_on_file(row: dict[str, Any]) -> Claim:
         },
         field_confidences={},
     )
+
+
+class CaseRetriever(StubRetriever):
+    """For a line's procedure code, the curated criteria the case's answer cites for that line."""
+
+    def __init__(self, case: dict[str, Any]) -> None:
+        super().__init__()
+        from app.db.curated import load_curated
+
+        curated = load_curated()
+        criteria = curated.criteria()
+        codes = {
+            line["line_no"]: line.get("procedure_code")
+            for line in case["given"]["claim"]["service_lines"]
+        }
+        self.by_code: dict[str, list[RetrievedCriterion]] = {}
+        for line in (case["given"].get("model_answer") or {}).get("lines", []):
+            found = self.by_code.setdefault(codes.get(line["line_no"]), [])
+            for cited in line.get("criteria", []):
+                criterion_id = cited["criterion_id"]
+                policy = curated.policies.get(criterion_id.split(".")[0])
+                if criterion_id in criteria and policy is not None:
+                    found.append(
+                        RetrievedCriterion(
+                            criterion_id=criterion_id,
+                            policy_id=policy.policy_id,
+                            policy_title=policy.title,
+                            text=criteria[criterion_id].text,
+                            source=criteria[criterion_id].source,
+                            effective_date=policy.effective_date,
+                        )
+                    )
+
+    def retrieve(self, query, plan_id, day, procedure_code=None, exclude_policies=()):  # noqa: ANN001, ANN201
+        self.queries.append(query)
+        return list(self.by_code.get(procedure_code, []))
+
+
+def process_case(api, load_case_reference, case_id: str, claim: dict[str, Any] | None = None):  # noqa: ANN001, ANN201
+    """A golden end-to-end case (or a copy of its claim) through intake and processing with the
+    case's stub model and retriever; returns the API client."""
+    case = E2E_CASES[case_id]
+    load_case_reference(case)
+    answer = case["given"].get("model_answer")
+    client = api(StubModel(json.dumps(answer) if answer else "unused"), CaseRetriever(case))
+    claim = claim or case["given"]["claim"]
+    assert client.post("/v1/claims/intake", json=claim).status_code == 201
+    response = client.post(f"/v1/claims/{claim['claim_id']}/process")
+    assert response.status_code == 200, response.text
+    return client
+
+
+# --- Review --------------------------------------------------------------------------------------
+
+REVIEWER = {"X-Role": "reviewer"}
+
+
+def audit(client, claim_id: str) -> list[dict[str, Any]]:  # noqa: ANN001
+    return client.get(f"/v1/claims/{claim_id}/audit").json()
+
+
+def stored_accumulators(engine: Engine, member_id: str) -> dict[str, int] | None:
+    """The member's stored in-network accumulators for benefit year 2026 (None without a row)."""
+    with Session(engine) as session:
+        row = session.get(Accumulator, (member_id, date(2026, 1, 1), "IN_NETWORK"))
+        if row is None:
+            return None
+        return {
+            "deductible_met_cents": row.deductible_met_cents,
+            "oop_met_cents": row.oop_met_cents,
+        }

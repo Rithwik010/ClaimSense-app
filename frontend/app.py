@@ -1,5 +1,6 @@
-"""ClaimSense walking-skeleton page (P1.5): submit a JSON claim, process it, and show the decision
-record and the audit trail. The P5.5 pages replace it.
+"""ClaimSense walking-skeleton page (P1.5): submit a JSON claim, process it, show the decision
+record and the audit trail, and review a claim awaiting review (P5.3: Accept, or one Submit with
+every changed line). The P5.5 pages replace it.
 
 Calls the API over HTTP only; never imports `app` or touches the database (§8.11).
 
@@ -9,7 +10,7 @@ Calls the API over HTTP only; never imports `app` or touches the database (§8.1
 
 import json
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,8 @@ API_URL = os.environ.get("CLAIMSENSE_API_URL", "http://localhost:8000")
 SAMPLE = Path(__file__).parent / "sample_claim.json"
 TIMEOUT_SECONDS = 330.0  # the model call may take minutes on a laptop
 CALCULATION_FAILED = "CALCULATION_FAILED:"  # an output_errors entry from the calculator (P2.4)
+REVIEWER_HEADERS = {"X-Role": "reviewer"}  # the prototype's role header (§8.10)
+DECISIONS = ["APPROVE", "PEND", "DENY"]
 
 
 def dollars(cents: int) -> str:
@@ -68,7 +71,119 @@ def show_health(http: httpx.Client) -> None:
         )
 
 
-def show_claim(http: httpx.Client, claim_id: str) -> None:
+def candidate_categories(record: dict[str, Any]) -> dict[int, list[str]]:
+    context = record["context_refs"]
+    if not context:
+        return {}
+    return {
+        line["line_no"]: [fact["benefit_category"] for fact in line["candidate_benefits"]]
+        for line in context["lines"]
+    }
+
+
+def open_for_review(http: httpx.Client, claim_id: str, reviewer_id: str) -> None:
+    """REVIEW_OPENED once per claim and reviewer in this session: the start of the review time."""
+    opened = st.session_state.setdefault("opened", set())
+    if (claim_id, reviewer_id) in opened:
+        return
+    response = http.post(
+        f"/v1/claims/{claim_id}/review/open",
+        json={"reviewer_id": reviewer_id},
+        headers=REVIEWER_HEADERS,
+    )
+    if response.status_code != 200:
+        show_error(response, "Opening the claim for review")
+        return
+    opened.add((claim_id, reviewer_id))
+
+
+def send_review(
+    http: httpx.Client,
+    claim_id: str,
+    reviewer_id: str,
+    action: str,
+    overrides: list[dict[str, Any]],
+) -> None:
+    body = {
+        "claim_id": claim_id,
+        "reviewer_id": reviewer_id,
+        "action": action,
+        "line_overrides": overrides,
+        "timestamp": datetime.now(UTC).isoformat(),
+    }
+    response = http.post(f"/v1/claims/{claim_id}/review", json=body, headers=REVIEWER_HEADERS)
+    if response.status_code != 200:
+        show_error(response, "Review")
+        return
+    status = response.json()["status"]
+    st.session_state["reviewed"] = f"Claim {claim_id} finalized as {status} by {reviewer_id}."
+    st.rerun()
+
+
+def review_controls(http: httpx.Client, record: dict[str, Any], reviewer_id: str) -> None:
+    """Accept, or Submit every changed line in one OVERRIDE (§8.8). Reviewers never enter amounts.
+    Rule lines are read-only (D-REV-2); a category choice appears only on an APPROVE line with
+    several candidate categories (D-REV-4)."""
+    claim_id = record["claim_id"]
+    candidates = candidate_categories(record)
+    st.markdown("**Review**")
+    overrides: list[dict[str, Any]] = []
+    without_reason: list[int] = []
+    for line in record["line_decisions"]:
+        n = line["line_no"]
+        if line["source"] == "RULE":
+            st.caption(
+                f"Line {n}: {line['decision']} by rule ({', '.join(line['reason_codes'])}); "
+                "rule outcomes are automatic and cannot be overridden."
+            )
+            continue
+        columns = st.columns([1, 1, 2])
+        decision = columns[0].selectbox(
+            f"Line {n} decision",
+            DECISIONS,
+            index=DECISIONS.index(line["decision"]),
+            key=f"decision-{claim_id}-{n}",
+        )
+        category = line["benefit_category"]
+        options = candidates.get(n, [])
+        if decision == "APPROVE" and len(options) > 1:
+            category = columns[1].selectbox(
+                f"Line {n} benefit category",
+                options,
+                index=options.index(category) if category in options else None,
+                placeholder="Choose one",
+                key=f"category-{claim_id}-{n}",
+            )
+        reason = columns[2].text_input(f"Line {n} reason", key=f"reason-{claim_id}-{n}")
+        if decision == line["decision"] and category == line["benefit_category"]:
+            continue
+        override = {"line_no": n, "decision": decision, "reason": reason}
+        if decision == "APPROVE" and len(options) > 1 and category is not None:
+            override["benefit_category"] = category
+        overrides.append(override)
+        if not reason.strip():
+            without_reason.append(n)
+
+    accept, submit = st.columns(2)
+    if accept.button(
+        "Accept",
+        type="primary",
+        disabled=bool(overrides),
+        help="Accept keeps every line as recommended; undo the changed lines to use it.",
+        key=f"accept-{claim_id}",
+    ):
+        send_review(http, claim_id, reviewer_id, "ACCEPT", [])
+    if submit.button("Submit", key=f"submit-{claim_id}"):
+        if not overrides:
+            st.error("Change at least one line's decision or category, or use Accept.")
+        elif without_reason:
+            lines = ", ".join(str(n) for n in without_reason)
+            st.error(f"Each changed line needs a reason (line {lines}).")
+        else:
+            send_review(http, claim_id, reviewer_id, "OVERRIDE", overrides)
+
+
+def show_claim(http: httpx.Client, claim_id: str, reviewer_id: str = "") -> None:
     response = http.get(f"/v1/claims/{claim_id}")
     if response.status_code != 200:
         show_error(response, "Loading the claim")
@@ -79,6 +194,12 @@ def show_claim(http: httpx.Client, claim_id: str) -> None:
     if record is None:
         st.info(f"Status {view['status']}: not processed yet.")
         return
+    if message := st.session_state.pop("reviewed", None):
+        st.success(message)
+    awaiting_review = record["status"] == "AWAITING_REVIEW" and bool(reviewer_id)
+    if awaiting_review:
+        open_for_review(http, claim_id, reviewer_id)
+    events = http.get(f"/v1/claims/{claim_id}/audit").json()
 
     amounts = record["amounts"]
     totals = amounts["totals"] if amounts else None
@@ -168,9 +289,19 @@ def show_claim(http: httpx.Client, claim_id: str) -> None:
         ]
         rows.append({"line": "total"} | {k: dollars(amounts["totals"][v]) for k, v in names})
         st.dataframe(rows, hide_index=True)
+    finalized = next((e for e in reversed(events) if e["event_type"] == "FINALIZED"), None)
+    if finalized and finalized["payload"]["amounts_changed_since_review"]:
+        changed = ", ".join(finalized["payload"]["changed_totals"])
+        st.info(
+            f"The final amounts differ from those shown at review ({changed}): they were "
+            "recomputed at finalization from the final line decisions and the member's "
+            "accumulators at that time."
+        )
+
+    if awaiting_review:
+        review_controls(http, record, reviewer_id)
 
     st.markdown("**Audit trail**")
-    events = http.get(f"/v1/claims/{claim_id}/audit").json()
     st.dataframe(
         [
             {
@@ -204,6 +335,7 @@ def main() -> None:
         "Synthetic data only."
     )
     api_url = st.sidebar.text_input("API URL", API_URL)
+    reviewer_id = st.sidebar.text_input("Reviewer ID", "reviewer-1").strip()
     with httpx.Client(base_url=api_url, timeout=TIMEOUT_SECONDS) as http:
         show_health(http)
 
@@ -231,7 +363,7 @@ def main() -> None:
 
         claim_id = st.text_input("Claim ID", st.session_state.get("claim_id", ""))
         if claim_id:
-            show_claim(http, claim_id.strip())
+            show_claim(http, claim_id.strip(), reviewer_id)
 
 
 if __name__ == "__main__":  # Streamlit runs the page as __main__

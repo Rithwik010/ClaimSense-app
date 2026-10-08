@@ -166,6 +166,46 @@ def test_downgrading_0002_keeps_audited_calculation_failures(db_url: str) -> Non
     assert kept == ["CALCULATION_FAILED"]
 
 
+def test_a_review_opening_can_be_audited(migrated: Engine) -> None:
+    """Migration 0004 (P5.3): REVIEW_OPENED joins the audit event types."""
+    with migrated.begin() as conn:
+        insert_claim(conn, "CLM-TEST-OPEN")
+        conn.execute(
+            text(
+                "INSERT INTO audit_events (claim_id, event_type, actor, payload) "
+                "VALUES ('CLM-TEST-OPEN', 'REVIEW_OPENED', 'reviewer-1', '{}')"
+            )
+        )
+
+
+def test_downgrading_0004_keeps_audited_review_openings(db_url: str) -> None:
+    """Going back to 0003 keeps REVIEW_OPENED rows (append-only); new ones are refused."""
+    config = alembic_config(db_url)
+    command.upgrade(config, "head")
+    engine = create_engine(db_url)
+    insert = text(
+        "INSERT INTO audit_events (claim_id, event_type, actor, payload) "
+        "VALUES ('CLM-TEST-DOWN', 'REVIEW_OPENED', 'reviewer-1', '{}')"
+    )
+    with engine.begin() as conn:
+        insert_claim(conn, "CLM-TEST-DOWN")
+        conn.execute(insert)
+
+    command.downgrade(config, "0003")
+
+    with engine.connect() as conn:
+        kept = conn.execute(text("SELECT event_type FROM audit_events")).scalars().all()
+    with (
+        pytest.raises(DBAPIError, match="ck_audit_events_event_type_allowed"),
+        engine.begin() as conn,
+    ):
+        conn.execute(insert)
+    engine.dispose()
+    command.downgrade(config, "base")
+
+    assert kept == ["REVIEW_OPENED"]
+
+
 def test_claim_status_must_be_a_known_value(migrated: Engine) -> None:
     with pytest.raises(DBAPIError, match="ck_claims_status_allowed"), migrated.begin() as conn:
         conn.execute(
