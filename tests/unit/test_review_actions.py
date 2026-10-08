@@ -21,6 +21,7 @@ from app.domain.contracts import (
     FinalLineDecision,
     LineContext,
     LineDecision,
+    LineRuleOutcome,
     Network,
     ReviewAction,
     RulesOutcome,
@@ -233,9 +234,31 @@ def test_rule_outcomes_cannot_be_overridden() -> None:
 
 def test_a_model_line_with_an_ncci_bypass_flag_can_be_overridden() -> None:
     """NCCI_BYPASS lines pass the rules and the model decides them (D-REV-2)."""
-    final = review_decisions(_record([MODEL_APPROVE]), override({"line_no": 1, "decision": "PEND"}))
+    record = _record([MODEL_APPROVE])
+    record.rules_outcome.line_outcomes.append(
+        LineRuleOutcome(line_no=1, outcome="PASS", flags=["NCCI_BYPASS"])
+    )
 
-    assert final[0].source == "REVIEWER"
+    final = review_decisions(record, override({"line_no": 1, "decision": "PEND"}))
+
+    assert (final[0].decision, final[0].source) == (PEND, "REVIEWER")
+
+
+def test_one_action_overrides_several_lines() -> None:
+    lines = [MODEL_APPROVE, with_category(decision(2, APPROVE), "ENDOSCOPY"), decision(3, PEND)]
+    action = override(
+        {"line_no": 1, "decision": "DENY"},
+        {"line_no": 2, "decision": "APPROVE", "benefit_category": "PREVENTIVE_CARE"},
+    )
+
+    final = review_decisions(_record(lines), action)
+
+    assert [(d.decision, d.benefit_category, d.source) for d in final] == [
+        (DENY, "ADVANCED_IMAGING", "REVIEWER"),
+        (APPROVE, "PREVENTIVE_CARE", "REVIEWER"),
+        (PEND, "ADVANCED_IMAGING", "MODEL"),
+    ]
+    assert final[2].reason_codes == ["PD_MISSING_DOCUMENTATION"]
 
 
 def test_approving_without_a_model_category_takes_the_only_candidate() -> None:
