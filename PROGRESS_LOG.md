@@ -11,7 +11,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 
 ---
 
-## 1. Current status (2026-10-05 IST)
+## 1. Current status (2026-10-09 IST)
 
 | Area | State |
 |---|---|
@@ -28,11 +28,12 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | **Rules engine (P2.3a)** | **v1 rules built (2026-10-03).** R01–R13, duplicates, H5, `RULES_VERSION` 1.0.0. All 90 golden rules cases pass; 0 differences from the generator's rule mirror on all 2,600 dataset records. The pipeline runs it since P2.5, on a database-backed reference. |
 | **Rule tables (P2.1)** | Place of service, procedure codes (20,591), ICD-10-CM FY2027, MUE and NCCI loaded in full with provenance (`reference_sources`). |
 | **Calculator (P2.4)** | Full §8.6 calculator built (2026-10-04); all 56 golden cases and 5,000 random claims pass; the pipeline uses it (`CALCULATOR_VERSION` 1.0.0). |
+| **Human review (P5.3)** | **Done (2026-10-09).** Review queue, open, accept or override, finalization; all 18 golden review cases match their golden finals end to end. Merged into `main` (`7575d36`); CI run 37828554505 passed. |
 | **Raw data** | 63 files listed with size and SHA-256 in `data/raw_manifest.csv`; a test fails on a missing or changed file (D-DATA-1). NCCI part f1 was restored from the original download (2026-10-03) and is read from its `.txt` again; the `.xlsx` fallback stays (SOURCES.md). Regenerating the decision dataset reproduces the v1 fingerprints exactly (checked in G2). |
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
-| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). |
+| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). `p5.3-review-finalization` (P5.3) merged into `main` (`--no-ff`, normal push; merge `7575d36`). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 1,608 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. Without Docker, the database and Qdrant tests are skipped. |
+| Tests | 1,663 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. Without Docker, the database and Qdrant tests are skipped. CI (run 37828554505 on `7575d36`): 1,438 passed, 46 skipped. The 46 need `data/raw/`, the model v1 dataset, the cached embedding model or the opt-in live model; the 180 raw-backed variants of the 90 golden rules cases (file and database references) are not collected without `data/raw/`, while their fixture variants run. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -42,7 +43,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | 2 Rules and calculator | P2.1, P2.2, P2.4, P2.5 | P2.3 (P2.3a v1 rules done and running in the pipeline; P2.3b R14, R15 and the D-RULE-1 rules not started) | |
 | 3 Knowledge and datasets | P3.1, P3.2, P3.3 (coverage_policies collection), P3.4, P3.5 (v2, real retrieval) | | |
 | 4 Model | P4.1, P4.2, P4.3, P4.5 | **P4.4 (measured; below the 0.90 target)** | |
-| 5 Integration | | P5.1 (digital PDF only), P5.2 (context with retrieval), P5.3 (tiers only), P5.5 (skeleton page), P5.6 (golden set written) | P5.4 |
+| 5 Integration | P5.3 | P5.1 (digital PDF only), P5.2 (context with retrieval), P5.5 (skeleton page), P5.6 (golden set written) | P5.4 |
 | 6 Evaluation and demo | | | P6.1, P6.2, P6.3 |
 
 ---
@@ -163,6 +164,9 @@ Kaggle copy for anything model-related.
   GGUF export runs in `/tmp` and keeps only the Q4_K_M file and the `mmproj` file; the dataset mounts
   at `/kaggle/input/datasets/<user>/<slug>/...` and the notebook finds files by search, so keep only
   one `train.py` in the dataset.
+- **Known limitation, `reviewer_id` length (P5.3):** the `ReviewAction` contract sets no maximum,
+  but the audit trail's actor column holds 64 characters, so a longer reviewer ID is refused with
+  422 (no contract change, team decision 2026-10-09).
 - **Base model behaviour:** base `gemma4:e2b` often cites criteria that were not retrieved or skips
   some; output validation turns these into PEND and FULL review. This is what fine-tuning targets.
 
@@ -318,6 +322,19 @@ Kaggle copy for anything model-related.
   - **Pipeline (P2.5):** `RULES_VERSION` 1.0.0; a rule failure is final (REJECTED, DENIED_BY_RULE, PENDED_BY_RULE) with an AUTO_OUTCOME event and every rule result's `fields_used`, and never reaches the model; Group C denials and flags pass through. A JSON claim failing the contract is filed when R01-R03 report every error (errors in INTAKE_COMPLETED) and is then rejected; one without a claim ID, member ID or received date is refused. A date of service before FY2027 (none in any data set, blind review counted by dates only) gets a 503 and stays RECEIVED. R08 now denies out-of-network care on a plan without out-of-network cover before the calculator. The review page handles both intake responses and shows a claim's contract errors (tested against the real API).
   - **All 30 golden end-to-end claims** pass through the pipeline with every expected value unchanged; their database comes from the committed fixtures, extended to the end-to-end claims (D-CI-3), so they run in CI.
   - **Tests:** 1,608 pass, 1 skipped. New decision: D-CI-3.
+
+### 2026-10-09
+
+- 00:29 | Manideep3183 | P5.3 | **Human review actions and finalization (branch `p5.3-review-finalization`, `18363a4`..`f90d876`; merged into `main` as `7575d36`, `--no-ff`, normal push; CI run 37828554505 passed, 1,438 passed and 46 skipped).**
+  - `GET /v1/review/queue`: tier order or oldest first; reviewer role through the `X-Role` header.
+  - `POST /v1/claims/{id}/review/open` and `POST /v1/claims/{id}/review`: ACCEPT, or OVERRIDE with a reason for each line; reviewers never enter amounts.
+  - Lines denied by R11–R13 cannot be overridden (D-REV-2).
+  - Finalization recomputes the amounts against the stored accumulators under a claim-then-member lock (D-REV-3). It updates accumulators and visit usage for approved lines, FINAL_PENDED included (D-REV-7, D-REV-8).
+  - Approved contract change: `LineOverride.benefit_category` (D-REV-4).
+  - A failed calculation refuses the review (D-REV-5). Review time runs from the reviewer's latest REVIEW_OPENED (D-REV-6, on the database clock; migration 0004).
+  - The review page has Accept and Submit, read-only rule lines and a category choice where needed.
+  - **All 18 golden review cases** match their golden finals end to end, covering every final status.
+  - **Tests:** 1,663 pass, 1 skipped. New decisions: D-REV-2 to D-REV-8.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
