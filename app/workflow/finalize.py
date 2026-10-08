@@ -9,14 +9,17 @@ review into a FINAL_* claim, in one transaction.
    review: the cause must be fixed or the line pended (D-REV-5).
 3. The stored accumulators for the claim's network and benefit year become the calculator's
    working accumulators after the claim (approved lines only).
-4. Audit REVIEW_ACCEPTED or REVIEW_OVERRIDDEN, then FINALIZED (final amounts, accumulators before
-   and after, whether the amounts differ from those shown at review, versions).
+   Visit-limited categories gain one visit per distinct date of service of their approved lines
+   (D-REV-8).
+4. Audit REVIEW_ACCEPTED or REVIEW_OVERRIDDEN (with the review time, from the acting reviewer's
+   latest REVIEW_OPENED to the action, D-REV-6), then FINALIZED (final amounts, accumulators and
+   visit usage before and after, whether the amounts differ from those shown at review, versions).
 5. A new decision record version with the review, the final lines and amounts.
 """
 
 from datetime import UTC, date, datetime
 
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -25,7 +28,7 @@ from app.calculator import CALCULATOR_VERSION
 from app.calculator.engine import CalculationError
 from app.core.logging import get_logger
 from app.db import lookups
-from app.db.models import Accumulator, Claim, Member
+from app.db.models import Accumulator, Claim, Member, VisitUsage
 from app.domain.contracts import (
     ClaimStatus,
     CostBreakdown,
@@ -33,8 +36,15 @@ from app.domain.contracts import (
     ReviewAction,
     ReviewActionType,
 )
-from app.review.actions import ReviewRefused, changes, finalization, review_decisions
+from app.review.actions import (
+    ReviewRefused,
+    changes,
+    finalization,
+    review_decisions,
+    visit_counts,
+)
 from app.workflow.pipeline import ClaimNotFound, _calculate, _save, latest_record, load_intake
+from app.workflow.review import REVIEWER_ID_MAX, latest_opening
 from app.workflow.states import InvalidTransition
 
 log = get_logger(__name__)
@@ -61,6 +71,28 @@ def _changed_totals(shown: CostBreakdown | None, final: CostBreakdown) -> list[s
     return sorted(name for name in after if before[name] != after[name])
 
 
+def _count_visits(
+    session: Session, member_id: str, period_start: date, visits: dict[str, int]
+) -> dict[str, dict[str, int]]:
+    """Add the claim's visits to the stored visit usage; each category's count before and after.
+    The table stores counts, not dates: a date already counted by another claim counts again
+    (D-REV-8, a known limitation)."""
+    usage = {}
+    for category, added in visits.items():
+        stored = session.get(VisitUsage, (member_id, period_start, category))
+        if stored is None:
+            stored = VisitUsage(
+                member_id=member_id,
+                period_start=period_start,
+                benefit_category=category,
+                visits_used=0,
+            )
+            session.add(stored)
+        usage[category] = {"before": stored.visits_used, "after": stored.visits_used + added}
+        stored.visits_used += added
+    return usage
+
+
 def finalize_review(session: Session, claim_id: str, action: ReviewAction) -> DecisionRecord:
     session.execute(text(f"SET LOCAL lock_timeout = '{LOCK_TIMEOUT}'"))
     try:
@@ -73,6 +105,9 @@ def finalize_review(session: Session, claim_id: str, action: ReviewAction) -> De
 
 
 def _finalize(session: Session, claim_id: str, action: ReviewAction) -> DecisionRecord:
+    if len(action.reviewer_id) > REVIEWER_ID_MAX:
+        raise ReviewRefused(f"reviewer_id is longer than {REVIEWER_ID_MAX} characters")
+    acted = session.scalar(select(func.now()))  # the action, on the database clock
     row = _lock_claim(session, claim_id)
     if row is None:
         raise ClaimNotFound(f"claim {claim_id} not found")
@@ -113,8 +148,13 @@ def _finalize(session: Session, claim_id: str, action: ReviewAction) -> Decision
             session.add(stored)
         stored.deductible_met_cents = after.deductible_met_cents
         stored.oop_met_cents = after.oop_met_cents
+    dates = {line.line_no: line.date_of_service for line in intake.claim.service_lines}
+    visit_usage = _count_visits(
+        session, row.member_id, period_start, visit_counts(record, decisions, dates)
+    )
 
     reviewer = action.reviewer_id
+    opened = latest_opening(session, claim_id, reviewer, acted)
     event = (
         EventType.REVIEW_ACCEPTED
         if action.action is ReviewActionType.ACCEPT
@@ -129,6 +169,8 @@ def _finalize(session: Session, claim_id: str, action: ReviewAction) -> Decision
             "timestamp": action.timestamp.isoformat(),
             "reason": action.reason,
             "changes": changes(record, action, decisions),
+            "opened_at": opened.isoformat() if opened else None,
+            "review_seconds": int((acted - opened).total_seconds()) if opened else None,
         },
         record.versions,
         actor=reviewer,
@@ -154,6 +196,7 @@ def _finalize(session: Session, claim_id: str, action: ReviewAction) -> Decision
                 else {"deductible_met_cents": before[0], "oop_met_cents": before[1]},
             },
             "accumulators_updated": outcome.accumulators_updated,
+            "visit_usage": visit_usage,
             "amounts_changed_since_review": bool(changed),
             "changed_totals": changed,
             "calculator_version": CALCULATOR_VERSION,

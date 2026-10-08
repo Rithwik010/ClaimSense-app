@@ -12,9 +12,12 @@ ReviewAction to the final line decisions and final status. Pure functions; the w
   FINAL_DENIED, all APPROVE -> FINAL_APPROVED, APPROVE and DENY -> FINAL_PARTIAL.
 - Approved lines count toward the stored accumulators at finalization, FINAL_PENDED included
   (D-REV-7); pended and denied lines carry no amounts and change nothing.
+- Approved lines in a visit-limited benefit category add one visit per distinct date of service
+  (D-REV-8), FINAL_PENDED included.
 """
 
 from dataclasses import dataclass
+from datetime import date
 
 from app.calculator.engine import Accumulators, CalculationResult
 from app.domain.contracts import (
@@ -125,6 +128,26 @@ def changes(
         }
         for override in action.line_overrides
     ]
+
+
+def visit_counts(
+    record: DecisionRecord, decisions: list[FinalLineDecision], dates: dict[int, date]
+) -> dict[str, int]:
+    """The visits the claim adds to each visit-limited benefit category (D-REV-8): one per distinct
+    date of service among the approved lines in that category. Pended and denied lines add none.
+    The limits are the ones context assembly gave the model."""
+    lines = record.context_refs.lines if record.context_refs else []
+    limited = {
+        fact.benefit_category
+        for line in lines
+        for fact in line.candidate_benefits
+        if fact.visit_limit is not None
+    }
+    days: dict[str, set[date]] = {}
+    for line in decisions:
+        if line.decision is LineDecision.APPROVE and line.benefit_category in limited:
+            days.setdefault(line.benefit_category, set()).add(dates[line.line_no])
+    return {category: len(found) for category, found in sorted(days.items())}
 
 
 @dataclass(frozen=True)

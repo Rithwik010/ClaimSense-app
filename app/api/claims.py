@@ -1,15 +1,16 @@
-"""Claim endpoints (INSTRUCTIONS.md §8.10): JSON intake, processing, the decision record and the
-audit trail. A JSON claim that fails the contract is still filed when rules R01 to R03 report every
-error (A-R8); processing then rejects it (P2.5).
+"""Claim endpoints (INSTRUCTIONS.md §8.10): JSON intake, processing, review (P5.3), the decision
+record and the audit trail. A JSON claim that fails the contract is still filed when rules R01 to
+R03 report every error (A-R8); processing then rejects it (P2.5). The review endpoints need the
+reviewer role (X-Role header); the others do not check roles yet (P5.5).
 
-Not yet: file upload (P5.1), the rendered explanation (P5.4), review (P5.3) and the role header.
+Not yet: file upload (P5.1) and the rendered explanation (P5.4).
 """
 
 from datetime import datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 from sqlalchemy.orm import Session
 
 from app.api.deps import ReviewerRole, get_decision_model, get_retriever, get_session
@@ -38,6 +39,7 @@ from app.workflow.pipeline import (
     load_intake,
     process_claim,
 )
+from app.workflow.review import REVIEWER_ID_MAX, open_review
 from app.workflow.states import InvalidTransition
 
 router = APIRouter(prefix="/v1/claims", tags=["claims"])
@@ -73,6 +75,18 @@ class AuditEventView(BaseModel):
     prompt_version: str | None
     policy_versions: dict[str, Any] | None
     created_at: datetime
+
+
+class ReviewOpen(BaseModel):
+    reviewer_id: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=REVIEWER_ID_MAX)
+    ]
+
+
+class ReviewOpened(BaseModel):
+    claim_id: str
+    reviewer_id: str
+    opened: datetime
 
 
 def _claim_row(session: Session, claim_id: str) -> Claim:
@@ -125,6 +139,21 @@ def process(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     except (ModelUnavailable, RetrievalUnavailable, ReferenceDataUnavailable) as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+
+
+@router.post("/{claim_id}/review/open")
+def open_for_review(
+    claim_id: str, body: ReviewOpen, session: SessionDep, _role: ReviewerRole
+) -> ReviewOpened:
+    """A reviewer opens a claim awaiting review (REVIEW_OPENED): their review time runs from their
+    latest opening to their action (D-REV-6)."""
+    try:
+        opened = open_review(session, claim_id, body.reviewer_id)
+    except ClaimNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    except InvalidTransition as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    return ReviewOpened(claim_id=claim_id, reviewer_id=body.reviewer_id, opened=opened)
 
 
 @router.post("/{claim_id}/review")

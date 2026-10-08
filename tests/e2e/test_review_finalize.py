@@ -16,7 +16,7 @@ import pytest
 from sqlalchemy import Engine, delete, text
 from sqlalchemy.orm import Session
 
-from app.db.models import FeeScheduleEntry
+from app.db.models import FeeScheduleEntry, VisitUsage
 from app.domain.contracts import ReviewAction
 from app.workflow import finalize
 from app.workflow.finalize import finalize_review
@@ -71,8 +71,37 @@ def test_accept_finalizes_the_claim_with_amounts_accumulators_and_audit(
     assert finalized["status"] == "FINAL_APPROVED" and finalized["accumulators_updated"]
     assert finalized["accumulators"]["after"] == expected_after
     assert finalized["amounts_changed_since_review"] is False
+    assert finalized["visit_usage"] == {}  # office visits have no visit limit
+    accepted = events[-2]["payload"]
+    assert (accepted["opened_at"], accepted["review_seconds"]) == (None, None)  # never opened
     assert finalized["calculator_version"] and events[-1]["rules_version"] == "1.0.0"
     assert client.get("/v1/claims/CLM-E2E-14").json()["record"] == record
+
+
+def visits_used(engine: Engine, member_id: str, category: str) -> int:
+    with Session(engine) as session:
+        row = session.get(VisitUsage, (member_id, date(2026, 1, 1), category))
+        return row.visits_used if row else 0
+
+
+def test_finalization_counts_a_therapy_session_as_one_visit(
+    api, load_case_reference, engine: Engine
+) -> None:  # noqa: ANN001
+    """E2E-22: two therapy codes on one date, line 1 approved and line 2 denied by a rule (MUE):
+    one visit (D-REV-8)."""
+    case = E2E_CASES["E2E-22"]
+    member = case["given"]["claim"]["member_id"]
+    client = process_case(api, load_case_reference, "E2E-22")
+    before = visits_used(engine, member, "REHAB_THERAPY")
+
+    response = client.post(
+        "/v1/claims/CLM-E2E-22/review", json=case["given"]["review_action"], headers=REVIEWER
+    )
+
+    assert response.status_code == 200, response.text
+    assert visits_used(engine, member, "REHAB_THERAPY") == before + 1
+    finalized = audit(client, "CLM-E2E-22")[-1]["payload"]
+    assert finalized["visit_usage"] == {"REHAB_THERAPY": {"before": before, "after": before + 1}}
 
 
 def test_review_errors(api, load_case_reference) -> None:  # noqa: ANN001

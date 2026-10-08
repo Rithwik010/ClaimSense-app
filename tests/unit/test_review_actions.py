@@ -27,7 +27,13 @@ from app.domain.contracts import (
     Timestamps,
     Versions,
 )
-from app.review.actions import ReviewRefused, changes, finalization, review_decisions
+from app.review.actions import (
+    ReviewRefused,
+    changes,
+    finalization,
+    review_decisions,
+    visit_counts,
+)
 
 APPROVE, DENY, PEND = LineDecision.APPROVE, LineDecision.DENY, LineDecision.PEND
 TERMS = NetworkTerms(deductible_cents=50000, coinsurance_bps=2000, oop_max_cents=300000)
@@ -107,12 +113,12 @@ def test_no_approved_line_changes_no_accumulator() -> None:
     assert outcome.accumulators_after == before
 
 
-def _fact(category: str) -> BenefitFact:
+def _fact(category: str, visit_limit: int | None = None) -> BenefitFact:
     return BenefitFact(
         benefit_category=category,
         covered=True,
         auth_required=False,
-        visit_limit=None,
+        visit_limit=visit_limit,
         visits_used=0,
         cost_share_rule=CostShareRule.DEDUCTIBLE_COINSURANCE,
     )
@@ -122,7 +128,11 @@ def _fact(category: str) -> BenefitFact:
 CANDIDATES = {1: ["ADVANCED_IMAGING"], 2: ["ENDOSCOPY", "PREVENTIVE_CARE"], 3: ["ADVANCED_IMAGING"]}
 
 
-def _record(decisions: list[FinalLineDecision]) -> DecisionRecord:
+def _record(
+    decisions: list[FinalLineDecision],
+    candidates: dict[int, list[str]] = CANDIDATES,
+    limits: dict[str, int] | None = None,
+) -> DecisionRecord:
     return DecisionRecord(
         claim_id="CLM-1",
         status=ClaimStatus.AWAITING_REVIEW,
@@ -137,10 +147,10 @@ def _record(decisions: list[FinalLineDecision]) -> DecisionRecord:
                 LineContext(
                     line_no=n,
                     procedure_code="45378" if n == 2 else "70551",
-                    candidate_benefits=[_fact(c) for c in categories],
+                    candidate_benefits=[_fact(c, (limits or {}).get(c)) for c in categories],
                     criteria=[],
                 )
-                for n, categories in CANDIDATES.items()
+                for n, categories in candidates.items()
             ],
         ),
         line_decisions=decisions,
@@ -327,3 +337,34 @@ def test_the_audit_changes_hold_before_after_and_reason() -> None:
             },
         }
     ]
+
+
+# --- Visits --------------------------------------------------------------------------------------
+
+THERAPY = "REHAB_THERAPY"
+OCT_16, OCT_17, OCT_18 = date(2026, 10, 16), date(2026, 10, 17), date(2026, 10, 18)
+
+
+def therapy(line_no: int, value: LineDecision) -> FinalLineDecision:
+    return with_category(decision(line_no, value), THERAPY)
+
+
+def test_visits_count_one_per_date_of_service_of_approved_lines() -> None:
+    """D-REV-8: two codes on one date are one visit, two dates two visits, and a denied line on a
+    third date no visit."""
+    record = _record([], {n: [THERAPY] for n in (1, 2, 3, 4)}, {THERAPY: 30})
+    lines = [therapy(1, APPROVE), therapy(2, APPROVE), therapy(3, APPROVE), therapy(4, DENY)]
+    dates = {1: OCT_16, 2: OCT_16, 3: OCT_17, 4: OCT_18}
+
+    assert visit_counts(record, lines[:2], dates) == {THERAPY: 1}
+    assert visit_counts(record, lines[:3], dates) == {THERAPY: 2}
+    assert visit_counts(record, lines, dates) == {THERAPY: 2}
+
+
+def test_a_pended_claim_counts_the_visits_of_its_approved_lines_only() -> None:
+    record = _record([], {1: [THERAPY], 2: [THERAPY], 3: ["ADVANCED_IMAGING"]}, {THERAPY: 30})
+    lines = [therapy(1, APPROVE), therapy(2, PEND), decision(3, APPROVE)]
+
+    found = visit_counts(record, lines, {1: OCT_16, 2: OCT_17, 3: OCT_18})
+
+    assert found == {THERAPY: 1}  # the pended line adds none; imaging has no visit limit
