@@ -145,3 +145,17 @@ class CaseRetriever(StubRetriever):
     def retrieve(self, query, plan_id, day, procedure_code=None, exclude_policies=()):  # noqa: ANN001, ANN201
         self.queries.append(query)
         return list(self.by_code.get(procedure_code, []))
+
+
+def process_case(api, load_case_reference, case_id: str, claim: dict[str, Any] | None = None):  # noqa: ANN001, ANN201
+    """A golden end-to-end case (or a copy of its claim) through intake and processing with the
+    case's stub model and retriever; returns the API client."""
+    case = E2E_CASES[case_id]
+    load_case_reference(case)
+    answer = case["given"].get("model_answer")
+    client = api(StubModel(json.dumps(answer) if answer else "unused"), CaseRetriever(case))
+    claim = claim or case["given"]["claim"]
+    assert client.post("/v1/claims/intake", json=claim).status_code == 201
+    response = client.post(f"/v1/claims/{claim['claim_id']}/process")
+    assert response.status_code == 200, response.text
+    return client

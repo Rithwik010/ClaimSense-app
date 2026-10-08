@@ -12,7 +12,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_decision_model, get_retriever, get_session
+from app.api.deps import ReviewerRole, get_decision_model, get_retriever, get_session
 from app.audit.events import list_events
 from app.core.settings import Settings, get_settings
 from app.db.models import Claim
@@ -20,10 +20,13 @@ from app.domain.contracts import (
     ClaimStatus,
     DecisionRecord,
     IntakeResult,
+    ReviewAction,
     SourceFormat,
 )
 from app.ml.client import DecisionModel, ModelUnavailable
 from app.rag.retrieve import RetrievalUnavailable, Retriever
+from app.review.actions import ReviewRefused
+from app.workflow.finalize import ReviewBusy, finalize_review
 from app.workflow.pipeline import (
     ClaimNotFound,
     DuplicateClaim,
@@ -122,6 +125,22 @@ def process(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     except (ModelUnavailable, RetrievalUnavailable, ReferenceDataUnavailable) as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+
+
+@router.post("/{claim_id}/review")
+def review(
+    claim_id: str, action: ReviewAction, session: SessionDep, _role: ReviewerRole
+) -> DecisionRecord:
+    """A reviewer's ACCEPT or OVERRIDE (§8.8); returns the finalized decision record. Reviewers
+    never enter amounts: the calculator recomputes them against the stored accumulators."""
+    try:
+        return finalize_review(session, claim_id, action)
+    except ClaimNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    except (InvalidTransition, ReviewBusy) as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except ReviewRefused as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
 
 @router.get("/{claim_id}")

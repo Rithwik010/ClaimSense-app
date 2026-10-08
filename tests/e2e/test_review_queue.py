@@ -3,29 +3,18 @@
 Golden end-to-end claims of every tier go through intake and processing: E2E-14 (QUICK), E2E-16
 (STANDARD), E2E-19 (FULL) and E2E-05 (DENIED_BY_RULE, never in the queue)."""
 
-import json
 from typing import Any
 
 from fastapi.testclient import TestClient
 
-from tests.e2e.support import E2E_CASES, CaseRetriever, StubModel
+from tests.e2e.support import E2E_CASES, StubModel, process_case
 
 REVIEWER = {"X-Role": "reviewer"}
 
 
 def process_cases(api, load_case_reference, case_ids: list[str]) -> TestClient:  # noqa: ANN001
-    """Each case through intake and processing with its own stub model; returns the last client."""
-    client = None
-    for case_id in case_ids:
-        case = E2E_CASES[case_id]
-        load_case_reference(case)
-        answer = case["given"].get("model_answer")
-        client = api(StubModel(json.dumps(answer) if answer else "unused"), CaseRetriever(case))
-        claim = case["given"]["claim"]
-        assert client.post("/v1/claims/intake", json=claim).status_code == 201
-        assert client.post(f"/v1/claims/{claim['claim_id']}/process").status_code == 200
-    assert client is not None
-    return client
+    """Each case through intake and processing; returns the last client."""
+    return [process_case(api, load_case_reference, case_id) for case_id in case_ids][-1]
 
 
 def queue(client: TestClient, **params: Any) -> list[dict[str, Any]]:
