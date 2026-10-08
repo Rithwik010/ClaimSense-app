@@ -109,3 +109,39 @@ def claim_on_file(row: dict[str, Any]) -> Claim:
         },
         field_confidences={},
     )
+
+
+class CaseRetriever(StubRetriever):
+    """For a line's procedure code, the curated criteria the case's answer cites for that line."""
+
+    def __init__(self, case: dict[str, Any]) -> None:
+        super().__init__()
+        from app.db.curated import load_curated
+
+        curated = load_curated()
+        criteria = curated.criteria()
+        codes = {
+            line["line_no"]: line.get("procedure_code")
+            for line in case["given"]["claim"]["service_lines"]
+        }
+        self.by_code: dict[str, list[RetrievedCriterion]] = {}
+        for line in (case["given"].get("model_answer") or {}).get("lines", []):
+            found = self.by_code.setdefault(codes.get(line["line_no"]), [])
+            for cited in line.get("criteria", []):
+                criterion_id = cited["criterion_id"]
+                policy = curated.policies.get(criterion_id.split(".")[0])
+                if criterion_id in criteria and policy is not None:
+                    found.append(
+                        RetrievedCriterion(
+                            criterion_id=criterion_id,
+                            policy_id=policy.policy_id,
+                            policy_title=policy.title,
+                            text=criteria[criterion_id].text,
+                            source=criteria[criterion_id].source,
+                            effective_date=policy.effective_date,
+                        )
+                    )
+
+    def retrieve(self, query, plan_id, day, procedure_code=None, exclude_policies=()):  # noqa: ANN001, ANN201
+        self.queries.append(query)
+        return list(self.by_code.get(procedure_code, []))

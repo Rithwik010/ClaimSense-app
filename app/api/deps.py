@@ -1,10 +1,11 @@
 """Request dependencies. Tests override `get_engine`, `get_decision_model` and `get_retriever`."""
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from enum import StrEnum
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
@@ -38,3 +39,26 @@ def get_retriever() -> Retriever:
         top_k=settings.rag_top_k,
         min_score=settings.rag_min_score,
     )
+
+
+class Role(StrEnum):
+    """The roles of the prototype's role header (§8.10); not authentication."""
+
+    PROVIDER = "provider"
+    REVIEWER = "reviewer"
+    ADMIN = "admin"
+
+
+def require_role(*allowed: Role) -> Callable[..., Role]:
+    """A dependency admitting only the given roles, from the X-Role header (403 otherwise)."""
+    names = ", ".join(role.value for role in allowed)
+
+    def check(x_role: Annotated[str | None, Header()] = None) -> Role:
+        if x_role not in {role.value for role in allowed}:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, f"needs the X-Role header: {names}")
+        return Role(x_role)
+
+    return check
+
+
+ReviewerRole = Annotated[Role, Depends(require_role(Role.REVIEWER, Role.ADMIN))]
