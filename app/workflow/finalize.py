@@ -6,7 +6,7 @@ review into a FINAL_* claim, in one transaction.
    member has no accumulator row yet). A lock not granted within LOCK_TIMEOUT is ReviewBusy.
 2. The final line decisions (app/review/actions.py) and the amounts, recomputed by the calculator
    against the stored accumulators read under the lock. A calculation that fails refuses the
-   review: the cause must be fixed or the line pended (D-REV).
+   review: the cause must be fixed or the line pended (D-REV-5).
 3. The stored accumulators for the claim's network and benefit year become the calculator's
    working accumulators after the claim (approved lines only).
 4. Audit REVIEW_ACCEPTED or REVIEW_OVERRIDDEN, then FINALIZED (final amounts, accumulators before
@@ -33,7 +33,7 @@ from app.domain.contracts import (
     ReviewAction,
     ReviewActionType,
 )
-from app.review.actions import ReviewRefused, finalization, review_decisions
+from app.review.actions import ReviewRefused, changes, finalization, review_decisions
 from app.workflow.pipeline import ClaimNotFound, _calculate, _save, latest_record, load_intake
 from app.workflow.states import InvalidTransition
 
@@ -128,7 +128,7 @@ def _finalize(session: Session, claim_id: str, action: ReviewAction) -> Decision
             "reviewer_id": reviewer,
             "timestamp": action.timestamp.isoformat(),
             "reason": action.reason,
-            "changes": [],
+            "changes": changes(record, action, decisions),
         },
         record.versions,
         actor=reviewer,

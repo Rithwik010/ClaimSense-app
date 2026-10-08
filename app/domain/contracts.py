@@ -381,6 +381,9 @@ class LineOverride(Contract):
     line_no: Annotated[int, Field(ge=1)]
     decision: LineDecision
     reason: NonBlank
+    # D-REV-4 (approved change, 2026-10-08): the benefit category for an APPROVE override, one of
+    # the line's candidate categories; checked by app/review/actions.py.
+    benefit_category: BenefitCategory | None = None
 
 
 class ReviewAction(Contract):

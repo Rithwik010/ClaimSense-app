@@ -16,14 +16,20 @@ import pytest
 from sqlalchemy import Engine, delete, text
 from sqlalchemy.orm import Session
 
-from app.db.models import Accumulator, FeeScheduleEntry
+from app.db.models import FeeScheduleEntry
 from app.domain.contracts import ReviewAction
 from app.workflow import finalize
 from app.workflow.finalize import finalize_review
 from app.workflow.states import InvalidTransition
-from tests.e2e.support import E2E_CASES, CaseRetriever, StubModel, process_case
-
-REVIEWER = {"X-Role": "reviewer"}
+from tests.e2e.support import (
+    E2E_CASES,
+    REVIEWER,
+    CaseRetriever,
+    StubModel,
+    audit,
+    process_case,
+    stored_accumulators,
+)
 
 
 def accept(claim_id: str, reviewer: str = "reviewer-1") -> dict[str, Any]:
@@ -35,19 +41,6 @@ def accept(claim_id: str, reviewer: str = "reviewer-1") -> dict[str, Any]:
         "reason": None,
         "timestamp": datetime.now(UTC).isoformat(),
     }
-
-
-def audit(client, claim_id: str) -> list[dict[str, Any]]:  # noqa: ANN001
-    return client.get(f"/v1/claims/{claim_id}/audit").json()
-
-
-def stored_accumulators(engine: Engine, member_id: str) -> dict[str, int]:
-    with Session(engine) as session:
-        row = session.get(Accumulator, (member_id, date(2026, 1, 1), "IN_NETWORK"))
-        return {
-            "deductible_met_cents": row.deductible_met_cents,
-            "oop_met_cents": row.oop_met_cents,
-        }
 
 
 def test_accept_finalizes_the_claim_with_amounts_accumulators_and_audit(

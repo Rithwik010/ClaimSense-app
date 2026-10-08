@@ -1,11 +1,15 @@
-"""Helpers for the end-to-end tests: golden cases, fee rows, a stub model and a stub retriever."""
+"""Helpers for the end-to-end tests: golden cases, fee rows, a stub model and a stub retriever, and
+the review helpers (the reviewer role header, the audit trail, the stored accumulators)."""
 
 import json
 from datetime import date
 from pathlib import Path
 from typing import Any
 
-from app.db.models import Claim
+from sqlalchemy import Engine
+from sqlalchemy.orm import Session
+
+from app.db.models import Accumulator, Claim
 from app.domain.contracts import RetrievedCriterion
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden"
@@ -159,3 +163,24 @@ def process_case(api, load_case_reference, case_id: str, claim: dict[str, Any] |
     response = client.post(f"/v1/claims/{claim['claim_id']}/process")
     assert response.status_code == 200, response.text
     return client
+
+
+# --- Review --------------------------------------------------------------------------------------
+
+REVIEWER = {"X-Role": "reviewer"}
+
+
+def audit(client, claim_id: str) -> list[dict[str, Any]]:  # noqa: ANN001
+    return client.get(f"/v1/claims/{claim_id}/audit").json()
+
+
+def stored_accumulators(engine: Engine, member_id: str) -> dict[str, int] | None:
+    """The member's stored in-network accumulators for benefit year 2026 (None without a row)."""
+    with Session(engine) as session:
+        row = session.get(Accumulator, (member_id, date(2026, 1, 1), "IN_NETWORK"))
+        if row is None:
+            return None
+        return {
+            "deductible_met_cents": row.deductible_met_cents,
+            "oop_met_cents": row.oop_met_cents,
+        }

@@ -260,6 +260,7 @@ Frozen after task P1.4. Minimum content:
 | `CostBreakdown` | lines, totals |
 | `DecisionRecord` | claim_id, status, rules_outcome, context_refs, slm_output, claim_decision (derived), amounts, review_tier, versions, timestamps |
 | `ReviewAction` | claim_id, reviewer_id, action (ACCEPT / OVERRIDE), line_overrides, reason, timestamp |
+| `LineOverride` | line_no, decision (APPROVE / PEND / DENY), reason (required, not blank), benefit_category (optional; APPROVE only, one of the line's candidate categories; D-REV-4) |
 
 The **claim-level decision is derived by code** from line decisions (§8.5), never produced by the SLM.
 
@@ -419,6 +420,11 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 - On finalization: status → `FINAL_*`, accumulators updated for approved lines, audit event written.
 - Rule-failure claims (`REJECTED`, `DENIED_BY_RULE`, `PENDED_BY_RULE`) are **not** in this queue.
   They are listed read-only in the UI for visibility.
+- An override changes a line's decision, its benefit category, or both (D-REV-4); lines denied by
+  R11–R13 cannot be overridden (D-REV-2). Finalization recomputes the amounts against the stored
+  accumulators under a claim-then-member lock (D-REV-3) and counts the approved lines of every
+  final claim, `FINAL_PENDED` included (D-REV-7); a calculation that fails refuses the review
+  (D-REV-5).
 
 ### 8.9 Audit and logging (`app/audit/`, `app/core/logging.py`)
 

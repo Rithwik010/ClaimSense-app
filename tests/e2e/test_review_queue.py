@@ -7,9 +7,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from tests.e2e.support import E2E_CASES, StubModel, process_case
-
-REVIEWER = {"X-Role": "reviewer"}
+from tests.e2e.support import E2E_CASES, REVIEWER, StubModel, process_case
 
 
 def process_cases(api, load_case_reference, case_ids: list[str]) -> TestClient:  # noqa: ANN001
