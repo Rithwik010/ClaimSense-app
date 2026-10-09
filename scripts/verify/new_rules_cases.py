@@ -171,6 +171,24 @@ DRAFTS: tuple[Draft, ...] = (
         ),
         (L33906,),
     ),
+    Draft(
+        "R14-06",
+        "R14_multiple_blocks.json",
+        "A denied ESI takes its add-on level with it",
+        ("R14",),
+        PAIN,
+        ("M5416", "M47816"),
+        (L("64483", "A"), L("64484", "A"), L("64493", "B")),
+        ("DENY DN_MULTIPLE_BLOCKS", "DENY DN_MULTIPLE_BLOCKS", "PASS"),
+        (
+            "64493 is a facet joint injection on the same date as the ESI 64483 -> R14 denies "
+            "line 1.",
+            "Line 2 64484 is the add-on of the denied 64483 on that date -> denied with it, same "
+            "reason (D-RULE-7). The facet line 3 passes.",
+            "R18: 64483 + 64484 = 2 levels -> within the limit.",
+        ),
+        (L33906, "D-RULE-7"),
+    ),
     # --- R15: the line's diagnoses against the billing article (D-RULE-4) ---
     Draft(
         "R15-01",
@@ -371,22 +389,21 @@ DRAFTS: tuple[Draft, ...] = (
     Draft(
         "R18-04",
         "R18_esi_levels.json",
-        "Bilateral two levels billed as right and left lines",
-        ("R12", "R18"),
+        "Bilateral first level, second level on each side",
+        ("R18",),
         PAIN,
         ("M5416",),
         (
-            L("64483", modifiers=("RT",)),
+            L("64483", modifiers=("50",)),
             L("64484", modifiers=("RT",)),
-            L("64483", modifiers=("LT",)),
             L("64484", modifiers=("LT",)),
         ),
-        ("DENY DN_MUE_EXCEEDED", "PASS", "DENY DN_MUE_EXCEEDED", "PASS"),
+        ("PASS", "PASS", "PASS"),
         (
-            "R18: right 64483 1 + 64484 1 = 2; left 2; the larger side is 2 -> no ESI level is "
-            "denied (bilateral does not count twice).",
-            "R12: 64483 units on the date 1 + 1 = 2 > MUE 1 -> both 64483 lines denied (A-R4); "
-            "64484 units 2 <= MUE 4.",
+            "R18 per side: 64483-50 counts on both sides; right 1 + 64484-RT 1 = 2, left 1 + "
+            "64484-LT 1 = 2 -> within 2 on each side, nothing denied (a plain sum of units, 3, "
+            "would deny).",
+            "R12: 64483 1 unit <= MUE 1; 64484 1 + 1 = 2 units <= MUE 4.",
         ),
         ("L33906 cov-032",),
     ),
@@ -850,6 +867,8 @@ the claim; limits worded "usually"/"rarely" or with a documented exception give 
   denervation (64633-64636), the same code on another line. Exception: a facet injection whose own
   diagnoses include a facet synovial cyst code (M71.30, M71.38) is not a block. Only ESI lines are
   denied; when two ESI codes meet, both are. Every billed line counts, even one another rule denies.
+  A denied ESI's own add-on lines on the same date (64480 with 64479, 64484 with 64483) are denied
+  with it, DN_MULTIPLE_BLOCKS (D-RULE-7).
 - R15 (billing articles): a line's own diagnoses (its pointers) must meet one of its code's
   alternatives; codes with no article are not checked. A group is met when one of the line's
   diagnoses is in it. 66982: group 1 only. Colonoscopy (45378, 45380, 45385): group 1, or the line's
@@ -921,7 +940,7 @@ def build_sheet(
         "Every claim below passes Groups A and B (eligibility, provider, filing, network, "
         "referral and authorization are in order); only Group C decides.",
         "",
-        "## Rule text (D-RULE-2 to D-RULE-4)",
+        "## Rule text (D-RULE-2 to D-RULE-4, D-RULE-7)",
         "",
         RULE_TEXT,
         "",
@@ -992,6 +1011,13 @@ def e2e_sheet(cases: Mapping[str, Mapping[str, Any]], tables: V1Tables, lookups:
         ]
         if answer:
             out += ["", f"Model complexity: {answer.get('complexity')}."]
+        if case_id == "E2E-32":
+            out += [
+                "",
+                "E2E-32 is a new case. Its amounts and accumulators equal E2E-23's already "
+                "verified values (same plan, member, fees and approved line); only the rule "
+                "outcome and the decisions are asked here.",
+            ]
         out += ["", "Facts: " + "; ".join(facts(case, tables, lookups)) + ".", ""]
         out += [
             "Rules claim outcome: ____ | Status after processing: ____",

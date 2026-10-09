@@ -73,6 +73,16 @@ GROUP_1_ONLY = {"66982"}  # A56544: group 2 is reported "if applicable" (Q6)
 CARPAL_TUNNEL = {"G5600", "G5601", "G5602", "G5603"}  # the L34594 exception (report only)
 SYNOVIAL_CYST = {"M7130", "M7138"}  # M71.3 other bursal cyst, covered by A57787 (to confirm)
 FOOT_CLASS_MODIFIERS = {"Q7", "Q8", "Q9"}  # A57188 group 2 "only with modifier Q7, Q8, or Q9"
+ADDON_PRIMARIES = {  # add-on code -> its primary codes (PFS global ZZZ; CPT descriptor, not copied)
+    "96131": {"96130"},
+    "95886": NERVE_CONDUCTION,
+    "64480": {"64479"},
+    "64484": {"64483"},
+    "64491": {"64490"},
+    "64494": {"64493"},
+    "64634": {"64633"},
+    "64636": {"64635"},
+}
 VEINS = {"36475", "36478", "37765"}  # SURG-003.F4: ablation and stab phlebectomy
 IMAGING = {"70450", "70551", "70553", "72141"}  # IMG-001.F2: the in-scope imaging codes
 D_GOLD_1 = {"R11-02", "R11-03", "R11-07", "R11-08", "X-02"}  # their L97419 becomes REPLACEMENT
@@ -192,8 +202,9 @@ def check_r15(lines: list[Line], lookups: Lookups, exact: bool = True) -> list[H
 def check_r14(lines: list[Line]) -> list[Hit]:
     """An ESI line is denied when another block (another ESI code or a facet joint injection) is
     billed on the same date; add-on codes, radiofrequency denervation and the same code on another
-    line (bilateral use) are not other blocks; a facet line for a synovial cyst is the exception."""
-    hits = []
+    line (bilateral use) are not other blocks; a facet line for a synovial cyst is the exception.
+    The denied ESI's own add-on lines on that date are denied with it (D-RULE-7)."""
+    hits: list[Hit] = []
     for x in lines:
         if x.code not in ESI:
             continue
@@ -217,6 +228,19 @@ def check_r14(lines: list[Line]) -> list[Hit]:
                     f"{x.code} with {[y.code for y in blocking]} on {x.day}",
                 )
             )
+            addon = TRANSFORAMINAL.get(x.code)
+            for y in same_day:
+                if y.code == addon and all(h.line_no != y.line_no for h in hits):
+                    hits.append(
+                        Hit(
+                            "R14",
+                            y.line_no,
+                            "DENY",
+                            "DN_MULTIPLE_BLOCKS",
+                            fields + _day_fields([y], "procedure_code", "date_of_service"),
+                            f"{y.code}: add-on of the denied {x.code}",
+                        )
+                    )
     return hits
 
 
@@ -666,6 +690,27 @@ def main() -> None:
         "(contradict L34594 cov-037; D-RULE-6): "
         + ", ".join(f"{k} {n}" for k, n in sorted(contradicting.items()))
         + f" (total {sum(contradicting.values())})",
+    ]
+
+    orphans: Counter[str] = Counter()
+    for r in records:
+        lines = lines_of(r.claim)
+        denied = {
+            h.line_no
+            for h in proposed(r.claim, lookups)
+            if h.outcome == "DENY" and h.rule in {f"R{n}" for n in range(14, 20)}
+        } | {n for n, label in r.labels.items() if label == "RULE DENY"}  # R11-R13 (stored)
+        for x in lines:
+            primaries = [
+                y for y in lines if y.code in ADDON_PRIMARIES.get(x.code, set()) and y.day == x.day
+            ]
+            if x.line_no not in denied and any(y.line_no in denied for y in primaries):
+                orphans[f"{x.code} {r.split} {r.labels.get(x.line_no, '?')}"] += 1
+    out += [
+        "- Add-on lines that pass while their primary on the same date is denied by a rule "
+        "(R11-R19): "
+        + (", ".join(f"{k} {n}" for k, n in sorted(orphans.items())) or "none")
+        + f" (total {sum(orphans.values())})",
     ]
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

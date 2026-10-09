@@ -92,20 +92,29 @@ def tabular_zip() -> zipfile.ZipFile | None:
 
 @pytest.mark.skipif(tabular_zip() is None, reason="FY2027 ICD-10-CM tabular not in data/raw/")
 def test_the_tabular_confirms_the_parasomnia_and_synovial_cyst_codes() -> None:
+    """Q5: G47.5 Parasomnia has exactly the codes G47.50-G47.59 of the PARASOMNIA set. Q4: M71.3
+    lists "Synovial cyst NOS" as an inclusion term, and the FACET_SYNOVIAL_CYST codes are under
+    it."""
     import xml.etree.ElementTree as ET
 
     archive = tabular_zip()
-    name = next(n for n in archive.namelist() if "tabular" in n.lower() and n.endswith(".xml"))
+    name = next(
+        n
+        for n in archive.namelist()
+        if n.endswith("icd10cm_tabular_2027.xml") and "__MACOSX" not in n
+    )
     root = ET.fromstring(archive.read(name))
     diagnoses = {d.findtext("name"): d for d in root.iter("diag")}
 
     def children(code: str) -> set[str]:
         return {c.findtext("name").replace(".", "") for c in diagnoses[code].findall("diag")}
 
-    def inclusions(code: str) -> list[str]:
-        return [n.text or "" for n in diagnoses[code].iter("note") if n is not None]
-
+    inclusions = [
+        note.text or ""
+        for term in diagnoses["M71.3"].findall("inclusionTerm")
+        for note in term.findall("note")
+    ]
     data = load_curated()
     assert children("G47.5") == data.diagnosis_sets["PARASOMNIA"]
-    assert any("synovial cyst" in note.lower() for note in inclusions("M71.3"))
-    assert children("M71.3") >= data.diagnosis_sets["FACET_SYNOVIAL_CYST"]
+    assert "Synovial cyst NOS" in inclusions
+    assert data.diagnosis_sets["FACET_SYNOVIAL_CYST"] <= children("M71.3")
