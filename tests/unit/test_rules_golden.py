@@ -1,4 +1,4 @@
-"""The rules engine against the 121 golden rules cases (tests/golden/rules/, README assumptions
+"""The rules engine against the 134 golden rules cases (tests/golden/rules/, README assumptions
 A-R1 to A-R11). Never change an expected value to make a test pass (H12).
 
 The code tables come from data/raw/ and, always, from the committed fixture of the rows the cases
@@ -15,12 +15,19 @@ from typing import Any
 import pytest
 
 from app.core.settings import Settings
-from app.db.curated import load_curated
+from app.db.curated import load_curated, rule_codes
 from app.db.rules_reference import CodeTables, build_reference, load_code_tables
 from app.domain.contracts import RuleResult
 from app.rules.engine import evaluate
 from app.rules.reference import RulesReference
-from scripts.verify.rules_fixture import code_tables, load_cases, raw_in_use, read_fixture
+from scripts.verify.rules_fixture import (
+    case_codes,
+    code_tables,
+    fixture_cases,
+    load_cases,
+    raw_in_use,
+    read_fixture,
+)
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden" / "rules"
 SHARED = json.loads((GOLDEN / "reference.json").read_text(encoding="utf-8"))
@@ -39,7 +46,8 @@ CONFIDENCE_MIN = 0.85  # A-R9: EXTRACTION_CONFIDENCE_MIN, which the expected val
 @cache
 def _code_tables(source: str) -> CodeTables:
     if source == "raw":
-        return load_code_tables(frozenset(load_curated().scope))
+        cases = fixture_cases()  # the golden rules cases and end-to-end claims (D-CI-5)
+        return load_code_tables(rule_codes(load_curated()) | case_codes(cases).procedure_codes)
     return code_tables(read_fixture())
 
 
@@ -73,10 +81,11 @@ def failures(results: list[RuleResult]) -> list[dict[str, Any]]:
     ]
 
 
-def test_there_are_121_cases() -> None:
-    """90 for rules v1 and 31 for rules v2 (R14 to R20, checked on sheet G4, D-GOLD-6)."""
-    assert len(CASES) == 121
-    assert len({case["case_id"] for case in CASES}) == 121
+def test_there_are_134_cases() -> None:
+    """90 for rules v1, 31 for rules v2 (R14 to R20, sheet G4, D-GOLD-6) and 13 for R11's
+    modifiers (sheet G5, D-GOLD-7)."""
+    assert len(CASES) == 134
+    assert len({case["case_id"] for case in CASES}) == 134
 
 
 def test_the_cases_threshold_is_the_settings_default() -> None:

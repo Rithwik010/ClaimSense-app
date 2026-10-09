@@ -110,6 +110,16 @@ class CodeRoleRef:
 
 
 @dataclass(frozen=True)
+class PtpModifierRef:
+    """An NCCI PTP-associated modifier for R11 (D-RULE-8): its group, where it may stand, and for
+    an E&M modifier the global periods the paired code must have."""
+
+    group: str
+    placement: str
+    paired_global_days: frozenset[str]
+
+
+@dataclass(frozen=True)
 class RulesReference:
     members: Mapping[str, MemberRef]
     providers: Mapping[str, ProviderRef]
@@ -129,6 +139,11 @@ class RulesReference:
     article_covered: Mapping[str, Mapping[int, frozenset[str]]] = field(default_factory=dict)
     code_roles: Mapping[str, CodeRoleRef] = field(default_factory=dict)
     diagnosis_sets: Mapping[str, frozenset[str]] = field(default_factory=dict)
+    # R11's modifiers (D-RULE-8): the NCCI PTP-associated modifiers, the E&M codes and the PFS
+    # global days of the codes (000, 010, 090, XXX, ...)
+    ptp_modifiers: Mapping[str, PtpModifierRef] = field(default_factory=dict)
+    em_codes: frozenset[str] = frozenset()
+    global_days: Mapping[str, str] = field(default_factory=dict)
 
     def in_network(self, npi: str, plan_id: str) -> bool:
         """A-R1: no network row for the plan means out of network."""

@@ -292,6 +292,8 @@ class ProcedureCode(Base):
     code_system: Mapped[str] = mapped_column(String(8))
     description: Mapped[str | None] = mapped_column(Text)
     in_scope: Mapped[bool] = mapped_column(Boolean, default=False)
+    # PFS global days (000, 010, 090, XXX, YYY, ZZZ, MMM); R11 reads them for modifiers 25 and 57
+    global_days: Mapped[str | None] = mapped_column(String(3))
 
 
 class PlaceOfServiceCode(Base):

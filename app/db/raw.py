@@ -15,7 +15,7 @@ import sys
 import zipfile
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 from xml.etree import ElementTree
@@ -35,9 +35,12 @@ MUE_EFFECTIVE = date(2026, 10, 1)
 MCD_ARTICLES_ZIP = RAW_DIR / "mcd" / "2026-09-21" / "current_article.zip"
 POS_PDF = RAW_DIR / "pos" / "2024-05-02" / "Website_POS_database__5_2_24 (kmk).pdf"
 HCPCS_TXT = RAW_DIR / "hcpcs" / "2026-10" / "HCPC2026_OCT_ANWEB_v2.txt"
+AOC_ZIP = RAW_DIR / "ncci-aoc" / "2026-10" / "aoc_v2026q4-f-mcr.zip"
+AOC_MEMBER = "AOC_V2026Q4-F-MCR.txt"
 
 # PFS RVU file columns (the file has a ten-row header; see RVU26AR.pdf for the layout).
 PFS_HCPCS, PFS_MOD, PFS_STATUS, PFS_NONFACILITY_TOTAL, PFS_CONVERSION_FACTOR = 0, 1, 3, 11, 25
+PFS_GLOBAL_DAYS = 14  # 000, 010, 090, XXX, YYY, ZZZ (add-on), MMM
 
 csv.field_size_limit(sys.maxsize)
 
@@ -89,6 +92,70 @@ def _yyyymmdd(value: str) -> date | None:
     if not value or value == "*":
         return None
     return date(int(value[:4]), int(value[4:6]), int(value[6:8]))
+
+
+def read_pfs_global_days(codes: set[str] | None = None) -> dict[str, str]:
+    """PFS RVU26A global days (column GLOB DAYS) per code without a modifier; no descriptor read."""
+    days = {}
+    with PFS_CSV.open(encoding="latin-1", newline="") as f:
+        for row in csv.reader(f):
+            if len(row) <= PFS_GLOBAL_DAYS or row[PFS_MOD].strip():
+                continue
+            if PROCEDURE_CODE.fullmatch(row[PFS_HCPCS]) and (
+                codes is None or row[PFS_HCPCS] in codes
+            ):
+                days[row[PFS_HCPCS]] = row[PFS_GLOBAL_DAYS].strip()
+    return days
+
+
+@dataclass(frozen=True)
+class AddOnEdit:
+    """One NCCI add-on code edit: an add-on code and one of its primary codes (edit type 1: the
+    only primaries; 2: contractor-defined; 3: some primaries listed). Dates are inclusive."""
+
+    edit_type: str
+    add_on: str
+    primary: str  # CCCCC: contractor-defined primary codes
+    effective: date
+    deleted: date | None
+
+    def active_on(self, day: date) -> bool:
+        return self.effective <= day and (self.deleted is None or day <= self.deleted)
+
+
+def _julian(value: str) -> date | None:
+    value = value.strip()
+    if not value:
+        return None
+    return date(int(value[:4]), 1, 1) + timedelta(days=int(value[4:7]) - 1)
+
+
+def read_add_on_edits() -> list[AddOnEdit]:
+    """The NCCI add-on code edits (AOC_ZIP), from the fixed-width text file: edit type (1),
+    add-on code (5), its deletion date (7), primary code (5), its deletion date (7), edit
+    effective date (7), edit deletion date (7), notes; dates as yyyyddd. Codes and dates only."""
+    with zipfile.ZipFile(AOC_ZIP) as archive:
+        text = archive.read(AOC_MEMBER).decode("latin-1")
+    edits = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        effective = _julian(line[25:32])
+        if effective is None:
+            raise ValueError(f"add-on edit without an effective date: {line[:40]!r}")
+        deletions = [
+            d for d in (_julian(line[6:13]), _julian(line[18:25]), _julian(line[32:39])) if d
+        ]
+        edits.append(
+            AddOnEdit(
+                edit_type=line[0],
+                add_on=line[1:6].strip(),
+                primary=line[13:18].strip(),
+                effective=effective,
+                deleted=min(deletions) if deletions else None,
+            )
+        )
+    return edits
 
 
 def read_icd10_codes() -> dict[str, str]:

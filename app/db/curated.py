@@ -45,6 +45,11 @@ SPINAL_ROLES = {role for role in RULE_ROLES if role.startswith(("ESI_", "FACET_"
 SPINAL_REGIONS = ("CERVICAL_THORACIC", "LUMBAR_SACRAL")
 RULE_DIAGNOSIS_SETS = ("PARASOMNIA", "FACET_SYNOVIAL_CYST")
 
+# R11's NCCI PTP-associated modifiers (D-RULE-8; 2026 NCCI Policy Manual, Chapter I section E).
+PTP_GROUPS = ("ANATOMIC", "GLOBAL_SURGERY", "OTHER")
+PTP_PLACEMENTS = ("NOT_EM", "EM_WITH_PROCEDURE", "PROCEDURE", "EITHER", "DIFFERENT_SITES")
+GLOBAL_DAYS = ("000", "010", "090", "XXX", "YYY", "ZZZ", "MMM")  # PFS GLOB DAYS values
+
 
 @dataclass(frozen=True)
 class NetworkTerms:
@@ -170,6 +175,17 @@ class CodeRole:
 
 
 @dataclass(frozen=True)
+class PtpModifier:
+    """An NCCI PTP-associated modifier and where it bypasses an edit (`ncci_ptp_modifiers.csv`)."""
+
+    modifier: str
+    group: str  # PTP_GROUPS
+    placement: str  # PTP_PLACEMENTS
+    paired_global_days: frozenset[str]  # EM_WITH_PROCEDURE: the paired code's global periods
+    source: str
+
+
+@dataclass(frozen=True)
 class CuratedData:
     provider_types: dict[str, bool]  # provider type -> primary care
     plans: dict[str, PlanConfig]
@@ -185,6 +201,7 @@ class CuratedData:
     bypass_modifiers: frozenset[str]
     code_roles: dict[str, CodeRole] = field(default_factory=dict)
     diagnosis_sets: dict[str, frozenset[str]] = field(default_factory=dict)
+    ptp_modifiers: dict[str, PtpModifier] = field(default_factory=dict)
 
     def benefit(self, plan_id: str, category: str) -> BenefitConfig:
         return self.benefits[(plan_id, category)]
@@ -374,7 +391,31 @@ def load_curated() -> CuratedData:
         bypass_modifiers=frozenset(r["modifier"] for r in _read_csv("ncci_bypass_modifiers.csv")),
         code_roles={r["procedure_code"]: _code_role(r) for r in _read_csv("rule_code_roles.csv")},
         diagnosis_sets=_diagnosis_sets(_read_csv("rule_diagnosis_sets.csv")),
+        ptp_modifiers={
+            r["modifier"]: PtpModifier(
+                modifier=r["modifier"],
+                group=r["group"],
+                placement=r["placement"],
+                paired_global_days=frozenset(r["paired_global_days"].split()),
+                source=r["source"],
+            )
+            for r in _read_csv("ncci_ptp_modifiers.csv")
+        },
     )
+
+
+def em_codes(data: CuratedData) -> frozenset[str]:
+    """The E&M codes R11's modifier placement reads (D-RULE-8): the in-scope office visit codes."""
+    return frozenset(
+        code
+        for code, entry in data.scope.items()
+        if any(category.startswith("OFFICE_VISIT") for category in entry.candidate_categories)
+    )
+
+
+def rule_codes(data: CuratedData) -> frozenset[str]:
+    """The codes the rules know beyond the code table: the scope and the rules v2 code roles."""
+    return frozenset(data.scope) | frozenset(data.code_roles)
 
 
 def billing_articles(data: CuratedData) -> set[str]:
@@ -467,4 +508,15 @@ def _rule_data_problems(data: CuratedData) -> list[str]:
             problems.append(f"{code}: minutes per unit do not fit role {role.role}")
     if set(data.diagnosis_sets) != set(RULE_DIAGNOSIS_SETS):
         problems.append(f"diagnosis sets {sorted(data.diagnosis_sets)} != {RULE_DIAGNOSIS_SETS}")
+    for name, m in data.ptp_modifiers.items():
+        if m.group not in PTP_GROUPS or m.placement not in PTP_PLACEMENTS:
+            problems.append(f"modifier {name}: unknown group or placement")
+        if (m.placement == "DIFFERENT_SITES") != (m.group == "ANATOMIC"):
+            problems.append(f"modifier {name}: only anatomic modifiers need different sites")
+        if not m.paired_global_days <= set(GLOBAL_DAYS) or (
+            m.paired_global_days and m.placement != "EM_WITH_PROCEDURE"
+        ):
+            problems.append(f"modifier {name}: paired global days do not fit")
+    if data.ptp_modifiers and not data.bypass_modifiers <= set(data.ptp_modifiers):
+        problems.append("the v1 bypass modifiers are not all NCCI PTP-associated modifiers")
     return problems

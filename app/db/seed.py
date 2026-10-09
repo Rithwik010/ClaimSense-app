@@ -27,7 +27,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Date, delete, func, insert, select, text
+from sqlalchemy import Date, delete, func, insert, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -284,6 +284,7 @@ class RuleTableData:
     ncci_rows: Callable[[], Iterator[raw.NcciEditRow]]  # in the published order
     # billing article -> (version, covered group -> ICD-10-CM codes), for R15
     article_covered: Mapping[str, tuple[str, Mapping[int, Iterable[str]]]]
+    global_days: Mapping[str, str]  # procedure code -> PFS global days, for R11 (D-RULE-8)
     sources: Mapping[str, tuple[Source, ...]]  # table name -> source files
 
 
@@ -326,6 +327,7 @@ def raw_rule_tables() -> RuleTableData:
         mue_effective=raw.MUE_EFFECTIVE,
         ncci_rows=raw.read_ncci_edits,
         article_covered={a: (found.version, found.covered) for a, found in articles.items()},
+        global_days=raw.read_pfs_global_days(),
         sources={
             "place_of_service_codes": raw_sources([raw.POS_PDF]),
             "procedure_codes": raw_sources([raw.PFS_CSV, raw.HCPCS_TXT]),
@@ -375,6 +377,14 @@ def load_rule_tables(session: Session, data: RuleTableData) -> dict[str, int]:
             ],
         )
     counts["procedure_codes"] = len(codes)
+    known = set(codes)
+    days = [
+        {"code": code, "global_days": value}
+        for code, value in sorted(data.global_days.items())
+        if code in known
+    ]
+    for start in range(0, len(days), CHUNK_ROWS):
+        session.execute(update(ProcedureCode), days[start : start + CHUNK_ROWS])
     counts["icd10_codes"] = upsert(
         session,
         Icd10Code,

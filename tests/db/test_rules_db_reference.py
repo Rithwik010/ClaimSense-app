@@ -9,6 +9,7 @@ exactly what the file-backed one gives.
   as the file-backed reference, and the generator's rule mirror and RULES_RESULT text
   (scripts/verify/rules_parity.py)."""
 
+import json
 from collections.abc import Iterator
 from datetime import date
 from typing import Any
@@ -32,6 +33,7 @@ from app.db.seed import (
 )
 from app.rules.engine import evaluate
 from app.rules.reference import NcciEdit, RulesReference
+from scripts.verify.rules_fixture import E2E_CASES
 from scripts.verify.rules_parity import DECISION_DIR, dataset_reference, db_differences
 from scripts.verify.rules_parity import load_records as load_dataset
 from tests.database import alembic_config, fresh_database
@@ -125,6 +127,18 @@ def _add_case_records(session: Session, additions: dict[str, Any]) -> None:
     session.flush()
 
 
+def claim_rows(claim: dict[str, Any], reference: RulesReference) -> tuple[dict, dict, dict]:
+    """The NCCI edits between the claim's codes (in published order), their MUE limits and PFS
+    global days, as a reference holds them (D-CI-5: file and database must hold the same rows)."""
+    lines = [line for line in claim.get("service_lines") or [] if isinstance(line, dict)]
+    codes = {line.get("procedure_code") for line in lines}
+    return (
+        {pair: edits for pair, edits in reference.ncci.items() if set(pair) <= codes},
+        {code: units for code, units in reference.mue.items() if code in codes},
+        {code: days for code, days in reference.global_days.items() if code in codes},
+    )
+
+
 def claim_coverage(claim: dict[str, Any], reference: RulesReference) -> dict:
     """The file reference's article coverage for the claim's codes and diagnoses (what the
     database reference loads for one claim)."""
@@ -164,6 +178,7 @@ def test_golden_rules_case_with_the_database_reference(
         )
         session.rollback()
     file_reference_ = reference_for(case, source)
+    assert claim_rows(given["claim"], db_reference) == claim_rows(given["claim"], file_reference_)
     assert db_reference.article_covered == claim_coverage(given["claim"], file_reference_)
     assert db_reference.diagnosis_support == file_reference_.diagnosis_support
     assert db_reference.code_roles == file_reference_.code_roles
@@ -183,6 +198,24 @@ def test_golden_rules_case_with_the_database_reference(
     else:
         assert [o.model_dump() for o in from_db.line_outcomes] == expected["line_outcomes"]
     assert from_db.flags == expected["flags"]
+
+
+E2E = json.loads(E2E_CASES.read_text(encoding="utf-8"))["cases"]
+
+
+@pytest.mark.parametrize("case", E2E, ids=[c["case_id"] for c in E2E])
+def test_end_to_end_claims_get_the_same_rows_from_files_and_the_database(
+    golden_database: tuple[str, Engine], case: dict[str, Any]
+) -> None:
+    """D-CI-5: the file-backed tables and the database hold the same NCCI edits, MUE limits and
+    global days for every golden end-to-end claim's codes (in scope or not)."""
+    source, engine = golden_database
+    claim = case["given"]["claim"]
+    with Session(engine) as session:
+        from_db = claim_rows(claim, reference_for_claim(session, claim))
+    from_files = claim_rows(claim, reference_for({"given": {"reference_additions": {}}}, source))
+
+    assert from_db == from_files
 
 
 # --- The 2,600 dataset records -------------------------------------------------------------------
