@@ -1117,6 +1117,8 @@ Extended author triage (2026-10-10): Claude Code, the author of the criteria, tr
 
 Pass 2 on the extended triage (2026-10-10): the 6 fix rows hold the reviewer's decisions (author triage by Claude Code, decided by Manideep with recommendations from the planning chat); the 41 rows the extended triage keeps have no pass 2 decision yet.
 
+Kept-text check (2026-10-10): Claude Code, the author of the criteria, compared every v1 criterion that keeps its ID and text with its v1 source excerpt for numbers, limiting words and left-out coverage limits, in P2_policies_v2_kept_texts.md; not an independent check. Nothing in it is applied until the reviewer approves it.
+
 ### Part A (MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE)
 
 | Row | Criterion | Pass 1 verdict (Claude chat) | Pass 1 notes | Pass 2 verdict (reviewer) | Pass 2 notes |

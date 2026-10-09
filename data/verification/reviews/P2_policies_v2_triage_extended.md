@@ -2,7 +2,7 @@
 
 Extended author triage (2026-10-10): Claude Code, the author of the criteria, triaged the other 15 Part A MATCHES rows, row A31 and the 31 Part B AGREE rows in P2_policies_v2_triage_extended.md; not an independent check. Nothing in it is applied until the reviewer approves it.
 
-The 22 rows: the 17 that pass 1 flagged, plus the 5 random MATCHES rows (A2, A6, A10, A11, A24). Categories: LIMITING CHANGE 3, ADDED 1, TYPE 2, OK 41. Proposed fixes change draft text of new v2 criteria in place (no v2 data uses them yet) or only the code list of kept criteria (their ID and text stay); one new criterion (SURG-003.c4) needs its own approval. Every excerpt below is checked word for word against data/raw by scripts/verify/policies_v2_triage.py.
+The 47 rows: the other 15 Part A MATCHES rows, row A31 and the 31 Part B AGREE rows. Categories: LIMITING CHANGE 3, ADDED 1, TYPE 2, OK 41. Fixes to new v2 criteria change their draft text in place; a kept v1 criterion whose text must change is replaced under a new ID (B7, B20); code-list fixes keep the ID and text. Every excerpt below is checked word for word against data/raw by scripts/verify/policies_v2_triage.py.
 
 | Row | Criterion | Category | Action | Reason |
 |---|---|---|---|---|
