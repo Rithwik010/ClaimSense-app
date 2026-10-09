@@ -10,8 +10,9 @@ under each option, and compared with v1 (XE, XP, XS, XU on either line):
   section E, page I-14), with the placement the manual gives (proposed): 59, XE, XP, XS and XU not
   on an E&M line (the CPT definition of 59, which the manual reproduces on page I-17, excludes E&M
   services; the definition itself is AMA text and is not copied here); 24, 25 and 57 only on an
-  E&M line paired with a non-E&M code ("Modifier 25 may be appended to an evaluation and management
-  (E&M) CPT code"); 58, 78 and 79 on a non-E&M line; 27 and 91 on either line; anatomic modifiers
+  E&M line paired with a non-E&M code, 25 only when that code's PFS global period is 000, 010 or
+  XXX (page I-16) and 57 only when it is 090 (page I-13); 58, 78 and 79 on a non-E&M line; 27 and
+  91 on either line; anatomic modifiers
   only when both lines carry one and they share none ("2 different anatomic sites");
 - B on either line: the full list with no placement rule (for comparison).
 
@@ -80,28 +81,34 @@ def lines_of(claim: Mapping[str, Any]) -> list[Line]:
     return out
 
 
-Bypass = Callable[[Line, Line, frozenset[str]], bool]  # (column 1 line, column 2 line, E&M codes)
+# (column 1 line, column 2 line, E&M codes, PFS global days)
+Bypass = Callable[[Line, Line, frozenset[str], Mapping[str, str]], bool]
+PAIRED_DAYS = {"25": {"000", "010", "XXX"}, "57": {"090"}}  # pages I-16 and I-13 (D-RULE-8)
 
 
-def v1(a: Line, b: Line, em: frozenset[str]) -> bool:
+def v1(a: Line, b: Line, em: frozenset[str], days: Mapping[str, str]) -> bool:
     return bool(V1 & (a.modifiers | b.modifiers))
 
 
-def option_a(a: Line, b: Line, em: frozenset[str]) -> bool:
+def option_a(a: Line, b: Line, em: frozenset[str], days: Mapping[str, str]) -> bool:
     return bool(X_AND_59 & (a.modifiers | b.modifiers))
 
 
-def option_b_either_line(a: Line, b: Line, em: frozenset[str]) -> bool:
+def option_b_either_line(a: Line, b: Line, em: frozenset[str], days: Mapping[str, str]) -> bool:
     return bool(FULL_LIST & (a.modifiers | b.modifiers))
 
 
-def option_b(a: Line, b: Line, em: frozenset[str]) -> bool:
+def option_b(a: Line, b: Line, em: frozenset[str], days: Mapping[str, str]) -> bool:
+    """The approved R11 bypass (D-RULE-8)."""
     for line, other in ((a, b), (b, a)):
         is_em = line.code in em
         if X_AND_59 & line.modifiers and not is_em:
             return True
-        if EM_ONLY & line.modifiers and is_em and other.code not in em:
-            return True
+        for modifier in EM_ONLY & line.modifiers:
+            paired = days.get(other.code)
+            needed = PAIRED_DAYS.get(modifier)
+            if is_em and other.code not in em and (needed is None or paired in needed):
+                return True
         if PROCEDURE_ONLY & line.modifiers and not is_em:
             return True
         if EITHER & line.modifiers:
@@ -112,7 +119,7 @@ def option_b(a: Line, b: Line, em: frozenset[str]) -> bool:
 
 OPTIONS: dict[str, Bypass] = {
     "A (v1 + 59)": option_a,
-    "B (full list, manual placement)": option_b,
+    "B (full list, manual placement; approved, D-RULE-8)": option_b,
     "B on either line (no placement)": option_b_either_line,
 }
 
@@ -121,6 +128,7 @@ OPTIONS: dict[str, Bypass] = {
 class Tables:
     ncci: Mapping[tuple[str, str], Sequence[raw.NcciPair]]
     mue: Mapping[str, int]
+    global_days: Mapping[str, str]
 
 
 def tables_for(codes: set[str]) -> Tables:
@@ -128,10 +136,16 @@ def tables_for(codes: set[str]) -> Tables:
     for pair in raw.read_ncci_pairs(codes):
         ncci.setdefault((pair.column1, pair.column2), []).append(pair)
     mue = {c: e.max_units for c, e in raw.read_mue(codes).items()}
-    return Tables(ncci, mue)
+    return Tables(ncci, mue, raw.read_pfs_global_days(codes))
 
 
-def r11(lines: list[Line], tables: Tables, bypass: Bypass, em: frozenset[str]) -> list[str]:
+def r11(
+    lines: list[Line],
+    tables: Tables,
+    bypass: Bypass,
+    em: frozenset[str],
+    days: Mapping[str, str] = {},  # noqa: B006 - read only
+) -> list[str]:
     """Per line: "DENY" (DN_NCCI_BUNDLED), "BYPASS" (NCCI_BYPASS) or "" (A-R3)."""
     out = [""] * len(lines)
     for i, a in enumerate(lines):
@@ -143,7 +157,7 @@ def r11(lines: list[Line], tables: Tables, bypass: Bypass, em: frozenset[str]) -
             indicator = next((e.modifier_indicator for e in edits if e.active_on(day)), None)
             if indicator in (None, "9"):
                 continue
-            if indicator == "1" and bypass(a, b, em):
+            if indicator == "1" and bypass(a, b, em, days):
                 if out[j] != "DENY":
                     out[j] = "BYPASS"
             else:
@@ -216,8 +230,8 @@ def main() -> None:
         office_25 = 0
         for c in found:
             lines = lines_of(c.claim)
-            before = r11(lines, full, v1, em)
-            after = r11(lines, full, bypass, em)
+            before = r11(lines, full, v1, em, full.global_days)
+            after = r11(lines, full, bypass, em, full.global_days)
             for x, old, new in zip(lines, before, after, strict=True):
                 if old != new:
                     label = c.labels.get(x.line_no, "")
@@ -248,7 +262,7 @@ def main() -> None:
         for x in lines:
             if x.code not in curated.scope:
                 outside[c.source] += 1
-        a, b = r11(lines, scoped, v1, em), r11(lines, full, v1, em)
+        a, b = r11(lines, scoped, v1, em), r11(lines, full, v1, em)  # v1: no global days
         m, n = r12(lines, scoped), r12(lines, full)
         for x, r11_file, r11_db, r12_file, r12_db in zip(lines, a, b, m, n, strict=True):
             if (r11_file, r12_file) != (r11_db, r12_db):
