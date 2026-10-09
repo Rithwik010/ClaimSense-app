@@ -27,16 +27,17 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Date, delete, func, select, text
+from sqlalchemy import Date, delete, func, insert, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.calculator.fee_schedule import allowed_amounts
 from app.db import raw
 from app.db.base import Base
-from app.db.curated import CuratedData, load_curated
+from app.db.curated import CuratedData, billing_articles, load_curated
 from app.db.models import (
     Accumulator,
+    ArticleIcd10Covered,
     Authorization,
     Benefit,
     FeeScheduleEntry,
@@ -260,6 +261,7 @@ RULE_TABLES = (
     Icd10Code,
     MueLimit,
     NcciPtpEdit,
+    ArticleIcd10Covered,
 )
 
 
@@ -280,6 +282,8 @@ class RuleTableData:
     mue: Mapping[str, tuple[int, str]]  # code -> (maximum units, adjudication indicator)
     mue_effective: date
     ncci_rows: Callable[[], Iterator[raw.NcciEditRow]]  # in the published order
+    # billing article -> (version, covered group -> ICD-10-CM codes), for R15
+    article_covered: Mapping[str, tuple[str, Mapping[int, Iterable[str]]]]
     sources: Mapping[str, tuple[Source, ...]]  # table name -> source files
 
 
@@ -313,6 +317,7 @@ def raw_sources(paths: Iterable[Path]) -> tuple[Source, ...]:
 
 def raw_rule_tables() -> RuleTableData:
     mue = raw.read_mue()
+    articles = raw.read_article_diagnoses(billing_articles(load_curated()))
     return RuleTableData(
         place_of_service=raw.read_place_of_service_codes(),
         procedure_codes=raw.read_procedure_code_table(),
@@ -320,12 +325,14 @@ def raw_rule_tables() -> RuleTableData:
         mue={code: (entry.max_units, entry.adjudication_indicator) for code, entry in mue.items()},
         mue_effective=raw.MUE_EFFECTIVE,
         ncci_rows=raw.read_ncci_edits,
+        article_covered={a: (found.version, found.covered) for a, found in articles.items()},
         sources={
             "place_of_service_codes": raw_sources([raw.POS_PDF]),
             "procedure_codes": raw_sources([raw.PFS_CSV, raw.HCPCS_TXT]),
             "icd10_codes": raw_sources([raw.ICD10_ZIP]),
             "mue_limits": raw_sources([raw.MUE_CSV]),
             "ncci_ptp_edits": raw_sources(raw.ncci_sources()),
+            "article_icd10_covered": raw_sources([raw.MCD_ARTICLES_ZIP]),
         },
     )
 
@@ -391,6 +398,21 @@ def load_rule_tables(session: Session, data: RuleTableData) -> dict[str, int]:
         ],
     )
     counts["ncci_ptp_edits"] = copy_ncci(session, data.ncci_rows())
+    session.execute(delete(ArticleIcd10Covered))
+    covered = [
+        {
+            "article_id": article,
+            "covered_group": group,
+            "icd10_code": code,
+            "article_version": version,
+        }
+        for article, (version, groups) in sorted(data.article_covered.items())
+        for group, codes in sorted(groups.items())
+        for code in sorted(codes)
+    ]
+    for start in range(0, len(covered), CHUNK_ROWS):
+        session.execute(insert(ArticleIcd10Covered), covered[start : start + CHUNK_ROWS])
+    counts["article_icd10_covered"] = len(covered)
     session.execute(delete(ReferenceSource).where(ReferenceSource.table_name.in_(data.sources)))
     session.add_all(
         ReferenceSource(

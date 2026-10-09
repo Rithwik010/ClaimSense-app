@@ -30,6 +30,7 @@ PROCEDURE = re.compile(r"[0-9]{4}[0-9A-Z]|[A-Z][0-9]{4}")
 PLACE = re.compile(r"[0-9]{2}")
 DAY = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
 INDICATORS = {"0", "1", "9"}
+ARTICLE = re.compile(r"A[0-9]{5}")
 
 
 def strings(value: Any) -> list[str]:
@@ -56,6 +57,8 @@ def test_the_fixture_holds_only_codes_dates_indicators_and_limits() -> None:
         assert indicator in INDICATORS
     assert all(PROCEDURE.fullmatch(code) for code in DATA["mue"])
     assert all(type(units) is int and units >= 1 for units in DATA["mue"].values())
+    for article, group, code in DATA["article_icd10_covered"]:
+        assert ARTICLE.fullmatch(article) and type(group) is int and ICD10.fullmatch(code)
 
 
 def test_no_text_beyond_codes_and_dates_outside_the_note_and_source_paths() -> None:
@@ -86,3 +89,13 @@ def test_the_fixture_equals_a_fresh_extraction_from_data_raw() -> None:
     """If this fails, data/raw/ or the golden cases changed: rewrite the fixture deliberately with
     `uv run python -m scripts.verify.rules_fixture --write` and review the diff."""
     assert render(fresh_fixture()) == FIXTURE.read_text(encoding="utf-8")
+
+
+def test_diagnoses_no_article_group_covers_stay_absent() -> None:
+    """R15 reads absence as not covered (D-CI-4): E2E-17's F41.9 on a blepharoplasty code and
+    E2E-23's I10 on a stress echo are in the cases but in none of their codes' covered groups."""
+    covered = {tuple(row) for row in DATA["article_icd10_covered"]}
+
+    assert not {("A56439", 1, "F419"), ("A56439", 2, "F419")} & covered  # 15822: groups 1 or 2
+    assert ("A56625", 4, "I10") not in covered  # 93350: group 4 (I10 is in another group)
+    assert ("A58565", 1, "L97412") in covered  # the D-GOLD-1 cases' diagnosis (D-GOLD-6)

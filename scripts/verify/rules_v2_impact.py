@@ -1,7 +1,7 @@
-"""Task P2.3b planning: the impact of the proposed rules v2 (R14 to R20) before any rule is built.
+"""Task P2.3b: the impact of rules v2 (R14 to R20), written independently of app/rules.
 
-Report only. The proposed checks are written here, independently of app/rules (which does not have
-them yet), and run over:
+Report only. The checks follow the definitions the team approved on 2026-10-09 (D-RULE-2 to
+D-RULE-4; the plan's first versions are in commit 37ab24f) and run over:
 
 - the 90 golden rules cases and the 30 golden end-to-end claims: every case a check would change,
   with the H5 conversion where a check reads a field below the confidence threshold;
@@ -64,14 +64,13 @@ NEEDLE_EMG = {
     "95860", "95861", "95863", "95864", "95865", "95866", "95867", "95868", "95869", "95870",
     "95872", "95885", "95886", "95887",
 }  # A57478 CPT group 1  # fmt: skip
-TESTING_HOURS = {"96130": 1.0, "96131": 1.0}  # evaluation services: hours per unit
-ADMINISTRATION_HOURS = {"96136": 0.5, "96137": 0.5}  # test administration: 30 minutes per unit
+TESTING_MINUTES = {"96130": 60, "96131": 60, "96136": 30}  # in-scope testing codes, per unit
 
 # --- Proposed diagnosis sets ------------------------------------------------------------------
 
-PARASOMNIA = {"G4750", "G4751", "G4752", "G4753", "G4754", "G4759"}  # ICD-10-CM category G47.5
-PARASOMNIA_WITH_F51 = PARASOMNIA | {"F513", "F514", "F515"}  # option: F51 sleep disorders
-CARPAL_TUNNEL = {"G5600", "G5601", "G5602", "G5603"}  # ICD-10-CM category G56.0
+PARASOMNIA = {"G4750", "G4751", "G4752", "G4753", "G4754", "G4759"}  # G47.50-G47.59 (Q5)
+GROUP_1_ONLY = {"66982"}  # A56544: group 2 is reported "if applicable" (Q6)
+CARPAL_TUNNEL = {"G5600", "G5601", "G5602", "G5603"}  # the L34594 exception (report only)
 SYNOVIAL_CYST = {"M7130", "M7138"}  # M71.3 other bursal cyst, covered by A57787 (to confirm)
 FOOT_CLASS_MODIFIERS = {"Q7", "Q8", "Q9"}  # A57188 group 2 "only with modifier Q7, Q8, or Q9"
 VEINS = {"36475", "36478", "37765"}  # SURG-003.F4: ablation and stab phlebectomy
@@ -148,9 +147,10 @@ class Lookups:
 
 
 def r15_supported(line: Line, lookups: Lookups, exact: bool) -> bool | None:
-    """None: the code has no billing article (not checked). `exact` adds what the articles say
-    beyond group sets: A56456's group 2A must be the primary (first) diagnosis, and A57188's
-    group 2 counts with modifier Q7, Q8 or Q9."""
+    """None: the code has no billing article (not checked). `exact` (approved, Q6 and Q7) follows
+    the article where the v1 group sets differ: 66982 needs group 1 only; A56456's group 2A must
+    be the line's first diagnosis; A57188's group 2 counts with modifier Q7, Q8 or Q9. Without it:
+    the v1 group sets (generator, V1a)."""
     support = lookups.curated.diagnosis_support.get(line.code)
     if support is None:
         return None
@@ -160,6 +160,8 @@ def r15_supported(line: Line, lookups: Lookups, exact: bool) -> bool | None:
         return any(dx in groups.get(group, frozenset()) for dx in among)
 
     alternatives = list(support.alternatives)
+    if exact and line.code in GROUP_1_ONLY:
+        alternatives = [(1,)]
     if exact and support.billing_article == "A57188" and FOOT_CLASS_MODIFIERS & set(line.modifiers):
         alternatives.append((2,))
     for alternative in alternatives:
@@ -172,7 +174,7 @@ def r15_supported(line: Line, lookups: Lookups, exact: bool) -> bool | None:
     return False
 
 
-def check_r15(lines: list[Line], lookups: Lookups, exact: bool = False) -> list[Hit]:
+def check_r15(lines: list[Line], lookups: Lookups, exact: bool = True) -> list[Hit]:
     return [
         Hit(
             "R15",
@@ -233,35 +235,38 @@ def check_r16(lines: list[Line], parasomnia: set[str] = PARASOMNIA) -> list[Hit]
     ]
 
 
-def check_r17(lines: list[Line], same_day: bool = True) -> list[Hit]:
-    hits = []
-    for x in lines:
-        if x.code not in NERVE_CONDUCTION:
-            continue
-        emg = [y for y in lines if y.code in NEEDLE_EMG and (y.day == x.day or not same_day)]
-        if emg:
-            continue
-        fields = _day_fields(lines, "procedure_code", "date_of_service") + _dx_fields(x)
-        if CARPAL_TUNNEL & set(x.diagnoses):
-            hits.append(Hit("R17", x.line_no, "FLAG", "NCS_ALONE_CTS", fields, "CTS diagnosis"))
-        else:
-            hits.append(Hit("R17", x.line_no, "DENY", "DN_NCS_WITHOUT_EMG", fields, x.code))
-    return hits
+def check_r17(lines: list[Line]) -> list[Hit]:
+    """L34594 says "usually" (D-RULE-2): a flag on every nerve conduction line with no needle EMG
+    line anywhere on the claim, carpal tunnel included."""
+    if any(y.code in NEEDLE_EMG for y in lines):
+        return []
+    fields = _day_fields(lines, "procedure_code")
+    return [
+        Hit("R17", x.line_no, "FLAG", "NCS_WITHOUT_EMG", fields, x.code)
+        for x in lines
+        if x.code in NERVE_CONDUCTION
+    ]
+
+
+def sides(line: Line) -> set[str]:
+    """RT or LT alone: that side; modifier 50, both or neither: both sides (the R18 fix)."""
+    side = {"RT", "LT"} & set(line.modifiers)
+    return side if len(side) == 1 and "50" not in line.modifiers else {"RT", "LT"}
 
 
 def check_r18(lines: list[Line]) -> list[Hit]:
     hits = []
     for primary, addon in TRANSFORAMINAL.items():
-        for day in {x.day for x in lines if x.code in (primary, addon)}:
+        for day in sorted({x.day for x in lines if x.code in (primary, addon)}):
             group = [x for x in lines if x.day == day and x.code in (primary, addon)]
-            levels = sum(x.units for x in group)
-            if levels > 2:
-                for x in group:
-                    if x.code == addon:
-                        fields = _day_fields(group, "procedure_code", "units", "date_of_service")
-                        hits.append(
-                            Hit("R18", x.line_no, "DENY", "DN_ESI_LEVELS", fields, f"{levels}")
-                        )
+            levels = {s: sum(x.units for x in group if s in sides(x)) for s in ("RT", "LT")}
+            over = {s for s, n in levels.items() if n > 2}
+            for x in group:
+                if x.code == addon and sides(x) & over:
+                    names = ("procedure_code", "units", "modifiers", "date_of_service")
+                    detail = f"right {levels['RT']} levels, left {levels['LT']}"
+                    fields = _day_fields(group, *names)
+                    hits.append(Hit("R18", x.line_no, "DENY", "DN_ESI_LEVELS", fields, detail))
     for x in lines:
         if x.code in INTERLAMINAR and "50" in x.modifiers:
             fields = _day_fields([x], "procedure_code", "modifiers")
@@ -295,10 +300,9 @@ def check_r19(lines: list[Line]) -> list[Hit]:
     return hits
 
 
-def check_r20(lines: list[Line], with_administration: bool = False) -> list[Hit]:
-    rates = TESTING_HOURS | (ADMINISTRATION_HOURS if with_administration else {})
-    hours = sum(x.units * rates[x.code] for x in lines if x.code in rates)
-    if hours <= 8:
+def check_r20(lines: list[Line]) -> list[Hit]:
+    minutes = sum(x.units * TESTING_MINUTES[x.code] for x in lines if x.code in TESTING_MINUTES)
+    if minutes <= 8 * 60:
         return []
     return [
         Hit(
@@ -307,15 +311,15 @@ def check_r20(lines: list[Line], with_administration: bool = False) -> list[Hit]
             "FLAG",
             "EXTENDED_TESTING",
             _day_fields(lines, "procedure_code", "units"),
-            f"{hours:g} hours",
+            f"{minutes} minutes",
         )
         for x in lines
-        if x.code in rates
+        if x.code in TESTING_MINUTES
     ]
 
 
 def proposed(claim: Mapping[str, Any], lookups: Lookups) -> list[Hit]:
-    """Every proposed check with its recommended definition, in rule order."""
+    """Every check with its approved definition, in rule order."""
     lines = lines_of(claim)
     return [
         *check_r14(lines),
@@ -476,8 +480,7 @@ def main() -> None:
     out += ["## Code facts", ""]
     family = (
         ESI | ESI_ADDON | FACET_INJECTION | FACET_ADDON | FACET_THIRD_LEVEL | RADIOFREQUENCY
-        | HOME_SLEEP_TEST | NERVE_CONDUCTION | NEEDLE_EMG | set(TESTING_HOURS)
-        | set(ADMINISTRATION_HOURS) | VEINS | IMAGING
+        | HOME_SLEEP_TEST | NERVE_CONDUCTION | NEEDLE_EMG | set(TESTING_MINUTES) | VEINS | IMAGING
     )  # fmt: skip
     mue = raw.read_mue(family)
     days = pfs_global_days(family)
@@ -521,10 +524,8 @@ def main() -> None:
     ]
     icd = raw.read_icd10_codes()
     sets = {
-        "parasomnia (G47.5)": PARASOMNIA,
-        "F51.3-F51.5 (option)": PARASOMNIA_WITH_F51 - PARASOMNIA,
-        "carpal tunnel (G56.0)": CARPAL_TUNNEL,
-        "synovial cyst (M71.3, to confirm)": SYNOVIAL_CYST,
+        "parasomnia (G47.50-G47.59)": PARASOMNIA,
+        "synovial cyst (M71.3, to confirm against the tabular)": SYNOVIAL_CYST,
     }
     out += ["", "Diagnosis sets (ICD-10-CM FY2027 titles):", ""]
     for name, codes in sets.items():
@@ -582,16 +583,13 @@ def main() -> None:
     ]
     variants: list[tuple[str, Callable[[list[Line]], list[Hit]]]] = [
         ("R14", check_r14),
-        ("R15 (group sets, as V1a)", lambda ls: check_r15(ls, lookups)),
-        ("R15 (article-exact)", lambda ls: check_r15(ls, lookups, exact=True)),
-        ("R16 (G47.5)", check_r16),
-        ("R16 (G47.5 + F51.3-5)", lambda ls: check_r16(ls, PARASOMNIA_WITH_F51)),
-        ("R17 (EMG same date)", check_r17),
-        ("R17 (EMG anywhere on claim)", lambda ls: check_r17(ls, same_day=False)),
+        ("R15 (group sets, as V1a)", lambda ls: check_r15(ls, lookups, exact=False)),
+        ("R15 (approved, article-exact)", lambda ls: check_r15(ls, lookups)),
+        ("R16", check_r16),
+        ("R17", check_r17),
         ("R18", check_r18),
         ("R19", check_r19),
-        ("R20 (evaluation hours)", check_r20),
-        ("R20 (evaluation + administration)", lambda ls: check_r20(ls, True)),
+        ("R20", check_r20),
     ]
     totals = {}
     for name, check in variants:
@@ -602,14 +600,24 @@ def main() -> None:
     r15 = totals["R15 (group sets, as V1a)"]
     decided = sum(n for (_, w), n in r15.items() if "<- RULE" not in w)
     decided_deny = sum(n for (_, w), n in r15.items() if w.endswith("<- MODEL DENY"))
-    exact = totals["R15 (article-exact)"]
+    exact = totals["R15 (approved, article-exact)"]
     out += [
         "",
         "## Comparison with V1a",
         "",
         f"- R15 (group sets) on lines the rules left to the model: {decided} "
         f"(MODEL DENY {decided_deny}); V1a: 391, all DENY.",
-        f"- R15 article-exact minus group sets: {sum(exact.values()) - sum(r15.values())} lines.",
+        f"- R15 approved minus group sets: {sum(exact.values()) - sum(r15.values())} lines.",
+    ]
+    changed: Counter[str] = Counter()
+    for r in records:
+        for x in lines_of(r.claim):
+            if r15_supported(x, lookups, False) != r15_supported(x, lookups, True):
+                changed[f"{x.code} {r.split} {r.labels.get(x.line_no, '?')}"] += 1
+    out += [
+        "- Lines whose R15 result differs between the v1 group sets and the approved definition "
+        "(66982 on group 1 only, colonoscopy 2A first, foot care Q7-Q9): "
+        + (", ".join(f"{k} {n}" for k, n in sorted(changed.items())) or "none")
     ]
     r14 = totals["R14"]
     became = sum(n for (_, w), n in r14.items() if w.endswith(("MODEL APPROVE", "MODEL PEND")))
@@ -620,7 +628,7 @@ def main() -> None:
     ]
     by_scenario: Counter[str] = Counter()
     for r in records:
-        for h in check_r15(lines_of(r.claim), lookups):
+        for h in check_r15(lines_of(r.claim), lookups, exact=False):
             if not r.labels.get(h.line_no, "").startswith("RULE"):
                 by_scenario[r.scenario] += 1
     out += [
@@ -641,6 +649,23 @@ def main() -> None:
     out += [
         f"- A58565 lines that fail on their own diagnoses but pass on the claim's (the article "
         f'says "the claim must have"): {claim_level}.',
+    ]
+
+    contradicting: Counter[str] = Counter()
+    for r in records:
+        lines = lines_of(r.claim)
+        by_no = {x.line_no: x for x in lines}
+        for h in check_r17(lines):
+            label = r.labels.get(h.line_no, "")
+            if label in ("MODEL APPROVE", "MODEL PEND") and not (
+                CARPAL_TUNNEL & set(by_no[h.line_no].diagnoses)
+            ):
+                contradicting[f"{r.split} {label}"] += 1
+    out += [
+        "- R17-flagged lines without a carpal tunnel diagnosis labelled APPROVE or PEND "
+        "(contradict L34594 cov-037; D-RULE-6): "
+        + ", ".join(f"{k} {n}" for k, n in sorted(contradicting.items()))
+        + f" (total {sum(contradicting.values())})",
     ]
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

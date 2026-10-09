@@ -1,6 +1,8 @@
 """Curated data (data/curated/) is internally consistent (INSTRUCTIONS.md §9.2)."""
 
-from app.db.curated import load_curated, parse_policy, validate_curated
+from dataclasses import replace
+
+from app.db.curated import CodeRole, load_curated, parse_policy, validate_curated
 
 
 def test_curated_files_are_consistent() -> None:
@@ -39,3 +41,57 @@ def test_auth_agrees_across_candidate_categories() -> None:
     assert not data.auth_required("PLN-PPO-GOLD", "45378")
     assert data.auth_required("PLN-HMO", "97110")
     assert not data.auth_required("PLN-PPO-GOLD", "97110")
+
+
+# --- Rules v2 data (D-RULE-3, D-RULE-4) ----------------------------------------------------------
+
+
+def test_r15_follows_the_articles_where_the_v1_group_sets_differ() -> None:
+    support = load_curated().diagnosis_support
+
+    assert support["66982"].alternatives == ((1, 2),)  # v1 (generator, V1a)
+    assert support["66982"].rule_alternatives == ((1,),)  # A56544: group 2 "if applicable"
+    assert support["45385"].rule_alternatives == ((1,), (2, 3))
+    assert support["45385"].rule_first_group == 2  # A56456: the 2A code is the primary
+    assert support["11720"].rule_alternatives == ((1,), (2,), (3,), (4,))
+    assert support["11720"].rule_group_modifiers == ((2, frozenset({"Q7", "Q8", "Q9"})),)
+    unchanged = [c for c in support if c not in {"66982", "45378", "45380", "45385"} | {"11720"}]
+    assert all(
+        support[c].rule_alternatives == support[c].alternatives for c in unchanged if c != "11721"
+    )
+
+
+def test_the_rule_code_roles_and_diagnosis_sets() -> None:
+    data = load_curated()
+    roles = data.code_roles
+
+    assert len(roles) == 46
+    assert roles["64484"] == CodeRole(
+        "64484", "ESI_TRANSFORAMINAL_ADDON", "LUMBAR_SACRAL", "64483", None, roles["64484"].source
+    )
+    assert {c for c, r in roles.items() if r.role == "TESTING_TIME"} == {"96130", "96131", "96136"}
+    assert [roles[c].minutes_per_unit for c in ("96130", "96131", "96136")] == [60, 60, 30]
+    assert data.diagnosis_sets["PARASOMNIA"] == {
+        "G4750", "G4751", "G4752", "G4753", "G4754", "G4759",
+    }  # fmt: skip
+    assert data.diagnosis_sets["FACET_SYNOVIAL_CYST"] == {"M7130", "M7138"}
+    assert all(role.source for role in roles.values())
+
+
+def test_rule_data_problems_are_found() -> None:
+    data = load_curated()
+    roles = dict(data.code_roles)
+    roles["64484"] = replace(roles["64484"], primary_code="64490")  # a facet code, not an ESI
+    roles["95806"] = replace(roles["95806"], minutes_per_unit=60)
+    roles["62321"] = replace(roles["62321"], spinal_region=None)
+    support = dict(data.diagnosis_support)
+    support["45385"] = replace(support["45385"], rule_first_group=5)
+
+    problems = validate_curated(replace(data, code_roles=roles, diagnosis_support=support))
+
+    assert problems == [
+        "45385: rule_first_group is in no rule_groups alternative",
+        "62321: spinal region does not fit role ESI_INTERLAMINAR",
+        "64484: primary code 64490 has the wrong role",
+        "95806: minutes per unit do not fit role HOME_SLEEP_TEST",
+    ]

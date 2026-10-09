@@ -2,13 +2,13 @@
 (tests/golden/rules/raw_subset.json, D-CI-1), in the shape app.db.seed.load_rule_tables loads.
 
 The fixture holds codes, dates, indicators and limits only, so place-of-service names, ICD-10-CM
-descriptions and MUE adjudication indicators are empty here."""
+descriptions, MUE adjudication indicators and billing-article versions are empty here."""
 
 from datetime import date
 
 from app.db import raw
 from app.db.seed import ROOT, RuleTableData, Source, file_sha256
-from scripts.verify.rules_fixture import FIXTURE, read_fixture
+from scripts.verify.rules_fixture import FIXTURE, article_covered, read_fixture
 
 
 def fixture_rule_tables() -> RuleTableData:
@@ -34,6 +34,9 @@ def fixture_rule_tables() -> RuleTableData:
         mue={code: (units, "") for code, units in data["mue"].items()},
         mue_effective=raw.MUE_EFFECTIVE,
         ncci_rows=lambda: iter(ncci_rows()),
+        article_covered={
+            article: ("", groups) for article, groups in article_covered(data).items()
+        },
         sources={
             table: source
             for table in (
@@ -42,6 +45,7 @@ def fixture_rule_tables() -> RuleTableData:
                 "icd10_codes",
                 "mue_limits",
                 "ncci_ptp_edits",
+                "article_icd10_covered",
             )
         },
     )

@@ -1,0 +1,47 @@
+procedure_code,role,spinal_region,primary_code,minutes_per_unit,source
+62321,ESI_INTERLAMINAR,CERVICAL_THORACIC,,,A56651 v36 CPT group 1; PFS RVU26A global days 000
+62323,ESI_INTERLAMINAR,LUMBAR_SACRAL,,,A56651 v36 CPT group 1; PFS RVU26A global days 000
+64479,ESI_TRANSFORAMINAL,CERVICAL_THORACIC,,,A56651 v36 CPT group 1; PFS RVU26A global days 000
+64480,ESI_TRANSFORAMINAL_ADDON,CERVICAL_THORACIC,64479,,A56651 v36 CPT group 1; PFS RVU26A global days ZZZ (add-on)
+64483,ESI_TRANSFORAMINAL,LUMBAR_SACRAL,,,A56651 v36 CPT group 1; PFS RVU26A global days 000
+64484,ESI_TRANSFORAMINAL_ADDON,LUMBAR_SACRAL,64483,,A56651 v36 CPT group 1; PFS RVU26A global days ZZZ (add-on)
+64490,FACET_INJECTION,CERVICAL_THORACIC,,,A57787 v47 CPT group 1; PFS RVU26A global days 000
+64491,FACET_INJECTION_ADDON,CERVICAL_THORACIC,64490,,A57787 v47 CPT group 1 (listed in addition to the primary procedure); PFS RVU26A global days ZZZ
+64492,FACET_THIRD_LEVEL,CERVICAL_THORACIC,64490,,A57787 v47 CPT group 2 (do not support medical necessity and are non-covered); L33930 cov-053
+64493,FACET_INJECTION,LUMBAR_SACRAL,,,A57787 v47 CPT group 1; PFS RVU26A global days 000
+64494,FACET_INJECTION_ADDON,LUMBAR_SACRAL,64493,,A57787 v47 CPT group 1 (listed in addition to the primary procedure); PFS RVU26A global days ZZZ
+64495,FACET_THIRD_LEVEL,LUMBAR_SACRAL,64493,,A57787 v47 CPT group 2 (do not support medical necessity and are non-covered); L33930 cov-053
+64633,FACET_DENERVATION,CERVICAL_THORACIC,,,A57787 v47 CPT group 1; PFS RVU26A global days 010; not a block (D-ESI-3)
+64634,FACET_DENERVATION_ADDON,CERVICAL_THORACIC,64633,,A57787 v47 CPT group 1; PFS RVU26A global days ZZZ; not a block (D-ESI-3)
+64635,FACET_DENERVATION,LUMBAR_SACRAL,,,A57787 v47 CPT group 1; PFS RVU26A global days 010; not a block (D-ESI-3)
+64636,FACET_DENERVATION_ADDON,LUMBAR_SACRAL,64635,,A57787 v47 CPT group 1; PFS RVU26A global days ZZZ; not a block (D-ESI-3)
+95800,HOME_SLEEP_TEST,,,,"A56923 v16 CPT group 1; unattended study (PFS RVU26A descriptor, not copied); L35050 home sleep testing"
+95801,HOME_SLEEP_TEST,,,,"A56923 v16 CPT group 1; unattended study (PFS RVU26A descriptor, not copied); L35050 home sleep testing"
+95806,HOME_SLEEP_TEST,,,,"A56923 v16 CPT group 1; unattended study (PFS RVU26A descriptor, not copied); L35050 home sleep testing"
+G0398,HOME_SLEEP_TEST,,,,A56923 v16 CPT group 1; HCPCS October 2026 long description: home sleep test
+G0399,HOME_SLEEP_TEST,,,,A56923 v16 CPT group 1; HCPCS October 2026 long description: home sleep test
+G0400,HOME_SLEEP_TEST,,,,A56923 v16 CPT group 1; HCPCS October 2026 long description: home sleep test
+95907,NERVE_CONDUCTION,,,,"A57478 v40 CPT group 1; nerve conduction studies (PFS RVU26A descriptor, not copied)"
+95908,NERVE_CONDUCTION,,,,"A57478 v40 CPT group 1; nerve conduction studies (PFS RVU26A descriptor, not copied)"
+95909,NERVE_CONDUCTION,,,,"A57478 v40 CPT group 1; nerve conduction studies (PFS RVU26A descriptor, not copied)"
+95910,NERVE_CONDUCTION,,,,"A57478 v40 CPT group 1; nerve conduction studies (PFS RVU26A descriptor, not copied)"
+95911,NERVE_CONDUCTION,,,,"A57478 v40 CPT group 1; nerve conduction studies (PFS RVU26A descriptor, not copied)"
+95912,NERVE_CONDUCTION,,,,"A57478 v40 CPT group 1; nerve conduction studies (PFS RVU26A descriptor, not copied)"
+95913,NERVE_CONDUCTION,,,,"A57478 v40 CPT group 1; nerve conduction studies (PFS RVU26A descriptor, not copied)"
+95860,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95861,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95863,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95864,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95865,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95866,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95867,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95868,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95869,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95870,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95872,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95885,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95886,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+95887,NEEDLE_EMG,,,,"A57478 v40 CPT group 1; needle electromyography (PFS RVU26A descriptor, not copied)"
+96130,TESTING_TIME,,,60,"A57780 v27 CPT group 1; time per unit (PFS RVU26A descriptor, not copied); L34520 cov-046"
+96131,TESTING_TIME,,,60,"A57780 v27 CPT group 1; time per unit (PFS RVU26A descriptor, not copied); L34520 cov-046"
+96136,TESTING_TIME,,,30,"A57780 v27 CPT group 1; time per unit (PFS RVU26A descriptor, not copied); L34520 cov-046"

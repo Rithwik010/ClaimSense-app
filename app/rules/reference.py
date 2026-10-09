@@ -3,7 +3,7 @@ from the curated and raw files in tests), so the rules stay pure functions with 
 of their own (§8.3)."""
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 
@@ -89,6 +89,27 @@ class NcciEdit:
 
 
 @dataclass(frozen=True)
+class DiagnosisSupportRef:
+    """R15 (D-RULE-4): the billing article of a procedure code and the covered-group combinations
+    that support it, as the article reads."""
+
+    billing_article: str
+    alternatives: tuple[tuple[int, ...], ...]  # one combination met = supported
+    first_group: int | None  # in a combination with it, this group holds the first diagnosis
+    group_modifiers: Mapping[int, frozenset[str]]  # a group that counts only with a modifier
+
+
+@dataclass(frozen=True)
+class CodeRoleRef:
+    """What a procedure code is for R14 to R20 (data/curated/rule_code_roles.csv)."""
+
+    role: str
+    spinal_region: str | None
+    primary_code: str | None
+    minutes_per_unit: int | None
+
+
+@dataclass(frozen=True)
 class RulesReference:
     members: Mapping[str, MemberRef]
     providers: Mapping[str, ProviderRef]
@@ -102,6 +123,12 @@ class RulesReference:
     ncci: Mapping[tuple[str, str], tuple[NcciEdit, ...]]  # (column 1, column 2) -> edits
     mue: Mapping[str, int]  # procedure code -> maximum units per date of service
     bypass_modifiers: frozenset[str]
+    # Rules v2 (D-RULE-3, D-RULE-4)
+    diagnosis_support: Mapping[str, DiagnosisSupportRef] = field(default_factory=dict)
+    # billing article -> covered group -> ICD-10-CM codes (from the database: the claim's codes)
+    article_covered: Mapping[str, Mapping[int, frozenset[str]]] = field(default_factory=dict)
+    code_roles: Mapping[str, CodeRoleRef] = field(default_factory=dict)
+    diagnosis_sets: Mapping[str, frozenset[str]] = field(default_factory=dict)
 
     def in_network(self, npi: str, plan_id: str) -> bool:
         """A-R1: no network row for the plan means out of network."""

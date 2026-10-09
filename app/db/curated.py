@@ -7,7 +7,7 @@ synthetic generators (`training/generate/`) read the same values, so both always
 
 import csv
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 from functools import lru_cache
@@ -19,6 +19,31 @@ import yaml
 CURATED_DIR = Path(__file__).resolve().parents[2] / "data" / "curated"
 
 CRITERION_HEADING = re.compile(r"^## (POL-[A-Z]+-[0-9]{3}\.c[0-9]+)\s*$", re.MULTILINE)
+
+# The line rules R14 to R20 (D-RULE-3): what a code is for them, and their diagnosis sets.
+RULE_ROLES = (
+    "ESI_INTERLAMINAR",
+    "ESI_TRANSFORAMINAL",
+    "ESI_TRANSFORAMINAL_ADDON",
+    "FACET_INJECTION",
+    "FACET_INJECTION_ADDON",
+    "FACET_THIRD_LEVEL",
+    "FACET_DENERVATION",
+    "FACET_DENERVATION_ADDON",
+    "HOME_SLEEP_TEST",
+    "NERVE_CONDUCTION",
+    "NEEDLE_EMG",
+    "TESTING_TIME",
+)
+EXTENDING_ROLES = {  # role of a code that extends a primary procedure -> the primary's role
+    "ESI_TRANSFORAMINAL_ADDON": "ESI_TRANSFORAMINAL",
+    "FACET_INJECTION_ADDON": "FACET_INJECTION",
+    "FACET_THIRD_LEVEL": "FACET_INJECTION",
+    "FACET_DENERVATION_ADDON": "FACET_DENERVATION",
+}
+SPINAL_ROLES = {role for role in RULE_ROLES if role.startswith(("ESI_", "FACET_"))}
+SPINAL_REGIONS = ("CERVICAL_THORACIC", "LUMBAR_SACRAL")
+RULE_DIAGNOSIS_SETS = ("PARASOMNIA", "FACET_SYNOVIAL_CYST")
 
 
 @dataclass(frozen=True)
@@ -123,7 +148,24 @@ class DiagnosisSupport:
 
     procedure_code: str
     billing_article: str
-    alternatives: tuple[tuple[int, ...], ...]
+    alternatives: tuple[tuple[int, ...], ...]  # v1, as the generator and V1a read the article
+    source: str
+    # R15 (D-RULE-4) follows the article where the v1 sets differ: its own combinations; a group
+    # that must hold the line's first diagnosis; groups that count only with given modifiers.
+    rule_alternatives: tuple[tuple[int, ...], ...] = ()
+    rule_first_group: int | None = None
+    rule_group_modifiers: tuple[tuple[int, frozenset[str]], ...] = ()
+
+
+@dataclass(frozen=True)
+class CodeRole:
+    """What a procedure code is for the line rules R14 to R20 (`rule_code_roles.csv`)."""
+
+    procedure_code: str
+    role: str  # RULE_ROLES
+    spinal_region: str | None  # SPINAL_REGIONS, for ESI and facet codes
+    primary_code: str | None  # an add-on or third-level code: the primary procedure it extends
+    minutes_per_unit: int | None  # TESTING_TIME codes
     source: str
 
 
@@ -141,6 +183,8 @@ class CuratedData:
     policies: dict[str, CoveragePolicy]
     diagnosis_support: dict[str, DiagnosisSupport]
     bypass_modifiers: frozenset[str]
+    code_roles: dict[str, CodeRole] = field(default_factory=dict)
+    diagnosis_sets: dict[str, frozenset[str]] = field(default_factory=dict)
 
     def benefit(self, plan_id: str, category: str) -> BenefitConfig:
         return self.benefits[(plan_id, category)]
@@ -202,6 +246,30 @@ def parse_policy(text: str) -> CoveragePolicy:
 
 def _parse_alternatives(value: str) -> tuple[tuple[int, ...], ...]:
     return tuple(tuple(int(g) for g in alt.split("+")) for alt in value.split("|"))
+
+
+def _parse_group_modifiers(value: str) -> tuple[tuple[int, frozenset[str]], ...]:
+    """`2:Q7 Q8 Q9`, groups separated by `;`."""
+    pairs = (part.partition(":") for part in value.split(";") if part.strip())
+    return tuple((int(group), frozenset(modifiers.split())) for group, _, modifiers in pairs)
+
+
+def _code_role(row: dict[str, str]) -> CodeRole:
+    return CodeRole(
+        procedure_code=row["procedure_code"],
+        role=row["role"],
+        spinal_region=row["spinal_region"] or None,
+        primary_code=row["primary_code"] or None,
+        minutes_per_unit=int(row["minutes_per_unit"]) if row["minutes_per_unit"] else None,
+        source=row["source"],
+    )
+
+
+def _diagnosis_sets(rows: list[dict[str, str]]) -> dict[str, frozenset[str]]:
+    sets: dict[str, set[str]] = {}
+    for row in rows:
+        sets.setdefault(row["set_name"], set()).add(row["icd10_code"])
+    return {name: frozenset(codes) for name, codes in sets.items()}
 
 
 @lru_cache
@@ -276,6 +344,9 @@ def load_curated() -> CuratedData:
             billing_article=row["billing_article"],
             alternatives=_parse_alternatives(row["supporting_groups"]),
             source=row["source"],
+            rule_alternatives=_parse_alternatives(row["rule_groups"]),
+            rule_first_group=int(row["rule_first_group"]) if row["rule_first_group"] else None,
+            rule_group_modifiers=_parse_group_modifiers(row["rule_group_modifiers"]),
         )
         for row in _read_csv("diagnosis_support.csv")
     }
@@ -301,7 +372,14 @@ def load_curated() -> CuratedData:
         policies=policies,
         diagnosis_support=support,
         bypass_modifiers=frozenset(r["modifier"] for r in _read_csv("ncci_bypass_modifiers.csv")),
+        code_roles={r["procedure_code"]: _code_role(r) for r in _read_csv("rule_code_roles.csv")},
+        diagnosis_sets=_diagnosis_sets(_read_csv("rule_diagnosis_sets.csv")),
     )
+
+
+def billing_articles(data: CuratedData) -> set[str]:
+    """The billing articles R15 reads: those of the in-scope codes (diagnosis_support.csv)."""
+    return {support.billing_article for support in data.diagnosis_support.values()}
 
 
 def validate_curated(data: CuratedData) -> list[str]:
@@ -353,4 +431,40 @@ def validate_curated(data: CuratedData) -> list[str]:
         for code in policy.procedure_codes:
             if data.scope.get(code) is None or data.scope[code].policy_id != policy.policy_id:
                 problems.append(f"{policy.policy_id}: code {code} not mapped in procedure_scope")
+    return problems + _rule_data_problems(data)
+
+
+def _rule_data_problems(data: CuratedData) -> list[str]:
+    """The line rules' curated data (D-RULE-3, D-RULE-4)."""
+    problems = []
+    for code, support in data.diagnosis_support.items():
+        groups = {g for alternative in support.rule_alternatives for g in alternative}
+        if not support.rule_alternatives:
+            problems.append(f"{code}: no rule_groups")
+        if support.rule_first_group is not None and support.rule_first_group not in groups:
+            problems.append(f"{code}: rule_first_group is in no rule_groups alternative")
+        if not {g for g, _ in support.rule_group_modifiers} <= groups:
+            problems.append(f"{code}: rule_group_modifiers names a group not in rule_groups")
+    roles = data.code_roles
+    for code, role in roles.items():
+        if role.role not in RULE_ROLES:
+            problems.append(f"{code}: unknown role {role.role}")
+        if (role.spinal_region is not None) != (role.role in SPINAL_ROLES) or (
+            role.spinal_region is not None and role.spinal_region not in SPINAL_REGIONS
+        ):
+            problems.append(f"{code}: spinal region does not fit role {role.role}")
+        primary = roles.get(role.primary_code or "")
+        if role.role in EXTENDING_ROLES:
+            if primary is None or primary.role != EXTENDING_ROLES[role.role]:
+                problems.append(f"{code}: primary code {role.primary_code} has the wrong role")
+            elif primary.spinal_region != role.spinal_region:
+                problems.append(f"{code}: primary code {role.primary_code} is in another region")
+        elif role.primary_code is not None:
+            problems.append(f"{code}: only add-on and third-level codes have a primary code")
+        if (role.minutes_per_unit is not None) != (role.role == "TESTING_TIME") or (
+            role.minutes_per_unit is not None and role.minutes_per_unit <= 0
+        ):
+            problems.append(f"{code}: minutes per unit do not fit role {role.role}")
+    if set(data.diagnosis_sets) != set(RULE_DIAGNOSIS_SETS):
+        problems.append(f"diagnosis sets {sorted(data.diagnosis_sets)} != {RULE_DIAGNOSIS_SETS}")
     return problems

@@ -19,8 +19,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import raw
-from app.db.curated import CuratedData, load_curated
+from app.db.curated import CuratedData, billing_articles, load_curated
 from app.db.models import (
+    ArticleIcd10Covered,
     Authorization,
     Benefit,
     Claim,
@@ -38,6 +39,8 @@ from app.db.models import (
 )
 from app.rules.reference import (
     AuthorizationRef,
+    CodeRoleRef,
+    DiagnosisSupportRef,
     ExistingClaimLine,
     MemberRef,
     NcciEdit,
@@ -54,6 +57,7 @@ class CodeTables:
     place_of_service_codes: frozenset[str]
     ncci: Mapping[tuple[str, str], tuple[NcciEdit, ...]]
     mue: Mapping[str, int]
+    article_covered: Mapping[str, Mapping[int, frozenset[str]]]  # article -> group -> codes
 
 
 @cache
@@ -76,7 +80,34 @@ def load_code_tables(scope: frozenset[str]) -> CodeTables:
         place_of_service_codes=frozenset(raw.read_place_of_service_codes()),
         ncci={key: tuple(edits) for key, edits in ncci.items()},
         mue={code: entry.max_units for code, entry in raw.read_mue(set(scope)).items()},
+        article_covered={
+            article: dict(found.covered)
+            for article, found in raw.read_article_diagnoses(
+                billing_articles(load_curated())
+            ).items()
+        },
     )
+
+
+def rule_refs(
+    curated: CuratedData,
+) -> tuple[dict[str, DiagnosisSupportRef], dict[str, CodeRoleRef], dict[str, frozenset[str]]]:
+    """The curated part of the rules v2 reference: R15's diagnosis support, the code roles and the
+    diagnosis sets."""
+    support = {
+        code: DiagnosisSupportRef(
+            billing_article=s.billing_article,
+            alternatives=s.rule_alternatives,
+            first_group=s.rule_first_group,
+            group_modifiers=dict(s.rule_group_modifiers),
+        )
+        for code, s in curated.diagnosis_support.items()
+    }
+    roles = {
+        code: CodeRoleRef(r.role, r.spinal_region, r.primary_code, r.minutes_per_unit)
+        for code, r in curated.code_roles.items()
+    }
+    return support, roles, dict(curated.diagnosis_sets)
 
 
 def _day(value: str | None) -> date | None:
@@ -111,6 +142,7 @@ def build_reference(
 ) -> RulesReference:
     """`existing_claims` holds one dict per claim line on file: claim_id, member_id, billing_npi,
     date_of_service, procedure_code, status."""
+    support, roles, diagnosis_sets = rule_refs(curated)
     return RulesReference(
         members={
             m["member_id"]: MemberRef(
@@ -155,6 +187,10 @@ def build_reference(
         ncci=codes.ncci,
         mue=codes.mue,
         bypass_modifiers=curated.bypass_modifiers,
+        diagnosis_support=support,
+        article_covered=codes.article_covered,
+        code_roles=roles,
+        diagnosis_sets=diagnosis_sets,
     )
 
 
@@ -280,6 +316,16 @@ def reference_for_claim(
         .subquery()
     )
     years = session.scalars(select(Icd10Code.fiscal_year).distinct()).all()
+    support, roles, diagnosis_sets = rule_refs(curated)
+    articles = {support[code].billing_article for code in codes if code in support}
+    covered: dict[str, dict[int, set[str]]] = defaultdict(lambda: defaultdict(set))
+    for row in session.scalars(
+        select(ArticleIcd10Covered).where(
+            ArticleIcd10Covered.article_id.in_(articles),
+            ArticleIcd10Covered.icd10_code.in_(diagnoses),
+        )
+    ):
+        covered[row.article_id][row.covered_group].add(row.icd10_code)
     return RulesReference(
         members=members,
         providers={
@@ -336,4 +382,11 @@ def reference_for_claim(
             ).all()
         ),
         bypass_modifiers=curated.bypass_modifiers,
+        diagnosis_support=support,
+        article_covered={
+            article: {group: frozenset(found) for group, found in groups.items()}
+            for article, groups in covered.items()
+        },
+        code_roles=roles,
+        diagnosis_sets=diagnosis_sets,
     )
