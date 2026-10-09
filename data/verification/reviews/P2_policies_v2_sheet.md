@@ -29,7 +29,7 @@ Two passes: pass 1 in a separate Claude chat (paste the whole sheet and ask for 
 - requirement: must be satisfied; silent notes give NOT_DOCUMENTED.
 - exclusion: describes a situation that is not covered; present gives NOT_MET, absent or silent gives NOT_APPLICABLE; never MET.
 - conditional: applies only in the situation named with it; otherwise NOT_APPLICABLE; when it applies, it works as a requirement.
-- Group: indication: alternative indications of one policy (D-POL-3). Counting only the criteria that apply to the line's code: any criterion NOT_MET gives DENY; otherwise, when no indication-group criterion is MET, PEND with 'no covered indication documented'; otherwise any NOT_DOCUMENTED gives PEND; otherwise APPROVE.
+- Group: indication: alternative indications of one policy, which count only as a group (D-POL-3). Counting only the criteria that apply to the line's code, the group is satisfied when any member is MET; a member's NOT_MET or NOT_DOCUMENTED never decides the line on its own. Any NOT_MET outside the group gives DENY; otherwise an unsatisfied group gives PEND with 'no covered indication documented'; otherwise any NOT_DOCUMENTED outside the group gives PEND; otherwise APPROVE. Explicit non-coverage is in exclusion criteria, outside the group.
 - Applies to: the criterion is shown only on lines billing these codes; without it, on every code of the policy.
 
 ## Codes of the policies
@@ -514,7 +514,7 @@ Excerpts, word for word:
 
 ### A21. POL-SURG-001.c4 (new, no v1 predecessor)
 
-- Decision: Checkpoint 1 review, point 4 (gap found; please confirm)
+- Decision: D-POL-4 (checkpoint 1 review)
 - What changed: New: L33558 cov-008, a covered indication no v1 criterion held (found while listing the indication group's sources). A separate criterion, so c3 keeps its ID.
 - **v2 text:** It is also covered when another procedure or treatment, done now or planned (such as pars plana vitrectomy, iridocyclectomy, a procedure for eye trauma, or external beam radiation), makes faster cataract development highly probable.
 - Type: conditional (applies when: another procedure or treatment likely to speed up the cataract). Applies to: every code of the policy. Group: indication.

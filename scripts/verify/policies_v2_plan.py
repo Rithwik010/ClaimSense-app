@@ -77,7 +77,7 @@ ADDED = {
     "POL-DX-002": "c4 conditional (D-RULE-6, Q9, L34594 cov-037)",
     "POL-FOOT-001": "c4 and c5 conditional, indication group (Q4, manual 290.C.3 and C.4)",
     "POL-DX-001": "c5 requirement on 95806 (D-POL-4, L35050 cov-107 and cov-108)",
-    "POL-SURG-001": "c4 conditional, indication group (L33558 cov-008; to confirm)",
+    "POL-SURG-001": "c4 conditional, indication group (D-POL-4, L33558 cov-008)",
 }
 FOOT_CODES = ("11720", "11721")
 ONYCHOMYCOSIS = "B351"
