@@ -20,6 +20,8 @@ ClaimSense: CMS-1500 claims → deterministic rules → fine-tuned Gemma 4 SLM r
 - No external model APIs. Inference runs locally via Ollama only.
 - Synthetic data only. Never commit `data/raw/`, `data/generated/`, `confidential/`,
   model weights, `.env`, or secrets. Never copy AMA CPT descriptor text.
+- CPT text reproduced in CMS manuals (code descriptors, modifier definitions) counts as AMA text;
+  paraphrase it and cite the page.
 - `app/domain/contracts.py` is frozen: propose changes, don't make them.
 - Golden test expected values are synthesized before the code they test, with worked steps,
   and spot-checked by the team. Never change them to make a test pass.
