@@ -1020,6 +1020,8 @@ Every covered indication the sources give for the policy's codes, word for word,
 
 Pass 1 (2026-10-09): a normal Claude chat with no repository access, which saw only the pasted sheet and the pass 1 prompt (answers as returned: P2_policies_v2_pass1_answers.md). A Claude recomputation, not a human check; independent of the repository by construction, not of the author model (the criteria were also written by Claude). Pass 2 is the reviewer's: the rows listed in P2_policies_v2_pass1_summary.md.
 
+Author triage (2026-10-09): Claude Code, the author of the criteria, triaged the 22 pass 2 rows in P2_policies_v2_triage.md; not an independent check. The pass 2 columns hold the reviewer's decisions, recorded as 'author triage by Claude Code, decided by Manideep'.
+
 ### Part A (MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE)
 
 | Row | Criterion | Pass 1 verdict (Claude chat) | Pass 1 notes | Pass 2 verdict (reviewer) | Pass 2 notes |
