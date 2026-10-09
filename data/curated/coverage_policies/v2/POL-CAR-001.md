@@ -15,6 +15,7 @@ replaces: {"POL-CAR-001.c1": ["POL-CAR-001.c4", "POL-CAR-001.c5"]}
 Repeating the study more often than once a year is not medically necessary unless the notes document a clear change in signs or symptoms, a check of the response to treatment, or planned valve surgery.
 
 Type: conditional
+Applies to: 93306, 93308
 Source: LCD L37379 v42, Sections A and F, repeat studies.
 
 ## POL-CAR-001.c3
@@ -25,11 +26,11 @@ Applies to: 93350
 Source: LCD L37379 v42, Stress echocardiography indications.
 
 ## POL-CAR-001.c4
-A transthoracic echocardiogram is covered when the patient has signs or symptoms of, or is being evaluated for, one of these: weakened heart muscle or cardiomyopathy; hypertensive heart disease with clinical evidence of heart disease; heart attack or coronary insufficiency; exposure to drugs or treatments toxic to the heart; heart transplant or rejection monitoring; native heart valve disease; prosthetic heart valves; acute endocarditis; pericardial disease; aortic disease; congenital heart disease; suspected clots or embolic sources in the heart; heart tumors or masses; critical illness or trauma; arrhythmias or palpitations; fainting (syncope); or lung disease affecting the heart.
+A transthoracic echocardiogram is covered when the patient has symptoms of, or an existing condition in, one of these: weakened heart muscle or cardiomyopathy; hypertensive heart disease with clinical evidence of heart disease; heart attack or coronary insufficiency; exposure to drugs or treatments toxic to the heart; heart transplant or rejection monitoring; native heart valve disease; prosthetic heart valves; acute endocarditis; pericardial disease; aortic disease; congenital heart disease; suspected clots or embolic sources in the heart; heart tumors or masses; critical illness or trauma; arrhythmias or palpitations; fainting (syncope); or pulmonary heart disease, such as unexplained pulmonary hypertension or a pulmonary embolism with suspected clots in the right heart.
 
 Type: requirement
 Applies to: 93306, 93308
-Source: LCD L37379 v42 cov-006, cov-007, cov-009, cov-011, cov-012, cov-013, cov-016, cov-018, cov-020, cov-022, cov-024, cov-026, cov-028, cov-030, cov-032, cov-034, cov-036, cov-038, cov-040, cov-042.
+Source: LCD L37379 v42 cov-006, cov-007, cov-009, cov-011, cov-012, cov-013, cov-016, cov-018, cov-020, cov-022, cov-024, cov-026, cov-028, cov-030, cov-032, cov-034, cov-036, cov-038, cov-040, cov-042, cov-043, cov-108.
 
 ## POL-CAR-001.c5
 High blood pressure alone, without signs or symptoms of heart disease, is not a covered reason.

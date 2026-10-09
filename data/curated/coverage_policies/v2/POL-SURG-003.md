@@ -15,6 +15,7 @@ replaces: {}
 Radiofrequency or laser vein ablation is covered only for symptomatic varicose veins of the great or small saphenous veins and their branches that have failed 3 months of conservative therapy.
 
 Type: requirement
+Applies to: 36475, 36478
 Source: LCD L34209 v43, Limitations for ablation, item 1.
 
 ## POL-SURG-003.c2
@@ -28,3 +29,9 @@ Treating spider veins (telangiectasias) by any technique is cosmetic and not cov
 
 Type: exclusion
 Source: LCD L34209 v43, Limitations for ablation, item 4.
+
+## POL-SURG-003.c4
+Treatment of varicose veins, including stab phlebectomy, is covered when a 3-month trial of conservative therapy, such as exercise, periodic leg elevation, weight loss, compression or avoiding long immobility, has failed, and the patient is symptomatic with one or more of: pain or burning in the leg severe enough to impair mobility; recurrent superficial phlebitis; a non-healing skin ulcer; bleeding from a varicosity; stasis dermatitis; or refractory dependent edema.
+
+Type: requirement
+Source: LCD L34209 v43 cov-007 to cov-015, cov-017, cov-028.

@@ -11,10 +11,14 @@ Every quoted excerpt is checked word for word against its LCD block or manual se
 data/raw (the resolver of scripts/verify/policies_v2_sources.py); the old texts, code lists and
 source lines are read from the v2 policy files, never typed.
 
-    uv run python -m scripts.verify.policies_v2_triage
-    # writes data/verification/reviews/P2_policies_v2_triage.md and records the triage in the sheet
+    uv run python -m scripts.verify.policies_v2_triage write    # the triage file; notes the sheet
+    uv run python -m scripts.verify.policies_v2_triage decide   # the reviewer's pass 2 decisions:
+    # recorded in the sheet's pass 2 columns, approved fixes applied to the v2 policy files, and
+    # any criterion the fixes add appended to the sheet as a new Part A row
 """
 
+import argparse
+import re
 from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -22,10 +26,17 @@ from dataclasses import dataclass, field
 from scripts.verify import policy_sources as ps
 from scripts.verify.policies_v2_sources import (
     SHEET,
+    V2_DIR,
     V2Criterion,
     ama_hits,
     bpm_sections,
+    lcds_cited,
+    read_v1,
     read_v2,
+    row_block,
+)
+from scripts.verify.policies_v2_sources import (
+    check as check_sources,
 )
 
 OUT = SHEET.parent / "P2_policies_v2_triage.md"
@@ -39,6 +50,14 @@ CATEGORIES = (
     "OK",
 )
 FIXED = {"LIMITING CHANGE", "ADDED", "MISSING LIMIT", "TYPE"}
+PASS2_BY = (
+    "author triage by Claude Code, decided by Manideep with recommendations from the planning chat"
+)
+PASS2_NOTE = (
+    "Pass 2 (2026-10-09): the 22 triaged rows hold the reviewer's decisions on the author "
+    f"triage ({PASS2_BY}). Approved fixes are applied to the v2 files; the texts above are the "
+    "ones reviewed, and the triage file shows old and new."
+)
 TRIAGE_NOTE = (
     "Author triage (2026-10-09): Claude Code, the author of the criteria, triaged the 22 pass 2 "
     "rows in P2_policies_v2_triage.md; not an independent check. The pass 2 columns hold the "
@@ -636,8 +655,227 @@ def record_in_sheet(text: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def main() -> None:
+# The reviewer's pass 2 decisions on TRIAGE (2026-10-09): row -> (decision, condition, final
+# text replacing the draft when the approval carries a condition).
+A17_TEXT = (
+    "Injections given to treat non-specific low back pain, axial spine pain, complex regional "
+    "pain syndrome, widespread diffuse pain, pain from neuropathy of other causes, or "
+    "cervicogenic headaches are not covered."
+)
+PASS2: dict[str, tuple[str, str, str | None]] = {
+    **{
+        row: ("approve", "", None)
+        for row in (
+            "A1",
+            "A3",
+            "A15",
+            "A19",
+            "A20",
+            "A22",
+            "A24",
+            "A26",
+            "A27",
+            "A30",
+            "B4",
+            "B18",
+            "B29",
+            "B34",
+            "B37",
+        )
+    },  # fmt: skip
+    "A17": (
+        "approve with a condition",
+        "remove the gloss but keep the LCD's 'to treat' wording, so the exclusion is about what "
+        "the injection treats; a patient with radicular pain who also has axial pain is not "
+        "excluded",
+        A17_TEXT,
+    ),
+    **{row: ("keep", "", None) for row in ("A2", "A6", "A10", "A11", "B17", "B27")},
+}
+VERDICT_WORD = {  # (part, triage category) -> the sheet's verdict word for pass 2
+    ("A", "ADDED"): "NOT IN SOURCE",
+    ("A", "LIMITING CHANGE"): "DIFFERENT MEANING",
+    ("A", "MISSING LIMIT"): "DIFFERENT MEANING",
+    ("A", "MISSING EXAMPLE"): "MATCHES",
+    ("A", "REWORDING"): "MATCHES",
+    ("A", "OK"): "MATCHES",
+    ("B", "TYPE"): "DISAGREE",
+    ("B", "REWORDING"): "AGREE",
+    ("B", "OK"): "AGREE",
+}
+
+
+def pass2_cells(entry: Entry) -> tuple[str, str]:
+    decision, condition, _ = PASS2[entry.row]
+    verdict = VERDICT_WORD[(entry.row[0], entry.category)]
+    if decision == "keep":
+        said = "kept"
+    elif condition:
+        said = f"fix approved with a condition: {condition}"
+    else:
+        said = "fix approved (old and new text in P2_policies_v2_triage.md)"
+    if entry.new_criteria:
+        said += "; adds " + ", ".join(n["criterion_id"] for n in entry.new_criteria)
+    return verdict, f"{entry.category}; {said}. {PASS2_BY[0].upper()}{PASS2_BY[1:]}."
+
+
+def record_pass2(text: str, entries: Sequence[Entry]) -> tuple[str, list[str]]:
+    """The sheet with the pass 2 cells of the triaged rows filled (only empty ones, or the same
+    content again), and PASS2_NOTE under the triage note."""
+    problems = []
+    lines = text.splitlines()
+    start = lines.index("## Verdicts")
+    by_row = {e.row: e for e in entries}
+    for i in range(start, len(lines)):
+        match = re.match(r"^\| ([AB][0-9]+) \| (POL-[^|]+?) \|", lines[i])
+        if not match or match.group(1) not in by_row:
+            continue
+        entry = by_row[match.group(1)]
+        cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+        if cells[1] != entry.criterion:
+            problems.append(
+                f"{entry.row}: the sheet names {cells[1]}, the triage {entry.criterion}"
+            )
+            continue
+        verdict, notes = pass2_cells(entry)
+        if (cells[4] or cells[5]) and (cells[4], cells[5]) != (verdict, notes):
+            problems.append(f"{entry.row}: the sheet already holds a different pass 2 decision")
+            continue
+        lines[i] = f"| {cells[0]} | {cells[1]} | {cells[2]} | {cells[3]} | {verdict} | {notes} |"
+    if PASS2_NOTE not in lines:
+        at = lines.index(TRIAGE_NOTE)
+        lines[at + 1 : at + 1] = ["", PASS2_NOTE]
+    return "\n".join(lines) + "\n", problems
+
+
+def criterion_block(c: V2Criterion) -> list[str]:
+    out = [f"## {c.criterion_id}", c.text, "", f"Type: {c.type}"]
+    if c.applies_to:
+        out.append(f"Applies to: {', '.join(c.applies_to)}")
+    if c.group:
+        out.append(f"Group: {c.group}")
+    return [*out, f"Source: {c.source}"]
+
+
+def fixed(entry: Entry, current: V2Criterion) -> V2Criterion:
+    final = PASS2[entry.row][2] or entry.new_text
+    return V2Criterion(
+        current.criterion_id,
+        current.number,
+        final or current.text,
+        current.type,
+        entry.new_applies if entry.new_applies is not None else current.applies_to,
+        current.group,
+        entry.new_source or current.source,
+    )
+
+
+def apply_fixes(entries: Sequence[Entry]) -> dict[str, str]:
+    """File name -> new text of every v2 policy file an approved fix changes. A changed criterion's
+    section is rebuilt in place; an added criterion goes at the end of its file."""
+    approved = [e for e in entries if e.action == "fix" and PASS2[e.row][0] != "keep"]
+    out: dict[str, str] = {}
+    for policy in read_v2():
+        changes = {
+            e.criterion: e
+            for e in approved
+            if e.criterion.startswith(policy.meta["policy_id"] + ".")
+        }
+        if not changes:
+            continue
+        path = V2_DIR / policy.name
+        text = path.read_text(encoding="utf-8")
+        front, body = text[: text.index("\n## ")], text[text.index("\n## ") + 1 :]
+        sections = re.split(r"(?m)^(?=## POL-)", body)
+        rebuilt = []
+        appended = []
+        for section in (s for s in sections if s.strip()):
+            cid = section.split("\n", 1)[0].removeprefix("## ").strip()
+            current = next(c for c in policy.criteria if c.criterion_id == cid)
+            new = fixed(changes[cid], current) if cid in changes else current
+            rebuilt.append("\n".join(criterion_block(new)))
+            for added in changes[cid].new_criteria if cid in changes else ():
+                appended.append(
+                    "\n".join(
+                        criterion_block(
+                            V2Criterion(
+                                added["criterion_id"],
+                                int(added["criterion_id"].rsplit(".c", 1)[1]),
+                                added["text"],
+                                added["type"],
+                                (),
+                                "",
+                                added["source"],
+                            )
+                        )
+                    )
+                )
+        out[policy.name] = front + "\n" + "\n\n".join(rebuilt + appended) + "\n"
+    return out
+
+
+def append_rows(sheet: str, entries: Sequence[Entry]) -> tuple[str, list[str]]:
+    """The sheet with each criterion a fix adds appended as a new Part A row (after the reviewed
+    rows, so their numbers stay) and in the Part A verdict table, with a note under Part A."""
+    added = [
+        n["criterion_id"] for e in entries if PASS2[e.row][0] != "keep" for n in e.new_criteria
+    ]
+    lines = sheet.splitlines()
+    numbers = [int(m.group(1)) for line in lines if (m := re.match(r"^### A([0-9]+)\. ", line))]
+    on_sheet = {m.group(1) for line in lines if (m := re.match(r"^### A[0-9]+\. (POL-\S+)", line))}
+    todo = [cid for cid in added if cid not in on_sheet]
+    if not todo:
+        return sheet, []
+    v1 = read_v1()
+    policies = read_v2()
+    _, rows = check_sources(policies, v1, lcds_cited(policies), "")
+    by_id = {r.criterion.criterion_id: r for r in rows}
+    blocks: list[str] = []
+    table: list[str] = []
+    for n, cid in enumerate(todo, start=max(numbers) + 1):
+        blocks += row_block(n, by_id[cid], v1)
+        table.append(f"| A{n} | {cid} |  |  |  |  |")
+    part_b = lines.index(next(line for line in lines if line.startswith("## Part B:")))
+    note = (
+        f"Rows added after pass 1 ({', '.join(todo)}): from approved pass 2 fixes; not yet "
+        "reviewed."
+    )
+    lines[part_b:part_b] = [note, "", *blocks]
+    at = lines.index(next(line for line in lines if line.startswith("### Part A (")))
+    end = next(i for i in range(at + 3, len(lines)) if not lines[i].startswith("|"))
+    lines[end:end] = table
+    return "\n".join(lines) + "\n", []
+
+
+def decide() -> None:
+    missing = sorted({e.row for e in TRIAGE} - set(PASS2))
+    if missing:
+        raise SystemExit(f"no pass 2 decision for {missing}")
+    sheet, problems = record_pass2(SHEET.read_text(encoding="utf-8"), TRIAGE)
+    files = apply_fixes(TRIAGE)
+    for name, text in files.items():
+        (V2_DIR / name).write_text(text, encoding="utf-8")  # rows below read the new files
+    sheet, more = append_rows(sheet, TRIAGE)
+    problems += more
+    hits = {n: k for n, k in ama_hits({SHEET.name: sheet, **files}).items() if k}
+    if hits:
+        problems.append(f"AMA CPT descriptor text found: {hits}")
+    if problems:
+        raise SystemExit(
+            "stopped (policy files may be written; check git diff):\n  " + "\n  ".join(problems)
+        )
+    SHEET.write_text(sheet, encoding="utf-8")
+    print(
+        f"pass 2 recorded for {len(PASS2)} rows; fixes applied to {len(files)} policy files "
+        f"({', '.join(sorted(files))})"
+    )
+
+
+def write() -> None:
     criteria = {c.criterion_id: c for p in read_v2() for c in p.criteria}
+    applied = [e.row for e in TRIAGE if e.new_text and criteria[e.criterion].text == e.new_text]
+    if applied:
+        raise SystemExit(f"fixes already applied ({applied}); the triage file is the record")
     problems = check(TRIAGE, criteria)
     written = render(TRIAGE, criteria)
     sheet = record_in_sheet(SHEET.read_text(encoding="utf-8"))
@@ -652,6 +890,12 @@ def main() -> None:
     print(
         f"{len(TRIAGE)} rows triaged: {fixes} fixes, {len(TRIAGE) - fixes} keep; wrote {OUT.name}"
     )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("step", choices=("write", "decide"))
+    {"write": write, "decide": decide}[parser.parse_args().step]()
 
 
 if __name__ == "__main__":

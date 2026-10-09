@@ -21,18 +21,19 @@ Source: LCD L34428 v93, General physical therapy guidelines.
 Restorative therapy requires a reasonable potential for improvement from the services. Maintenance programs must meet the Medicare Benefit Policy Manual, Chapter 15, Section 220 criteria.
 
 Type: requirement
+Applies to: 97110, 97140, 97530
 Source: LCD L34428 v93, Restorative and maintenance therapy.
 
 ## POL-REHAB-001.c4
-Treatment, as opposed to an initial evaluation or re-evaluation, must follow a written plan of care with specific goals, developed from an examination and evaluation. An evaluation can be covered even when it finds that therapy is not needed.
+Treatment must follow a written plan of care, developed from an examination and evaluation, that sets specific goals and plans the procedures by type, frequency and duration.
 
 Type: requirement
 Applies to: 97110, 97140, 97530
 Source: LCD L34428 v93 cov-001, cov-020, cov-112.
 
 ## POL-REHAB-001.c5
-The patient must be under the care of a physician or NPP, who certifies and recertifies the plan of care.
+The patient must be under the care of a physician or NPP, and a physician or NPP must certify the plan of care and recertify it.
 
 Type: requirement
 Applies to: 97110, 97140, 97530
-Source: LCD L34428 v93 cov-018, doc-007, doc-019.
+Source: LCD L34428 v93 cov-005, cov-018, doc-007, doc-016, doc-019.

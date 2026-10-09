@@ -34,4 +34,5 @@ Source: LCD L37373 v41, CT section, contrast indications.
 Brain imaging to stage a cancer without neurological symptoms is not covered for cancers that rarely spread to the brain: esophagus, oropharynx, prostate and non-melanoma skin cancer.
 
 Type: exclusion
+Applies to: 70450, 70551, 70553
 Source: LCD L37373 v41, MRI section, cancer staging.

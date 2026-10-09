@@ -15,6 +15,7 @@ replaces: {"POL-WOUND-001.c3": ["POL-WOUND-001.c4"]}
 Active wound care (debridement) is covered to remove dead tissue and promote healing, performed with direct one-on-one patient contact, following accepted standards of wound treatment.
 
 Type: requirement
+Applies to: 11042, 97597
 Source: LCD L38902 v12, Indications.
 
 ## POL-WOUND-001.c2
@@ -24,7 +25,7 @@ Type: requirement
 Source: LCD L38902 v12, Indications.
 
 ## POL-WOUND-001.c4
-How often debridement is done depends on the wound. A given type of wound care is not continued when the record does not show improvement leading to healing, and when healing is not documented after 30 days the plan of care must be revised.
+How often debridement is done depends on the wound. When the goal of care is healing, a given type of wound care is not continued if the record does not show improvement leading to healing, and when the expected healing is not documented after 30 days the plan of care should be revised. When the goal of care is not healing, the patient is managed under palliative care standards.
 
 Type: conditional
 Source: LCD L38902 v12 cov-082, cov-118, doc-032.

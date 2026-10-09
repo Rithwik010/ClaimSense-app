@@ -30,7 +30,7 @@ Type: requirement
 Source: LCD L33906 v75 cov-013, cov-023; decision D-ESI-2.
 
 ## POL-PAIN-001.c7
-Injections must be done under CT or fluoroscopic guidance with contrast; without contrast only when a contrast allergy or pregnancy is documented. A procedure code that includes imaging guidance counts as evidence of guidance, but contrast use, or the documented allergy or pregnancy, must be in the notes. Interlaminar and caudal injections are limited to one level, and transforaminal injections to two levels in one spinal region.
+Injections must be done under CT or fluoroscopic guidance with contrast. Without contrast, for example under ultrasound guidance, they are covered only when a contraindication to contrast, such as an allergy or pregnancy, is documented. A procedure code that includes imaging guidance counts as evidence of guidance, but contrast use, or the documented contraindication, must be in the notes. Interlaminar and caudal injections are limited to one level, and transforaminal injections to two levels in one spinal region.
 
 Type: requirement
 Source: LCD L33906 v75 cov-015, cov-016, cov-017, cov-020, cov-025; decision D-ESI-7.
@@ -42,7 +42,7 @@ Type: conditional
 Source: LCD L33906 v75 cov-019, cov-039; decision D-ESI-2.
 
 ## POL-PAIN-001.c9
-Injections are not covered to treat non-specific low back pain, axial spine pain (pain that does not radiate from a nerve root), complex regional pain syndrome, widespread diffuse pain, pain from neuropathy of other causes, or cervicogenic headaches.
+Injections given to treat non-specific low back pain, axial spine pain, complex regional pain syndrome, widespread diffuse pain, pain from neuropathy of other causes, or cervicogenic headaches are not covered.
 
 Type: exclusion
 Source: LCD L33906 v75 cov-029; decision D-ESI-4.

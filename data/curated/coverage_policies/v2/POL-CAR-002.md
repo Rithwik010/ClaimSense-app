@@ -12,7 +12,7 @@ replaces: {"POL-CAR-002.c1": ["POL-CAR-002.c4"], "POL-CAR-002.c2": ["POL-CAR-002
 ---
 
 ## POL-CAR-002.c4
-Recording for up to 48 hours is covered for one or more of: palpitations, fainting or near fainting, dizziness, chest pain, transient ischemic episodes, shortness of breath, or a known arrhythmia; checking the response to antiarrhythmic drugs; heart attack survivors with an ejection fraction of 40% or less; coronary artery disease with active symptoms, to correlate chest pain with ST-segment changes; other acute and subacute forms of ischemic heart disease; or detecting arrhythmias after an ablation procedure.
+Recording for up to 48 hours is covered for one or more of: palpitations, fainting or near fainting, dizziness, chest pain, transient ischemic episodes, shortness of breath, or arrhythmias; checking the response to antiarrhythmic drugs; heart attack survivors with an ejection fraction of 40% or less; coronary artery disease with active symptoms, to correlate chest pain with ST-segment changes; other acute and subacute forms of ischemic heart disease; or detecting arrhythmias after an ablation procedure.
 
 Type: requirement
 Applies to: 93224

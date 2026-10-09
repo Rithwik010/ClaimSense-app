@@ -12,13 +12,13 @@ replaces: {"POL-SURG-004.c1": ["POL-SURG-004.c5"], "POL-SURG-004.c2": ["POL-SURG
 ---
 
 ## POL-SURG-004.c5
-Eyelid surgery is covered when it corrects visual impairment caused by excess eyelid skin weighing down the lashes (dermatochalasis), blepharochalasis, drooping of the eyelid (blepharoptosis) or drooping of the brow. It is also covered as reconstruction: to repair defects caused by disease (including thyroid disease and cranial nerve palsies), trauma or tumor surgery; for ectropion or entropion, epiblepharon, lagophthalmos, congenital ectropion, entropion, lagophthalmos or ptosis, lid retraction or lag, or chronic dermatitis caused by redundant upper eyelid skin; or, when other treatments have failed or cannot be used, to relieve blepharospasm. For these reconstructive conditions, the record must document the patient's complaints and the examination findings.
+Eyelid surgery is covered when it corrects visual impairment caused by excess eyelid skin weighing down the lashes (dermatochalasis), blepharochalasis, drooping of the eyelid (blepharoptosis) or drooping of the brow. It is also covered as reconstruction: to repair defects caused by disease (including thyroid disease and cranial nerve palsies), trauma or tumor surgery; for ectropion or entropion, epiblepharon, lagophthalmos, congenital ectropion, entropion, lagophthalmos or ptosis; for lid retraction or lag caused by horizontal laxity of the lower eyelid without ectropion or entropion (with exposure keratopathy or tearing), by horizontal laxity of the upper eyelid (with floppy eyelid syndrome), or by orbital thyroid disease; for chronic symptomatic dermatitis of the pretarsal skin caused by redundant upper eyelid skin; or, when other treatments have failed or cannot be used, to relieve blepharospasm. For these reconstructive conditions, the record must document the patient's complaints and the examination findings.
 
 Type: requirement
 Source: LCD L33944 v27 cov-016, cov-017, cov-019 to cov-022, cov-030 to cov-043.
 
 ## POL-SURG-004.c6
-For dermatochalasis, blepharochalasis, blepharoptosis or brow ptosis, the record must document the patient's complaints of functional problems: vision blocked above or to the side, trouble reading because the upper field is lost, or looking through the eyelashes or seeing eyelid skin. The reconstructive conditions are exempt.
+For dermatochalasis, blepharochalasis, blepharoptosis or brow ptosis, the record must document the patient's complaints of functional problems, such as vision blocked above or to the side, trouble reading because the upper field is lost, or looking through the eyelashes or seeing eyelid skin. The reconstructive conditions are exempt.
 
 Type: conditional
 Source: LCD L33944 v27 cov-016, cov-024 to cov-027.

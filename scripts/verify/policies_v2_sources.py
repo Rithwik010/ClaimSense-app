@@ -191,6 +191,12 @@ NOTES: dict[str, tuple[str, str]] = {
         "New: L33558 cov-008, a covered indication no v1 criterion held (found while listing the "
         "indication group's sources). A separate criterion, so c3 keeps its ID.",
     ),
+    "POL-SURG-003.c4": (
+        "D-POL-4 (checkpoint 1 review, B34)",
+        "New: the LCD's section A indications (cov-007 to cov-015), which cov-017 also applies "
+        "to ablation and cov-028 to same-day stab phlebectomy; c1 now applies to the ablation "
+        "codes only, so stab phlebectomy (37765) has a requirement. Added after pass 1.",
+    ),
     "POL-SURG-004.c5": (
         "D-V2-2 SURG-004.F1, Q3",
         "v1 c1 plus the reconstructive conditions: the LCD's group 2 (cov-030 to cov-041) and "
@@ -933,6 +939,37 @@ def _escaped(text: str) -> str:
     return text.replace("*", chr(92) + "*")
 
 
+def row_block(n: int, r: Row, v1: Mapping[str, Any]) -> list[str]:
+    """The Part A block of one new criterion: its notes, v1 and v2 texts, fields and excerpts."""
+    c = r.criterion
+    decision, note = NOTES.get(c.criterion_id, ("-", "-"))
+    replaced = f"replaces {', '.join(r.replaced)}" if r.replaced else "new, no v1 predecessor"
+    out = [
+        f"### A{n}. {c.criterion_id} ({replaced})",
+        "",
+        f"- Decision: {decision}",
+        f"- What changed: {note}",
+    ]
+    texts = v1[r.policy.meta["policy_id"]][0]
+    out += [f"- v1 text ({old}): {texts[old]}" for old in r.replaced]
+    out += [
+        f"- **v2 text:** {c.text}",
+        f"- Type: {c.type}"
+        + (f" (applies when: {CONDITIONS[c.criterion_id]})" if c.criterion_id in CONDITIONS else "")
+        + f". Applies to: {', '.join(c.applies_to) or 'every code of the policy'}. "
+        f"Group: {c.group or '-'}.",
+        f"- Source line: {c.source}",
+        "- Automatic check, numbers in the v2 text that no excerpt contains: "
+        + (", ".join(r.flagged) if r.flagged else "none"),
+        "",
+        "Excerpts, word for word:",
+        "",
+    ]
+    for e in r.excerpts:
+        out += [f"> {_excerpt_line(e)}: {_escaped(e.text)}", ""]
+    return out
+
+
 def sheet(
     rows: Sequence[Row],
     policies: Sequence[V2Policy],
@@ -1028,36 +1065,7 @@ def sheet(
             )
     out += ["", f"## Part A: new criteria ({len(rows)} rows)", ""]
     for n, r in enumerate(rows, start=1):
-        c = r.criterion
-        decision, note = NOTES.get(c.criterion_id, ("-", "-"))
-        replaced = f"replaces {', '.join(r.replaced)}" if r.replaced else "new, no v1 predecessor"
-        out += [
-            f"### A{n}. {c.criterion_id} ({replaced})",
-            "",
-            f"- Decision: {decision}",
-            f"- What changed: {note}",
-        ]
-        texts = v1[r.policy.meta["policy_id"]][0]
-        out += [f"- v1 text ({old}): {texts[old]}" for old in r.replaced]
-        out += [
-            f"- **v2 text:** {c.text}",
-            f"- Type: {c.type}"
-            + (
-                f" (applies when: {CONDITIONS[c.criterion_id]})"
-                if c.criterion_id in CONDITIONS
-                else ""
-            )
-            + f". Applies to: {', '.join(c.applies_to) or 'every code of the policy'}. "
-            f"Group: {c.group or '-'}.",
-            f"- Source line: {c.source}",
-            "- Automatic check, numbers in the v2 text that no excerpt contains: "
-            + (", ".join(r.flagged) if r.flagged else "none"),
-            "",
-            "Excerpts, word for word:",
-            "",
-        ]
-        for e in r.excerpts:
-            out += [f"> {_excerpt_line(e)}: {_escaped(e.text)}", ""]
+        out += row_block(n, r, v1)
     out += [
         f"## Part B: kept criteria ({len(kept)} rows)",
         "",

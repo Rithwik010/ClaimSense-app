@@ -781,6 +781,41 @@ Excerpts, word for word:
 
 > **L38902-doc-032** (item; under: Utilization Guidelines:): Wound care must be performed in accordance with accepted standards for medical and surgical treatment of wounds. The appropriate interval and frequency of debridement depends on the individual clinical characteristics of the patient and the extent of the wound. The extent and number of services provided should be medically necessary and reasonable based on the documented medical evaluation of the patient's condition, diagnosis, and plan.
 
+Rows added after pass 1 (POL-SURG-003.c4): from approved pass 2 fixes; not yet reviewed.
+
+### A31. POL-SURG-003.c4 (new, no v1 predecessor)
+
+- Decision: D-POL-4 (checkpoint 1 review, B34)
+- What changed: New: the LCD's section A indications (cov-007 to cov-015), which cov-017 also applies to ablation and cov-028 to same-day stab phlebectomy; c1 now applies to the ablation codes only, so stab phlebectomy (37765) has a requirement. Added after pass 1.
+- **v2 text:** Treatment of varicose veins, including stab phlebectomy, is covered when a 3-month trial of conservative therapy, such as exercise, periodic leg elevation, weight loss, compression or avoiding long immobility, has failed, and the patient is symptomatic with one or more of: pain or burning in the leg severe enough to impair mobility; recurrent superficial phlebitis; a non-healing skin ulcer; bleeding from a varicosity; stasis dermatitis; or refractory dependent edema.
+- Type: requirement. Applies to: every code of the policy. Group: -.
+- Source line: LCD L34209 v43 cov-007 to cov-015, cov-017, cov-028.
+- Automatic check, numbers in the v2 text that no excerpt contains: none
+
+Excerpts, word for word:
+
+> **L34209-cov-007** (item; under: the top of the field): A. Indications for surgical treatment: For example venous ligation, vein stripping and/or sclerotherapy:
+
+> **L34209-cov-008** (item; under: the top of the field): 1. A 3-month trial of conservative therapy such as exercise, periodic leg elevation, weight loss, compressive therapy, and avoidance of prolonged immobility where appropriate, has failed, AND
+
+> **L34209-cov-009** (heading): 2. The patient is symptomatic and has one, or more, of the following:
+
+> **L34209-cov-010** (item; under: 2. The patient is symptomatic and has one, or more, of the following:): a. Pain or burning in the extremity severe enough to impair mobility
+
+> **L34209-cov-011** (item; under: 2. The patient is symptomatic and has one, or more, of the following:): b. Recurrent episodes of superficial phlebitis
+
+> **L34209-cov-012** (item; under: 2. The patient is symptomatic and has one, or more, of the following:): c. Non-healing skin ulceration
+
+> **L34209-cov-013** (item; under: 2. The patient is symptomatic and has one, or more, of the following:): d. Bleeding from a varicosity
+
+> **L34209-cov-014** (item; under: 2. The patient is symptomatic and has one, or more, of the following:): e. Stasis dermatitis
+
+> **L34209-cov-015** (item; under: 2. The patient is symptomatic and has one, or more, of the following:): f. Refractory dependent edema
+
+> **L34209-cov-017** (item; under: 2. The patient is symptomatic and has one, or more, of the following: > B. Indications for ERFA or laser ablation :): In addition to the above (see A), the patient's anatomy and clinical condition are amenable to the proposed treatment including ALL of the following:
+
+> **L34209-cov-028** (item; under: 2. The patient is symptomatic and has one, or more, of the following: > C. Limitations for ERFA and laser ablation:): Noridian notes that stab phlebectomy of the same vein performed on the same day as endovenous radiofrequency or laser ablation may be covered if the criteria for reasonable and necessary as described in this LCD are met.
+
 ## Part B: kept criteria (38 rows)
 
 Text and ID unchanged from v1 (checked byte for byte); only the type, code list and group are new.
@@ -1022,40 +1057,43 @@ Pass 1 (2026-10-09): a normal Claude chat with no repository access, which saw o
 
 Author triage (2026-10-09): Claude Code, the author of the criteria, triaged the 22 pass 2 rows in P2_policies_v2_triage.md; not an independent check. The pass 2 columns hold the reviewer's decisions, recorded as 'author triage by Claude Code, decided by Manideep'.
 
+Pass 2 (2026-10-09): the 22 triaged rows hold the reviewer's decisions on the author triage (author triage by Claude Code, decided by Manideep with recommendations from the planning chat). Approved fixes are applied to the v2 files; the texts above are the ones reviewed, and the triage file shows old and new.
+
 ### Part A (MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE)
 
 | Row | Criterion | Pass 1 verdict (Claude chat) | Pass 1 notes | Pass 2 verdict (reviewer) | Pass 2 notes |
 |---|---|---|---|---|---|
-| A1 | POL-CAR-001.c4 | DIFFERENT MEANING | The lead-in "signs or symptoms of, or is being evaluated for" is applied to all 17 items, but only A (cov-009) and B (cov-012) state a signs/symptoms condition and C to Q are bare headings. "lung disease affecting the heart" adds "affecting the heart" to heading "Q. Pulmonary". cov-009's "expected to be performed by examiners recognized as experts" (diastolic dysfunction) is not reflected. |  |  |
-| A2 | POL-CAR-001.c5 | MATCHES | Same as the first sentence of cov-012 ("When there are no signs or symptoms of heart disease, the use of TTE is not covered for hypertension"); exclusion type fits. |  |  |
-| A3 | POL-CAR-002.c4 | DIFFERENT MEANING | "a known arrhythmia" narrows source item "Arrhythmias" (cov-007), which has no "known"; A5 uses plain "arrhythmias" for the matching 30-day list. The 40% ejection fraction, ST-segment and ablation items match. Minor: "Syncope (lightheadedness)" becomes "fainting". |  |  |
+| A1 | POL-CAR-001.c4 | DIFFERENT MEANING | The lead-in "signs or symptoms of, or is being evaluated for" is applied to all 17 items, but only A (cov-009) and B (cov-012) state a signs/symptoms condition and C to Q are bare headings. "lung disease affecting the heart" adds "affecting the heart" to heading "Q. Pulmonary". cov-009's "expected to be performed by examiners recognized as experts" (diastolic dysfunction) is not reflected. | NOT IN SOURCE | ADDED; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
+| A2 | POL-CAR-001.c5 | MATCHES | Same as the first sentence of cov-012 ("When there are no signs or symptoms of heart disease, the use of TTE is not covered for hypertension"); exclusion type fits. | MATCHES | OK; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
+| A3 | POL-CAR-002.c4 | DIFFERENT MEANING | "a known arrhythmia" narrows source item "Arrhythmias" (cov-007), which has no "known"; A5 uses plain "arrhythmias" for the matching 30-day list. The 40% ejection fraction, ST-segment and ablation items match. Minor: "Syncope (lightheadedness)" becomes "fainting". | NOT IN SOURCE | ADDED; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A4 | POL-CAR-002.c5 | MATCHES | Matches cov-019 (more than 48 h up to 15 days; asymptomatic episodes for treatment response; infrequent symptoms, less often than every 48 hours). Minor: source says "alternative to Holter monitoring", text says "alternative to 48-hour monitoring". |  |  |
 | A5 | POL-CAR-002.c6 | MATCHES | All items of cov-022 to cov-032 are present and no ejection fraction is added for heart attack survivors. cov-020's billing rule is left to R11, as the sheet states. |  |  |
-| A6 | POL-DX-001.c4 | MATCHES | Matches cov-110 (significant comorbid conditions or sleep disorders; moderate to severe pulmonary disease, neuromuscular disease, congestive heart failure). "not covered" is supported by the parent heading "...are not covered in the following situations". |  |  |
+| A6 | POL-DX-001.c4 | MATCHES | Matches cov-110 (significant comorbid conditions or sleep disorders; moderate to severe pulmonary disease, neuromuscular disease, congestive heart failure). "not covered" is supported by the parent heading "...are not covered in the following situations". | MATCHES | OK; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A7 | POL-DX-001.c5 | MATCHES | Matches cov-107 and cov-108 (high likelihood of moderate to severe sleep apnea, shown by symptoms and physical examination in the note). |  |  |
 | A8 | POL-DX-002.c4 | MATCHES | Matches cov-037 ("usually considered not medically necessary"; "The only exception" is carpal tunnel syndrome with a high pre-test probability). "which the notes must document" comes from the cited decision and the conditional type, not the source. |  |  |
 | A9 | POL-DX-003.c4 | MATCHES | Prick list matches cov-008. Intradermal list matches cov-009 without foods, consistent with cov-058. Correlation with history and examination matches cov-007. |  |  |
-| A10 | POL-DX-003.c5 | MATCHES | cov-058 and cov-080 sit under Limitations, so "not covered" is a fair reading, though cov-058 itself uses the weaker "not recommended". |  |  |
-| A11 | POL-FOOT-001.c4 | MATCHES | Systemic conditions and asterisk/active-care rule (290.D), Class B/C counts including "three required" (290.F), "diagnosis alone" (290.G) and the 290.C.3 hazard wording all match; "for example" keeps the findings non-exhaustive. |  |  |
+| A10 | POL-DX-003.c5 | MATCHES | cov-058 and cov-080 sit under Limitations, so "not covered" is a fair reading, though cov-058 itself uses the weaker "not recommended". | MATCHES | OK; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
+| A11 | POL-FOOT-001.c4 | MATCHES | Systemic conditions and asterisk/active-care rule (290.D), Class B/C counts including "three required" (290.F), "diagnosis alone" (290.G) and the 290.C.3 hazard wording all match; "for example" keeps the findings non-exhaustive. | MATCHES | OK; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A12 | POL-FOOT-001.c5 | MATCHES | Matches 290.C.4 for ambulatory and nonambulatory patients. "covered only when" becomes "is covered when", but c6 carries the "only". |  |  |
 | A13 | POL-FOOT-001.c6 | MATCHES | Matches 290.B.2 (corns, calluses, nail trimming and debriding). "Except as provided above" becomes "Except in the situations this policy covers", in line with c4, c5 and Part C. |  |  |
 | A14 | POL-PAIN-001.c6 | MATCHES | Severity and baseline scale match cov-013 and cov-023. "a numeric score or a named scale" is added by cited decision D-ESI-2. |  |  |
-| A15 | POL-PAIN-001.c7 | DIFFERENT MEANING | "without contrast only when a contrast allergy or pregnancy is documented" is narrower than cov-020 ("unless the patient has a contraindication to contrast") and cov-025 ("documented contraindication to contrast media (e.g., allergy, pregnancy)"). cov-015's fallback is "ultrasound guidance without contrast", which the text does not mention. Level limits match cov-016 and cov-017. |  |  |
+| A15 | POL-PAIN-001.c7 | DIFFERENT MEANING | "without contrast only when a contrast allergy or pregnancy is documented" is narrower than cov-020 ("unless the patient has a contraindication to contrast") and cov-025 ("documented contraindication to contrast media (e.g., allergy, pregnancy)"). cov-015's fallback is "ultrasound guidance without contrast", which the text does not mention. Level limits match cov-016 and cov-017. | DIFFERENT MEANING | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A16 | POL-PAIN-001.c8 | MATCHES | Matches cov-019 and cov-039 (50% for 3 months or 50% function on the same scale; repeat after 14 days with a different approach, level or medication, rationale documented). |  |  |
-| A17 | POL-PAIN-001.c9 | NOT IN SOURCE | The gloss "(pain that does not radiate from a nerve root)" is not in cov-029, which says only "axial spine pain". The six listed conditions otherwise match. |  |  |
+| A17 | POL-PAIN-001.c9 | NOT IN SOURCE | The gloss "(pain that does not radiate from a nerve root)" is not in cov-029, which says only "axial spine pain". The six listed conditions otherwise match. | NOT IN SOURCE | ADDED; fix approved with a condition: remove the gloss but keep the LCD's 'to treat' wording, so the exclusion is about what the injection treats; a patient with radicular pain who also has axial pain is not excluded. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A18 | POL-PAIN-002.c5 | MATCHES | Matches cov-023 and cov-024 (RFA intent; second procedure a minimum of 2 weeks later; documented exception). |  |  |
-| A19 | POL-REHAB-001.c4 | DIFFERENT MEANING | Drops the proviso "if the patient's condition showed a need for an evaluation" (cov-112), so "An evaluation can be covered even when it finds that therapy is not needed" is unconditional (and it concerns evaluation codes this criterion does not apply to). It also drops the plan content in cov-020, "planned out specifically in terms of type, frequency and duration"; the text says only "specific goals". |  |  |
-| A20 | POL-REHAB-001.c5 | NOT IN SOURCE | "who certifies and recertifies the plan of care": doc-007 only lists "Certifications and recertifications" as required documentation, with no who or what, and cov-018 lets the physical therapist establish the plan. "under the care of a physician or NPP" is supported by doc-019. |  |  |
+| A19 | POL-REHAB-001.c4 | DIFFERENT MEANING | Drops the proviso "if the patient's condition showed a need for an evaluation" (cov-112), so "An evaluation can be covered even when it finds that therapy is not needed" is unconditional (and it concerns evaluation codes this criterion does not apply to). It also drops the plan content in cov-020, "planned out specifically in terms of type, frequency and duration"; the text says only "specific goals". | DIFFERENT MEANING | MISSING LIMIT; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
+| A20 | POL-REHAB-001.c5 | NOT IN SOURCE | "who certifies and recertifies the plan of care": doc-007 only lists "Certifications and recertifications" as required documentation, with no who or what, and cov-018 lets the physical therapist establish the plan. "under the care of a physician or NPP" is supported by doc-019. | NOT IN SOURCE | ADDED; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A21 | POL-SURG-001.c4 | MATCHES | Matches cov-008 (high probability of accelerating cataract development after a concomitant or subsequent procedure; examples; external beam irradiation). |  |  |
-| A22 | POL-SURG-002.c4 | DIFFERENT MEANING | "blood in the stool not from a rectal source" drops "or perianal" and "thought to be" from cov-009 ("not thought to be from rectum or perianal source"), which broadens it. Minor: examples "negative stool cultures persisting for more than 3 weeks" (cov-023) and "an inadequate examination" (cov-007) are left out. Other items match. |  |  |
+| A22 | POL-SURG-002.c4 | DIFFERENT MEANING | "blood in the stool not from a rectal source" drops "or perianal" and "thought to be" from cov-009 ("not thought to be from rectum or perianal source"), which broadens it. Minor: examples "negative stool cultures persisting for more than 3 weeks" (cov-023) and "an inadequate examination" (cov-007) are left out. Other items match. | DIFFERENT MEANING | MISSING LIMIT; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A23 | POL-SURG-002.c5 | MATCHES | Matches cov-013, 015, 017, 019 to 021 (2 cm, 7 years, 15 years, rectosigmoid). The 3 to 6 month and 1 to 2 year intervals are dropped by the sheet's D-RULE-1. |  |  |
-| A24 | POL-SURG-002.c6 | MATCHES | All items of cov-037 to cov-049 are present (cov-040 left out on purpose per the sheet). Minor: "unusual exceptions" (cov-037) becomes "it may be done", and cov-036's documentation clause is also applied to the cov-045 list. |  |  |
+| A24 | POL-SURG-002.c6 | MATCHES | All items of cov-037 to cov-049 are present (cov-040 left out on purpose per the sheet). Minor: "unusual exceptions" (cov-037) becomes "it may be done", and cov-036's documentation clause is also applied to the cov-045 list. | DIFFERENT MEANING | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A25 | POL-SURG-002.c7 | MATCHES | Matches cov-027 to cov-031 and cov-034. Minor: "stenosing, bleeding neoplasms" becomes "narrowing or bleeding tumors". |  |  |
-| A26 | POL-SURG-004.c5 | DIFFERENT MEANING | Drops qualifiers. "lid retraction or lag" omits cov-039's "due to horizontal lower eyelid laxity ... due to horizontal upper eyelid laxity ... or due to orbital thyroid disease". "chronic dermatitis" omits "symptomatic" and "of pretarsal skin" (cov-040). Blepharospasm omits "Primary essential (idiopathic)" (cov-042). |  |  |
-| A27 | POL-SURG-004.c6 | DIFFERENT MEANING | Closes an open list. cov-024 says the documentation must address the signs and symptoms commonly found, and "These include (but are not limited to)" three items; the text lists only those three complaints. |  |  |
+| A26 | POL-SURG-004.c5 | DIFFERENT MEANING | Drops qualifiers. "lid retraction or lag" omits cov-039's "due to horizontal lower eyelid laxity ... due to horizontal upper eyelid laxity ... or due to orbital thyroid disease". "chronic dermatitis" omits "symptomatic" and "of pretarsal skin" (cov-040). Blepharospasm omits "Primary essential (idiopathic)" (cov-042). | DIFFERENT MEANING | MISSING LIMIT; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
+| A27 | POL-SURG-004.c6 | DIFFERENT MEANING | Closes an open list. cov-024 says the documentation must address the signs and symptoms commonly found, and "These include (but are not limited to)" three items; the text lists only those three complaints. | DIFFERENT MEANING | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A28 | POL-SURG-004.c7 | MATCHES | Matches cov-028 (minimum 12 degree or 30 percent loss of upper field, potential correction). The lid-taping method is not stated but not contradicted. |  |  |
 | A29 | POL-SURG-004.c8 | MATCHES | Supported by cov-001, cov-004 and cov-006. Paraphrases "in the absence of any signs or symptoms of functional abnormalities" as "without documented functional impairment"; the "to improve a patient's appearance" purpose is implicit. |  |  |
-| A30 | POL-WOUND-001.c4 | DIFFERENT MEANING | Drops the palliative exception in cov-082 ("However, if it is determined that the goal of care is not wound healing ... palliative care standards"), which also conflicts with kept c2 (B38: "preventing the wound from getting worse"). "must be revised" hardens cov-118's "should necessitate a revision", and "expected healing" becomes "healing". The 30 days and the frequency sentence match. |  |  |
+| A30 | POL-WOUND-001.c4 | DIFFERENT MEANING | Drops the palliative exception in cov-082 ("However, if it is determined that the goal of care is not wound healing ... palliative care standards"), which also conflicts with kept c2 (B38: "preventing the wound from getting worse"). "must be revised" hardens cov-118's "should necessitate a revision", and "expected healing" becomes "healing". The 30 days and the frequency sentence match. | DIFFERENT MEANING | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
+| A31 | POL-SURG-003.c4 |  |  |  |  |
 
 ### Part B (AGREE, DISAGREE or UNSURE)
 
@@ -1064,7 +1102,7 @@ Author triage (2026-10-09): Claude Code, the author of the criteria, triaged the
 | B1 | POL-BH-001.c1 | AGREE | Positive coverage condition, so requirement fits; all three codes. |  |  |
 | B2 | POL-BH-001.c2 | AGREE | Lists situations not covered, so exclusion fits; all codes. |  |  |
 | B3 | POL-BH-001.c3 | AGREE | Not-necessary situation, so exclusion fits; all codes. |  |  |
-| B4 | POL-CAR-001.c2 | UNSURE | Conditional fits the repeat trigger, but "all" includes 93350 (stress echo) while the TTE criteria A1 and A2 apply to 93306, 93308 only. The text says "Repeating the study more often than once a year" and "planned valve surgery", so the sheet does not show the rule covers stress echo. |  |  |
+| B4 | POL-CAR-001.c2 | UNSURE | Conditional fits the repeat trigger, but "all" includes 93350 (stress echo) while the TTE criteria A1 and A2 apply to 93306, 93308 only. The text says "Repeating the study more often than once a year" and "planned valve surgery", so the sheet does not show the rule covers stress echo. | DISAGREE | TYPE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B5 | POL-CAR-001.c3 | AGREE | Stress-echo requirement; 93350 only is right. |  |  |
 | B6 | POL-DX-001.c1 | AGREE | Requirement for sleep testing; all three codes. |  |  |
 | B7 | POL-DX-001.c3 | AGREE | Conditional on a repeat facility study; 95810 and 95811 are the facility codes (95806 is home). |  |  |
@@ -1077,8 +1115,8 @@ Author triage (2026-10-09): Claude Code, the author of the criteria, triaged the
 | B14 | POL-FOOT-001.c2 | AGREE | Conditional on anticoagulation; both codes; indication group matches C1. |  |  |
 | B15 | POL-IMG-001.c1 | AGREE | General requirement for head or neck CT/MRI; all four codes. |  |  |
 | B16 | POL-IMG-001.c2 | AGREE | Conditional on headache or dizziness; "all" is workable because the trigger gates it. |  |  |
-| B17 | POL-IMG-001.c3 | UNSURE | 70553 is the only contrast code, so the code list fits. The type mixes a requirement ("need a documented reason") with a repeat-scan rule ("More than one contrast scan per episode of illness is not covered except ...") that applies only to a second contrast scan; the sheet splits mixed criteria elsewhere (A1 and A2). |  |  |
-| B18 | POL-IMG-001.c4 | DISAGREE | Text says "Brain imaging", but "all" includes 72141 (MRI of the neck (cervical) spine). Applies to should be 70450, 70551, 70553. |  |  |
+| B17 | POL-IMG-001.c3 | UNSURE | 70553 is the only contrast code, so the code list fits. The type mixes a requirement ("need a documented reason") with a repeat-scan rule ("More than one contrast scan per episode of illness is not covered except ...") that applies only to a second contrast scan; the sheet splits mixed criteria elsewhere (A1 and A2). | AGREE | REWORDING; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
+| B18 | POL-IMG-001.c4 | DISAGREE | Text says "Brain imaging", but "all" includes 72141 (MRI of the neck (cervical) spine). Applies to should be 70450, 70551, 70553. | DISAGREE | TYPE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B19 | POL-IMG-002.c1 | AGREE | Requirement listing the covered indications; both ultrasound codes. |  |  |
 | B20 | POL-IMG-002.c2 | AGREE | Not-necessary situations, so exclusion fits; both codes. |  |  |
 | B21 | POL-IMG-002.c3 | AGREE | Conditional on plantar fasciitis; both codes. |  |  |
@@ -1087,17 +1125,17 @@ Author triage (2026-10-09): Claude Code, the author of the criteria, triaged the
 | B24 | POL-PAIN-001.c3 | AGREE | Requirement with an exemption for acute shingles pain; all codes. |  |  |
 | B25 | POL-PAIN-002.c1 | AGREE | Requirement; all three facet codes. |  |  |
 | B26 | POL-PAIN-002.c2 | AGREE | Requirement; all codes. |  |  |
-| B27 | POL-PAIN-002.c3 | UNSURE | Negative wording ("There must be no untreated nerve-root pain ... and no other cause of the pain") behaves like an exclusion (silent notes give NOT_APPLICABLE) but is typed requirement (silent notes give NOT_DOCUMENTED, so PEND). Confirm that is intended. |  |  |
+| B27 | POL-PAIN-002.c3 | UNSURE | Negative wording ("There must be no untreated nerve-root pain ... and no other cause of the pain") behaves like an exclusion (silent notes give NOT_APPLICABLE) but is typed requirement (silent notes give NOT_DOCUMENTED, so PEND). Confirm that is intended. | AGREE | REWORDING; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B28 | POL-REHAB-001.c1 | AGREE | Requirement; all five codes, including evaluations, is fine. |  |  |
-| B29 | POL-REHAB-001.c3 | DISAGREE | "Restorative therapy requires a reasonable potential for improvement" should not apply to evaluation codes 97161 and 97162 (A19: an evaluation can be covered even when therapy is not needed). Applies to should be 97110, 97140, 97530. |  |  |
+| B29 | POL-REHAB-001.c3 | DISAGREE | "Restorative therapy requires a reasonable potential for improvement" should not apply to evaluation codes 97161 and 97162 (A19: an evaluation can be covered even when therapy is not needed). Applies to should be 97110, 97140, 97530. | DISAGREE | TYPE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B30 | POL-SURG-001.c1 | AGREE | Conditional on a symptomatic cataract; both codes; indication group matches C2. |  |  |
 | B31 | POL-SURG-001.c2 | AGREE | Not-necessary situation, so exclusion fits, outside the group; both codes. |  |  |
 | B32 | POL-SURG-001.c3 | AGREE | Conditional; indication group matches C2; both codes. |  |  |
 | B33 | POL-SURG-002.c3 | AGREE | Conditional on high-risk screening; indication group matches C3; all three codes. Note: keeps "every 24 months" while A23 drops intervals by D-RULE-1. |  |  |
-| B34 | POL-SURG-003.c1 | DISAGREE | Text is limited to "Radiofrequency or laser vein ablation", but "all" includes 37765 (removal through small punctures, not ablation). Applies to should be 36475, 36478, or the text should be widened. |  |  |
+| B34 | POL-SURG-003.c1 | DISAGREE | Text is limited to "Radiofrequency or laser vein ablation", but "all" includes 37765 (removal through small punctures, not ablation). Applies to should be 36475, 36478, or the text should be widened. | DISAGREE | TYPE; fix approved (old and new text in P2_policies_v2_triage.md); adds POL-SURG-003.c4. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B35 | POL-SURG-003.c2 | AGREE | Exclusion "by any technique", so all three codes. |  |  |
 | B36 | POL-SURG-003.c3 | AGREE | Exclusion "by any technique", so all three codes. |  |  |
-| B37 | POL-WOUND-001.c1 | DISAGREE | Text is about "Active wound care (debridement) ... to remove dead tissue", but "all" includes 29581 (multi-layer compression wrap), which is not debridement. Applies to should be 11042, 97597. |  |  |
+| B37 | POL-WOUND-001.c1 | DISAGREE | Text is about "Active wound care (debridement) ... to remove dead tissue", but "all" includes 29581 (multi-layer compression wrap), which is not debridement. Applies to should be 11042, 97597. | DISAGREE | TYPE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B38 | POL-WOUND-001.c2 | AGREE | Plan-of-care requirement fits every wound code, including the compression wrap. |  |  |
 
 ### Part C (COMPLETE, GAPS or UNSURE)
