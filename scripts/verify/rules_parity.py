@@ -11,15 +11,26 @@ not compared (P2.3a decision 2): many dataset claims reference authorizations th
 reference data. The full engine is still run on every record to report where it would stop, by
 rule and by what is missing.
 
+Rules v2 (P2.3b, R14 to R20) change some lines by design: the engine must give the stored outcome
+plus exactly the reason codes and flags listed in tests/golden/rules/v2_dataset_changes.csv (a line
+with an added reason is denied; a claim whose every line is denied is DENY), so any unplanned
+change still shows. For a record the list does not touch, the prompt's RULES_RESULT block must
+still be exactly the engine's. The list is written from the engine (--write-v2-changes) and must
+equal the independent checks of scripts/verify/rules_v2_impact.py.
+
 Report only: the generator and the dataset are not changed.
 
     uv run python -m scripts.verify.rules_parity
+    uv run python -m scripts.verify.rules_parity --write-v2-changes   # rewrite the change list
 """
 
+import argparse
+import csv
 import json
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +39,7 @@ from app.db.rules_reference import build_reference, load_code_tables, reference_
 from app.domain.contracts import IntakeClaim, RuleOutcomeValue, RuleResult, RulesOutcome
 from app.ml.prompt import _rule_line
 from app.rules.engine import evaluate
+from app.rules.lcd_edits import REASON_RULES
 from app.rules.line_edits import check_line_edits
 from app.rules.reference import RulesReference
 from app.rules.requirements import check_group_b
@@ -39,6 +51,81 @@ EXTRA_AUTHORIZATIONS = ROOT / "data" / "generated" / "claims" / "authorizations_
 SPLITS = ("train", "validation", "test")
 CONFIDENCE_MIN = 0.85  # dataset claims are JSON: no field confidences
 EXAMPLES = 3
+V2_CHANGES = ROOT / "tests" / "golden" / "rules" / "v2_dataset_changes.csv"
+CHANGE_FIELDS = ("record_id", "line_no", "rule_id", "kind", "code")
+FLAG_RULES = {"NCS_WITHOUT_EMG": "R17", "FACET_TWO_REGIONS": "R19", "EXTENDED_TESTING": "R20"}
+V2_RULES = {**REASON_RULES, **FLAG_RULES}  # code -> rule
+
+
+@dataclass(frozen=True)
+class Change:
+    """One reason code (kind REASON: the line is denied) or flag that rules v2 add to a line."""
+
+    record_id: str
+    line_no: int
+    rule_id: str
+    kind: str  # REASON | FLAG
+    code: str
+
+
+def read_changes(path: Path = V2_CHANGES) -> dict[str, list[Change]]:
+    out: dict[str, list[Change]] = defaultdict(list)
+    with path.open(encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            out[row["record_id"]].append(
+                Change(
+                    row["record_id"], int(row["line_no"]), row["rule_id"], row["kind"], row["code"]
+                )
+            )
+    return dict(out)
+
+
+def write_changes(changes: Sequence[Change], path: Path = V2_CHANGES) -> None:
+    with path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(CHANGE_FIELDS)
+        writer.writerows((c.record_id, c.line_no, c.rule_id, c.kind, c.code) for c in changes)
+
+
+@cache
+def listed_changes() -> dict[str, list[Change]]:
+    return read_changes()
+
+
+def with_changes(stored: RulesOutcome, changes: Sequence[Change]) -> RulesOutcome:
+    """The stored v1 outcome with the listed v2 reasons and flags added, in order."""
+    lines = []
+    for line in stored.line_outcomes:
+        mine = [c for c in changes if c.line_no == line.line_no]
+        reasons = [*line.reason_codes, *(c.code for c in mine if c.kind == "REASON")]
+        flags = [*line.flags, *(c.code for c in mine if c.kind == "FLAG")]
+        lines.append(
+            line.model_copy(
+                update={
+                    "outcome": "DENY" if reasons else "PASS",
+                    "reason_codes": reasons,
+                    "flags": flags,
+                }
+            )
+        )
+    denied = bool(lines) and all(line.outcome == "DENY" for line in lines)
+    return stored.model_copy(
+        update={
+            "line_outcomes": lines,
+            "claim_outcome": RuleOutcomeValue.DENY if denied else stored.claim_outcome,
+        }
+    )
+
+
+def engine_changes(record_id: str, view: RulesOutcome) -> list[Change]:
+    """The rules v2 reason codes and flags on the engine's lines (what the change list holds)."""
+    return [
+        Change(record_id, line.line_no, V2_RULES[code], kind, code)
+        for line in view.line_outcomes
+        for kind, codes in (("REASON", line.reason_codes), ("FLAG", line.flags))
+        for code in codes
+        if code in V2_RULES
+    ]
 
 
 @dataclass(frozen=True)
@@ -126,7 +213,8 @@ def prompt_block(user_message: str) -> str:
 def differences(record: Record, reference: RulesReference) -> list[str]:
     claim = IntakeClaim.model_validate(record.claim)
     view = engine_view(claim, reference)
-    stored = RulesOutcome.model_validate(record.rules_outcome)
+    changes = listed_changes().get(record.record_id, [])
+    stored = with_changes(RulesOutcome.model_validate(record.rules_outcome), changes)
     found = []
     if view.claim_outcome is not stored.claim_outcome:
         found.append(f"claim outcome {view.claim_outcome.value} != {stored.claim_outcome.value}")
@@ -145,7 +233,7 @@ def differences(record: Record, reference: RulesReference) -> list[str]:
         ]
         if len(engine_lines) != len(stored_lines):
             found.append(f"{len(engine_lines)} line outcomes != {len(stored_lines)}")
-    if rules_block(view) != prompt_block(record.user_message):
+    if not changes and rules_block(view) != prompt_block(record.user_message):
         found.append("the prompt's RULES_RESULT block differs from the engine's")
     return found
 
@@ -269,8 +357,21 @@ def render(total: int, diffs: Mapping[str, Sequence[str]], stopped: int, stops: 
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--write-v2-changes", action="store_true", help="rewrite the change list")
     records = load_records()
     reference = dataset_reference()
+    if parser.parse_args().write_v2_changes:
+        changes = [
+            change
+            for r in records
+            for change in engine_changes(
+                r.record_id, engine_view(IntakeClaim.model_validate(r.claim), reference)
+            )
+        ]
+        write_changes(changes)
+        print(f"wrote {V2_CHANGES.relative_to(ROOT)}: {len(changes)} changes")
+        return
     diffs = {r.record_id: found for r in records if (found := differences(r, reference))}
     stopped, stops = full_run_stops(records, reference)
     print(render(len(records), diffs, stopped, stops), end="")

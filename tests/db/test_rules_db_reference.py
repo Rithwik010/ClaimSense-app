@@ -2,7 +2,7 @@
 exactly what the file-backed one gives.
 
 - NCCI: with several edits for one pair, the same "first edit active on the date".
-- The 90 golden rules cases: the same RulesOutcome, equal to the expected values, on a database
+- The 121 golden rules cases: the same RulesOutcome, equal to the expected values, on a database
   loaded from the committed fixture (runs in CI, D-CI-1) and, where data/raw/ is present, from
   data/raw/ in full.
 - The 2,600 dataset records (where the dataset and data/raw/ are present): the same RulesOutcome
@@ -99,7 +99,7 @@ def test_the_database_picks_the_same_first_active_ncci_edit(
     assert picked[2] == expected_overlap
 
 
-# --- The 90 golden rules cases -------------------------------------------------------------------
+# --- The 121 golden rules cases -------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module", params=SOURCES)

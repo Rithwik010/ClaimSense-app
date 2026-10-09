@@ -1,5 +1,5 @@
 """Task P2.3a-ci: the raw rows the golden rules cases need, as a committed fixture, so CI (which has
-no data/raw/, H9) runs all 90 golden rules cases. Since P2.1 it also covers the 30 golden
+no data/raw/, H9) runs every golden rules case. Since P2.1 it also covers the golden
 end-to-end claims, whose database the fixture loads in CI.
 
 tests/golden/rules/raw_subset.json holds only what the rules engine reads from data/raw/ for the

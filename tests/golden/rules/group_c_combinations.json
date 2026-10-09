@@ -244,6 +244,390 @@
         "Reason codes listed in rule order (R11, R12). Line 1 PASS."
       ],
       "sources": []
+    },
+    {
+      "case_id": "X-03",
+      "title": "Two ESI codes on one date: a line fails R11 and R14",
+      "rules": [
+        "R11",
+        "R14"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-X-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "62323",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64483",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-X-03-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "62323",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-X-03-2",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64483",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R14",
+            "outcome": "DENY",
+            "reason_code": "DN_MULTIPLE_BLOCKS",
+            "line_no": 1
+          },
+          {
+            "rule_id": "R11",
+            "outcome": "DENY",
+            "reason_code": "DN_NCCI_BUNDLED",
+            "line_no": 2
+          },
+          {
+            "rule_id": "R14",
+            "outcome": "DENY",
+            "reason_code": "DN_MULTIPLE_BLOCKS",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MULTIPLE_BLOCKS"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_NCCI_BUNDLED",
+              "DN_MULTIPLE_BLOCKS"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-X-03-1 covers 62323.",
+        "R10: authorization AUTH-X-03-2 covers 64483.",
+        "R11: NCCI 62323/64483 (modifier indicator 1), no bypass modifier -> column-2 line 2 denied.",
+        "R14: each ESI line has another ESI code on the date -> both lines denied.",
+        "Line 2 lists DN_NCCI_BUNDLED then DN_MULTIPLE_BLOCKS (rule order; the first is primary). Every line denied -> claim DENY."
+      ],
+      "sources": [
+        "L33906 cov-027 (D-ESI-3)"
+      ]
+    },
+    {
+      "case_id": "X-04",
+      "title": "Regression: head CT and cervical spine MRI on the same date",
+      "rules": [
+        "R11",
+        "R12"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-X-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000038",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "R519",
+            "M5412"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "70450",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000038"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "72141",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "B"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000038"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-X-04-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000038",
+              "procedure_code": "70450",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-X-04-2",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000038",
+              "procedure_code": "72141",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-X-04-1 covers 70450.",
+        "R10: authorization AUTH-X-04-2 covers 72141.",
+        "Different body areas; no NCCI edit pairs them and no rule v2 limits imaging -> both pass."
+      ],
+      "sources": [
+        "L37373 cov-042 (IMG-001.F2)"
+      ]
+    },
+    {
+      "case_id": "X-05",
+      "title": "Regression: vein ablation and stab phlebectomy on the same date",
+      "rules": [
+        "R11"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-X-05",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "I83811"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "36478",
+              "modifiers": [
+                "RT"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000012"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "37765",
+              "modifiers": [
+                "RT"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-X-05-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000012",
+              "procedure_code": "36478",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-X-05-2",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000012",
+              "procedure_code": "37765",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-X-05-1 covers 36478.",
+        "R10: authorization AUTH-X-05-2 covers 37765.",
+        "No NCCI edit pairs 36478 and 37765, and no rule v2 limits them -> both pass."
+      ],
+      "sources": [
+        "L34209 cov-028 (SURG-003.F4)"
+      ]
     }
   ]
 }

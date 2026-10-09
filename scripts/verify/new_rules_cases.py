@@ -881,7 +881,8 @@ the claim; limits worded "usually"/"rarely" or with a documented exception give 
   tunnel included; never a denial.
 - R18 (L33906): transforaminal levels per date and region (64483 + add-on 64484; 64479 + 64480),
   counted per side: an RT or LT line counts on its side; modifier 50 or no side modifier on both
-  sides. If either side has more than 2 levels, the add-on lines counting on that side are denied,
+  sides; each unit of an add-on level code is one level, the primary code the first. If either
+  side has more than 2 levels, the add-on lines counting on that side are denied,
   DN_ESI_LEVELS. An interlaminar or caudal ESI (62321, 62323) with modifier 50 is denied,
   DN_ESI_LEVELS.
 - R19 (L33930, A57787): a third-level facet code (64492, 64495) is denied, DN_FACET_LEVELS. Facet
@@ -892,6 +893,18 @@ the claim; limits worded "usually"/"rarely" or with a documented exception give 
 - H5: a failing rule whose fields include a field read below 0.85 becomes REJECT
   RJ_LOW_CONFIDENCE_FIELD, never DENY; the claim is then REJECT with no line outcomes. R15 reads
   the line's code, pointers and pointed diagnoses."""
+
+
+def status_table() -> list[str]:
+    """The claim status table of INSTRUCTIONS.md section 5, word for word (G4 lacked it)."""
+    lines = (ROOT / "INSTRUCTIONS.md").read_text(encoding="utf-8").splitlines()
+    start = lines.index("### Claim status values") + 2
+    table = []
+    for line in lines[start:]:
+        if not line.startswith("|"):
+            break
+        table.append(line)
+    return table
 
 
 def lettered(diagnoses: Sequence[str]) -> str:
@@ -984,6 +997,10 @@ def build_sheet(
         "complexity, a high-dollar or low-confidence claim; QUICK otherwise). Complexity is HIGH "
         "when the line decisions differ, rule-denied lines counting as DENY. A rule-denied claim "
         "never reaches the model or review.",
+        "",
+        "Claim statuses (INSTRUCTIONS.md section 5; use these names in the status cells):",
+        "",
+        *status_table(),
     ]
     return "\n".join(out) + "\n"
 
