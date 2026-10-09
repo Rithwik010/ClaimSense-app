@@ -1,4 +1,4 @@
-"""The rules engine against the 121 golden rules cases (tests/golden/rules/, README assumptions
+"""The rules engine against the 134 golden rules cases (tests/golden/rules/, README assumptions
 A-R1 to A-R11). Never change an expected value to make a test pass (H12).
 
 The code tables come from data/raw/ and, always, from the committed fixture of the rows the cases
@@ -81,10 +81,11 @@ def failures(results: list[RuleResult]) -> list[dict[str, Any]]:
     ]
 
 
-def test_there_are_121_cases() -> None:
-    """90 for rules v1 and 31 for rules v2 (R14 to R20, checked on sheet G4, D-GOLD-6)."""
-    assert len(CASES) == 121
-    assert len({case["case_id"] for case in CASES}) == 121
+def test_there_are_134_cases() -> None:
+    """90 for rules v1, 31 for rules v2 (R14 to R20, sheet G4, D-GOLD-6) and 13 for R11's
+    modifiers (sheet G5, D-GOLD-7)."""
+    assert len(CASES) == 134
+    assert len({case["case_id"] for case in CASES}) == 134
 
 
 def test_the_cases_threshold_is_the_settings_default() -> None:

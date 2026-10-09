@@ -6,10 +6,11 @@ R11 to R13 follow the generator's rule mirror (training/generate/codebook.py `li
 which the trained model saw (frozen for model v1); the parity test checks they agree, and that
 R14 to R20 change exactly the lines listed in tests/golden/rules/v2_dataset_changes.csv.
 
-- R11 (A-R3): for every ordered pair of lines on the same date of service, the first NCCI edit
-  active that day with line A's code in column 1 and line B's in column 2 applies (indicator 9:
-  none). With indicator 1 and a bypass modifier (XE, XP, XS, XU) on either line, line B passes
-  with the flag NCCI_BYPASS (the model checks the documentation); otherwise line B is denied.
+- R11 (A-R3, D-RULE-8): for every ordered pair of lines on the same date of service, the first
+  NCCI edit active that day with line A's code in column 1 and line B's in column 2 applies
+  (indicator 9: none). With indicator 1 and an NCCI PTP-associated modifier reported where the
+  2026 NCCI Policy Manual places it (`bypassing_modifiers`), line B passes with the flag
+  NCCI_BYPASS (the model and the reviewer check the documentation); otherwise line B is denied.
 - R12 (A-R4): the units of one code on one date of service, added over the lines, above the MUE
   limit deny every line of that code and date.
 - R13: a code on the plan's fixed exclusion list is denied.
@@ -17,7 +18,13 @@ A line failing several rules lists every reason, and its flags, in rule order (A
 reason is the primary one (D-RULE-3).
 """
 
-from app.domain.contracts import IntakeClaim, LineRuleOutcome, RuleOutcomeValue, RuleResult
+from app.domain.contracts import (
+    IntakeClaim,
+    LineRuleOutcome,
+    RuleOutcomeValue,
+    RuleResult,
+    ServiceLine,
+)
 from app.rules.lcd_edits import PASS_DETAILS, REASON_RULES, check_lcd_edits
 from app.rules.reference import PlanRef, RulesReference
 from app.rules.results import failed, line_fields, passed
@@ -26,6 +33,49 @@ BYPASS_FLAG = "NCCI_BYPASS"
 NO_EDIT = "9"  # modifier indicator: the edit does not apply
 BYPASS_ALLOWED = "1"
 RULE_OF = {"DN_NCCI_BUNDLED": "R11", "DN_MUE_EXCEEDED": "R12", "DN_EXCLUDED": "R13"} | REASON_RULES
+
+
+def _in_place(
+    line: ServiceLine, other: ServiceLine, modifier: str, reference: RulesReference
+) -> bool:
+    """Whether `modifier` on `line` stands where the manual places it (D-RULE-8)."""
+    ref = reference.ptp_modifiers[modifier]
+    is_em = line.procedure_code in reference.em_codes
+    if ref.placement in ("NOT_EM", "PROCEDURE"):  # 59 and X modifiers; 58, 78, 79
+        return not is_em
+    if ref.placement == "EM_WITH_PROCEDURE":  # 24, 25, 57
+        paired = reference.global_days.get(other.procedure_code)
+        return (
+            is_em
+            and other.procedure_code not in reference.em_codes
+            and (not ref.paired_global_days or paired in ref.paired_global_days)
+        )
+    return ref.placement == "EITHER"  # 27, 91; anatomic modifiers are checked in pairs
+
+
+def bypassing_modifiers(a: ServiceLine, b: ServiceLine, reference: RulesReference) -> list[str]:
+    """The modifiers on two lines that bypass an NCCI edit with indicator 1. With the manual's
+    NCCI PTP-associated modifiers in the reference (D-RULE-8): each where the manual places it, and
+    anatomic modifiers when both lines carry one and they share none (different sites). Without
+    them (a v1 reference): XE, XP, XS or XU on either line (A-R3 v1)."""
+    if not reference.ptp_modifiers:
+        return sorted(reference.bypass_modifiers & {*a.modifiers, *b.modifiers})
+    found = {
+        modifier
+        for line, other in ((a, b), (b, a))
+        for modifier in line.modifiers
+        if modifier in reference.ptp_modifiers
+        and reference.ptp_modifiers[modifier].placement != "DIFFERENT_SITES"
+        and _in_place(line, other, modifier, reference)
+    }
+    sites = [
+        {m for m in line.modifiers if m in reference.ptp_modifiers}
+        & {m for m, ref in reference.ptp_modifiers.items() if ref.placement == "DIFFERENT_SITES"}
+        for line in (a, b)
+    ]
+    if sites[0] and sites[1] and not sites[0] & sites[1]:
+        found |= sites[0] | sites[1]
+    return sorted(found)
 
 
 def _fields(rule_id: str, index: int | None, line_count: int) -> list[str]:
@@ -63,7 +113,7 @@ def check_line_edits(
                 f"NCCI edit {a.procedure_code}/{b.procedure_code} (modifier indicator "
                 f"{indicator}) with line {a.line_no}"
             )
-            bypass = sorted(reference.bypass_modifiers & {*a.modifiers, *b.modifiers})
+            bypass = bypassing_modifiers(a, b, reference)
             if indicator == BYPASS_ALLOWED and bypass:
                 if BYPASS_FLAG not in flags[j]:
                     flags[j].append(BYPASS_FLAG)
