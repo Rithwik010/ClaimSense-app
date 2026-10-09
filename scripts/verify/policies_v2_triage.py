@@ -12,6 +12,7 @@ data/raw (the resolver of scripts/verify/policies_v2_sources.py); the old texts,
 source lines are read from the v2 policy files, never typed.
 
     uv run python -m scripts.verify.policies_v2_triage write    # the triage file; notes the sheet
+    uv run python -m scripts.verify.policies_v2_triage extended # the triage of the other rows
     uv run python -m scripts.verify.policies_v2_triage decide   # the reviewer's pass 2 decisions:
     # recorded in the sheet's pass 2 columns, approved fixes applied to the v2 policy files, and
     # any criterion the fixes add appended to the sheet as a new Part A row
@@ -562,7 +563,11 @@ TRIAGE: tuple[Entry, ...] = (
 
 
 def source_text(label: str, lcds: Mapping[str, ps.Lcd]) -> str:
-    """The word-for-word text of an LCD block ("L34005-cov-009") or a manual section ("§290.F")."""
+    """The word-for-word text of an LCD block ("L34005-cov-009"), a manual section ("§290.F"), or
+    a kept criterion's v1 excerpt ("v1:POL-IMG-002.c2", from data/curated/policy_sources.csv, which
+    V1b checked word for word against the LCD)."""
+    if label.startswith("v1:"):
+        return ps.read_sources()[label.removeprefix("v1:")].source_text
     if label.startswith("§"):
         return bpm_sections()[label.removeprefix("§")][0]
     lcd_id, tag, index = label.split("-")
@@ -573,6 +578,7 @@ def source_text(label: str, lcds: Mapping[str, ps.Lcd]) -> str:
 def check(entries: Sequence[Entry], criteria: Mapping[str, V2Criterion]) -> list[str]:
     problems = []
     lcds = ps.load_lcds({q[0].split("-")[0] for e in entries for q in e.quotes if q[0][0] == "L"})
+    v1_criteria = set(ps.read_sources())
     rows = [e.row for e in entries]
     if len(set(rows)) != len(rows):
         problems.append("a row is triaged twice")
@@ -589,6 +595,9 @@ def check(entries: Sequence[Entry], criteria: Mapping[str, V2Criterion]) -> list
         if not e.quotes:
             problems.append(f"{e.row}: no excerpt words")
         for label, words in e.quotes:
+            if label.startswith("v1:") and label.removeprefix("v1:") not in v1_criteria:
+                problems.append(f"{e.row}: no v1 excerpt for {label}")
+                continue
             if words not in source_text(label, lcds):
                 problems.append(f"{e.row}: {label} does not contain {words!r}")
     return problems
@@ -892,10 +901,567 @@ def write() -> None:
     )
 
 
+EXTENDED_OUT = SHEET.parent / "P2_policies_v2_triage_extended.md"
+EXTENDED_NOTE = (
+    "Extended author triage (2026-10-10): Claude Code, the author of the criteria, triaged the "
+    "other 15 Part A MATCHES rows, row A31 and the 31 Part B AGREE rows in "
+    "P2_policies_v2_triage_extended.md; not an independent check. Nothing in it is applied until "
+    "the reviewer approves it."
+)
+
+
+def keep(row: str, criterion: str, reason: str, *quotes: tuple[str, str]) -> Entry:
+    return Entry(row, criterion, "OK", reason, tuple(quotes))
+
+
+# The rest of the sheet after the random sample found a problem in 1 of 5 MATCHES rows (A24):
+# the other 15 Part A MATCHES rows, the new row A31, and the 31 Part B AGREE rows. Part B rows
+# were triaged for type, code list and group; two kept v1 texts showed problems on the way.
+TRIAGE_EXTENDED: tuple[Entry, ...] = (
+    Entry(
+        "A4",
+        "POL-CAR-002.c5",
+        "LIMITING CHANGE",
+        "Its only code, 93241, is continuous recording; cov-019 covers continuous recording beyond "
+        "48 hours only for treatment response, and the infrequent-symptom path is for event "
+        "monitors, which no in-scope code bills. D-V2-1 named this criterion 'event monitoring up "
+        "to 15 days', so this narrows the decided wording: please confirm.",
+        (
+            (
+                "L34636-cov-019",
+                "by continuous rhythm recording and storage, may be considered "
+                "medically necessary in patients treated for reasons listed in the diagnosis "
+                "list to monitor for asymptomatic episodes in order to evaluate treatment response",
+            ),
+            (
+                "L34636-cov-019",
+                "The use of external electrocardiographic event monitors for greater than 48 hours",
+            ),
+        ),
+        new_text=(
+            "Continuous recording for more than 48 hours, up to 15 days, is covered to look for "
+            "symptom-free episodes when checking the response to treatment in a patient treated "
+            "for a listed condition."
+        ),
+    ),
+    keep(
+        "A5",
+        "POL-CAR-002.c6",
+        "Every item of the 30-day list (cov-022 to cov-032) is present; "
+        "'30-day' matches; no ejection fraction condition.",
+        ("L34636-cov-030", "Evaluation of myocardial infarction (MI) survivors."),
+        ("L34636-cov-029", "To initiate, revise or discontinue arrhythmia drug therapy."),
+    ),
+    keep(
+        "A7",
+        "POL-DX-001.c5",
+        "'high likelihood of moderate to severe' and 'documented in the "
+        "note' are cov-107 and cov-108's.",
+        ("L35050-cov-107", "high likelihood of having moderate to severe sleep apnea"),
+        ("L35050-cov-108", "evidenced by symptoms and physical examination documented in the note"),
+    ),
+    Entry(
+        "A8",
+        "POL-DX-002.c4",
+        "ADDED",
+        "'which the notes must document' is not in cov-037; it is Q9's documentation rule, "
+        "recorded in D-POL-4. Cite the decision on the source line; the text stays.",
+        (
+            (
+                "L34594-cov-037",
+                "The only exception to this is a situation where a provider may "
+                "consider it appropriate to perform an NCS without doing an EMG for the "
+                "diagnosis of carpal tunnel syndrome with a high pre-test probability.",
+            ),
+        ),
+        new_source="LCD L34594 v42 cov-037; decision D-POL-4.",
+    ),
+    keep(
+        "A9",
+        "POL-DX-003.c4",
+        "Prick and intradermal lists match cov-008 and cov-009; foods "
+        "only for prick; correlation with history and examination is cov-007's.",
+        (
+            "L33261-cov-008",
+            "inhalants, foods, Hymenoptera (stinging insects), chemicals, and specific drugs",
+        ),
+        (
+            "L33261-cov-009",
+            "inhalants, Hymenoptera venoms (e.g., bee venom), drugs (e.g., "
+            "penicillin, insulin, heparin, muscle relaxants) and/or chemicals",
+        ),
+    ),
+    Entry(
+        "A12",
+        "POL-FOOT-001.c5",
+        "LIMITING CHANGE",
+        "The manual says 'covered only when'; the text dropped 'only'. c6 and the group rule "
+        "carry it today, but the word belongs in the criterion.",
+        (("§290.C.4", "covered only when the physician attending the"),),
+        new_text=(
+            "Without a systemic condition, treatment of mycotic (fungal) toenails is covered only "
+            "when the physician attending the mycotic condition documents clinical evidence of "
+            "mycosis of the toenail and, for a patient who can walk, marked limitation of walking, "
+            "pain, or secondary infection caused by the thickened, dystrophic nail plate; for a "
+            "patient who cannot walk, pain or secondary infection caused by it."
+        ),
+    ),
+    keep(
+        "A13",
+        "POL-FOOT-001.c6",
+        "'not covered' and the examples match 290.B.2; 'except in the "
+        "situations this policy covers' was approved under Q4.",
+        ("§290.B.2", "Except as provided above, routine foot care is excluded from coverage."),
+    ),
+    keep(
+        "A14",
+        "POL-PAIN-001.c6",
+        "Severity and a baseline scale before treatment are cov-013's; "
+        "the scale form is D-ESI-2's.",
+        (
+            "L33906-cov-013",
+            "An objective pain scale or functional assessment must be performed at "
+            "baseline (prior to interventions).",
+        ),
+    ),
+    keep(
+        "A16",
+        "POL-PAIN-001.c8",
+        "50%, 3 months, 14 days and the different approach, level or "
+        "medication match cov-019 and cov-039.",
+        (
+            "L33906-cov-019",
+            "a repeat ESI after 14 days can be performed using a different "
+            "approach, level and/or medication",
+        ),
+    ),
+    keep(
+        "A18",
+        "POL-PAIN-002.c5",
+        "'a minimum of 2 weeks' and the documented exception match "
+        "cov-024; the intent to proceed to RFA is cov-023's.",
+        (
+            "L33930-cov-024",
+            "The second diagnostic procedure may only be performed a minimum of 2 "
+            "weeks after the initial diagnostic procedure.",
+        ),
+    ),
+    keep(
+        "A21",
+        "POL-SURG-001.c4",
+        "Matches cov-008, including its examples.",
+        ("L33558-cov-008", "High probability of accelerating cataract development"),
+    ),
+    keep(
+        "A23",
+        "POL-SURG-002.c5",
+        "2 cm, 7 and 15 years and the rectosigmoid exclusion match; the "
+        "intervals are left out by D-RULE-1.",
+        ("L34005-cov-020", "Pancolitis of greater than seven years duration; or,"),
+        ("L34005-cov-021", "Left-sided colitis of over 15 years duration"),
+    ),
+    keep(
+        "A25",
+        "POL-SURG-002.c7",
+        "All six therapeutic items of cov-027 to cov-031 and cov-034 are present.",
+        ("L34005-cov-029", "Excision of colonic polyps;"),
+    ),
+    keep(
+        "A28",
+        "POL-SURG-004.c7",
+        "12 degrees or 30 percent and the potential correction match "
+        "cov-028; the taping is how the correction is shown, not a further limit.",
+        ("L33944-cov-028", "A minimum 12 degree or 30 percent loss of upper field of vision"),
+    ),
+    keep(
+        "A29",
+        "POL-SURG-004.c8",
+        "'considered cosmetic' without functional signs or symptoms is "
+        "cov-004's; scoped to group 1 by cov-016.",
+        (
+            "L33944-cov-004",
+            "in the absence of any signs or symptoms of functional abnormalities, "
+            "the procedure is considered cosmetic.",
+        ),
+    ),
+    keep(
+        "A31",
+        "POL-SURG-003.c4",
+        "3 months, 'AND' and 'one, or more' match section A. Stab "
+        "phlebectomy rests on cov-028 and section A's open 'For example' list of surgical "
+        "treatments. Not yet reviewed by pass 1.",
+        ("L34209-cov-008", "A 3-month trial of conservative therapy"),
+        ("L34209-cov-009", "The patient is symptomatic and has one, or more, of the following:"),
+        (
+            "L34209-cov-007",
+            "A. Indications for surgical treatment: For example venous ligation, "
+            "vein stripping and/or sclerotherapy:",
+        ),
+    ),
+    keep(
+        "B1",
+        "POL-BH-001.c1",
+        "Requirement on every testing code fits.",
+        ("v1:POL-BH-001.c1", "known or suspected neurocognitive involvement or effects"),
+    ),
+    keep(
+        "B2",
+        "POL-BH-001.c2",
+        "Not-covered situations: exclusion.",
+        (
+            "v1:POL-BH-001.c2",
+            "performed when abnormalities of brain or emotional function are not suspected",
+        ),
+    ),
+    keep(
+        "B3",
+        "POL-BH-001.c3",
+        "Not-necessary situation: exclusion.",
+        ("v1:POL-BH-001.c3", "is not medically necessary."),
+    ),
+    keep(
+        "B5",
+        "POL-CAR-001.c3",
+        "Stress echo requirement on 93350.",
+        ("v1:POL-CAR-001.c3", "who have signs or symptoms of suspected CAD"),
+    ),
+    keep(
+        "B6",
+        "POL-DX-001.c1",
+        "Requirement on every sleep test code fits.",
+        (
+            "v1:POL-DX-001.c1",
+            "The patient is to be evaluated by a physician prior to ordering of test.",
+        ),
+    ),
+    Entry(
+        "B7",
+        "POL-DX-001.c3",
+        "TYPE",
+        "The LCD's repeat rule is for 'polysomnography or sleep testing', home tests included, but "
+        "c3 says 'facility' and applies to 95810 and 95811 only, so a repeat home test has no "
+        "limit; c3 also dropped cov-059's 'due to equipment failure'. The text must change, so a "
+        "new ID: c6 replaces c3 (on every code), with cov-121's in-laboratory follow-up after a "
+        "failed home test.",
+        (
+            (
+                "L35050-cov-058",
+                "Repeat polysomnography or sleep testing for diagnosing sleep "
+                "apnea requires documentation justifying the medical necessity for the repeated "
+                "test.",
+            ),
+            (
+                "L35050-cov-059",
+                "if the first study is technically inadequate due to equipment failure;",
+            ),
+            (
+                "L35050-cov-121",
+                "Negative or technically inadequate OCST in patients with a high "
+                "pretest probability of moderate to severe OSA should have prompt in-laboratory",
+            ),
+        ),
+        new_criteria=(
+            {
+                "criterion_id": "POL-DX-001.c6",
+                "type": "conditional",
+                "applies_to": "every code of the policy; replaces POL-DX-001.c3",
+                "text": (
+                    "A repeat sleep study, in a facility or at home, is covered when the record "
+                    "justifies it: the first study was technically inadequate because of "
+                    "equipment failure, the patient could not sleep or slept too little for a "
+                    "diagnosis, the results were inconclusive or ambiguous, or starting therapy "
+                    "or confirming that the prescribed therapy works requires it. After a "
+                    "negative or technically inadequate home test in a patient with a high "
+                    "likelihood of moderate to severe obstructive sleep apnea, the repeat should "
+                    "be an in-laboratory study."
+                ),
+                "source": "LCD L35050 v55 cov-058 to cov-062, cov-121.",
+            },
+        ),
+    ),
+    keep(
+        "B8",
+        "POL-DX-002.c1",
+        "Requirement on every code, EMG included.",
+        (
+            "v1:POL-DX-002.c1",
+            "must always describe and document clearly and comprehensibly the "
+            "need for the planned test",
+        ),
+    ),
+    keep(
+        "B9",
+        "POL-DX-002.c2",
+        "A situation where testing is not appropriate: exclusion.",
+        (
+            "v1:POL-DX-002.c2",
+            "irrelevant as a first order diagnostic test for limb pain resulting "
+            "from immediate antecedent trauma or acute bone injury",
+        ),
+    ),
+    keep(
+        "B10",
+        "POL-DX-002.c3",
+        "Not-covered situations: exclusion.",
+        ("v1:POL-DX-002.c3", "is not considered medically necessary and is not covered."),
+    ),
+    keep(
+        "B11",
+        "POL-DX-003.c2",
+        "Patch test requirement on 95044.",
+        (
+            "v1:POL-DX-003.c2",
+            "Allergy patch testing will be considered medically reasonable and "
+            "necessary when used to diagnose allergic contact dermatitis",
+        ),
+    ),
+    keep(
+        "B12",
+        "POL-DX-003.c3",
+        "Requirement on every allergy test code.",
+        ("v1:POL-DX-003.c3", "The number of allergy tests performed should be judicious"),
+    ),
+    keep(
+        "B13",
+        "POL-FOOT-001.c1",
+        "Conditional, in the indication group (C1).",
+        (
+            "v1:POL-FOOT-001.c1",
+            "absence of sensation at two or more sites out of five tested on either foot",
+        ),
+    ),
+    keep(
+        "B14",
+        "POL-FOOT-001.c2",
+        "Conditional, in the indication group (C1).",
+        ("v1:POL-FOOT-001.c2", "For patients requiring anticoagulation therapy"),
+    ),
+    keep(
+        "B15",
+        "POL-IMG-001.c1",
+        "Requirement on every head and neck code.",
+        ("v1:POL-IMG-001.c1", "preliminary (or provisional) diagnosis"),
+    ),
+    Entry(
+        "B16",
+        "POL-IMG-001.c2",
+        "TYPE",
+        "The headache rule is for head imaging; shown on the cervical spine MRI (72141) it invites "
+        "a wrong NOT_MET when the notes mention a headache, as B18 found for c4. Code list: the "
+        "head and brain codes.",
+        (
+            (
+                "v1:POL-IMG-001.c2",
+                "CT imaging has not been useful in general for the evaluation "
+                "of headache or dizziness",
+            ),
+        ),
+        new_applies=("70450", "70551", "70553"),
+    ),
+    keep(
+        "B19",
+        "POL-IMG-002.c1",
+        "Requirement on both ultrasound codes.",
+        ("v1:POL-IMG-002.c1", "Extremity ultrasound is indicated for the following conditions"),
+    ),
+    Entry(
+        "B20",
+        "POL-IMG-002.c2",
+        "LIMITING CHANGE",
+        "Type and codes fit, but the kept v1 text applies 'unless the notes show that the clinical "
+        "picture is unclear' to every condition; the LCD gives that exception only to neuromas, "
+        "superficial ganglia, bursae and abscesses (cov-019), and the text leaves out ganglia and "
+        "bursae. The text must change, so a new ID: c5 replaces c2.",
+        (
+            (
+                "L33619-cov-011",
+                "Extremity ultrasound is considered not medically necessary for "
+                "the routine diagnosis or management of the following conditions:",
+            ),
+            (
+                "L33619-cov-014",
+                "neuromas (where the clinical impression is obvious and ultrasound "
+                "is not likely to add further information)",
+            ),
+            (
+                "L33619-cov-019",
+                "neuromas, superficial ganglia, bursae and abscesses unless there "
+                "is documented evidence of some clinical presentation",
+            ),
+        ),
+        new_criteria=(
+            {
+                "criterion_id": "POL-IMG-002.c5",
+                "type": "exclusion",
+                "applies_to": "every code of the policy; replaces POL-IMG-002.c2",
+                "text": (
+                    "Extremity ultrasound is not medically necessary for the routine diagnosis or "
+                    "management of bunions, cellulitis, nail-fold infections (paronychia), plantar "
+                    "warts, superficial abscesses, or neuromas whose clinical impression is "
+                    "obvious. For neuromas, superficial ganglia, bursae and abscesses it is not "
+                    "medically necessary unless the notes document a clinical presentation that "
+                    "obscures these simple diagnoses."
+                ),
+                "source": "LCD L33619 v25 cov-011 to cov-017, cov-019.",
+            },
+        ),
+    ),
+    keep(
+        "B21",
+        "POL-IMG-002.c3",
+        "Conditional on plantar fasciitis.",
+        (
+            "v1:POL-IMG-002.c3",
+            "A single diagnostic extremity ultrasound may be medically "
+            "necessary for plantar fasciitis",
+        ),
+    ),
+    keep(
+        "B22",
+        "POL-IMG-002.c4",
+        "Conditional on both limbs being scanned.",
+        (
+            "v1:POL-IMG-002.c4",
+            "Bilateral studies are allowed only if there is pathology of both extremities",
+        ),
+    ),
+    keep(
+        "B23",
+        "POL-PAIN-001.c1",
+        "Requirement on every ESI code (D-ESI-1).",
+        (
+            "v1:POL-PAIN-001.c1",
+            "concordant radiological image-based diagnostic testing that "
+            "supports one of the following",
+        ),
+    ),
+    keep(
+        "B24",
+        "POL-PAIN-001.c3",
+        "Requirement on every ESI code (D-ESI-1).",
+        ("v1:POL-PAIN-001.c3", "Pain duration of at least four (4) weeks"),
+    ),
+    keep(
+        "B25",
+        "POL-PAIN-002.c1",
+        "Requirement on every facet code, RFA included (cov-015's 'ALL of the following').",
+        (
+            "v1:POL-PAIN-002.c1",
+            "Moderate to severe chronic neck or low back pain, predominantly axial",
+        ),
+    ),
+    keep(
+        "B26",
+        "POL-PAIN-002.c2",
+        "Requirement on every facet code.",
+        ("v1:POL-PAIN-002.c2", "Pain that has been present for a minimum of 3 months"),
+    ),
+    keep(
+        "B28",
+        "POL-REHAB-001.c1",
+        "Skilled-service requirement fits evaluations and treatment.",
+        (
+            "v1:POL-REHAB-001.c1",
+            "can be safely and effectively performed only by a licensed "
+            "physical therapist or under his/her supervision",
+        ),
+    ),
+    keep(
+        "B30",
+        "POL-SURG-001.c1",
+        "Conditional, in the indication group (C2).",
+        (
+            "v1:POL-SURG-001.c1",
+            "when one (or more) of the following conditions or circumstances exists",
+        ),
+    ),
+    keep(
+        "B31",
+        "POL-SURG-001.c2",
+        "Not-necessary situation: exclusion, outside the group.",
+        ("v1:POL-SURG-001.c2", "purely on the basis of lens opacity in the absence of symptoms"),
+    ),
+    keep(
+        "B32",
+        "POL-SURG-001.c3",
+        "Conditional, in the indication group (C2).",
+        (
+            "v1:POL-SURG-001.c3",
+            "Cataract interfering with the performance of vitreoretinal surgery",
+        ),
+    ),
+    keep(
+        "B33",
+        "POL-SURG-002.c3",
+        "Conditional, in the indication group (C3); the 24 months are "
+        "the LCD's own indication, not an interval rule.",
+        ("v1:POL-SURG-002.c3", "is eligible for continued screening at 24-month intervals"),
+    ),
+    keep(
+        "B35",
+        "POL-SURG-003.c2",
+        "Exclusion 'by any technique': every code.",
+        (
+            "v1:POL-SURG-003.c2",
+            "by any technique will be considered cosmetic and therefore not covered",
+        ),
+    ),
+    keep(
+        "B36",
+        "POL-SURG-003.c3",
+        "Exclusion 'by any technique': every code.",
+        ("v1:POL-SURG-003.c3", "by any technique is considered cosmetic"),
+    ),
+    keep(
+        "B38",
+        "POL-WOUND-001.c2",
+        "Plan requirement on every wound code; its palliative goal agrees with the fixed c4.",
+        (
+            "v1:POL-WOUND-001.c2",
+            "the goal of wound care provided in outpatient settings may be "
+            "only to prevent progression of the wound",
+        ),
+    ),
+)
+
+
+def extended() -> None:
+    criteria = {c.criterion_id: c for p in read_v2() for c in p.criteria}
+    problems = check(TRIAGE_EXTENDED, criteria)
+    first = {e.row for e in TRIAGE}
+    problems += [f"{e.row} was triaged before" for e in TRIAGE_EXTENDED if e.row in first]
+    written = (
+        render(TRIAGE_EXTENDED, criteria)
+        .replace(
+            "# Policies v2 review sheet: author triage of the pass 2 rows",
+            "# Policies v2 review sheet: extended author triage",
+        )
+        .replace(TRIAGE_NOTE, EXTENDED_NOTE)
+    )
+    text = SHEET.read_text(encoding="utf-8")
+    if EXTENDED_NOTE not in text:
+        lines = text.splitlines()
+        at = lines.index(PASS2_NOTE)
+        lines[at + 1 : at + 1] = ["", EXTENDED_NOTE]
+        text = "\n".join(lines) + "\n"
+    hits = {n: k for n, k in ama_hits({EXTENDED_OUT.name: written, SHEET.name: text}).items() if k}
+    if hits:
+        problems.append(f"AMA CPT descriptor text found: {hits}")
+    if problems:
+        raise SystemExit("not written:\n  " + "\n  ".join(problems))
+    EXTENDED_OUT.write_text(written, encoding="utf-8")
+    SHEET.write_text(text, encoding="utf-8")
+    fixes = [e.row for e in TRIAGE_EXTENDED if e.action == "fix"]
+    print(
+        f"{len(TRIAGE_EXTENDED)} rows triaged: {len(fixes)} fixes ({', '.join(fixes)}), "
+        f"{len(TRIAGE_EXTENDED) - len(fixes)} keep; wrote {EXTENDED_OUT.name}"
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("step", choices=("write", "decide"))
-    {"write": write, "decide": decide}[parser.parse_args().step]()
+    parser.add_argument("step", choices=("write", "decide", "extended"))
+    {"write": write, "decide": decide, "extended": extended}[parser.parse_args().step]()
 
 
 if __name__ == "__main__":

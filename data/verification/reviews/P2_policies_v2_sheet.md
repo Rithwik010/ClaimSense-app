@@ -1059,6 +1059,8 @@ Author triage (2026-10-09): Claude Code, the author of the criteria, triaged the
 
 Pass 2 (2026-10-09): the 22 triaged rows hold the reviewer's decisions on the author triage (author triage by Claude Code, decided by Manideep with recommendations from the planning chat). Approved fixes are applied to the v2 files; the texts above are the ones reviewed, and the triage file shows old and new.
 
+Extended author triage (2026-10-10): Claude Code, the author of the criteria, triaged the other 15 Part A MATCHES rows, row A31 and the 31 Part B AGREE rows in P2_policies_v2_triage_extended.md; not an independent check. Nothing in it is applied until the reviewer approves it.
+
 ### Part A (MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE)
 
 | Row | Criterion | Pass 1 verdict (Claude chat) | Pass 1 notes | Pass 2 verdict (reviewer) | Pass 2 notes |
