@@ -1135,6 +1135,18 @@ def sheet(
     return "\n".join(out) + "\n"
 
 
+def has_verdicts(text: str) -> bool:
+    """True when any verdict row of the sheet has a filled pass 1 or pass 2 cell (verdict rows
+    are the rows under "## Verdicts"; Part B's own table above uses the same row IDs)."""
+    lines = text.splitlines()
+    for line in lines[lines.index("## Verdicts") if "## Verdicts" in lines else len(lines) :]:
+        if re.match(r"^\| [ABC][0-9]+ \| POL-", line):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if any(cells[2:]):
+                return True
+    return False
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("step", choices=("check", "selftest", "sheet"))
@@ -1169,6 +1181,10 @@ def main() -> None:
     if problems:
         raise SystemExit(1)
     if step == "sheet":
+        if SHEET.exists() and has_verdicts(SHEET.read_text(encoding="utf-8")):
+            raise SystemExit(
+                f"{SHEET.name} holds review verdicts; not overwritten (move them first)"
+            )
         SHEET.write_text(texts[SHEET.name], encoding="utf-8")
         print(f"wrote {SHEET.relative_to(ROOT)}")
 
