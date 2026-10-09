@@ -48,9 +48,9 @@ CRITERION = re.compile(r"POL-[A-Z]+-[0-9]{3}\.c[0-9]+")
 # v1 criterion -> (decision, proposed v2 IDs). Every row is a changed meaning, so a new ID.
 REPLACED: dict[str, tuple[str, str]] = {
     "POL-CAR-001.c1": ("D-V2-1", "c4 requirement + c5 exclusion"),
-    "POL-CAR-002.c1": ("D-V2-1, CAR-002.F1 note", "c4"),
-    "POL-CAR-002.c2": ("D-V2-2 CAR-002.F1", "c5"),
-    "POL-CAR-002.c3": ("D-V2-1", "c6 + c7"),
+    "POL-CAR-002.c1": ("D-V2-1, CAR-002.F1 note", "c4 (48-hour list, with c2)"),
+    "POL-CAR-002.c2": ("D-V2-2 CAR-002.F1", "c4 (48-hour list, with c1)"),
+    "POL-CAR-002.c3": ("D-V2-1", "c5 (up to 15 days) + c6 (30-day)"),
     "POL-DX-001.c2": ("D-V2-1", "c4"),
     "POL-DX-003.c1": ("D-V2-2 DX-003.F1", "c4 + c5"),
     "POL-PAIN-001.c2": ("D-ESI-2", "c6"),
