@@ -21,6 +21,7 @@ Source: LCD L37373 v41, CT section, general indications.
 For headache or dizziness, imaging is covered only with a focal neurological finding, a significant change in symptoms, a head injury where bleeding must be ruled out, a headache lasting more than two weeks that has not responded to treatment, or a sudden, severe headache.
 
 Type: conditional
+Applies to: 70450, 70551, 70553
 Source: LCD L37373 v41, CT section, headache indications.
 
 ## POL-IMG-001.c3

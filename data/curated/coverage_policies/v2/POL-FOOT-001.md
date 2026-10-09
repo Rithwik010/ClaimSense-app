@@ -33,7 +33,7 @@ Group: indication
 Source: Medicare Benefit Policy Manual Ch. 15 §290.C.3, §290.D, §290.F, §290.G; LCD L33941 v23 cov-000.
 
 ## POL-FOOT-001.c5
-Without a systemic condition, treatment of mycotic (fungal) toenails is covered when the physician attending the mycotic condition documents clinical evidence of mycosis of the toenail and, for a patient who can walk, marked limitation of walking, pain, or secondary infection caused by the thickened, dystrophic nail plate; for a patient who cannot walk, pain or secondary infection caused by it.
+Without a systemic condition, treatment of mycotic (fungal) toenails is covered only when the physician attending the mycotic condition documents clinical evidence of mycosis of the toenail and, for a patient who can walk, marked limitation of walking, pain, or secondary infection caused by the thickened, dystrophic nail plate; for a patient who cannot walk, pain or secondary infection caused by it.
 
 Type: conditional
 Group: indication

@@ -10,6 +10,9 @@ before any policy file changes.
   its reason);
 - the lines billing the foot care codes 11720 and 11721, whose policy gains the manual's
   section 290.C exceptions (Q4), with their v1 labels and diagnoses;
+- the lines billing 93241 (continuous recording beyond 48 hours), whose v2 criterion POL-CAR-002.c5
+  covers only checking the response to treatment (extended triage A4): what each v1 label rests
+  on (the evidence of v1 c3) and the status and decision it would get under c5;
 - for the SURG-002.F3 limitations (D-V2-2): which of their diagnosis codes A56456 covers, so R15
   cannot catch them and the policy needs an exclusion criterion.
 
@@ -55,8 +58,10 @@ REPLACED: dict[str, tuple[str, str]] = {
     "POL-CAR-002.c2": ("D-V2-2 CAR-002.F1", "c4 (48-hour list, with c1)"),
     "POL-CAR-002.c3": ("D-V2-1", "c5 (up to 15 days) + c6 (30-day)"),
     "POL-DX-001.c2": ("D-V2-1, Q6", "c4 exclusion (cov-109, cov-110)"),
+    "POL-DX-001.c3": ("D-POL-4 (extended triage B7)", "c6 (repeat sleep study, home included)"),
     "POL-DX-003.c1": ("D-V2-2 DX-003.F1", "c4 + c5"),
     "POL-FOOT-001.c3": ("D-V2-1, Q4", "c6 exclusion (except as provided)"),
+    "POL-IMG-002.c2": ("D-POL-4 (extended triage B20)", "c5 exclusion (scoped exception)"),
     "POL-PAIN-001.c2": ("D-ESI-2", "c6"),
     "POL-PAIN-001.c4": ("D-ESI-7", "c7"),
     "POL-PAIN-001.c5": ("D-ESI-2, V1a open item", "c8"),
@@ -372,6 +377,93 @@ def foot_section() -> list[str]:
     return out
 
 
+CONTINUOUS = "93241"
+# The evidence of v1 POL-CAR-002.c3 on a 93241 line, read by its wording: the generator wrote one
+# template per status, so the reading of each label is fixed by its sentence.
+READINGS = (
+    (
+        "infrequent symptoms",
+        re.compile(r"too rarely|too infrequent|less often than every|once every \d+ days"),
+    ),
+    ("frequent symptoms", re.compile(r"several times every day|every day")),
+    ("treatment response", re.compile(r"response to|asymptomatic|symptom-free|on treatment")),
+)
+# Under v2 c5 (continuous recording only to check the response to treatment): notes that give
+# another purpose do not satisfy it (NOT_MET); silent notes leave it NOT_DOCUMENTED.
+UNDER_C5 = {
+    "infrequent symptoms": ("NOT_MET", "DENY"),
+    "frequent symptoms": ("NOT_MET", "DENY"),
+    "treatment response": ("MET", "APPROVE"),
+    "another purpose": ("NOT_MET", "DENY"),
+    "silent": ("NOT_DOCUMENTED", "PEND"),
+}
+
+
+def reading(status: str, evidence: str) -> str:
+    if status == "NOT_DOCUMENTED":
+        return "silent"
+    for name, pattern in READINGS:
+        if pattern.search(evidence):
+            return name
+    return "another purpose"
+
+
+def continuous_section() -> list[str]:
+    """Extended triage A4: the 93241 lines, what their v1 labels rest on, and what each becomes
+    under v2 c5 (other criteria do not apply to 93241 in v2)."""
+    targets = {
+        (row["record_id"], x["line_no"]): {
+            c["criterion_id"]: (c["status"], c["evidence"]) for c in x.get("criteria", [])
+        }
+        for split in SPLITS
+        for row in read_jsonl(DECISION_DIR / f"{split}_inputs.jsonl")
+        for x in (row.get("target") or {}).get("lines", [])
+    }
+    counts: Counter[tuple[str, str, str, str]] = Counter()
+    for r in load_records():
+        for line in rule_lines_of(r.claim):
+            if line.code != CONTINUOUS:
+                continue
+            label = r.labels.get(line.line_no, "?")
+            if label.startswith("RULE"):
+                counts[(r.split, label, "decided by a rule", "-")] += 1
+                continue
+            status, evidence = targets.get((r.record_id, line.line_no), {}).get(
+                "POL-CAR-002.c3", ("-", "")
+            )
+            counts[(r.split, label, status, reading(status, evidence))] += 1
+    out = [
+        "",
+        f"## Lines billing {CONTINUOUS}: v1 labels and v2 c5 (extended triage A4)",
+        "",
+        "v2 POL-CAR-002.c5 is the only criterion on 93241 and covers continuous recording beyond "
+        "48 hours only to check the response to treatment (L34636 cov-019); the infrequent-"
+        "symptoms path is for event monitors. The reading comes from the wording of the v1 c3 "
+        "evidence; the v2 status follows D-POL-3 (another purpose: NOT_MET, DENY; silent: "
+        "NOT_DOCUMENTED, PEND). For generator v2; the v1 dataset is not changed.",
+        "",
+        "| Split | v1 label | v1 c3 | Reading of the v1 label | v2 c5 | v2 decision | Lines |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    changed = 0
+    for (split, label, status, why), n in sorted(counts.items()):
+        if status == "decided by a rule":
+            out.append(f"| {split} | {label} | - | decided by a rule | - | unchanged | {n} |")
+            continue
+        v2_status, v2_decision = UNDER_C5[why]
+        out.append(f"| {split} | {label} | {status} | {why} | {v2_status} | {v2_decision} | {n} |")
+        if label.split()[-1] != v2_decision:
+            changed += n
+    total = sum(counts.values())
+    infrequent = sum(n for k, n in counts.items() if k[3] == "infrequent symptoms")
+    out += [
+        "",
+        f"- Lines billing {CONTINUOUS}: {total}; v1 labels resting on the infrequent-symptoms "
+        f"reading: {infrequent}; labels whose decision changes under v2 c5: {changed}.",
+    ]
+    return out
+
+
 def limitations_section() -> list[str]:
     lookups = load_lookups()
     icd = raw.read_icd10_codes()
@@ -413,6 +505,7 @@ def main() -> None:
     out += golden_section()
     out += ncs_section()
     out += foot_section()
+    out += continuous_section()
     out += limitations_section()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(out) + "\n", encoding="utf-8")

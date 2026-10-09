@@ -19,7 +19,7 @@ Applies to: 93224
 Source: LCD L34636 v38 cov-004, cov-005 to cov-018.
 
 ## POL-CAR-002.c5
-Recording for more than 48 hours, up to 15 days, is covered to look for symptom-free episodes when checking the response to treatment in a patient treated for a listed condition, or, with an event monitor, as an alternative to 48-hour monitoring when symptoms suggesting an arrhythmia (palpitations, dizziness, near fainting or fainting) occur less often than every 48 hours.
+Continuous recording for more than 48 hours, up to 15 days, is covered to look for symptom-free episodes when checking the response to treatment in a patient treated for a listed condition.
 
 Type: requirement
 Applies to: 93241

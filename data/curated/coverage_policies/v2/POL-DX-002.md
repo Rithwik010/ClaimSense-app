@@ -34,4 +34,4 @@ A nerve conduction study done without needle EMG is usually not medically necess
 
 Type: conditional
 Applies to: 95907, 95910
-Source: LCD L34594 v42 cov-037.
+Source: LCD L34594 v42 cov-037; decision D-POL-4.

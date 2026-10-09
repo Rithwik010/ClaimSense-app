@@ -110,6 +110,12 @@ NOTES: dict[str, tuple[str, str]] = {
         "New: the home-testing conditions of cov-107 and cov-108. A requirement on the home-test "
         "code: the code list carries the condition, as for CAR-002 c4 to c6.",
     ),
+    "POL-DX-001.c6": (
+        "D-POL-4 (checkpoint 1 review, extended triage B7)",
+        "Replaces kept v1 c3: the LCD's repeat rule covers 'polysomnography or sleep testing', "
+        "home tests included, and needs cov-059's 'due to equipment failure'; adds cov-121's "
+        "in-laboratory study after a failed home test. Added after pass 1.",
+    ),
     "POL-DX-002.c4": (
         "D-RULE-6, Q9",
         "New. Applies when a nerve conduction study is done without needle EMG; then needs "
@@ -133,6 +139,12 @@ NOTES: dict[str, tuple[str, str]] = {
         "D-V2-1, Q4",
         "Replaces v1 c3: cites manual section 290.B.2 (now in data/raw) and says 'except in the "
         "situations this policy covers', since c4 and c5 add exceptions.",
+    ),
+    "POL-IMG-002.c5": (
+        "D-POL-4 (checkpoint 1 review, extended triage B20)",
+        "Replaces kept v1 c2: the 'unless the clinical picture is unclear' exception applies only "
+        "to neuromas, superficial ganglia, bursae and abscesses (cov-019), and ganglia and bursae "
+        "are added. Added after pass 1.",
     ),
     "POL-PAIN-001.c6": (
         "D-ESI-2",
@@ -229,7 +241,7 @@ NOTES: dict[str, tuple[str, str]] = {
 # The situation in which each conditional criterion applies (D-ESI-6), for the reviewer.
 CONDITIONS: dict[str, str] = {
     "POL-CAR-001.c2": "the study repeats one done within the past year",
-    "POL-DX-001.c3": "a repeat facility study",
+    "POL-DX-001.c6": "a repeat sleep study, in a facility or at home",
     "POL-DX-002.c4": "a nerve conduction study with no needle EMG on the claim",
     "POL-FOOT-001.c1": "nerve damage in the feet without blood-vessel impairment",
     "POL-FOOT-001.c2": "the patient takes blood thinners",

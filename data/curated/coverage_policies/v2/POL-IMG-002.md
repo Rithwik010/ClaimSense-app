@@ -8,7 +8,7 @@ sources: ["LCD L33619 version 25 (revision effective 2026-04-01); billing articl
 billing_article: A56787
 split: TEST_ONLY
 policy_set: v2
-replaces: {}
+replaces: {"POL-IMG-002.c2": ["POL-IMG-002.c5"]}
 ---
 
 ## POL-IMG-002.c1
@@ -16,12 +16,6 @@ Extremity ultrasound is covered to evaluate cysts, abscesses, tumors or joint ef
 
 Type: requirement
 Source: LCD L33619 v25, Indications.
-
-## POL-IMG-002.c2
-It is not medically necessary for the routine diagnosis of bunions, cellulitis, obvious neuromas, nail-fold infections, plantar warts or superficial abscesses, unless the notes show that the clinical picture is unclear.
-
-Type: exclusion
-Source: LCD L33619 v25, Limitations.
 
 ## POL-IMG-002.c3
 For plantar fasciitis, one ultrasound is covered only when the diagnosis is still uncertain after a failed course of conservative treatment. It is not covered for the initial diagnosis or for repeat studies.
@@ -34,3 +28,9 @@ Scanning both limbs requires documented disease in both. Scanning the other limb
 
 Type: conditional
 Source: LCD L33619 v25, Limitations.
+
+## POL-IMG-002.c5
+Extremity ultrasound is not medically necessary for the routine diagnosis or management of bunions, cellulitis, nail-fold infections (paronychia), plantar warts, superficial abscesses, or neuromas whose clinical impression is obvious. For neuromas, superficial ganglia, bursae and abscesses it is not medically necessary unless the notes document a clinical presentation that obscures these simple diagnoses.
+
+Type: exclusion
+Source: LCD L33619 v25 cov-011 to cov-017, cov-019.

@@ -816,6 +816,60 @@ Excerpts, word for word:
 
 > **L34209-cov-028** (item; under: 2. The patient is symptomatic and has one, or more, of the following: > C. Limitations for ERFA and laser ablation:): Noridian notes that stab phlebectomy of the same vein performed on the same day as endovenous radiofrequency or laser ablation may be covered if the criteria for reasonable and necessary as described in this LCD are met.
 
+Rows added after pass 1 (POL-DX-001.c6, POL-IMG-002.c5): from approved pass 2 fixes; not yet reviewed.
+
+### A32. POL-DX-001.c6 (replaces POL-DX-001.c3)
+
+- Decision: D-POL-4 (checkpoint 1 review, extended triage B7)
+- What changed: Replaces kept v1 c3: the LCD's repeat rule covers 'polysomnography or sleep testing', home tests included, and needs cov-059's 'due to equipment failure'; adds cov-121's in-laboratory study after a failed home test. Added after pass 1.
+- v1 text (POL-DX-001.c3): A repeat facility study is covered when the first study was technically inadequate, the patient slept too little for a diagnosis, starting or confirming the effect of therapy requires it (such as CPAP titration), or the results were inconclusive.
+- **v2 text:** A repeat sleep study, in a facility or at home, is covered when the record justifies it: the first study was technically inadequate because of equipment failure, the patient could not sleep or slept too little for a diagnosis, the results were inconclusive or ambiguous, or starting therapy or confirming that the prescribed therapy works requires it. After a negative or technically inadequate home test in a patient with a high likelihood of moderate to severe obstructive sleep apnea, the repeat should be an in-laboratory study.
+- Type: conditional (applies when: a repeat sleep study, in a facility or at home). Applies to: every code of the policy. Group: -.
+- Source line: LCD L35050 v55 cov-058 to cov-062, cov-121.
+- Automatic check, numbers in the v2 text that no excerpt contains: none
+
+Excerpts, word for word:
+
+> **L35050-cov-058** (item; under: Covered Indications > Diagnosis of obstructive sleep apnea requires documentation of:): Repeat polysomnography or sleep testing for diagnosing sleep apnea requires documentation justifying the medical necessity for the repeated test. Repeat polysomnography/sleep testing may be indicated:
+
+> **L35050-cov-059** (item; under: Covered Indications > Diagnosis of obstructive sleep apnea requires documentation of:): if the first study is technically inadequate due to equipment failure;
+
+> **L35050-cov-060** (item; under: Covered Indications > Diagnosis of obstructive sleep apnea requires documentation of:): if the subject could not sleep or slept for an insufficient amount of time to allow a clinical diagnosis;
+
+> **L35050-cov-061** (item; under: Covered Indications > Diagnosis of obstructive sleep apnea requires documentation of:): if the results were inconclusive or ambiguous; or
+
+> **L35050-cov-062** (item; under: Covered Indications > Diagnosis of obstructive sleep apnea requires documentation of:): if initiation of therapy or confirmation of the efficacy of prescribed therapy is needed.
+
+> **L35050-cov-121** (item; under: Limitations > Types of Monitors:): A follow-up visit to review test results should be performed for all patients undergoing OCST in the sleep facility authorized to order such testing or oversee OCST testing. Negative or technically inadequate OCST in patients with a high pretest probability of moderate to severe OSA should have prompt in-laboratory polysomnography.
+
+### A33. POL-IMG-002.c5 (replaces POL-IMG-002.c2)
+
+- Decision: D-POL-4 (checkpoint 1 review, extended triage B20)
+- What changed: Replaces kept v1 c2: the 'unless the clinical picture is unclear' exception applies only to neuromas, superficial ganglia, bursae and abscesses (cov-019), and ganglia and bursae are added. Added after pass 1.
+- v1 text (POL-IMG-002.c2): It is not medically necessary for the routine diagnosis of bunions, cellulitis, obvious neuromas, nail-fold infections, plantar warts or superficial abscesses, unless the notes show that the clinical picture is unclear.
+- **v2 text:** Extremity ultrasound is not medically necessary for the routine diagnosis or management of bunions, cellulitis, nail-fold infections (paronychia), plantar warts, superficial abscesses, or neuromas whose clinical impression is obvious. For neuromas, superficial ganglia, bursae and abscesses it is not medically necessary unless the notes document a clinical presentation that obscures these simple diagnoses.
+- Type: exclusion. Applies to: every code of the policy. Group: -.
+- Source line: LCD L33619 v25 cov-011 to cov-017, cov-019.
+- Automatic check, numbers in the v2 text that no excerpt contains: none
+
+Excerpts, word for word:
+
+> **L33619-cov-011** (item; under: Limitations:): Extremity ultrasound is considered not medically necessary for the routine diagnosis or management of the following conditions:
+
+> **L33619-cov-012** (item; under: Limitations:): - bunions;
+
+> **L33619-cov-013** (item; under: Limitations:): - cellulitis;
+
+> **L33619-cov-014** (item; under: Limitations:): - neuromas (where the clinical impression is obvious and ultrasound is not likely to add further information);
+
+> **L33619-cov-015** (item; under: Limitations:): - paronychia;
+
+> **L33619-cov-016** (item; under: Limitations:): - plantar warts; or
+
+> **L33619-cov-017** (item; under: Limitations:): - superficial abscesses.
+
+> **L33619-cov-019** (item; under: Limitations:): Extremity ultrasound is considered not medically necessary for diagnosis or management of neuromas, superficial ganglia, bursae and abscesses unless there is documented evidence of some clinical presentation that obscures the clinician's ability to establish these simple clinical diagnoses.
+
 ## Part B: kept criteria (38 rows)
 
 Text and ID unchanged from v1 (checked byte for byte); only the type, code list and group are new.
@@ -1061,6 +1115,8 @@ Pass 2 (2026-10-09): the 22 triaged rows hold the reviewer's decisions on the au
 
 Extended author triage (2026-10-10): Claude Code, the author of the criteria, triaged the other 15 Part A MATCHES rows, row A31 and the 31 Part B AGREE rows in P2_policies_v2_triage_extended.md; not an independent check. Nothing in it is applied until the reviewer approves it.
 
+Pass 2 on the extended triage (2026-10-10): the 6 fix rows hold the reviewer's decisions (author triage by Claude Code, decided by Manideep with recommendations from the planning chat); the 41 rows the extended triage keeps have no pass 2 decision yet.
+
 ### Part A (MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE)
 
 | Row | Criterion | Pass 1 verdict (Claude chat) | Pass 1 notes | Pass 2 verdict (reviewer) | Pass 2 notes |
@@ -1068,15 +1124,15 @@ Extended author triage (2026-10-10): Claude Code, the author of the criteria, tr
 | A1 | POL-CAR-001.c4 | DIFFERENT MEANING | The lead-in "signs or symptoms of, or is being evaluated for" is applied to all 17 items, but only A (cov-009) and B (cov-012) state a signs/symptoms condition and C to Q are bare headings. "lung disease affecting the heart" adds "affecting the heart" to heading "Q. Pulmonary". cov-009's "expected to be performed by examiners recognized as experts" (diastolic dysfunction) is not reflected. | NOT IN SOURCE | ADDED; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A2 | POL-CAR-001.c5 | MATCHES | Same as the first sentence of cov-012 ("When there are no signs or symptoms of heart disease, the use of TTE is not covered for hypertension"); exclusion type fits. | MATCHES | OK; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A3 | POL-CAR-002.c4 | DIFFERENT MEANING | "a known arrhythmia" narrows source item "Arrhythmias" (cov-007), which has no "known"; A5 uses plain "arrhythmias" for the matching 30-day list. The 40% ejection fraction, ST-segment and ablation items match. Minor: "Syncope (lightheadedness)" becomes "fainting". | NOT IN SOURCE | ADDED; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
-| A4 | POL-CAR-002.c5 | MATCHES | Matches cov-019 (more than 48 h up to 15 days; asymptomatic episodes for treatment response; infrequent symptoms, less often than every 48 hours). Minor: source says "alternative to Holter monitoring", text says "alternative to 48-hour monitoring". |  |  |
+| A4 | POL-CAR-002.c5 | MATCHES | Matches cov-019 (more than 48 h up to 15 days; asymptomatic episodes for treatment response; infrequent symptoms, less often than every 48 hours). Minor: source says "alternative to Holter monitoring", text says "alternative to 48-hour monitoring". | DIFFERENT MEANING | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage_extended.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A5 | POL-CAR-002.c6 | MATCHES | All items of cov-022 to cov-032 are present and no ejection fraction is added for heart attack survivors. cov-020's billing rule is left to R11, as the sheet states. |  |  |
 | A6 | POL-DX-001.c4 | MATCHES | Matches cov-110 (significant comorbid conditions or sleep disorders; moderate to severe pulmonary disease, neuromuscular disease, congestive heart failure). "not covered" is supported by the parent heading "...are not covered in the following situations". | MATCHES | OK; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A7 | POL-DX-001.c5 | MATCHES | Matches cov-107 and cov-108 (high likelihood of moderate to severe sleep apnea, shown by symptoms and physical examination in the note). |  |  |
-| A8 | POL-DX-002.c4 | MATCHES | Matches cov-037 ("usually considered not medically necessary"; "The only exception" is carpal tunnel syndrome with a high pre-test probability). "which the notes must document" comes from the cited decision and the conditional type, not the source. |  |  |
+| A8 | POL-DX-002.c4 | MATCHES | Matches cov-037 ("usually considered not medically necessary"; "The only exception" is carpal tunnel syndrome with a high pre-test probability). "which the notes must document" comes from the cited decision and the conditional type, not the source. | NOT IN SOURCE | ADDED; fix approved (old and new text in P2_policies_v2_triage_extended.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A9 | POL-DX-003.c4 | MATCHES | Prick list matches cov-008. Intradermal list matches cov-009 without foods, consistent with cov-058. Correlation with history and examination matches cov-007. |  |  |
 | A10 | POL-DX-003.c5 | MATCHES | cov-058 and cov-080 sit under Limitations, so "not covered" is a fair reading, though cov-058 itself uses the weaker "not recommended". | MATCHES | OK; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A11 | POL-FOOT-001.c4 | MATCHES | Systemic conditions and asterisk/active-care rule (290.D), Class B/C counts including "three required" (290.F), "diagnosis alone" (290.G) and the 290.C.3 hazard wording all match; "for example" keeps the findings non-exhaustive. | MATCHES | OK; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
-| A12 | POL-FOOT-001.c5 | MATCHES | Matches 290.C.4 for ambulatory and nonambulatory patients. "covered only when" becomes "is covered when", but c6 carries the "only". |  |  |
+| A12 | POL-FOOT-001.c5 | MATCHES | Matches 290.C.4 for ambulatory and nonambulatory patients. "covered only when" becomes "is covered when", but c6 carries the "only". | DIFFERENT MEANING | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage_extended.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A13 | POL-FOOT-001.c6 | MATCHES | Matches 290.B.2 (corns, calluses, nail trimming and debriding). "Except as provided above" becomes "Except in the situations this policy covers", in line with c4, c5 and Part C. |  |  |
 | A14 | POL-PAIN-001.c6 | MATCHES | Severity and baseline scale match cov-013 and cov-023. "a numeric score or a named scale" is added by cited decision D-ESI-2. |  |  |
 | A15 | POL-PAIN-001.c7 | DIFFERENT MEANING | "without contrast only when a contrast allergy or pregnancy is documented" is narrower than cov-020 ("unless the patient has a contraindication to contrast") and cov-025 ("documented contraindication to contrast media (e.g., allergy, pregnancy)"). cov-015's fallback is "ultrasound guidance without contrast", which the text does not mention. Level limits match cov-016 and cov-017. | DIFFERENT MEANING | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
@@ -1096,6 +1152,8 @@ Extended author triage (2026-10-10): Claude Code, the author of the criteria, tr
 | A29 | POL-SURG-004.c8 | MATCHES | Supported by cov-001, cov-004 and cov-006. Paraphrases "in the absence of any signs or symptoms of functional abnormalities" as "without documented functional impairment"; the "to improve a patient's appearance" purpose is implicit. |  |  |
 | A30 | POL-WOUND-001.c4 | DIFFERENT MEANING | Drops the palliative exception in cov-082 ("However, if it is determined that the goal of care is not wound healing ... palliative care standards"), which also conflicts with kept c2 (B38: "preventing the wound from getting worse"). "must be revised" hardens cov-118's "should necessitate a revision", and "expected healing" becomes "healing". The 30 days and the frequency sentence match. | DIFFERENT MEANING | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | A31 | POL-SURG-003.c4 |  |  |  |  |
+| A32 | POL-DX-001.c6 |  |  |  |  |
+| A33 | POL-IMG-002.c5 |  |  |  |  |
 
 ### Part B (AGREE, DISAGREE or UNSURE)
 
@@ -1107,7 +1165,7 @@ Extended author triage (2026-10-10): Claude Code, the author of the criteria, tr
 | B4 | POL-CAR-001.c2 | UNSURE | Conditional fits the repeat trigger, but "all" includes 93350 (stress echo) while the TTE criteria A1 and A2 apply to 93306, 93308 only. The text says "Repeating the study more often than once a year" and "planned valve surgery", so the sheet does not show the rule covers stress echo. | DISAGREE | TYPE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B5 | POL-CAR-001.c3 | AGREE | Stress-echo requirement; 93350 only is right. |  |  |
 | B6 | POL-DX-001.c1 | AGREE | Requirement for sleep testing; all three codes. |  |  |
-| B7 | POL-DX-001.c3 | AGREE | Conditional on a repeat facility study; 95810 and 95811 are the facility codes (95806 is home). |  |  |
+| B7 | POL-DX-001.c3 | AGREE | Conditional on a repeat facility study; 95810 and 95811 are the facility codes (95806 is home). | DISAGREE | TYPE; fix approved (old and new text in P2_policies_v2_triage_extended.md); adds POL-DX-001.c6. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B8 | POL-DX-002.c1 | AGREE | Requirement; all three codes. |  |  |
 | B9 | POL-DX-002.c2 | AGREE | Situation where the test is not appropriate, so exclusion fits. "first-line" is softer than "not covered" but acceptable; all codes. |  |  |
 | B10 | POL-DX-002.c3 | AGREE | Not-covered situations, so exclusion fits; all codes. |  |  |
@@ -1116,11 +1174,11 @@ Extended author triage (2026-10-10): Claude Code, the author of the criteria, tr
 | B13 | POL-FOOT-001.c1 | AGREE | Conditional on neuropathy without vascular impairment; both nail codes; indication group matches C1. |  |  |
 | B14 | POL-FOOT-001.c2 | AGREE | Conditional on anticoagulation; both codes; indication group matches C1. |  |  |
 | B15 | POL-IMG-001.c1 | AGREE | General requirement for head or neck CT/MRI; all four codes. |  |  |
-| B16 | POL-IMG-001.c2 | AGREE | Conditional on headache or dizziness; "all" is workable because the trigger gates it. |  |  |
+| B16 | POL-IMG-001.c2 | AGREE | Conditional on headache or dizziness; "all" is workable because the trigger gates it. | DISAGREE | TYPE; fix approved (old and new text in P2_policies_v2_triage_extended.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B17 | POL-IMG-001.c3 | UNSURE | 70553 is the only contrast code, so the code list fits. The type mixes a requirement ("need a documented reason") with a repeat-scan rule ("More than one contrast scan per episode of illness is not covered except ...") that applies only to a second contrast scan; the sheet splits mixed criteria elsewhere (A1 and A2). | AGREE | REWORDING; kept. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B18 | POL-IMG-001.c4 | DISAGREE | Text says "Brain imaging", but "all" includes 72141 (MRI of the neck (cervical) spine). Applies to should be 70450, 70551, 70553. | DISAGREE | TYPE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B19 | POL-IMG-002.c1 | AGREE | Requirement listing the covered indications; both ultrasound codes. |  |  |
-| B20 | POL-IMG-002.c2 | AGREE | Not-necessary situations, so exclusion fits; both codes. |  |  |
+| B20 | POL-IMG-002.c2 | AGREE | Not-necessary situations, so exclusion fits; both codes. | DISAGREE | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage_extended.md); adds POL-IMG-002.c5. Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
 | B21 | POL-IMG-002.c3 | AGREE | Conditional on plantar fasciitis; both codes. |  |  |
 | B22 | POL-IMG-002.c4 | AGREE | Conditional on both limbs scanned; both codes. |  |  |
 | B23 | POL-PAIN-001.c1 | AGREE | Requirement; all three ESI codes. |  |  |
