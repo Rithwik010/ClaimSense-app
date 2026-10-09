@@ -33,7 +33,15 @@ Group: indication
 Source: LCD L34005 v34 cov-013, cov-015, cov-017, cov-019 to cov-021.
 
 ## POL-SURG-002.c6
-Colonoscopy is generally not covered, unless the record documents why it is needed, for: chronic, stable irritable bowel syndrome or chronic abdominal pain (it may be done to rule out organic disease, especially when symptoms do not respond to therapy); acute diarrhea; hemorrhoids; routine follow-up of inflammatory bowel disease (cancer surveillance in Crohn's disease or chronic ulcerative colitis excepted); routine examination before elective abdominal surgery for a non-colonic disease; upper GI bleeding or black tarry stool with a demonstrated upper GI source; fulminant colitis; possible perforation; acute severe diverticulitis; or diverticulosis as the reason for the test (it may still be reported when it is the final diagnosis).
+Colonoscopy is generally not covered, unless the record documents why it is needed, for: chronic, stable irritable bowel syndrome or chronic abdominal pain (it may be done to rule out organic disease, especially when symptoms do not respond to therapy); acute diarrhea; hemorrhoids; routine follow-up of inflammatory bowel disease (cancer surveillance in Crohn's disease or chronic ulcerative colitis excepted); routine examination before elective abdominal surgery for a non-colonic disease; upper GI bleeding or black tarry stool with a demonstrated upper GI source; bright red rectal bleeding with a convincing anorectal source on sigmoidoscopy and no other symptoms suggesting a source higher up; fulminant colitis; possible perforation; acute severe diverticulitis; or diverticulosis as the reason for the test (it may still be reported when it is the final diagnosis).
 
 Type: exclusion
-Source: LCD L34005 v34 cov-036 to cov-039, cov-041 to cov-043, cov-045 to cov-049.
+Source: LCD L34005 v34 cov-036 to cov-039, cov-041 to cov-049.
+
+## POL-SURG-002.c7
+Colonoscopy is also covered to treat: bleeding from lesions such as vascular anomalies, ulceration or tumors; a foreign body (removal); colonic polyps (excision); pseudo-obstruction of the colon (Ogilvie's syndrome, decompression); sigmoid volvulus or stricture; or narrowing or bleeding tumors, as palliative treatment (for example laser, electrocoagulation or stenting).
+
+Type: conditional
+Applies to: 45380, 45385
+Group: indication
+Source: LCD L34005 v34 cov-006, cov-027 to cov-031, cov-034.

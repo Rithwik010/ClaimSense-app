@@ -1,15 +1,15 @@
 # Policies v2: source review sheet (checkpoint 1)
 
-Two passes: pass 1 in a separate Claude chat (paste the whole sheet and ask for the two verdict tables at the end, filled); pass 2 by the reviewer, for every row whose pass 1 verdict is not MATCHES or AGREE, plus 5 random MATCHES rows.
+Two passes: pass 1 in a separate Claude chat (paste the whole sheet and ask for the three verdict tables at the end, filled); pass 2 by the reviewer, for every row whose pass 1 verdict is not MATCHES, AGREE or COMPLETE, plus 5 random MATCHES rows.
 
 - **Who wrote what.** The v2 texts, the choice of excerpts, the types, the code lists and the notes were written by the same model (Claude, in the repository session); the two passes are the check.
 - **Excerpts are copied word for word from data/raw by `scripts/verify/policies_v2_sources.py`, never typed.** LCD text: the CMS Medicare Coverage Database download (data/raw/mcd/2026-09-21/current_lcd.zip, lcd.csv, latest version of each LCD), with tags removed, entities decoded and whitespace collapsed, as in V1b. Block IDs are the V1b IDs: L<LCD>-cov-NNN is block NNN of the LCD's coverage field, L<LCD>-doc-NNN of its Associated Information field; headings and background blocks are marked. Manual text: Medicare Benefit Policy Manual, chapter 15, Rev. 13889 (data/raw/cms-manual/bp102c15/bp102c15.pdf), line breaks joined.
 - **No AMA CPT text.** Codes are shown with the team's plain-language descriptions (data/curated/procedure_descriptions.csv), not CPT descriptors; the sheet was checked against the CPT descriptor texts of our codes before writing (0 found).
 - In the excerpts, a backslash before `*` is Markdown escaping, not source text. 'under:' names the headings above an LCD block, as the V1b parser reads them.
 - **Decisions** cited as `decision D-...` are team decisions recorded in DECISIONS.md, not sources: do not mark a row NOT IN SOURCE for what such a decision adds.
-- Part A: 27 new criteria (each replaces a v1 criterion or is new); Part B: 38 criteria kept from v1 with their v1 ID and text; v1 criteria retired: 19. v2 total: 65.
+- Part A: 30 new criteria (each replaces a v1 criterion or is new); Part B: 38 criteria kept from v1 with their v1 ID and text; v1 criteria retired: 19. v2 total: 68. Part C: 3 indication groups, each with every covered indication its sources give.
 - Automatic checks: every cited block and section found, every excerpt word for word in its source; rows with a number, duration or threshold that no excerpt contains: 0 (none).
-- Estimated time: Part A about 3 minutes a row (81 minutes), Part B about 19 minutes.
+- Estimated time: Part A about 3 minutes a row (90 minutes), Part B about 19 minutes, Part C about 12 minutes.
 
 ## How to judge
 
@@ -22,12 +22,14 @@ Two passes: pass 1 in a separate Claude chat (paste the whole sheet and ask for 
 
 **Part B** (AGREE, DISAGREE or UNSURE): is the type right for the text, and the code list and group?
 
+**Part C** (COMPLETE, GAPS or UNSURE): for each indication group, is every covered indication its sources give for the policy's codes held by the criterion named, and is each reason to leave one out right?
+
 **Types** (decisions D-ESI-6 and D-GEN-3) fix what the notes' silence means:
 
 - requirement: must be satisfied; silent notes give NOT_DOCUMENTED.
 - exclusion: describes a situation that is not covered; present gives NOT_MET, absent or silent gives NOT_APPLICABLE; never MET.
 - conditional: applies only in the situation named with it; otherwise NOT_APPLICABLE; when it applies, it works as a requirement.
-- Group: indication: alternative indications of one policy; when none of them is MET, the line is PEND with 'no covered indication documented'.
+- Group: indication: alternative indications of one policy (D-POL-3). Counting only the criteria that apply to the line's code: any criterion NOT_MET gives DENY; otherwise, when no indication-group criterion is MET, PEND with 'no covered indication documented'; otherwise any NOT_DOCUMENTED gives PEND; otherwise APPROVE.
 - Applies to: the criterion is shown only on lines billing these codes; without it, on every code of the policy.
 
 ## Codes of the policies
@@ -86,7 +88,7 @@ Two passes: pass 1 in a separate Claude chat (paste the whole sheet and ask for 
 | POL-WOUND-001 | 97597 | Selective removal of dead tissue from an open wound, first 20 square cm or less |
 | POL-WOUND-001 | 29581 | Applying a multi-layer compression wrap to the leg |
 
-## Part A: new criteria (27 rows)
+## Part A: new criteria (30 rows)
 
 ### A1. POL-CAR-001.c4 (replaces POL-CAR-001.c1)
 
@@ -258,7 +260,7 @@ Excerpts, word for word:
 ### A6. POL-DX-001.c4 (replaces POL-DX-001.c2)
 
 - Decision: D-V2-1, Q6
-- What changed: v1 c2 without the accreditation requirement, with the home-testing conditions of cov-109 and cov-110 spelled out. Typed exclusion, so silent notes give NOT_APPLICABLE. Not included: cov-107 and cov-108 (a high likelihood of moderate to severe sleep apnea, shown by documented symptoms and examination), also home-testing conditions.
+- What changed: v1 c2 without the accreditation requirement, with the home-testing conditions of cov-109 and cov-110 spelled out. Typed exclusion, so silent notes give NOT_APPLICABLE. The other home-testing conditions (cov-107 and cov-108) are c5.
 - v1 text (POL-DX-001.c2): The study must be performed by a sleep program that meets the LCD's physician-direction and accreditation requirements. Home (out-of-center) testing is covered only under the LCD's out-of-center sleep testing conditions and supervision.
 - **v2 text:** Home (out-of-center) sleep testing is not covered for diagnosing obstructive sleep apnea when the patient has a significant comorbid medical condition or sleep disorder that may make the test inaccurate, such as moderate to severe lung disease, neuromuscular disease or congestive heart failure.
 - Type: exclusion. Applies to: 95806. Group: -.
@@ -273,7 +275,24 @@ Excerpts, word for word:
 
 > **L35050-cov-110** (item; under: Limitations > Polysomnography or sleep studies, and MSLT are not covered in the following situations:): OCST is not appropriate for the diagnosis of OSA in patients with significant comorbid medical conditions or comorbid sleep disorders that may degrade the accuracy of PM, including, but not limited to, moderate to severe pulmonary disease, neuromuscular disease, or congestive heart failure.
 
-### A7. POL-DX-002.c4 (new, no v1 predecessor)
+### A7. POL-DX-001.c5 (new, no v1 predecessor)
+
+- Decision: D-POL-4 (checkpoint 1 review)
+- What changed: New: the home-testing conditions of cov-107 and cov-108. A requirement on the home-test code: the code list carries the condition, as for CAR-002 c4 to c6.
+- **v2 text:** Home (out-of-center) sleep testing requires a high likelihood of moderate to severe sleep apnea, shown by the symptoms and the physical examination documented in the notes.
+- Type: requirement. Applies to: 95806. Group: -.
+- Source line: LCD L35050 v55 cov-106, cov-107, cov-108.
+- Automatic check, numbers in the v2 text that no excerpt contains: none
+
+Excerpts, word for word:
+
+> **L35050-cov-106** (item; under: Limitations > Polysomnography or sleep studies, and MSLT are not covered in the following situations:): Hospital based sleep, as well as non-hospital based sleep clinics shall be credentialed with the qualification listed in the Documentation Requirements below and shall meet the following criteria for OCST:
+
+> **L35050-cov-107** (item; under: Limitations > Polysomnography or sleep studies, and MSLT are not covered in the following situations:): The medical record must clearly indicate the patient has a high likelihood of having moderate to severe sleep apnea
+
+> **L35050-cov-108** (item; under: Limitations > Polysomnography or sleep studies, and MSLT are not covered in the following situations:): This increased likelihood is evidenced by symptoms and physical examination documented in the note
+
+### A8. POL-DX-002.c4 (new, no v1 predecessor)
 
 - Decision: D-RULE-6, Q9
 - What changed: New. Applies when a nerve conduction study is done without needle EMG; then needs documented carpal tunnel syndrome with a high pre-test probability (notes showing another cause: NOT_MET; silent notes: NOT_DOCUMENTED).
@@ -286,7 +305,7 @@ Excerpts, word for word:
 
 > **L34594-cov-037** (item; under: Results of the NCS reflect on the integrity and function of: > Nerve Conduction Studies): In most instances, both NCS and EMG are necessary to perform diagnostic testing. While a provider may choose to perform just an NCS, when performed alone it is usually considered not medically necessary. The only exception to this is a situation where a provider may consider it appropriate to perform an NCS without doing an EMG for the diagnosis of carpal tunnel syndrome with a high pre-test probability.
 
-### A8. POL-DX-003.c4 (replaces POL-DX-003.c1)
+### A9. POL-DX-003.c4 (replaces POL-DX-003.c1)
 
 - Decision: D-V2-2 DX-003.F1
 - What changed: v1 c1 with foods removed from intradermal testing (the LCD lists foods for prick tests only).
@@ -306,7 +325,7 @@ Excerpts, word for word:
 
 > **L33261-cov-058** (item; under: Limitations): Intracutaneous (intradermal) tests for food sensitivity are not recommended because of numerous false-positive test findings and possible risks.
 
-### A9. POL-DX-003.c5 (replaces POL-DX-003.c1)
+### A10. POL-DX-003.c5 (replaces POL-DX-003.c1)
 
 - Decision: D-V2-2 DX-003.F1
 - What changed: New exclusion: intradermal testing for food allergy.
@@ -322,7 +341,7 @@ Excerpts, word for word:
 
 > **L33261-cov-080** (item; under: Limitations > Tests to diagnose Food Allergy:): Intradermal testing to diagnose food allergy
 
-### A10. POL-FOOT-001.c4 (new, no v1 predecessor)
+### A11. POL-FOOT-001.c4 (new, no v1 predecessor)
 
 - Decision: Q4 (new finding)
 - What changed: New: manual section 290.C.3 (systemic conditions), with 290.D's list and its asterisk rule, 290.F's class findings, and 290.G's 'the mere statement of a diagnosis ... does not of itself indicate the severity'.
@@ -343,7 +362,7 @@ Excerpts, word for word:
 
 > **L33941-cov-000** (item; under: the top of the field): Please refer to CMS IOM Publication 100-02, Medicare Benefit Policy Manual , Chapter 15, Section 290 Foot Care for indications and limitations in coverage of routine foot care.
 
-### A11. POL-FOOT-001.c5 (new, no v1 predecessor)
+### A12. POL-FOOT-001.c5 (new, no v1 predecessor)
 
 - Decision: Q4 (new finding)
 - What changed: New: manual section 290.C.4 (mycotic nails).
@@ -358,7 +377,7 @@ Excerpts, word for word:
 
 > **L33941-cov-000** (item; under: the top of the field): Please refer to CMS IOM Publication 100-02, Medicare Benefit Policy Manual , Chapter 15, Section 290 Foot Care for indications and limitations in coverage of routine foot care.
 
-### A12. POL-FOOT-001.c6 (replaces POL-FOOT-001.c3)
+### A13. POL-FOOT-001.c6 (replaces POL-FOOT-001.c3)
 
 - Decision: D-V2-1, Q4
 - What changed: Replaces v1 c3: cites manual section 290.B.2 (now in data/raw) and says 'except in the situations this policy covers', since c4 and c5 add exceptions.
@@ -374,7 +393,7 @@ Excerpts, word for word:
 
 > **L33941-cov-000** (item; under: the top of the field): Please refer to CMS IOM Publication 100-02, Medicare Benefit Policy Manual , Chapter 15, Section 290 Foot Care for indications and limitations in coverage of routine foot care.
 
-### A13. POL-PAIN-001.c6 (replaces POL-PAIN-001.c2)
+### A14. POL-PAIN-001.c6 (replaces POL-PAIN-001.c2)
 
 - Decision: D-ESI-2
 - What changed: v1 c2 plus: the baseline score is a numeric score or a named scale.
@@ -390,7 +409,7 @@ Excerpts, word for word:
 
 > **L33906-cov-023** (item; under: Covered Indications): \*Note: The scales used to measure pain or disability must be documented in the medical record. Acceptable scales include, but are not limited to: Verbal rating scales, Numerical Rating Scale (NRS) and Visual Analog Scale (VAS) for pain assessment, and Pain Disability Assessment Scale (PDAS), Oswestry Disability Index (ODI), Oswestry Low Back Pain Disability Questionnaire (OLBPDQ), Quebec Back Pain Disability Scale (QBPDS), Roland Morris Pain Scale, Back Pain Functional Scale (BPFS), and the Patient-Reported Outcomes Measurement Information System (PROMIS) profile domains to assess function.
 
-### A14. POL-PAIN-001.c7 (replaces POL-PAIN-001.c4)
+### A15. POL-PAIN-001.c7 (replaces POL-PAIN-001.c4)
 
 - Decision: D-ESI-7
 - What changed: v1 c4 plus: a code that includes imaging guidance counts as evidence of guidance, and contrast use (or the documented allergy or pregnancy) must be in the notes; caudal injections added to the one-level limit (cov-017). The level limits are also enforced by R18.
@@ -412,7 +431,7 @@ Excerpts, word for word:
 
 > **L33906-cov-025** (item; under: Limitations): Injections performed without image guidance or by ultrasound are not considered medically reasonable and necessary except in cases of documented contraindication to contrast media (e.g., allergy, pregnancy).
 
-### A15. POL-PAIN-001.c8 (replaces POL-PAIN-001.c5)
+### A16. POL-PAIN-001.c8 (replaces POL-PAIN-001.c5)
 
 - Decision: D-ESI-2, V1a open item
 - What changed: v1 c5 plus the repeat after a poor first response (after 14 days, with a different approach, level or medication, the reason documented).
@@ -428,7 +447,7 @@ Excerpts, word for word:
 
 > **L33906-cov-039** (item; under: Limitations): The ESI provides at least 50% sustained improvement of pain and/or 50% objective improvement in function (using same scale as baseline).
 
-### A16. POL-PAIN-001.c9 (new, no v1 predecessor)
+### A17. POL-PAIN-001.c9 (new, no v1 predecessor)
 
 - Decision: D-ESI-4, Q5
 - What changed: New exclusion with every condition cov-029 lists.
@@ -441,7 +460,7 @@ Excerpts, word for word:
 
 > **L33906-cov-029** (item; under: Limitations): ESIs to treat non-specific low back pain (LBP), axial spine pain, complex regional pain syndrome, widespread diffuse pain, pain from neuropathy from other causes, or cervicogenic headaches are considered investigational and therefore are not considered medically reasonable and necessary.
 
-### A17. POL-PAIN-002.c5 (replaces POL-PAIN-002.c4)
+### A18. POL-PAIN-002.c5 (replaces POL-PAIN-002.c4)
 
 - Decision: D-V2-1
 - What changed: v1 c4 plus the LCD's documented-exception clause; shown on the diagnostic injection codes only.
@@ -457,7 +476,7 @@ Excerpts, word for word:
 
 > **L33930-cov-024** (item; under: Covered Indications > A. Diagnostic Facet Joint Injection Procedures (IA or MBB):): A second diagnostic facet procedure is considered medically reasonable and necessary to confirm validity of the initial diagnostic facet procedure when administered at the same level. The second diagnostic procedure may only be performed a minimum of 2 weeks after the initial diagnostic procedure.Clinical circumstances that necessitate an exception to the 2 week duration may be considered on an individual basis and must be clearly documented in the medical record.
 
-### A18. POL-REHAB-001.c4 (replaces POL-REHAB-001.c2)
+### A19. POL-REHAB-001.c4 (replaces POL-REHAB-001.c2)
 
 - Decision: D-V2-2 REHAB-001.F1
 - What changed: v1 c2, shown on treatment codes only: an evaluation needs no plan of care.
@@ -475,7 +494,7 @@ Excerpts, word for word:
 
 > **L34428-cov-112** (item; under: Restorative/Rehabilitative therapy: > 1. The initial examination has the following components:): 3. Initial evaluations or re-evaluations may be determined reasonable and necessary even when the evaluation determines that skilled rehabilitation is not required if the patient's condition showed a need for an evaluation, or even if the goals established by the plan of treatment are not realized.
 
-### A19. POL-REHAB-001.c5 (replaces POL-REHAB-001.c2)
+### A20. POL-REHAB-001.c5 (replaces POL-REHAB-001.c2)
 
 - Decision: D-V2-2 REHAB-001.F2
 - What changed: New: physician or NPP care and plan certification, treatment codes only.
@@ -493,10 +512,25 @@ Excerpts, word for word:
 
 > **L34428-doc-019** (item; under: Documentation Requirements > 5. Documentation should justify:): - the individual is under the care of a physician or NPP
 
-### A20. POL-SURG-002.c4 (replaces POL-SURG-002.c1)
+### A21. POL-SURG-001.c4 (new, no v1 predecessor)
+
+- Decision: Checkpoint 1 review, point 4 (gap found; please confirm)
+- What changed: New: L33558 cov-008, a covered indication no v1 criterion held (found while listing the indication group's sources). A separate criterion, so c3 keeps its ID.
+- **v2 text:** It is also covered when another procedure or treatment, done now or planned (such as pars plana vitrectomy, iridocyclectomy, a procedure for eye trauma, or external beam radiation), makes faster cataract development highly probable.
+- Type: conditional (applies when: another procedure or treatment likely to speed up the cataract). Applies to: every code of the policy. Group: indication.
+- Source line: LCD L33558 v33 cov-003, cov-008.
+- Automatic check, numbers in the v2 text that no excerpt contains: none
+
+Excerpts, word for word:
+
+> **L33558-cov-003** (item; under: Indications and Limitations:): Lens extraction is considered medically necessary and therefore covered by Medicare when one (or more) of the following conditions or circumstances exists:
+
+> **L33558-cov-008** (item; under: Indications and Limitations:): High probability of accelerating cataract development as a result of a concomitant or subsequent procedure (e.g., pars plana vitrectomy, iridocyclectomy, procedure for ocular trauma) and treatments such as external beam irradiation
+
+### A22. POL-SURG-002.c4 (replaces POL-SURG-002.c1)
 
 - Decision: D-V2-2 SURG-002.F1
-- What changed: v1 c1 plus the covered indications it missed (cov-014, cov-022, cov-024 to cov-026, cov-032, cov-033, doc-001). Not added: cov-027 to cov-031 and cov-034, the LCD's therapeutic indications (such as treating bleeding or removing polyps).
+- What changed: v1 c1 plus the covered indications it missed (cov-014, cov-022, cov-024 to cov-026, cov-032, cov-033, doc-001). The LCD's therapeutic indications are c7.
 - v1 text (POL-SURG-002.c1): Colonoscopy to investigate symptoms is covered for an imaging abnormality likely to be significant; unexplained bleeding (blood in the stool not from a rectal source, black tarry stool, or a positive stool blood test); unexplained iron-deficiency anemia; or significant unexplained diarrhea with other findings such as weight loss.
 - **v2 text:** Colonoscopy to investigate symptoms or findings is covered for: an imaging abnormality likely to be significant; unexplained bleeding (blood in the stool not from a rectal source, black tarry stool, or a positive stool blood test); unexplained iron-deficiency anemia; significant unexplained diarrhea with other findings such as weight loss; examining the whole colon for synchronous cancer or polyps in a patient with a treatable cancer or polyp; chronic inflammatory bowel disease when a more precise diagnosis or the extent of activity will change immediate management; locating during surgery a lesion that cannot be found by touch or sight; acute colonic ischemia; Streptococcus bovis endocarditis; unexplained new-onset constipation that does not respond to medical treatment; an anorectal adenomatous polyp; or infectious colitis.
 - Type: conditional (applies when: symptoms or findings to investigate). Applies to: every code of the policy. Group: indication.
@@ -533,7 +567,7 @@ Excerpts, word for word:
 
 > **L34005-doc-001** (item; under: the top of the field): Infectious colitis is an acceptable indication in its general form. However, specificity in ICD-10-CM coding is not needed but should be maintained in the patient's chart. The medical record should support the medical necessity and frequency of this treatment.
 
-### A21. POL-SURG-002.c5 (replaces POL-SURG-002.c2)
+### A23. POL-SURG-002.c5 (replaces POL-SURG-002.c2)
 
 - Decision: D-V2-1
 - What changed: v1 c2 plus the large sessile adenoma definition (more than 2 cm) and the rectosigmoid exclusion; no intervals (D-RULE-1).
@@ -557,13 +591,13 @@ Excerpts, word for word:
 
 > **L34005-cov-021** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:): Left-sided colitis of over 15 years duration (no surveillance needed for disease limited to rectosigmoid);
 
-### A22. POL-SURG-002.c6 (new, no v1 predecessor)
+### A24. POL-SURG-002.c6 (new, no v1 predecessor)
 
 - Decision: D-V2-2 SURG-002.F3
-- What changed: New exclusion: the LCD limitations that R15 cannot catch. Left out: cov-040 (R15 denies it: billing article A56456 covers none of its diagnosis codes) and cov-044 (bright red bleeding with an anorectal source), which c4's 'not from a rectal source' already expresses.
-- **v2 text:** Colonoscopy is generally not covered, unless the record documents why it is needed, for: chronic, stable irritable bowel syndrome or chronic abdominal pain (it may be done to rule out organic disease, especially when symptoms do not respond to therapy); acute diarrhea; hemorrhoids; routine follow-up of inflammatory bowel disease (cancer surveillance in Crohn's disease or chronic ulcerative colitis excepted); routine examination before elective abdominal surgery for a non-colonic disease; upper GI bleeding or black tarry stool with a demonstrated upper GI source; fulminant colitis; possible perforation; acute severe diverticulitis; or diverticulosis as the reason for the test (it may still be reported when it is the final diagnosis).
+- What changed: New exclusion: the LCD limitations that R15 cannot catch, including cov-044 (bright red bleeding with an anorectal source; checkpoint 1 review). Left out: cov-040 (R15 denies it: billing article A56456 covers none of its diagnosis codes).
+- **v2 text:** Colonoscopy is generally not covered, unless the record documents why it is needed, for: chronic, stable irritable bowel syndrome or chronic abdominal pain (it may be done to rule out organic disease, especially when symptoms do not respond to therapy); acute diarrhea; hemorrhoids; routine follow-up of inflammatory bowel disease (cancer surveillance in Crohn's disease or chronic ulcerative colitis excepted); routine examination before elective abdominal surgery for a non-colonic disease; upper GI bleeding or black tarry stool with a demonstrated upper GI source; bright red rectal bleeding with a convincing anorectal source on sigmoidoscopy and no other symptoms suggesting a source higher up; fulminant colitis; possible perforation; acute severe diverticulitis; or diverticulosis as the reason for the test (it may still be reported when it is the final diagnosis).
 - Type: exclusion. Applies to: every code of the policy. Group: -.
-- Source line: LCD L34005 v34 cov-036 to cov-039, cov-041 to cov-043, cov-045 to cov-049.
+- Source line: LCD L34005 v34 cov-036 to cov-039, cov-041 to cov-049.
 - Automatic check, numbers in the v2 text that no excerpt contains: none
 
 Excerpts, word for word:
@@ -582,6 +616,8 @@ Excerpts, word for word:
 
 > **L34005-cov-043** (item; under: Limitations:): Upper gastrointestinal (GI) bleeding or melena with a demonstrated upper GI source; or,
 
+> **L34005-cov-044** (item; under: Limitations:): Bright red rectal bleeding with a convincing anorectal source on sigmoidoscopy and no other symptoms suggestive of a more proximal bleeding source;
+
 > **L34005-cov-045** (heading): Colonoscopy/Sigmoidoscopy/Proctosigmoidoscopy is generally not covered for:
 
 > **L34005-cov-046** (item; under: Limitations: > Colonoscopy/Sigmoidoscopy/Proctosigmoidoscopy is generally not covered for:): Fulminant colitis;
@@ -592,7 +628,32 @@ Excerpts, word for word:
 
 > **L34005-cov-049** (item; under: Limitations: > Colonoscopy/Sigmoidoscopy/Proctosigmoidoscopy is generally not covered for:): Diverticulosis. This condition is not usually considered an indication for diagnostic or therapeutic colonoscopy, sigmoidoscopy or proctosigmoidoscopy, but may be reported on the claim when this condition is found to be the final diagnosis.
 
-### A23. POL-SURG-004.c5 (replaces POL-SURG-004.c1)
+### A25. POL-SURG-002.c7 (new, no v1 predecessor)
+
+- Decision: D-POL-4 (checkpoint 1 review)
+- What changed: New: the LCD's therapeutic indications (cov-027 to cov-031, cov-034), in the indication group, on the biopsy and polyp-removal codes, so those lines are not pended for want of an indication.
+- **v2 text:** Colonoscopy is also covered to treat: bleeding from lesions such as vascular anomalies, ulceration or tumors; a foreign body (removal); colonic polyps (excision); pseudo-obstruction of the colon (Ogilvie's syndrome, decompression); sigmoid volvulus or stricture; or narrowing or bleeding tumors, as palliative treatment (for example laser, electrocoagulation or stenting).
+- Type: conditional (applies when: treatment during the colonoscopy). Applies to: 45380, 45385. Group: indication.
+- Source line: LCD L34005 v34 cov-006, cov-027 to cov-031, cov-034.
+- Automatic check, numbers in the v2 text that no excerpt contains: none
+
+Excerpts, word for word:
+
+> **L34005-cov-006** (heading): The following are Medicare-covered indications:
+
+> **L34005-cov-027** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:): Treatment of bleeding from such lesions as vascular anomalies, ulceration and neoplasia;
+
+> **L34005-cov-028** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:): Removal of foreign body;
+
+> **L34005-cov-029** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:): Excision of colonic polyps;
+
+> **L34005-cov-030** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:): Decompression of pseudo-obstruction of the colon (Olgilvie’s syndrome);
+
+> **L34005-cov-031** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:): Treatment of sigmoid volvulus or stricture;
+
+> **L34005-cov-034** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:): Palliative treatment of stenosing, bleeding neoplasms (e.g., laser, electrocoagulation, stenting).
+
+### A26. POL-SURG-004.c5 (replaces POL-SURG-004.c1)
 
 - Decision: D-V2-2 SURG-004.F1, Q3
 - What changed: v1 c1 plus the reconstructive conditions: the LCD's group 2 (cov-030 to cov-041) and group 3 (blepharospasm, cov-042 and cov-043). The V1b finding cited only cov-030 and cov-038.
@@ -644,7 +705,7 @@ Excerpts, word for word:
 
 > **L33944-cov-043** (item; under: Indications and Limitations: > To correct visual impairment caused by:): Patient complaints and relevant medical history (e.g., failure to respond to botulinum toxin therapy, botulinum toxin therapy is contraindicated, etc.) must be documented and available upon request. Please see “Documentation Requirements.”
 
-### A24. POL-SURG-004.c6 (replaces POL-SURG-004.c2)
+### A27. POL-SURG-004.c6 (replaces POL-SURG-004.c2)
 
 - Decision: D-V2-2 SURG-004.F1
 - What changed: v1 c2 limited to the four group 1 conditions; the reconstructive conditions are exempt (cov-016).
@@ -666,7 +727,7 @@ Excerpts, word for word:
 
 > **L33944-cov-027** (item; under: Indications and Limitations: > To correct visual impairment caused by:): Looking through the eyelashes or seeing the upper eyelid skin.
 
-### A25. POL-SURG-004.c7 (replaces POL-SURG-004.c3)
+### A28. POL-SURG-004.c7 (replaces POL-SURG-004.c3)
 
 - Decision: D-V2-2 SURG-004.F1
 - What changed: v1 c3 limited to the four group 1 conditions; the reconstructive conditions are exempt (cov-016).
@@ -682,7 +743,7 @@ Excerpts, word for word:
 
 > **L33944-cov-028** (item; under: Indications and Limitations: > To correct visual impairment caused by:): The visual fields should demonstrate a significant loss of superior visual field and potential correction of the visual field by the proposed procedures(s). A minimum 12 degree or 30 percent loss of upper field of vision with upper lid skin and/or upper lid margin in repose and elevated (by taping of the lid) to demonstrate potential correction by the proposed procedure or procedures is required. Photographs may be used to demonstrate the eyelid abnormality(ies) necessitating the procedures(s), but are not required. (Photography for purposes of documentation is not seperately reportable or reimbursed.) (Please see “Documentation Requirements.”)
 
-### A26. POL-SURG-004.c8 (replaces POL-SURG-004.c4)
+### A29. POL-SURG-004.c8 (replaces POL-SURG-004.c4)
 
 - Decision: D-V2-2 SURG-004.F1, Q3
 - What changed: v1 c4 limited to the four group 1 conditions; sourced to the LCD's cosmetic definitions (background blocks cov-001, cov-004 and cov-006) and cov-016.
@@ -702,7 +763,7 @@ Excerpts, word for word:
 
 > **L33944-cov-016** (item; under: Indications and Limitations:): The conditions listed under “2” and “3” below are generally considered reconstructive and not subject to the medical review of conditions listed under “1” which have the potential of being considered cosmetic
 
-### A27. POL-WOUND-001.c4 (replaces POL-WOUND-001.c3)
+### A30. POL-WOUND-001.c4 (replaces POL-WOUND-001.c3)
 
 - Decision: D-V2-2 WOUND-001.F3
 - What changed: v1 c3's frequency sentence plus the firm rule only: no continued care without improvement, and a revised plan when healing is not documented after 30 days. v1's 'frequent repeated debridement requires a documented reassessment' is replaced by the 30-day revision. Left out: the expectations in cov-112, cov-113 and cov-117.
@@ -765,6 +826,196 @@ Text and ID unchanged from v1 (checked byte for byte); only the type, code list 
 | B37 | POL-WOUND-001.c1 | Active wound care (debridement) is covered to remove dead tissue and promote healing, performed with direct one-on-one patient contact, following accepted standards of wound treatment. | requirement | all | - |
 | B38 | POL-WOUND-001.c2 | Care must be part of a plan that addresses complicating factors (pressure off-loading, infection, poor circulation, metabolic or nutritional problems), aiming at wound closure or, when healing is not possible, preventing the wound from getting worse. | requirement | all | - |
 
+## Part C: indication groups (3 rows)
+
+Every covered indication the sources give for the policy's codes, word for word, and the criterion that holds it, or why it is left out. Checked automatically: every listed source exists; a new criterion that holds one cites it; every group criterion holds at least one; the LCD indication lists (SURG-001: L33558 cov-004 to cov-009; SURG-002: L34005 cov-007 to cov-034, plus doc-001) are listed block by block.
+
+### C1. POL-FOOT-001 (group: c1, c2, c4, c5; codes 11720, 11721)
+
+- **L33941-cov-002** (item; under: Covered Indications) -> **POL-FOOT-001.c1**.
+
+  > Routine foot care may be available for patients with peripheral neuropathy involving the feet, but without vascular impairment. The neuropathy should be of such severity that care by a non- professional person would put the patient at risk. The medical record must document the patient has an absence of sensation at two or more sites out of five tested on either foot when tested with the 5.07 Semmes-Weinstein monofilament to support the diagnosis of peripheral neuropathy with loss of protective sensation. This testing may be performed by the attending physician, non-physician practitioner, or the podiatrist.
+
+- **L33941-cov-003** (item; under: Covered Indications) -> **POL-FOOT-001.c2**.
+
+  > For patients requiring anticoagulation therapy, the provider must document in the medical record the significant risk and danger posed by the non-professional rendering routine foot care services.
+
+- **Manual Ch. 15 §290.A** (pages 259-260) -> left out: not an indication for the nail codes 11720 and 11721 (Q4); treatment of subluxation, billed with other codes.
+
+  > A. Treatment of Subluxation of Foot Subluxations of the foot are defined as partial dislocations or displacements of joint surfaces, tendons ligaments, or muscles of the foot. Surgical or nonsurgical treatments undertaken for the sole purpose of correcting a subluxated structure in the foot as an isolated entity are not covered. However, medical or surgical treatment of subluxation of the ankle joint (talo-crural joint) is covered. In addition, reasonable and necessary medical or surgical services, diagnosis, or treatment for medical conditions that have resulted from or are associated with partial displacement of structures is covered. For example, if a patient has osteoarthritis that has resulted in a partial displacement of joints in the foot, and the primary treatment is for the osteoarthritis, coverage is provided.
+
+- **Manual Ch. 15 §290.C.1** (page 261) -> left out: not an indication for the nail codes 11720 and 11721 (Q4); routine care done as a necessary and integral part of another covered service, such as ulcer, wound or infection treatment, goes with that service.
+
+  > 1. Necessary and Integral Part of Otherwise Covered Services In certain circumstances, services ordinarily considered to be routine may be covered if they are performed as a necessary and integral part of otherwise covered services, such as diagnosis and treatment of ulcers, wounds, or infections.
+
+- **Manual Ch. 15 §290.C.2** (page 261) -> left out: not an indication for the nail codes 11720 and 11721 (Q4); treatment of warts, billed with other codes.
+
+  > 2. Treatment of Warts on Foot The treatment of warts (including plantar warts) on the foot is covered to the same extent as services provided for the treatment of warts located elsewhere on the body.
+
+- **Manual Ch. 15 §290.C.3** (page 261) -> **POL-FOOT-001.c4**.
+
+  > 3. Presence of Systemic Condition The presence of a systemic condition such as metabolic, neurologic, or peripheral vascular disease may require scrupulous foot care by a professional that in the absence of such condition(s) would be considered routine (and, therefore, excluded from coverage). Accordingly, foot care that would otherwise be considered routine may be covered when systemic condition(s) result in severe circulatory embarrassment or areas of diminished sensation in the individual’s legs or feet. (See subsection A.) In these instances, certain foot care procedures that otherwise are considered routine (e.g., cutting or removing corns and calluses, or trimming, cutting, clipping, or debriding nails) may pose a hazard when performed by a nonprofessional person on patients with such systemic conditions. (See §290.G for procedural instructions.)
+
+- **Manual Ch. 15 §290.C.4** (page 261) -> **POL-FOOT-001.c5**.
+
+  > 4. Mycotic Nails In the absence of a systemic condition, treatment of mycotic nails may be covered. The treatment of mycotic nails for an ambulatory patient is covered only when the physician attending the patient’s mycotic condition documents that (1) there is clinical evidence of mycosis of the toenail, and (2) the patient has marked limitation of ambulation, pain, or secondary infection resulting from the thickening and dystrophy of the infected toenail plate. The treatment of mycotic nails for a nonambulatory patient is covered only when the physician attending the patient’s mycotic condition documents that (1) there is clinical evidence of mycosis of the toenail, and (2) the patient suffers from pain or secondary infection resulting from the thickening and dystrophy of the infected toenail plate. For the purpose of these requirements, documentation means any written information that is required by the A/B MAC (B) in order for services to be covered. Thus, the information submitted with claims must be substantiated by information found in the patient’s medical record. Any information, including that contained in a form letter, used for documentation purposes is subject to A/B MAC (B) verification in order to ensure that the information adequately justifies coverage of the treatment of mycotic nails.
+
+- **Manual Ch. 15 §290.D** (page 262) -> **POL-FOOT-001.c4** (the systemic conditions and the asterisk rule).
+
+  > D. Systemic Conditions That Might Justify Coverage Although not intended as a comprehensive list, the following metabolic, neurologic, and peripheral vascular diseases (with synonyms in parentheses) most commonly represent the underlying conditions that might justify coverage for routine foot care. Diabetes mellitus \* Arteriosclerosis obliterans (A.S.O., arteriosclerosis of the extremities, occlusive peripheral arteriosclerosis) Buerger’s disease (thromboangiitis obliterans) Chronic thrombophlebitis \* Peripheral neuropathies involving the feet - Associated with malnutrition and vitamin deficiency \* • Malnutrition (general, pellagra) • Alcoholism • Malabsorption (celiac disease, tropical sprue) • Pernicious anemia Associated with carcinoma \* Associated with diabetes mellitus \* Associated with drugs and toxins \* Associated with multiple sclerosis \* Associated with uremia (chronic renal disease) \* Associated with traumatic injury Associated with leprosy or neurosyphilis Associated with hereditary disorders • Hereditary sensory radicular neuropathy • Angiokeratoma corporis diffusum (Fabry’s) • Amyloid neuropathy When the patient’s condition is one of those designated by an asterisk (\*), routine procedures are covered only if the patient is under the active care of a doctor of medicine or osteopathy who documents the condition.
+
+- **Manual Ch. 15 §290.E** (page 262) -> left out: not an indication for the nail codes 11720 and 11721 (Q4); supportive devices and therapeutic shoes.
+
+  > E. Supportive Devices for Feet Orthopedic shoes and other supportive devices for the feet generally are not covered. However, this exclusion does not apply to such a shoe if it is an integral part of a leg brace, and its expense is included as part of the cost of the brace. Also, this exclusion does not apply to therapeutic shoes furnished to diabetics.
+
+- **Manual Ch. 15 §290.F** (pages 262-264) -> **POL-FOOT-001.c4** (the class findings that show the severity).
+
+  > F. Presumption of Coverage In evaluating whether the routine services can be reimbursed, a presumption of coverage may be made where the evidence available discloses certain physical and/or clinical findings consistent with the diagnosis and indicative of severe peripheral involvement. For purposes of applying this presumption the following findings are pertinent: Class A Findings Nontraumatic amputation of foot or integral skeletal portion thereof. Class B Findings Absent posterior tibial pulse; Advanced trophic changes as: hair growth (decrease or absence) nail changes (thickening) pigmentary changes (discoloration) skin texture (thin, shiny) skin color (rubor or redness) (Three required); and Absent dorsalis pedis pulse. Class C Findings Claudication; Temperature changes (e.g., cold feet); Edema; Paresthesias (abnormal spontaneous sensations in the feet); and Burning. The presumption of coverage may be applied when the physician rendering the routine foot care has identified: 1. A Class A finding; 2. Two of the Class B findings; or 3. One Class B and two Class C findings. Cases evidencing findings falling short of these alternatives may involve podiatric treatment that may constitute covered care and should be reviewed by the intermediary’s medical staff and developed as necessary. For purposes of applying the coverage presumption where the routine services have been rendered by a podiatrist, the A/B MAC (B) may deem the active care requirement met if the claim or other evidence available discloses that the patient has seen an M.D. or D.O. for treatment and/or evaluation of the complicating disease process during the 6-month period prior to the rendition of the routine-type services. The A/B MAC (A) may also accept the podiatrist’s statement that the diagnosing and treating M.D. or D.O. also concurs with the podiatrist’s findings as to the severity of the peripheral involvement indicated. Services ordinarily considered routine might also be covered if they are performed as a necessary and integral part of otherwise covered services, such as diagnosis and treatment of diabetic ulcers, wounds, and infections.
+
+- **Manual Ch. 15 §290.G** (pages 264-265) -> **POL-FOOT-001.c4** (the sentence that a diagnosis alone does not show the severity; its items 1 and 2 are payment rules for other services (a covered procedure, initial diagnostic services)).
+
+  > G. Application of Foot Care Exclusions to Physician’s Services The exclusion of foot care is determined by the nature of the service. Thus, payment for an excluded service should be denied whether performed by a podiatrist, osteopath, or a doctor of medicine, and without regard to the difficulty or complexity of the procedure. When an itemized bill shows both covered services and noncovered services not integrally related to the covered service, the portion of charges attributable to the noncovered services should be denied. (For example, if an itemized bill shows surgery for an ingrown toenail and also removal of calluses not necessary for the performance of toe surgery, any additional charge attributable to removal of the calluses should be denied.) In reviewing claims involving foot care, the A/B MAC (B) should be alert to the following exceptional situations: 1. Payment may be made for incidental noncovered services performed as a necessary and integral part of, and secondary to, a covered procedure. For example, if trimming of toenails is required for application of a cast to a fractured foot, the A/B MAC (B) need not allocate and deny a portion of the charge for the trimming of the nails. However, a separately itemized charge for such excluded service should be disallowed. When the primary procedure is covered the administration of anesthesia necessary for the performance of such procedure is also covered. 2. Payment may be made for initial diagnostic services performed in connection with a specific symptom or complaint if it seems likely that its treatment would be covered even though the resulting diagnosis may be one requiring only noncovered care. The name of the M.D. or D.O. who diagnosed the complicating condition must be submitted with the claim. In those cases, where active care is required, the approximate date the beneficiary was last seen by such physician must also be indicated. NOTE: Section 939 of P.L. 96-499 removed “warts” from the routine foot care exclusion effective July 1, 1981. Relatively few claims for routine-type care are anticipated considering the severity of conditions contemplated as the basis for this exception. Claims for this type of foot care should not be paid in the absence of convincing evidence that nonprofessional performance of the service would have been hazardous for the beneficiary because of an underlying systemic disease. The mere statement of a diagnosis such as those mentioned in §D above does not of itself indicate the severity of the condition. Where development is indicated to verify diagnosis and/or severity the A/B MAC (B) should follow existing claims processing practices, which may include review of A/B MAC (B)’s history and medical consultation as well as physician contacts. The rules in §290.F concerning presumption of coverage also apply. Codes and policies for routine foot care and supportive devices for the feet are not exclusively for the use of podiatrists. These codes must be used to report foot care services regardless of the specialty of the physician who furnishes the services. A/B MACs (B) must instruct physicians to use the most appropriate code available when billing for routine foot care.
+
+### C2. POL-SURG-001 (group: c1, c3, c4; codes 66982, 66984)
+
+- **L33558-cov-004** (item; under: Indications and Limitations:) -> **POL-SURG-001.c1**.
+
+  > Cataract causing symptomatic (i.e., causing the patient to seek medical attention) impairment of visual function not correctable with a tolerable change in glasses or contact lenses resulting in specific activity limitations and/or participation restrictions including, but not limited to reading, viewing television, driving, or meeting vocational or recreational needs. Surgery is not deemed to be medically necessary purely on the basis of lens opacity in the absence of symptoms. Also other eye disease(s) including, but not limited to macular degeneration or diabetic retinopathy, have been ruled out as the primary cause of decreased visual function.
+
+- **L33558-cov-005** (item; under: Indications and Limitations:) -> **POL-SURG-001.c3**.
+
+  > Concomitant intraocular disease (e.g., diabetic retinopathy or intraocular tumor) requiring monitoring or treatment that is prevented by the presence of cataract.
+
+- **L33558-cov-006** (item; under: Indications and Limitations:) -> **POL-SURG-001.c3**.
+
+  > Cataract interfering with the performance of vitreoretinal surgery (e.g., performance of surgery for far peripheral vitreoretinal dissection and excision of the vitreous base, as in cases of proliferative vitreoretinopathy, complicated retinal detachments, and severe proliferative diabetic retinopathy).
+
+- **L33558-cov-007** (item; under: Indications and Limitations:) -> **POL-SURG-001.c3**.
+
+  > Lens-induced disease threatening vision or ocular health (including, but not limited to, phacomorphic or phacolytic glaucoma)
+
+- **L33558-cov-008** (item; under: Indications and Limitations:) -> **POL-SURG-001.c4**.
+
+  > High probability of accelerating cataract development as a result of a concomitant or subsequent procedure (e.g., pars plana vitrectomy, iridocyclectomy, procedure for ocular trauma) and treatments such as external beam irradiation
+
+- **L33558-cov-009** (item; under: Indications and Limitations:) -> **POL-SURG-001.c3**.
+
+  > Intolerable anisometropia or aniseikonia uncorrectable with glasses or contact lenses that exists as a result of lens extraction in the first eye (despite satisfactorily corrected monocular visual acuity).
+
+### C3. POL-SURG-002 (group: c3, c4, c5, c7 (45380, 45385); codes 45378, 45380, 45385)
+
+- **L34005-cov-007** (item; under: Indications: > The following are Medicare-covered indications:) -> **POL-SURG-002.c4**.
+
+  > Evaluation of an abnormality discovered on barium enema and/or other imaging technique that is likely to be clinically significant, such as a filling defect or stricture or an inadequate examination;
+
+- **L34005-cov-009** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Hematochezia not thought to be from rectum or perianal source
+
+- **L34005-cov-010** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Melena of unknown origin;
+
+- **L34005-cov-011** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Presence of fecal occult blood
+
+- **L34005-cov-012** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Unexplained iron deficiency anemia;
+
+- **L34005-cov-014** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Examination to evaluate entire colon for synchronous cancer or polyps in a patient with treatable cancer or polyp;
+
+- **L34005-cov-013** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c5**.
+
+  > Surveillance of colonic neoplasia. When the patient has a history of colorectal cancer or polyps and is being followed for this indication;
+
+- **L34005-cov-015** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c5**.
+
+  > Follow-up in one year after surgery for treatment of colorectal cancer;
+
+- **L34005-cov-016** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c3**.
+
+  > This patient is identified as being at high-risk for colon cancer and is eligible for continued screening at 24-month intervals.
+
+- **L34005-cov-017** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c5**.
+
+  > Follow-up for removal of neoplastic polyp (follow-up at least three to six months to verify removal of large sessile adenoma [i.e., greater than 2 cm in greatest dimension] after colonoscopic removal);
+
+- **L34005-cov-018** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c3** (the LCD repeats cov-016).
+
+  > This patient is identified as being at high-risk for colon cancer and is eligible for continued screening at 24-month intervals.
+
+- **L34005-cov-019** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c5**.
+
+  > In patients with Crohn’s colitis and chronic ulcerative colitis: colonoscopy every one or two years with multiple biopsies for detection of cancer and dysplasia in patients with:
+
+- **L34005-cov-020** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c5**.
+
+  > Pancolitis of greater than seven years duration; or,
+
+- **L34005-cov-021** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c5**.
+
+  > Left-sided colitis of over 15 years duration (no surveillance needed for disease limited to rectosigmoid);
+
+- **L34005-cov-022** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Chronic inflammatory bowel disease of the colon if a more precise diagnosis or if a determination of the extent of activity of disease will influence immediate management;
+
+- **L34005-cov-023** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Clinically significant diarrhea of unexplained origin with additional findings (e.g., with weight loss or negative stool cultures persisting for more than 3 weeks;
+
+- **L34005-cov-024** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Intraoperative identification of the site of a lesion that can not be detected by palpation or gross inspection at surgery (e.g., polypectomy site or location of a bleeding source);
+
+- **L34005-cov-025** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Evaluation of acute colonic ischemia/ischemic bowel disease;
+
+- **L34005-cov-026** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Evaluation of patient with Streptococcus bovis endocarditis;
+
+- **L34005-cov-027** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c7**.
+
+  > Treatment of bleeding from such lesions as vascular anomalies, ulceration and neoplasia;
+
+- **L34005-cov-028** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c7**.
+
+  > Removal of foreign body;
+
+- **L34005-cov-029** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c7**.
+
+  > Excision of colonic polyps;
+
+- **L34005-cov-030** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c7**.
+
+  > Decompression of pseudo-obstruction of the colon (Olgilvie’s syndrome);
+
+- **L34005-cov-031** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c7**.
+
+  > Treatment of sigmoid volvulus or stricture;
+
+- **L34005-cov-032** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Evaluation of unexplained, new onset constipation, refractory to medical therapy;
+
+- **L34005-cov-033** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c4**.
+
+  > Evaluation of anorectal polyp (adenomatous polyp only); or,
+
+- **L34005-cov-034** (item; under: Indications: > Evaluation of unexplained gastrointestinal bleeding:) -> **POL-SURG-002.c7**.
+
+  > Palliative treatment of stenosing, bleeding neoplasms (e.g., laser, electrocoagulation, stenting).
+
+- **L34005-doc-001** (item; under: the top of the field) -> **POL-SURG-002.c4**.
+
+  > Infectious colitis is an acceptable indication in its general form. However, specificity in ICD-10-CM coding is not needed but should be maintained in the patient's chart. The medical record should support the medical necessity and frequency of this treatment.
+
 ## Verdicts
 
 ### Part A (MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE)
@@ -777,27 +1028,30 @@ Text and ID unchanged from v1 (checked byte for byte); only the type, code list 
 | A4 | POL-CAR-002.c5 |  |  |  |  |
 | A5 | POL-CAR-002.c6 |  |  |  |  |
 | A6 | POL-DX-001.c4 |  |  |  |  |
-| A7 | POL-DX-002.c4 |  |  |  |  |
-| A8 | POL-DX-003.c4 |  |  |  |  |
-| A9 | POL-DX-003.c5 |  |  |  |  |
-| A10 | POL-FOOT-001.c4 |  |  |  |  |
-| A11 | POL-FOOT-001.c5 |  |  |  |  |
-| A12 | POL-FOOT-001.c6 |  |  |  |  |
-| A13 | POL-PAIN-001.c6 |  |  |  |  |
-| A14 | POL-PAIN-001.c7 |  |  |  |  |
-| A15 | POL-PAIN-001.c8 |  |  |  |  |
-| A16 | POL-PAIN-001.c9 |  |  |  |  |
-| A17 | POL-PAIN-002.c5 |  |  |  |  |
-| A18 | POL-REHAB-001.c4 |  |  |  |  |
-| A19 | POL-REHAB-001.c5 |  |  |  |  |
-| A20 | POL-SURG-002.c4 |  |  |  |  |
-| A21 | POL-SURG-002.c5 |  |  |  |  |
-| A22 | POL-SURG-002.c6 |  |  |  |  |
-| A23 | POL-SURG-004.c5 |  |  |  |  |
-| A24 | POL-SURG-004.c6 |  |  |  |  |
-| A25 | POL-SURG-004.c7 |  |  |  |  |
-| A26 | POL-SURG-004.c8 |  |  |  |  |
-| A27 | POL-WOUND-001.c4 |  |  |  |  |
+| A7 | POL-DX-001.c5 |  |  |  |  |
+| A8 | POL-DX-002.c4 |  |  |  |  |
+| A9 | POL-DX-003.c4 |  |  |  |  |
+| A10 | POL-DX-003.c5 |  |  |  |  |
+| A11 | POL-FOOT-001.c4 |  |  |  |  |
+| A12 | POL-FOOT-001.c5 |  |  |  |  |
+| A13 | POL-FOOT-001.c6 |  |  |  |  |
+| A14 | POL-PAIN-001.c6 |  |  |  |  |
+| A15 | POL-PAIN-001.c7 |  |  |  |  |
+| A16 | POL-PAIN-001.c8 |  |  |  |  |
+| A17 | POL-PAIN-001.c9 |  |  |  |  |
+| A18 | POL-PAIN-002.c5 |  |  |  |  |
+| A19 | POL-REHAB-001.c4 |  |  |  |  |
+| A20 | POL-REHAB-001.c5 |  |  |  |  |
+| A21 | POL-SURG-001.c4 |  |  |  |  |
+| A22 | POL-SURG-002.c4 |  |  |  |  |
+| A23 | POL-SURG-002.c5 |  |  |  |  |
+| A24 | POL-SURG-002.c6 |  |  |  |  |
+| A25 | POL-SURG-002.c7 |  |  |  |  |
+| A26 | POL-SURG-004.c5 |  |  |  |  |
+| A27 | POL-SURG-004.c6 |  |  |  |  |
+| A28 | POL-SURG-004.c7 |  |  |  |  |
+| A29 | POL-SURG-004.c8 |  |  |  |  |
+| A30 | POL-WOUND-001.c4 |  |  |  |  |
 
 ### Part B (AGREE, DISAGREE or UNSURE)
 
@@ -841,3 +1095,11 @@ Text and ID unchanged from v1 (checked byte for byte); only the type, code list 
 | B36 | POL-SURG-003.c3 |  |  |  |  |
 | B37 | POL-WOUND-001.c1 |  |  |  |  |
 | B38 | POL-WOUND-001.c2 |  |  |  |  |
+
+### Part C (COMPLETE, GAPS or UNSURE)
+
+| Row | Criterion | Pass 1 verdict (Claude chat) | Pass 1 notes | Pass 2 verdict (reviewer) | Pass 2 notes |
+|---|---|---|---|---|---|
+| C1 | POL-FOOT-001 |  |  |  |  |
+| C2 | POL-SURG-001 |  |  |  |  |
+| C3 | POL-SURG-002 |  |  |  |  |

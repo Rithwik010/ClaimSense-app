@@ -11,6 +11,9 @@ Checked for every file in data/curated/coverage_policies/v2/:
   for byte; a new criterion is numbered above the policy's highest v1 number, so no number is ever
   reused; every retired v1 ID is listed under `replaces`, whose values are new IDs;
 - groups: an indication group holds 2 or more conditional criteria (alternatives);
+- indication groups: every covered indication the sources give for the codes of each
+  indication-group policy is listed (INDICATIONS) with the criterion that holds it, or why it is
+  left out; the LCD indication lists are covered block by block;
 - the sources of every new criterion (needs data/raw): each cited LCD block, by its V1b ID
   (L<lcd>-cov-NNN in the coverage field, -doc-NNN in Associated Information; ranges allowed;
   headings and background blocks included), exists in the cited LCD version, which must be the
@@ -100,8 +103,12 @@ NOTES: dict[str, tuple[str, str]] = {
         "D-V2-1, Q6",
         "v1 c2 without the accreditation requirement, with the home-testing conditions of "
         "cov-109 and cov-110 spelled out. Typed exclusion, so silent notes give NOT_APPLICABLE. "
-        "Not included: cov-107 and cov-108 (a high likelihood of moderate to severe sleep apnea, "
-        "shown by documented symptoms and examination), also home-testing conditions.",
+        "The other home-testing conditions (cov-107 and cov-108) are c5.",
+    ),
+    "POL-DX-001.c5": (
+        "D-POL-4 (checkpoint 1 review)",
+        "New: the home-testing conditions of cov-107 and cov-108. A requirement on the home-test "
+        "code: the code list carries the condition, as for CAR-002 c4 to c6.",
     ),
     "POL-DX-002.c4": (
         "D-RULE-6, Q9",
@@ -160,8 +167,7 @@ NOTES: dict[str, tuple[str, str]] = {
     "POL-SURG-002.c4": (
         "D-V2-2 SURG-002.F1",
         "v1 c1 plus the covered indications it missed (cov-014, cov-022, cov-024 to cov-026, "
-        "cov-032, cov-033, doc-001). Not added: cov-027 to cov-031 and cov-034, the LCD's "
-        "therapeutic indications (such as treating bleeding or removing polyps).",
+        "cov-032, cov-033, doc-001). The LCD's therapeutic indications are c7.",
     ),
     "POL-SURG-002.c5": (
         "D-V2-1",
@@ -170,10 +176,20 @@ NOTES: dict[str, tuple[str, str]] = {
     ),
     "POL-SURG-002.c6": (
         "D-V2-2 SURG-002.F3",
-        "New exclusion: the LCD limitations that R15 cannot catch. Left out: cov-040 (R15 "
-        "denies it: billing article A56456 covers none of its diagnosis codes) and cov-044 "
-        "(bright red bleeding with an anorectal source), which c4's 'not from a rectal source' "
-        "already expresses.",
+        "New exclusion: the LCD limitations that R15 cannot catch, including cov-044 (bright "
+        "red bleeding with an anorectal source; checkpoint 1 review). Left out: cov-040 (R15 "
+        "denies it: billing article A56456 covers none of its diagnosis codes).",
+    ),
+    "POL-SURG-002.c7": (
+        "D-POL-4 (checkpoint 1 review)",
+        "New: the LCD's therapeutic indications (cov-027 to cov-031, cov-034), in the indication "
+        "group, on the biopsy and polyp-removal codes, so those lines are not pended for want of "
+        "an indication.",
+    ),
+    "POL-SURG-001.c4": (
+        "Checkpoint 1 review, point 4 (gap found; please confirm)",
+        "New: L33558 cov-008, a covered indication no v1 criterion held (found while listing the "
+        "indication group's sources). A separate criterion, so c3 keeps its ID.",
     ),
     "POL-SURG-004.c5": (
         "D-V2-2 SURG-004.F1, Q3",
@@ -219,12 +235,72 @@ CONDITIONS: dict[str, str] = {
     "POL-PAIN-001.c8": "a repeat injection",
     "POL-SURG-001.c1": "a cataract causing impaired vision",
     "POL-SURG-001.c3": "another eye disease, retinal surgery or a difference between the eyes",
+    "POL-SURG-001.c4": "another procedure or treatment likely to speed up the cataract",
     "POL-SURG-002.c3": "screening of a high-risk patient",
     "POL-SURG-002.c4": "symptoms or findings to investigate",
     "POL-SURG-002.c5": "surveillance",
+    "POL-SURG-002.c7": "treatment during the colonoscopy",
     "POL-SURG-004.c6": "dermatochalasis, blepharochalasis, blepharoptosis or brow ptosis",
     "POL-SURG-004.c7": "dermatochalasis, blepharochalasis, blepharoptosis or brow ptosis",
     "POL-WOUND-001.c4": "continuing or repeated wound care",
+}
+
+# Every covered indication the sources give for the codes of each indication-group policy, and
+# the criterion that holds it, or why it is left out (checkpoint 1 review, point 4). LCD blocks
+# by V1b ID; manual sections as "§290.X.n".
+NOT_OUR_CODES = "not an indication for the nail codes 11720 and 11721 (Q4); "
+INDICATIONS: dict[str, list[tuple[str, str, str]]] = {
+    "POL-FOOT-001": [
+        ("L33941-cov-002", "POL-FOOT-001.c1", ""),
+        ("L33941-cov-003", "POL-FOOT-001.c2", ""),
+        ("§290.A", "", NOT_OUR_CODES + "treatment of subluxation, billed with other codes"),
+        (
+            "§290.C.1",
+            "",
+            NOT_OUR_CODES + "routine care done as a necessary and integral part of another "
+            "covered service, such as ulcer, wound or infection treatment, goes with that service",
+        ),
+        ("§290.C.2", "", NOT_OUR_CODES + "treatment of warts, billed with other codes"),
+        ("§290.C.3", "POL-FOOT-001.c4", ""),
+        ("§290.C.4", "POL-FOOT-001.c5", ""),
+        ("§290.D", "POL-FOOT-001.c4", "the systemic conditions and the asterisk rule"),
+        ("§290.E", "", NOT_OUR_CODES + "supportive devices and therapeutic shoes"),
+        ("§290.F", "POL-FOOT-001.c4", "the class findings that show the severity"),
+        (
+            "§290.G",
+            "POL-FOOT-001.c4",
+            "the sentence that a diagnosis alone does not show the severity; its items 1 and 2 "
+            "are payment rules for other services (a covered procedure, initial diagnostic "
+            "services)",
+        ),
+    ],
+    "POL-SURG-001": [
+        ("L33558-cov-004", "POL-SURG-001.c1", ""),
+        ("L33558-cov-005", "POL-SURG-001.c3", ""),
+        ("L33558-cov-006", "POL-SURG-001.c3", ""),
+        ("L33558-cov-007", "POL-SURG-001.c3", ""),
+        ("L33558-cov-008", "POL-SURG-001.c4", ""),
+        ("L33558-cov-009", "POL-SURG-001.c3", ""),
+    ],
+    "POL-SURG-002": [
+        *[(f"L34005-cov-{n:03d}", "POL-SURG-002.c4", "") for n in (7, 9, 10, 11, 12, 14)],
+        ("L34005-cov-013", "POL-SURG-002.c5", ""),
+        ("L34005-cov-015", "POL-SURG-002.c5", ""),
+        ("L34005-cov-016", "POL-SURG-002.c3", ""),
+        ("L34005-cov-017", "POL-SURG-002.c5", ""),
+        ("L34005-cov-018", "POL-SURG-002.c3", "the LCD repeats cov-016"),
+        *[(f"L34005-cov-{n:03d}", "POL-SURG-002.c5", "") for n in (19, 20, 21)],
+        *[(f"L34005-cov-{n:03d}", "POL-SURG-002.c4", "") for n in (22, 23, 24, 25, 26)],
+        *[(f"L34005-cov-{n:03d}", "POL-SURG-002.c7", "") for n in (27, 28, 29, 30, 31)],
+        *[(f"L34005-cov-{n:03d}", "POL-SURG-002.c4", "") for n in (32, 33)],
+        ("L34005-cov-034", "POL-SURG-002.c7", ""),
+        ("L34005-doc-001", "POL-SURG-002.c4", ""),
+    ],
+}
+# The LCD indication lists that INDICATIONS must cover block by block: (LCD, tag, first, last).
+INDICATION_RANGES = {
+    "POL-SURG-001": ("L33558", "cov", 4, 9),
+    "POL-SURG-002": ("L34005", "cov", 7, 34),
 }
 
 
@@ -608,6 +684,77 @@ def check(
     return problems, rows
 
 
+@dataclass(frozen=True)
+class Indication:
+    excerpt: Excerpt
+    held_by: str  # criterion ID, or "" when left out
+    note: str
+
+
+def indications(
+    policies: Sequence[V2Policy],
+    lcds: Mapping[str, ps.Lcd],
+    table: Mapping[str, Sequence[tuple[str, str, str]]] = INDICATIONS,
+) -> tuple[list[str], dict[str, list[Indication]]]:
+    """(problems, policy -> its listed indications) for INDICATIONS: each listed source exists;
+    a holding criterion is in the policy's indication group and, when new, cites the source; a
+    left-out source has a reason; every indication-group criterion holds something; the LCD
+    indication lists of INDICATION_RANGES are listed block by block."""
+    problems: list[str] = []
+    out: dict[str, list[Indication]] = {}
+    by_id = {p.meta["policy_id"]: p for p in policies}
+    for pid, entries in table.items():
+        criteria = {c.criterion_id: c for c in by_id[pid].criteria}
+        group = {i for i, c in criteria.items() if c.group == "indication"}
+        listed = []
+        for source, held_by, note in entries:
+            if source.startswith("§"):
+                ref = Ref("bpm", sections=(source.removeprefix("§"),))
+            else:
+                lcd_id, tag, index = source.split("-")
+                version = lcds[lcd_id].version if lcd_id in lcds else ""
+                ref = Ref("lcd", lcd_id, version, ((tag, int(index)),))
+            excerpts, ref_problems = resolve(ref, lcds, "")
+            problems += [f"{pid} indications: {p}" for p in ref_problems]
+            if not excerpts:
+                continue
+            listed.append(Indication(excerpts[0], held_by, note))
+            if not held_by:
+                if not note:
+                    problems.append(f"{pid} indications: {source} is left out without a reason")
+                continue
+            if held_by not in group:
+                problems.append(f"{pid} indications: {held_by} is not in the indication group")
+                continue
+            refs = parse_refs(criteria[held_by].source)[0]
+            cited = any(
+                (r.kind == "bpm" and source.removeprefix("§") in r.sections)
+                or (
+                    r.kind == "lcd"
+                    and source.startswith(r.lcd_id)
+                    and (source.split("-")[1], int(source.split("-")[2])) in r.blocks
+                )
+                for r in refs
+            )
+            if refs and not cited:
+                problems.append(f"{pid} indications: {held_by} does not cite {source}")
+        holders = {i.held_by for i in listed}
+        problems += [
+            f"{pid} indications: {c} holds no listed indication" for c in sorted(group - holders)
+        ]
+        if pid in INDICATION_RANGES:
+            lcd_id, tag, first, last = INDICATION_RANGES[pid]
+            blocks = ps.blocks(TAG_FIELD[tag], lcds[lcd_id].fields.get(TAG_FIELD[tag], ""))
+            named = {source for source, _, _ in entries}
+            problems += [
+                f"{pid} indications: {lcd_id}-{tag}-{b.index:03d} is not listed"
+                for b in blocks[first : last + 1]
+                if not b.heading and f"{lcd_id}-{tag}-{b.index:03d}" not in named
+            ]
+        out[pid] = listed
+    return problems, out
+
+
 def lcds_cited(policies: Sequence[V2Policy]) -> dict[str, ps.Lcd]:
     ids = {
         ref.lcd_id
@@ -615,6 +762,12 @@ def lcds_cited(policies: Sequence[V2Policy]) -> dict[str, ps.Lcd]:
         for c in policy.criteria
         for ref in parse_refs(c.source)[0]
         if ref.kind == "lcd"
+    }
+    ids |= {
+        source.split("-")[0]
+        for entries in INDICATIONS.values()
+        for source, _, _ in entries
+        if not source.startswith("§")
     }
     return ps.load_lcds(ids)
 
@@ -653,7 +806,28 @@ def selftest() -> list[tuple[str, bool]]:
     )[1]
     c4_blocks = [e.label for e in rows[0].excerpts if e.label.startswith("L34636-cov-")]
     section = bpm_sections()["290.C.4"]
+    policies = read_v2()
+    all_lcds = lcds_cited(policies)
+    surg = INDICATIONS["POL-SURG-002"]
+    dropped = {"POL-SURG-002": [e for e in surg if e[0] != "L34005-cov-028"]}
+    moved = {
+        "POL-SURG-002": [
+            (src, "POL-SURG-002.c7" if src == "L34005-cov-007" else held, note)
+            for src, held, note in surg
+        ]
+    }
     return [
+        (
+            "an LCD indication left off a group's list is a problem",
+            has(indications(policies, all_lcds, dropped)[0], "L34005-cov-028 is not listed"),
+        ),
+        (
+            "a holding criterion that does not cite the indication is a problem",
+            has(
+                indications(policies, all_lcds, moved)[0],
+                "POL-SURG-002.c7 does not cite L34005-cov-007",
+            ),
+        ),
         ("the real CAR-002 file has no problems", not clean),
         ("cov-004 plus the range cov-005 to cov-018 gives 15 blocks", len(c4_blocks) == 15),
         (
@@ -738,6 +912,8 @@ VERDICT_HEADER = (
 )
 VERDICTS_A = "MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE"
 VERDICTS_B = "AGREE, DISAGREE or UNSURE"
+VERDICTS_C = "COMPLETE, GAPS or UNSURE"
+MINUTES_C = 4
 MINUTES_A = 3
 MINUTES_B = 0.5
 
@@ -746,7 +922,23 @@ def _quote(text: str) -> str:
     return text.replace("|", "\\|")
 
 
-def sheet(rows: Sequence[Row], policies: Sequence[V2Policy], v1: Mapping[str, Any]) -> str:
+def _excerpt_line(e: Excerpt) -> str:
+    where = e.where
+    if e.where in ("item", "background block"):
+        where += f"; under: {e.section or 'the top of the field'}"
+    return f"**{e.label}** ({where})"
+
+
+def _escaped(text: str) -> str:
+    return text.replace("*", chr(92) + "*")
+
+
+def sheet(
+    rows: Sequence[Row],
+    policies: Sequence[V2Policy],
+    v1: Mapping[str, Any],
+    groups: Mapping[str, Sequence[Indication]],
+) -> str:
     curated = load_curated()
     kept = [
         (p, c) for p in policies for c in p.criteria if c.criterion_id in v1[p.meta["policy_id"]][0]
@@ -756,9 +948,9 @@ def sheet(rows: Sequence[Row], policies: Sequence[V2Policy], v1: Mapping[str, An
     out = [
         "# Policies v2: source review sheet (checkpoint 1)",
         "",
-        "Two passes: pass 1 in a separate Claude chat (paste the whole sheet and ask for the two "
+        "Two passes: pass 1 in a separate Claude chat (paste the whole sheet and ask for the three "
         "verdict tables at the end, filled); pass 2 by the reviewer, for every row whose pass 1 "
-        "verdict is not MATCHES or AGREE, plus 5 random MATCHES rows.",
+        "verdict is not MATCHES, AGREE or COMPLETE, plus 5 random MATCHES rows.",
         "",
         "- **Who wrote what.** The v2 texts, the choice of excerpts, the types, the code lists and "
         "the notes were written by the same model (Claude, in the repository session); the two "
@@ -780,12 +972,14 @@ def sheet(rows: Sequence[Row], policies: Sequence[V2Policy], v1: Mapping[str, An
         "not sources: do not mark a row NOT IN SOURCE for what such a decision adds.",
         f"- Part A: {len(rows)} new criteria (each replaces a v1 criterion or is new); Part B: "
         f"{len(kept)} criteria kept from v1 with their v1 ID and text; v1 criteria retired: "
-        f"{retired}. v2 total: {len(rows) + len(kept)}.",
+        f"{retired}. v2 total: {len(rows) + len(kept)}. Part C: {len(groups)} indication "
+        "groups, each with every covered indication its sources give.",
         f"- Automatic checks: every cited block and section found, every excerpt word for word in "
         f"its source; rows with a number, duration or threshold that no excerpt contains: "
         f"{len(flagged)} ({', '.join(r.criterion.criterion_id for r in flagged) or 'none'}).",
         f"- Estimated time: Part A about {MINUTES_A} minutes a row ({len(rows) * MINUTES_A} "
-        f"minutes), Part B about {round(len(kept) * MINUTES_B)} minutes.",
+        f"minutes), Part B about {round(len(kept) * MINUTES_B)} minutes, Part C about "
+        f"{MINUTES_C * len(groups)} minutes.",
         "",
         "## How to judge",
         "",
@@ -801,6 +995,10 @@ def sheet(rows: Sequence[Row], policies: Sequence[V2Policy], v1: Mapping[str, An
         "",
         f"**Part B** ({VERDICTS_B}): is the type right for the text, and the code list and group?",
         "",
+        f"**Part C** ({VERDICTS_C}): for each indication group, is every covered indication its "
+        "sources give for the policy's codes held by the criterion named, and is each reason to "
+        "leave one out right?",
+        "",
         "**Types** (decisions D-ESI-6 and D-GEN-3) fix what the notes' silence means:",
         "",
         "- requirement: must be satisfied; silent notes give NOT_DOCUMENTED.",
@@ -808,8 +1006,10 @@ def sheet(rows: Sequence[Row], policies: Sequence[V2Policy], v1: Mapping[str, An
         "silent gives NOT_APPLICABLE; never MET.",
         "- conditional: applies only in the situation named with it; otherwise NOT_APPLICABLE; "
         "when it applies, it works as a requirement.",
-        "- Group: indication: alternative indications of one policy; when none of them is MET, the "
-        "line is PEND with 'no covered indication documented'.",
+        "- Group: indication: alternative indications of one policy (D-POL-3). Counting only the "
+        "criteria that apply to the line's code: any criterion NOT_MET gives DENY; otherwise, when "
+        "no indication-group criterion is MET, PEND with 'no covered indication documented'; "
+        "otherwise any NOT_DOCUMENTED gives PEND; otherwise APPROVE.",
         "- Applies to: the criterion is shown only on lines billing these codes; without it, on "
         "every code of the policy.",
         "",
@@ -854,10 +1054,7 @@ def sheet(rows: Sequence[Row], policies: Sequence[V2Policy], v1: Mapping[str, An
             "",
         ]
         for e in r.excerpts:
-            where = e.where
-            if e.where in ("item", "background block"):
-                where += f"; under: {e.section or 'the top of the field'}"
-            out += [f"> **{e.label}** ({where}): {e.text.replace('*', chr(92) + '*')}", ""]
+            out += [f"> {_excerpt_line(e)}: {_escaped(e.text)}", ""]
     out += [
         f"## Part B: kept criteria ({len(kept)} rows)",
         "",
@@ -875,8 +1072,43 @@ def sheet(rows: Sequence[Row], policies: Sequence[V2Policy], v1: Mapping[str, An
             f"| B{n} | {c.criterion_id} | {_quote(c.text)} | {kind} | "
             f"{', '.join(c.applies_to) or 'all'} | {c.group or '-'} |"
         )
+    by_id = {p.meta["policy_id"]: p for p in policies}
     out += [
         "",
+        f"## Part C: indication groups ({len(groups)} rows)",
+        "",
+        "Every covered indication the sources give for the policy's codes, word for word, and the "
+        "criterion that holds it, or why it is left out. Checked automatically: every listed "
+        "source exists; a new criterion that holds one cites it; every group criterion holds at "
+        "least one; the LCD indication lists (SURG-001: L33558 cov-004 to cov-009; SURG-002: "
+        "L34005 cov-007 to cov-034, plus doc-001) are listed block by block.",
+        "",
+    ]
+    for n, (pid, listed) in enumerate(groups.items(), start=1):
+        policy = by_id[pid]
+        members = [
+            f"{c.criterion_id.rsplit('.', 1)[1]}"
+            + (f" ({', '.join(c.applies_to)})" if c.applies_to else "")
+            for c in policy.criteria
+            if c.group == "indication"
+        ]
+        out += [
+            f"### C{n}. {pid} (group: {', '.join(members)}; codes "
+            f"{', '.join(str(c) for c in policy.meta['procedure_codes'])})",
+            "",
+        ]
+        for i in listed:
+            if i.held_by:
+                target = f"**{i.held_by}**" + (f" ({i.note})" if i.note else "")
+            else:
+                target = f"left out: {i.note}"
+            out += [
+                f"- {_excerpt_line(i.excerpt)} -> {target}.",
+                "",
+                f"  > {_escaped(i.excerpt.text)}",
+                "",
+            ]
+    out += [
         "## Verdicts",
         "",
         f"### Part A ({VERDICTS_A})",
@@ -895,6 +1127,8 @@ def sheet(rows: Sequence[Row], policies: Sequence[V2Policy], v1: Mapping[str, An
         "|---|---|---|---|---|---|",
     ]
     out += [f"| B{n} | {c.criterion_id} |  |  |  |  |" for n, (_, c) in enumerate(kept, start=1)]
+    out += ["", f"### Part C ({VERDICTS_C})", "", VERDICT_HEADER, "|---|---|---|---|---|---|"]
+    out += [f"| C{n} | {pid} |  |  |  |  |" for n, pid in enumerate(groups, start=1)]
     return "\n".join(out) + "\n"
 
 
@@ -913,12 +1147,13 @@ def main() -> None:
         return
     v1 = read_v1()
     policies = read_v2()
-    problems, rows = check(
-        policies, v1, lcds_cited(policies), DECISIONS_MD.read_text(encoding="utf-8")
-    )
+    lcds = lcds_cited(policies)
+    problems, rows = check(policies, v1, lcds, DECISIONS_MD.read_text(encoding="utf-8"))
+    group_problems, groups = indications(policies, lcds)
+    problems += group_problems
     texts = {p.name: (V2_DIR / p.name).read_text(encoding="utf-8") for p in policies}
     if step == "sheet":
-        texts[SHEET.name] = sheet(rows, policies, v1)
+        texts[SHEET.name] = sheet(rows, policies, v1, groups)
     hits = {name: n for name, n in ama_hits(texts).items() if n}
     if hits:
         problems.append(f"AMA CPT descriptor text found: {hits}")

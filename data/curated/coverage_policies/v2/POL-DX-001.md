@@ -30,3 +30,10 @@ Home (out-of-center) sleep testing is not covered for diagnosing obstructive sle
 Type: exclusion
 Applies to: 95806
 Source: LCD L35050 v55 cov-106, cov-109, cov-110.
+
+## POL-DX-001.c5
+Home (out-of-center) sleep testing requires a high likelihood of moderate to severe sleep apnea, shown by the symptoms and the physical examination documented in the notes.
+
+Type: requirement
+Applies to: 95806
+Source: LCD L35050 v55 cov-106, cov-107, cov-108.

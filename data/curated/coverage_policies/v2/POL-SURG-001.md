@@ -30,3 +30,10 @@ It is also covered when the cataract prevents monitoring or treatment of another
 Type: conditional
 Group: indication
 Source: LCD L33558 v33, Indications and limitations.
+
+## POL-SURG-001.c4
+It is also covered when another procedure or treatment, done now or planned (such as pars plana vitrectomy, iridocyclectomy, a procedure for eye trauma, or external beam radiation), makes faster cataract development highly probable.
+
+Type: conditional
+Group: indication
+Source: LCD L33558 v33 cov-003, cov-008.
