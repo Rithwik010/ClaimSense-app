@@ -2,11 +2,14 @@
 before any policy file changes.
 
 - the dataset lines (every split) and the golden cases that reference a v1 criterion the plan
-  replaces with a new ID (a changed meaning gets a new ID; FOOT-001.c3 keeps its ID, only its
-  source changes);
+  replaces with a new ID (a changed meaning gets a new ID);
 - the v1 labels that D-GEN-3 contradicts: an exclusion criterion labelled MET;
 - the nerve-conduction test labels that contradict L34594 cov-037 (D-RULE-6): an R17-flagged line
-  (no needle EMG on the claim) without a carpal tunnel diagnosis, labelled APPROVE or PEND;
+  (no needle EMG on the claim) without a carpal tunnel diagnosis, labelled APPROVE or PEND, with
+  the status the v2 criterion POL-DX-002.c4 should get (Q9; a judgment of the notes, listed with
+  its reason);
+- the lines billing the foot care codes 11720 and 11721, whose policy gains the manual's
+  section 290.C exceptions (Q4), with their v1 labels and diagnoses;
 - for the SURG-002.F3 limitations (D-V2-2): which of their diagnosis codes A56456 covers, so R15
   cannot catch them and the policy needs an exclusion criterion.
 
@@ -51,8 +54,9 @@ REPLACED: dict[str, tuple[str, str]] = {
     "POL-CAR-002.c1": ("D-V2-1, CAR-002.F1 note", "c4 (48-hour list, with c2)"),
     "POL-CAR-002.c2": ("D-V2-2 CAR-002.F1", "c4 (48-hour list, with c1)"),
     "POL-CAR-002.c3": ("D-V2-1", "c5 (up to 15 days) + c6 (30-day)"),
-    "POL-DX-001.c2": ("D-V2-1", "c4"),
+    "POL-DX-001.c2": ("D-V2-1, Q6", "c4 exclusion (cov-109, cov-110)"),
     "POL-DX-003.c1": ("D-V2-2 DX-003.F1", "c4 + c5"),
+    "POL-FOOT-001.c3": ("D-V2-1, Q4", "c6 exclusion (except as provided)"),
     "POL-PAIN-001.c2": ("D-ESI-2", "c6"),
     "POL-PAIN-001.c4": ("D-ESI-7", "c7"),
     "POL-PAIN-001.c5": ("D-ESI-2, V1a open item", "c8"),
@@ -70,8 +74,36 @@ REPLACED: dict[str, tuple[str, str]] = {
 ADDED = {
     "POL-PAIN-001": "c9 exclusion (D-ESI-4)",
     "POL-SURG-002": "c6 exclusion (D-V2-2 SURG-002.F3)",
-    "POL-DX-002": "c4 exclusion (D-RULE-6, L34594 cov-037)",
+    "POL-DX-002": "c4 conditional (D-RULE-6, Q9, L34594 cov-037)",
+    "POL-FOOT-001": "c4 and c5 conditional, indication group (Q4, manual 290.C.3 and C.4)",
 }
+FOOT_CODES = ("11720", "11721")
+ONYCHOMYCOSIS = "B351"
+# Q9: the expected status of POL-DX-002.c4 on each contradicting line, judged from the notes and
+# the line's diagnoses: another cause shown -> NOT_MET (DENY); silent -> NOT_DOCUMENTED (PEND).
+LEG_DIABETES = (
+    "leg symptoms; the line's diagnosis is diabetic polyneuropathy (E11.42), another cause"
+)
+HAND_DIABETES = (
+    "hand numbness and weak grip, but the notes and the line's diagnosis give diabetic "
+    "polyneuropathy (E11.42), another cause; carpal tunnel not mentioned (judgment: hand symptoms)"
+)
+HAND_SILENT = (
+    "hand numbness and weak grip, a nerve lesion suspected; no other cause, no carpal tunnel"
+)
+NCS_EXPECTED: dict[str, tuple[str, str]] = {
+    "DEC-TE-00001": ("NOT_MET", HAND_DIABETES),
+    "DEC-TE-00010": ("NOT_MET", LEG_DIABETES),
+    "DEC-TE-00020": ("NOT_DOCUMENTED", HAND_SILENT),
+    "DEC-TE-00040": ("NOT_MET", LEG_DIABETES),
+    "DEC-TE-00041": ("NOT_MET", HAND_DIABETES),
+    "DEC-TE-00046": ("NOT_MET", "leg symptoms; the line's diagnosis is radiculopathy (M54.12)"),
+    "DEC-TE-00070": ("NOT_MET", HAND_DIABETES),
+    "DEC-TE-00080": ("NOT_DOCUMENTED", HAND_SILENT),
+    "DEC-TE-00089": ("NOT_MET", LEG_DIABETES),
+    "DEC-TE-00096": ("NOT_MET", LEG_DIABETES),
+}
+V2_DECISION = {"NOT_MET": "DENY", "NOT_DOCUMENTED": "PEND"}
 # v1 criteria whose proposed type is exclusion (D-ESI-6, D-GEN-3): never MET.
 V1_EXCLUSIONS = (
     "POL-BH-001.c2",
@@ -258,9 +290,11 @@ def ncs_section() -> list[str]:
                 continue
             found = targets.get((r.record_id, h.line_no), {})
             criteria = ", ".join(f"{k.split('.')[1]} {v}" for k, v in sorted(found.items()))
+            status, why = NCS_EXPECTED.get(r.record_id, ("?", "not judged"))
             rows.append(
                 f"| {r.record_id} | {r.split} | {h.line_no} | {line.code} | "
-                f"{' '.join(line.diagnoses)} | {label.split()[1]} | {r.scenario} | {criteria} |"
+                f"{' '.join(line.diagnoses)} | {label.split()[1]} | {r.scenario} | {criteria} | "
+                f"{status} -> {V2_DECISION.get(status, '?')} | {why} |"
             )
     return [
         "",
@@ -268,14 +302,72 @@ def ncs_section() -> list[str]:
         "",
         "R17-flagged lines (a nerve conduction code, no needle EMG code on the claim) without a "
         "carpal tunnel diagnosis (G56.00-G56.03), labelled APPROVE or PEND. For the generator v2 "
-        "task; the v1 dataset is not changed.",
+        "task; the v1 dataset is not changed. Expected v2: the status of POL-DX-002.c4 (Q9: "
+        "another cause in the notes NOT_MET, silent NOT_DOCUMENTED) and the line decision it "
+        "gives; a judgment of the notes, with its reason.",
         "",
-        "| Record | Split | Line | Code | Diagnoses | Label | Scenario | DX-002 statuses |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Record | Split | Line | Code | Diagnoses | v1 label | Scenario | v1 DX-002 statuses | "
+        "Expected v2 c4 -> decision | Why |",
+        "|---|---|---|---|---|---|---|---|---|---|",
         *rows,
         "",
-        f"- Total: {len(rows)}.",
+        f"- Total: {len(rows)}; expected v2: "
+        + ", ".join(
+            f"{status} {n}"
+            for status, n in sorted(Counter(s for s, _ in NCS_EXPECTED.values()).items())
+        )
+        + ".",
     ]
+
+
+def foot_section() -> list[str]:
+    """Q4: the lines billing 11720 or 11721, by split and v1 label, with their FOOT-001 statuses
+    and diagnoses."""
+    targets = {
+        (row["record_id"], x["line_no"]): statuses(x)
+        for split in SPLITS
+        for row in read_jsonl(DECISION_DIR / f"{split}_inputs.jsonl")
+        for x in (row.get("target") or {}).get("lines", [])
+    }
+    labels: Counter[tuple[str, str]] = Counter()
+    criteria: Counter[tuple[str, str]] = Counter()
+    diagnoses: Counter[str] = Counter()
+    scenarios: Counter[str] = Counter()
+    records: set[str] = set()
+    for r in load_records():
+        for line in rule_lines_of(r.claim):
+            if line.code not in FOOT_CODES:
+                continue
+            records.add(r.record_id)
+            labels[(r.split, r.labels.get(line.line_no, "?"))] += 1
+            scenarios[r.scenario] += 1
+            for cid, status in targets.get((r.record_id, line.line_no), {}).items():
+                if cid.startswith("POL-FOOT-001"):
+                    criteria[(cid.split(".")[1], status)] += 1
+            diagnoses.update(set(line.diagnoses))
+    total = sum(labels.values())
+    out = [
+        "",
+        "## Foot care lines (11720, 11721): what Q4's new criteria touch",
+        "",
+        f"Lines billing 11720 or 11721: {total} in {len(records)} records. Their v1 labels by "
+        "split (source and decision):",
+        "",
+        "| Split | v1 label | Lines |",
+        "|---|---|---|",
+    ]
+    out += [f"| {split} | {label} | {n} |" for (split, label), n in sorted(labels.items())]
+    out += [
+        "",
+        "- v1 FOOT-001 statuses on these lines: "
+        + ", ".join(f"{c} {s} {n}" for (c, s), n in sorted(criteria.items())),
+        "- Scenarios: " + ", ".join(f"{k} {n}" for k, n in scenarios.most_common()),
+        f"- Lines with onychomycosis ({ONYCHOMYCOSIS}, the mycotic-nail path of the new c5): "
+        f"{diagnoses[ONYCHOMYCOSIS]}",
+        "- Diagnoses on these lines (lines with each code): "
+        + ", ".join(f"{k} {n}" for k, n in diagnoses.most_common()),
+    ]
+    return out
 
 
 def limitations_section() -> list[str]:
@@ -318,6 +410,7 @@ def main() -> None:
     out += dataset_section()
     out += golden_section()
     out += ncs_section()
+    out += foot_section()
     out += limitations_section()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(out) + "\n", encoding="utf-8")

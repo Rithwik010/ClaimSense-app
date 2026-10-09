@@ -338,8 +338,11 @@ For a claim that passed the rules:
 
 1. From the database: plan type, the benefit row for each line's candidate categories, cost-share
    rules, visit limits and usage so far, exclusions list, flags from the rules engine.
-2. From RAG (§9.3): top-k (`RAG_TOP_K`, default 3) coverage criteria per procedure code,
-   **filtered by plan ID (or `ALL`) and effective date ≤ date of service before similarity search**.
+2. From RAG (§9.3): **every** coverage criterion for the line's procedure code, filtered by plan
+   ID (or `ALL`), effective date ≤ date of service and the criterion's own codes, with no top-k cap
+   (D-RAG-1, D-RAG-2). Policy set v2 (`POLICY_SET`, the default) uses an exact lookup by code;
+   policy set v1, kept only to reproduce model v1, ranks the covering policy's criteria by
+   similarity and takes the top 5 (`RAG_TOP_K`).
 3. Output: a `ContextPackage` with every item's ID and source, stored in the decision record.
 
 ### 8.5 SLM decision (`app/ml/`)
@@ -501,7 +504,8 @@ The frontend calls the API with `httpx` only. It never imports `app` or touches 
 | `OLLAMA_URL` | `http://localhost:11434` |
 | `MODEL_NAME` | `gemma4:e2b` (replaced by the fine-tuned model name in Phase 4) |
 | `EMBEDDING_MODEL` | fastembed default small English model (record the exact name in `DECISIONS.md`) |
-| `RAG_TOP_K` | 3 |
+| `POLICY_SET` | `v2` (policy set of the pipeline: `v1` or `v2`; D-POL-2) |
+| `RAG_TOP_K` | 5 (policy set v1 only; v2 has no cap, D-RAG-1) |
 | `EXTRACTION_CONFIDENCE_MIN` | 0.85 |
 | `REVIEW_HIGH_DOLLAR_CENTS` | 100000 |
 
@@ -530,7 +534,7 @@ human confirming the URL (H6).
 | `exclusions.yaml` | Fixed exclusion code lists per plan |
 | `procedure_descriptions.csv` | Team-written short descriptions for every procedure code used |
 | `reason_code_map.csv` | Internal reason code → CARC/RARC (from the official list) |
-| `coverage_policies/POL-*.md` | 15–25 coverage policies (format below) |
+| `coverage_policies/v1/POL-*.md`, `coverage_policies/v2/POL-*.md` | 15–25 coverage policies per policy set (format below; D-POL-2) |
 
 **Coverage policy format.** Every criterion has a stable ID and at least one source reference:
 
@@ -550,6 +554,12 @@ sources: ["<NCD/LCD/Article ID and retrieval date>"]
 <criterion text>
 ```
 
+Policy set v2 adds to the front matter `policy_set: v2` and `replaces` (retired v1 ID → its new
+IDs), and to each criterion a `Type:` line (requirement, exclusion or conditional), an optional
+`Applies to:` line (the codes it is shown on), an optional `Group: indication` line and a `Source:`
+line that cites LCD block IDs or manual sections. A changed meaning gets a new ID; numbers are
+never reused (D-POL-1, D-POL-3).
+
 Claude Code may help **format** policies and check them against their sources. It must **not
 write clinical criteria** that are not in a cited source (H6).
 
@@ -557,13 +567,18 @@ write clinical criteria** that are not in a cited source (H6).
 
 | Collection | Source | Chunking |
 |---|---|---|
-| `coverage_policies` | `data/curated/coverage_policies/` | One chunk per criterion ID |
+| `coverage_policies_v1` | `data/curated/coverage_policies/v1/` (frozen for model v1) | One chunk per criterion ID |
+| `coverage_policies_v2` | `data/curated/coverage_policies/v2/` | One chunk per criterion ID |
 | `plan_documents` | SBCs generated from `plans.yaml` + `benefits.yaml` | One chunk per SBC section |
 | `code_reference` | ICD-10 descriptions for codes used + relevant guideline sections | One chunk per code / section |
 | `carc_rarc` | Codes in `reason_code_map.csv` with official descriptions | One chunk per code |
 
 Payload metadata on every point: collection, policy_id, criterion_id, plan_ids, effective_date,
-source, license. Only `coverage_policies` feeds the SLM prompt. The other collections support
+source, license; in `coverage_policies_v2` also the criterion's type, its own procedure codes and
+its group (D-POL-3). Only the coverage policy collection of the pipeline's policy set feeds the SLM
+prompt. **v2 retrieval is an exact lookup by code**: every criterion that matches the line's code,
+plan and date, with no cap and in policy-file order (D-RAG-2). **Semantic search stays in the v1
+collection** (to reproduce model v1) and in the explanation collections, which support
 explanations.
 
 ### 9.4 Synthetic generators (`training/generate/`)
