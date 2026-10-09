@@ -1,7 +1,9 @@
 """P2.3a parity, frozen for model v1 (PROGRESS_LOG.md section 2): on every train, validation and
 test record, the engine gives the claim outcome, claim flags and line outcomes (reasons in order,
-NCCI_BYPASS) the generator's rule mirror stored, and the prompt's RULES_RESULT block is what the
-engine's outcome renders to (scripts/verify/rules_parity.py).
+NCCI_BYPASS) the generator's rule mirror stored, plus exactly the rules v2 changes listed in
+tests/golden/rules/v2_dataset_changes.csv (P2.3b), and the prompt's RULES_RESULT block is what the
+engine's outcome renders to wherever no change is listed (scripts/verify/rules_parity.py). The
+list equals the independent checks of scripts/verify/rules_v2_impact.py.
 
 The dataset check is skipped where the dataset or data/raw/ is absent (CI)."""
 
@@ -11,11 +13,15 @@ from app.db import raw
 from app.domain.contracts import RulesOutcome
 from scripts.verify.rules_parity import (
     DECISION_DIR,
+    V2_CHANGES,
+    V2_RULES,
+    Change,
     Record,
     dataset_reference,
     differences,
     load_records,
     prompt_block,
+    read_changes,
     rules_block,
 )
 from tests.unit.rules_support import claim_data, line, reference
@@ -78,3 +84,36 @@ def test_a_different_line_outcome_flag_or_prompt_is_reported() -> None:
     assert found[0] == "claim flags [] != ['OON']"
     assert found[1].startswith("line 1:")
     assert found[-1] == "the prompt's RULES_RESULT block differs from the engine's"
+
+
+# --- Rules v2 changes (P2.3b) -------------------------------------------------------------------
+
+
+def test_the_v2_change_list_names_only_rules_v2_codes_in_rule_order() -> None:
+    changes = [c for found in read_changes(V2_CHANGES).values() for c in found]
+
+    assert len(changes) == 461
+    assert all(V2_RULES[c.code] == c.rule_id for c in changes)
+    assert all(c.kind == ("FLAG" if c.rule_id in {"R17", "R20"} else "REASON") for c in changes)
+    for found in read_changes(V2_CHANGES).values():  # each record: by line, then rule order
+        keys = [(c.line_no, int(c.rule_id[1:])) for c in found]
+        assert keys == sorted(keys)
+
+
+@pytest.mark.skipif(not DATASET_PRESENT, reason="model v1 dataset or data/raw/ not present")
+def test_the_v2_change_list_equals_the_independent_checks() -> None:
+    """The engine wrote the list; scripts/verify/rules_v2_impact.py checks the same rules written
+    independently of app/rules (D-RULE-3, D-RULE-4, D-RULE-7)."""
+    from scripts.verify.rules_v2_impact import load_lookups, proposed
+
+    lookups = load_lookups()
+    independent = [
+        Change(
+            r.record_id, h.line_no, h.rule, "FLAG" if h.outcome == "FLAG" else "REASON", h.reason
+        )
+        for r in load_records()
+        for h in sorted(proposed(r.claim, lookups), key=lambda h: (h.line_no, int(h.rule[1:])))
+    ]
+    listed = [c for found in read_changes(V2_CHANGES).values() for c in found]
+
+    assert sorted(listed, key=repr) == sorted(independent, key=repr)

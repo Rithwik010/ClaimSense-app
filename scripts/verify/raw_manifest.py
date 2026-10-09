@@ -3,8 +3,9 @@ data/raw_manifest.csv (committed), so a lost or changed file is noticed (D-DATA-
 
 Without --update the script only checks: every listed file must exist with its listed size and
 SHA-256, and files present but not listed are reported. --update rewrites the manifest from the
-files on disk; do it only deliberately and record it in the progress log. macOS Finder metadata
-(.DS_Store, ._* files) is not data and is ignored.
+files on disk; do it only deliberately and record it in the progress log. A file's download URL
+(`source_url`, optional, set by hand) is kept across updates. macOS Finder metadata (.DS_Store,
+._* files) is not data and is ignored.
 
     uv run python -m scripts.verify.raw_manifest            # check
     uv run python -m scripts.verify.raw_manifest --update   # rewrite the manifest
@@ -15,13 +16,13 @@ import csv
 import hashlib
 import re
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw"
 MANIFEST = ROOT / "data" / "raw_manifest.csv"
-FIELDS = ("path", "bytes", "sha256")
+FIELDS = ("path", "bytes", "sha256", "source_url")
 FINDER_METADATA = re.compile(r"(^|/)(\.DS_Store|\._[^/]*)$")
 
 
@@ -30,6 +31,7 @@ class Entry:
     path: str  # relative to data/raw/, "/"-separated
     size: int
     sha256: str
+    source_url: str = ""  # where the file was downloaded, when recorded
 
 
 @dataclass
@@ -70,14 +72,23 @@ def scan(raw_dir: Path = RAW_DIR) -> list[Entry]:
 
 def read_manifest(path: Path = MANIFEST) -> list[Entry]:
     with path.open(encoding="utf-8", newline="") as f:
-        return [Entry(r["path"], int(r["bytes"]), r["sha256"]) for r in csv.DictReader(f)]
+        return [
+            Entry(r["path"], int(r["bytes"]), r["sha256"], r.get("source_url") or "")
+            for r in csv.DictReader(f)
+        ]
 
 
 def write_manifest(entries: Sequence[Entry], path: Path = MANIFEST) -> None:
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, lineterminator="\n")
         writer.writerow(FIELDS)
-        writer.writerows((e.path, e.size, e.sha256) for e in entries)
+        writer.writerows((e.path, e.size, e.sha256, e.source_url) for e in entries)
+
+
+def keep_source_urls(scanned: Sequence[Entry], old: Sequence[Entry]) -> list[Entry]:
+    """The scanned entries with the source URL each path had in the previous manifest."""
+    urls = {e.path: e.source_url for e in old}
+    return [replace(e, source_url=urls.get(e.path, "")) for e in scanned]
 
 
 def compare(listed: Sequence[Entry], raw_dir: Path = RAW_DIR) -> Report:
@@ -110,7 +121,7 @@ def main() -> None:
         raise SystemExit(f"{RAW_DIR} does not exist")
     if update:
         old = {e.path: e for e in read_manifest()} if MANIFEST.exists() else {}
-        entries = scan()
+        entries = keep_source_urls(scan(), list(old.values()))
         write_manifest(entries)
         new = {e.path: e for e in entries}
         added = sorted(set(new) - set(old))

@@ -32,6 +32,7 @@ ClaimSense: CMS-1500 claims → deterministic rules → fine-tuned Gemma 4 SLM r
 - Tests first for rules, calculator and validators.
 - Before finishing: `uv run ruff check .`, `uv run ruff format --check .`,
   `uv run pytest`, `uv run lint-imports` must all pass.
+- Before any merge, run the full suite locally with data/raw present, and report both the local and the CI counts.
 - Branch: `p<phase>.<task>-<short-name>`. One task per session.
 - End with the task report format from `INSTRUCTIONS.md` §12.
 - Stop-and-ask triggers: `INSTRUCTIONS.md` §13.

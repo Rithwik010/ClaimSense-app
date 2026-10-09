@@ -536,6 +536,83 @@
         "billing_npi confidence 0.70 < 0.85 -> REJECT RJ_LOW_CONFIDENCE_FIELD."
       ],
       "sources": []
+    },
+    {
+      "case_id": "H5-08",
+      "title": "Diagnosis read below the threshold fails R15",
+      "rules": [
+        "R15"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-H5-08",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000079",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "I10"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "93350",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000079"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "SCANNED",
+        "field_confidences": {
+          "diagnoses.0": 0.6
+        },
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "REJECT",
+        "status": "REJECTED",
+        "failures": [
+          {
+            "rule_id": "R15",
+            "outcome": "REJECT",
+            "reason_code": "RJ_LOW_CONFIDENCE_FIELD",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": null,
+        "flags": []
+      },
+      "worked_steps": [
+        "R15 would deny line 1 (I10 not in A56625 group 4), but diagnoses.0 was read with confidence 0.60 < 0.85 -> REJECT RJ_LOW_CONFIDENCE_FIELD, never DENY (H5)."
+      ],
+      "sources": [
+        "H5"
+      ]
     }
   ]
 }

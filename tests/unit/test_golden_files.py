@@ -112,13 +112,23 @@ def _icd10() -> frozenset[str]:
     return frozenset(read_fixture()["icd10_codes"][str(raw.ICD10_FISCAL_YEAR)])
 
 
+def _procedure_codes() -> frozenset[str]:
+    if raw_in_use():
+        return raw.read_procedure_code_table()
+    return frozenset(read_fixture()["procedure_codes"])
+
+
 @pytest.mark.parametrize("case", RULE_CASES, ids=ids(RULE_CASES))
 def test_rules_case_codes_exist_unless_r02(case: dict[str, Any]) -> None:
     if any(f["rule_id"] in CONTRACT_RULES for f in case["expected"]["failures"]):
         return
     claim = case["given"]["claim"]
     assert {d.replace(".", "").upper() for d in claim["diagnoses"]} <= _icd10()
-    assert {line["procedure_code"] for line in claim["service_lines"]} <= set(load_curated().scope)
+    codes = {line["procedure_code"] for line in claim["service_lines"]}
+    curated = load_curated()
+    assert codes <= _procedure_codes()  # in the R02 code table
+    # in scope, or a code rules v2 reason about (add-on and third-level codes, P2.3b)
+    assert codes <= set(curated.scope) | set(curated.code_roles)
 
 
 # --- Calculator ----------------------------------------------------------------------------------

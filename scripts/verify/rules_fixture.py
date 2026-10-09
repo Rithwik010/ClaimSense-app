@@ -1,5 +1,5 @@
 """Task P2.3a-ci: the raw rows the golden rules cases need, as a committed fixture, so CI (which has
-no data/raw/, H9) runs all 90 golden rules cases. Since P2.1 it also covers the 30 golden
+no data/raw/, H9) runs every golden rules case. Since P2.1 it also covers the golden
 end-to-end claims, whose database the fixture loads in CI.
 
 tests/golden/rules/raw_subset.json holds only what the rules engine reads from data/raw/ for the
@@ -10,7 +10,9 @@ codes the cases and claims use:
 - NCCI edits for every ordered pair of codes billed on the same claim: every edit row of the pair,
   with its effective and deletion dates and modifier indicator, in the source order (the first
   edit active on the date of service applies);
-- MUE unit limits for the cases' procedure codes.
+- MUE unit limits for the cases' procedure codes;
+- the billing articles' covered ICD-10-CM rows (article, group, code) for the cases' procedure
+  codes and diagnoses, which R15 reads (D-CI-4). A diagnosis no group covers stays absent.
 Codes, dates, indicators and limits only: no descriptions are read or written (H10). NCCI edits
 and MUE limits cover the in-scope codes, as the engine's reference does (app/db/rules_reference).
 
@@ -54,6 +56,7 @@ KEYS = (
     "place_of_service_codes",
     "ncci",
     "mue",
+    "article_icd10_covered",
 )
 
 
@@ -116,6 +119,7 @@ def extract(
     cases: Iterable[Mapping[str, Any]], tables: CodeTables, sources: list[str]
 ) -> dict[str, Any]:
     used = case_codes(cases)
+    support = load_curated().diagnosis_support
     return {
         "note": NOTE,
         "sources": sources,
@@ -133,13 +137,21 @@ def extract(
         "mue": {
             code: tables.mue[code] for code in sorted(used.procedure_codes) if code in tables.mue
         },
+        "article_icd10_covered": [
+            [article, group, code]
+            for article in sorted(
+                {s.billing_article for c, s in support.items() if c in used.procedure_codes}
+            )
+            for group, codes in sorted(tables.article_covered.get(article, {}).items())
+            for code in sorted(used.diagnoses & codes)
+        ],
     }
 
 
 def raw_sources() -> list[str]:
     """The data/raw/ files the fixture's rows come from, relative to data/raw/."""
     files = [raw.ICD10_ZIP, raw.PFS_CSV, raw.HCPCS_TXT, raw.POS_PDF, *raw._ncci_files()]
-    files.append(raw.MUE_CSV)
+    files += [raw.MUE_CSV, raw.MCD_ARTICLES_ZIP]
     return [path.relative_to(raw.RAW_DIR).as_posix() for path in files]
 
 
@@ -168,16 +180,24 @@ def code_tables(fixture: Mapping[str, Any]) -> CodeTables:
         place_of_service_codes=frozenset(fixture["place_of_service_codes"]),
         ncci={key: tuple(edits) for key, edits in ncci.items()},
         mue=dict(fixture["mue"]),
+        article_covered=article_covered(fixture),
     )
+
+
+def article_covered(fixture: Mapping[str, Any]) -> dict[str, dict[int, frozenset[str]]]:
+    covered: dict[str, dict[int, set[str]]] = {}
+    for article, group, code in fixture["article_icd10_covered"]:
+        covered.setdefault(article, {}).setdefault(group, set()).add(code)
+    return {a: {g: frozenset(c) for g, c in groups.items()} for a, groups in covered.items()}
 
 
 def render(fixture: Mapping[str, Any]) -> str:
     """Stable JSON, one NCCI edit per line."""
 
     def entry(key: str) -> str:
-        if key == "ncci":
-            rows = ",\n".join(f"    {json.dumps(row)}" for row in fixture["ncci"])
-            return f'  "ncci": [\n{rows}\n  ]'
+        if key in ("ncci", "article_icd10_covered"):
+            rows = ",\n".join(f"    {json.dumps(row)}" for row in fixture[key])
+            return f'  "{key}": [\n{rows}\n  ]'
         value = json.dumps(fixture[key], indent=2).replace("\n", "\n  ")
         return f"  {json.dumps(key)}: {value}"
 
@@ -210,7 +230,8 @@ def summary(fixture: Mapping[str, Any]) -> str:
         f"{sum(len(c) for c in fixture['icd10_codes'].values())} ICD-10-CM codes, "
         f"{len(fixture['procedure_codes'])} procedure codes, "
         f"{len(fixture['place_of_service_codes'])} place-of-service codes, "
-        f"{len(fixture['ncci'])} NCCI edits, {len(fixture['mue'])} MUE limits"
+        f"{len(fixture['ncci'])} NCCI edits, {len(fixture['mue'])} MUE limits, "
+        f"{len(fixture['article_icd10_covered'])} covered article rows"
     )
 
 

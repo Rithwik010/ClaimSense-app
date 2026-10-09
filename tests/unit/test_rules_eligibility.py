@@ -77,5 +77,5 @@ def test_passing_result_uses_every_date_of_service() -> None:
 
 
 def test_rules_version() -> None:
-    """v1 rules (P2.3a), which the pipeline runs since P2.5."""
-    assert RULES_VERSION == "1.0.0"
+    """v1 rules (P2.3a) plus rules v2 R14 to R20 (P2.3b)."""
+    assert RULES_VERSION == "2.0.0"

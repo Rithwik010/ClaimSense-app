@@ -334,6 +334,18 @@ class MueLimit(Base):
     adjudication_indicator: Mapped[str] = mapped_column(Text)
 
 
+class ArticleIcd10Covered(Base):
+    """A billing article's covered ICD-10-CM codes by group (MCD current articles), for R15
+    (D-DX-1, D-RULE-4): the articles of the in-scope codes (data/curated/diagnosis_support.csv)."""
+
+    __tablename__ = "article_icd10_covered"
+
+    article_id: Mapped[str] = mapped_column(String(8), primary_key=True)
+    covered_group: Mapped[int] = mapped_column(Integer, primary_key=True)
+    icd10_code: Mapped[str] = mapped_column(String(7), primary_key=True)
+    article_version: Mapped[str] = mapped_column(String(8))
+
+
 class ReferenceSource(Base):
     """Where a loaded reference table came from (P2.1): each source file with its SHA-256, as
     listed in data/raw_manifest.csv (D-DATA-1) or computed for a committed fixture."""

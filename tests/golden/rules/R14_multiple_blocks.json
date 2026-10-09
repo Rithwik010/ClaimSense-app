@@ -1,0 +1,766 @@
+{
+  "cases": [
+    {
+      "case_id": "R14-01",
+      "title": "Transforaminal ESI and a facet joint injection on the same date",
+      "rules": [
+        "R14"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R14-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416",
+            "M47816"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64483",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64493",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "B"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-R14-01-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64483",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-R14-01-2",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64493",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R14",
+            "outcome": "DENY",
+            "reason_code": "DN_MULTIPLE_BLOCKS",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MULTIPLE_BLOCKS"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-R14-01-1 covers 64483.",
+        "R10: authorization AUTH-R14-01-2 covers 64493.",
+        "Line 1 64483 is an ESI (transforaminal, lumbar/sacral); line 2 64493 is a facet joint injection, another block, on the same date.",
+        "No facet synovial cyst diagnosis on line 2 -> R14 denies the ESI line 1; the facet line 2 is not an ESI and passes."
+      ],
+      "sources": [
+        "L33906 cov-027 (D-ESI-3)"
+      ]
+    },
+    {
+      "case_id": "R14-02",
+      "title": "Near miss: the same ESI and facet injection on different dates",
+      "rules": [
+        "R14"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R14-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416",
+            "M47816"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64483",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-13",
+              "place_of_service": "11",
+              "procedure_code": "64493",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "B"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-R14-02-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64483",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-R14-02-2",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64493",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-R14-02-1 covers 64483.",
+        "R10: authorization AUTH-R14-02-2 covers 64493.",
+        "Different dates of service: not the same session -> R14 does not apply."
+      ],
+      "sources": [
+        "L33906 cov-027 (D-ESI-3)"
+      ]
+    },
+    {
+      "case_id": "R14-03",
+      "title": "Exception: the facet injection is for a facet synovial cyst",
+      "rules": [
+        "R14"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R14-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416",
+            "M7138"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64483",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64493",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "B"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-R14-03-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64483",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-R14-03-2",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64493",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-R14-03-1 covers 64483.",
+        "R10: authorization AUTH-R14-03-2 covers 64493.",
+        "Line 2 64493 points at M7138, a facet synovial cyst code (FACET_SYNOVIAL_CYST) -> the LCD's exception; no other block remains -> line 1 passes."
+      ],
+      "sources": [
+        "L33906 cov-027 (D-ESI-3)"
+      ]
+    },
+    {
+      "case_id": "R14-04",
+      "title": "Near miss: a transforaminal ESI with its additional-level add-on",
+      "rules": [
+        "R14",
+        "R18"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R14-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64483",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64484",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-R14-04-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64483",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-R14-04-1 covers 64483.",
+        "64484 is an add-on level code, not another block -> R14 does not apply.",
+        "R18: both lines count on both sides (no side modifier): 1 + 1 = 2 levels -> within the limit of 2."
+      ],
+      "sources": [
+        "L33906 cov-027 (D-ESI-3)",
+        "L33906 cov-032"
+      ]
+    },
+    {
+      "case_id": "R14-05",
+      "title": "Same ESI code on two lines (right and left) is not another block",
+      "rules": [
+        "R12",
+        "R14"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R14-05",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64483",
+              "modifiers": [
+                "RT"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64483",
+              "modifiers": [
+                "LT"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-R14-05-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64483",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R12",
+            "outcome": "DENY",
+            "reason_code": "DN_MUE_EXCEEDED",
+            "line_no": 1
+          },
+          {
+            "rule_id": "R12",
+            "outcome": "DENY",
+            "reason_code": "DN_MUE_EXCEEDED",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MUE_EXCEEDED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MUE_EXCEEDED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-R14-05-1 covers 64483.",
+        "R12: 64483 units on the date 1 + 1 = 2 > MUE 1 -> both lines denied (A-R4).",
+        "R14: the same code on another line is bilateral use, not another block -> no DN_MULTIPLE_BLOCKS.",
+        "Every line denied -> claim DENY."
+      ],
+      "sources": [
+        "L33906 cov-027 (D-ESI-3)"
+      ]
+    },
+    {
+      "case_id": "R14-06",
+      "title": "A denied ESI takes its add-on level with it",
+      "rules": [
+        "R14"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R14-06",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000020",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "M5416",
+            "M47816"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64483",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64484",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            },
+            {
+              "line_no": 3,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "64493",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "B"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000020"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-R14-06-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64483",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-R14-06-2",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000020",
+              "procedure_code": "64493",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [
+          {
+            "rule_id": "R14",
+            "outcome": "DENY",
+            "reason_code": "DN_MULTIPLE_BLOCKS",
+            "line_no": 1
+          },
+          {
+            "rule_id": "R14",
+            "outcome": "DENY",
+            "reason_code": "DN_MULTIPLE_BLOCKS",
+            "line_no": 2
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MULTIPLE_BLOCKS"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_MULTIPLE_BLOCKS"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 3,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-R14-06-1 covers 64483.",
+        "R10: authorization AUTH-R14-06-2 covers 64493.",
+        "64493 is a facet joint injection on the same date as the ESI 64483 -> R14 denies line 1.",
+        "Line 2 64484 is the add-on of the denied 64483 on that date -> denied with it, same reason (D-RULE-7). The facet line 3 passes.",
+        "R18: 64483 + 64484 = 2 levels -> within the limit."
+      ],
+      "sources": [
+        "L33906 cov-027 (D-ESI-3)",
+        "D-RULE-7"
+      ]
+    }
+  ]
+}

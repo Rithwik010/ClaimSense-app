@@ -74,7 +74,7 @@ def test_accept_finalizes_the_claim_with_amounts_accumulators_and_audit(
     assert finalized["visit_usage"] == {}  # office visits have no visit limit
     accepted = events[-2]["payload"]
     assert (accepted["opened_at"], accepted["review_seconds"]) == (None, None)  # never opened
-    assert finalized["calculator_version"] and events[-1]["rules_version"] == "1.0.0"
+    assert finalized["calculator_version"] and events[-1]["rules_version"] == "2.0.0"
     assert client.get("/v1/claims/CLM-E2E-14").json()["record"] == record
 
 

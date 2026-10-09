@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.db import raw
 from app.db.models import (
+    ArticleIcd10Covered,
     Icd10Code,
     MueLimit,
     NcciPtpEdit,
@@ -23,7 +24,7 @@ from app.db.seed import load_rule_tables, raw_rule_tables, seed_curated
 from tests.database import alembic_config, fresh_database
 from tests.rule_tables import fixture_rule_tables
 
-TABLES = (PlaceOfServiceCode, ProcedureCode, Icd10Code, MueLimit, NcciPtpEdit)
+TABLES = (PlaceOfServiceCode, ProcedureCode, Icd10Code, MueLimit, NcciPtpEdit, ArticleIcd10Covered)
 
 
 @pytest.fixture
@@ -85,6 +86,8 @@ def test_the_fixture_loads_with_provenance_and_again_changes_nothing(engine: Eng
 
     rows = list(data.ncci_rows())
     assert loaded["ncci_ptp_edits"] == len(rows) and loaded["mue_limits"] == len(data.mue)
+    covered = sum(len(c) for _, groups in data.article_covered.values() for c in groups.values())
+    assert loaded["article_icd10_covered"] == covered > 0
     assert first == second
     edits = [row[1:6] for row in first[1][: len(rows)]]
     assert edits == rows  # published order kept
@@ -119,9 +122,10 @@ def test_data_raw_loads_in_full_with_the_manifest_hashes(engine: Engine) -> None
         "icd10_codes": 74879,
         "mue_limits": 15212,
         "ncci_ptp_edits": 2637645,
+        "article_icd10_covered": 41680,  # the 17 billing articles of the in-scope codes
     }
     assert again == loaded
     assert out_of_scope == 0  # no description outside the scope (H10)
-    assert len(sources) == 9  # 1 + 2 + 1 + 1 + the 4 NCCI part files
+    assert len(sources) == 10  # 1 + 2 + 1 + 1 + the 4 NCCI part files + the MCD articles
     for _, path, sha256 in sources:
         assert manifest[path.removeprefix("data/raw/")] == sha256

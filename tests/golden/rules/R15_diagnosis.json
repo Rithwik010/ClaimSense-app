@@ -1,0 +1,576 @@
+{
+  "cases": [
+    {
+      "case_id": "R15-01",
+      "title": "Stress echo with high blood pressure alone",
+      "rules": [
+        "R15"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R15-01",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000079",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "I10"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "93350",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000079"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R15",
+            "outcome": "DENY",
+            "reason_code": "DN_DX_NOT_SUPPORTED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_DX_NOT_SUPPORTED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "93350 -> A56625 group 4; I10 is in groups 2 and 3 only -> not supported -> line 1 denied.",
+        "Every line denied -> claim DENY."
+      ],
+      "sources": [
+        "A56625 group 4"
+      ]
+    },
+    {
+      "case_id": "R15-02",
+      "title": "Near miss: stress echo with coronary artery disease",
+      "rules": [
+        "R15"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R15-02",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000079",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "I2510"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "93350",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000079"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "I25.10 is in A56625 group 4 -> supported."
+      ],
+      "sources": [
+        "A56625 group 4"
+      ]
+    },
+    {
+      "case_id": "R15-03",
+      "title": "Complex cataract surgery with a group 1 diagnosis only",
+      "rules": [
+        "R15"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R15-03",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "H2513"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "66982",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {
+          "authorizations": [
+            {
+              "auth_number": "AUTH-R15-03-1",
+              "member_id": "MBR-G00001",
+              "provider_npi": "1000000012",
+              "procedure_code": "66982",
+              "start_date": "2026-10-01",
+              "end_date": "2026-12-31",
+              "units_approved": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "R10: authorization AUTH-R15-03-1 covers 66982.",
+        "66982 -> A56544; R15 requires group 1 only (group 2 is reported 'if applicable', not checked; D-RULE-4); H25.13 is in group 1 -> supported."
+      ],
+      "sources": [
+        "A56544 groups 1 and 2"
+      ]
+    },
+    {
+      "case_id": "R15-04",
+      "title": "Colonoscopy with the group 2B code first",
+      "rules": [
+        "R15"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R15-04",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000061",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "S36500A",
+            "S31609A"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "45385",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A",
+                "B"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000061"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R15",
+            "outcome": "DENY",
+            "reason_code": "DN_DX_NOT_SUPPORTED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_DX_NOT_SUPPORTED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "45385 -> A56456: group 1, or a group 2A primary with a group 2B secondary; the line's first diagnosis S36500A is 2B, not 2A; no group 1 code -> not supported."
+      ],
+      "sources": [
+        "A56456 groups 2A and 2B"
+      ]
+    },
+    {
+      "case_id": "R15-05",
+      "title": "Near miss: colonoscopy with the group 2A code first",
+      "rules": [
+        "R15"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R15-05",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000061",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "S31609A",
+            "S36500A"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "45385",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A",
+                "B"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000061"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "First diagnosis S31609A is 2A, a 2B code follows -> supported."
+      ],
+      "sources": [
+        "A56456 groups 2A and 2B"
+      ]
+    },
+    {
+      "case_id": "R15-06",
+      "title": "Routine foot care: a group 2 diagnosis with modifier Q8",
+      "rules": [
+        "R15"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R15-06",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "E1151"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "11720",
+              "modifiers": [
+                "Q8"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "PASS",
+        "status": "RECEIVED",
+        "failures": [],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "E11.51 is in A57188 group 2, which counts with Q7, Q8 or Q9; Q8 is billed -> supported."
+      ],
+      "sources": [
+        "A57188 group 2"
+      ]
+    },
+    {
+      "case_id": "R15-07",
+      "title": "Routine foot care: the same group 2 diagnosis without a class modifier",
+      "rules": [
+        "R15"
+      ],
+      "given": {
+        "claim": {
+          "claim_id": "GR-R15-07",
+          "member_id": "MBR-G00001",
+          "patient": {
+            "first_name": "Jordan",
+            "last_name": "Lee",
+            "date_of_birth": "1970-05-14",
+            "sex": "F",
+            "address": {
+              "line1": "12 Elm St",
+              "city": "Austin",
+              "state": "TX",
+              "zip_code": "78701"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1000000012",
+          "billing_tin": "080000009",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "E1151"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-06",
+              "place_of_service": "11",
+              "procedure_code": "11720",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 50000,
+              "rendering_npi": "1000000012"
+            }
+          ],
+          "clinical_notes": "",
+          "received_date": "2026-10-20",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "source_format": "JSON",
+        "field_confidences": {},
+        "reference_additions": {}
+      },
+      "expected": {
+        "claim_outcome": "DENY",
+        "status": "DENIED_BY_RULE",
+        "failures": [
+          {
+            "rule_id": "R15",
+            "outcome": "DENY",
+            "reason_code": "DN_DX_NOT_SUPPORTED",
+            "line_no": 1
+          }
+        ],
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_DX_NOT_SUPPORTED"
+            ],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "worked_steps": [
+        "E11.51 is only in A57188 group 2; no Q7, Q8 or Q9 -> group 2 does not count -> not supported."
+      ],
+      "sources": [
+        "A57188 group 2"
+      ]
+    }
+  ]
+}

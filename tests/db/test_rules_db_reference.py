@@ -2,7 +2,7 @@
 exactly what the file-backed one gives.
 
 - NCCI: with several edits for one pair, the same "first edit active on the date".
-- The 90 golden rules cases: the same RulesOutcome, equal to the expected values, on a database
+- The 121 golden rules cases: the same RulesOutcome, equal to the expected values, on a database
   loaded from the committed fixture (runs in CI, D-CI-1) and, where data/raw/ is present, from
   data/raw/ in full.
 - The 2,600 dataset records (where the dataset and data/raw/ are present): the same RulesOutcome
@@ -31,7 +31,7 @@ from app.db.seed import (
     seed_curated,
 )
 from app.rules.engine import evaluate
-from app.rules.reference import NcciEdit
+from app.rules.reference import NcciEdit, RulesReference
 from scripts.verify.rules_parity import DECISION_DIR, dataset_reference, db_differences
 from scripts.verify.rules_parity import load_records as load_dataset
 from tests.database import alembic_config, fresh_database
@@ -99,7 +99,7 @@ def test_the_database_picks_the_same_first_active_ncci_edit(
     assert picked[2] == expected_overlap
 
 
-# --- The 90 golden rules cases -------------------------------------------------------------------
+# --- The 121 golden rules cases -------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module", params=SOURCES)
@@ -125,6 +125,28 @@ def _add_case_records(session: Session, additions: dict[str, Any]) -> None:
     session.flush()
 
 
+def claim_coverage(claim: dict[str, Any], reference: RulesReference) -> dict:
+    """The file reference's article coverage for the claim's codes and diagnoses (what the
+    database reference loads for one claim)."""
+    lines = [line for line in claim.get("service_lines") or [] if isinstance(line, dict)]
+    codes = {line.get("procedure_code") for line in lines}
+    diagnoses = {
+        d.replace(".", "").strip().upper()
+        for d in claim.get("diagnoses") or []
+        if isinstance(d, str)
+    }
+    articles = {s.billing_article for c, s in reference.diagnosis_support.items() if c in codes}
+    covered = {
+        article: {
+            group: found & diagnoses
+            for group, found in reference.article_covered.get(article, {}).items()
+            if found & diagnoses
+        }
+        for article in articles
+    }
+    return {article: groups for article, groups in covered.items() if groups}
+
+
 @pytest.mark.parametrize("case", CASES, ids=[c["case_id"] for c in CASES])
 def test_golden_rules_case_with_the_database_reference(
     golden_database: tuple[str, Engine], case: dict[str, Any]
@@ -133,13 +155,18 @@ def test_golden_rules_case_with_the_database_reference(
     given, expected = case["given"], case["expected"]
     with Session(engine) as session:
         _add_case_records(session, given["reference_additions"])
+        db_reference = reference_for_claim(session, given["claim"])
         from_db = evaluate(
             given["claim"],
             given["field_confidences"],
-            reference_for_claim(session, given["claim"]),
+            db_reference,
             confidence_min=CONFIDENCE_MIN,
         )
         session.rollback()
+    file_reference_ = reference_for(case, source)
+    assert db_reference.article_covered == claim_coverage(given["claim"], file_reference_)
+    assert db_reference.diagnosis_support == file_reference_.diagnosis_support
+    assert db_reference.code_roles == file_reference_.code_roles
     from_files = evaluate(
         given["claim"],
         given["field_confidences"],

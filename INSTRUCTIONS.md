@@ -288,8 +288,12 @@ no network calls other than the database.
 1. **Group A (data integrity)**: R01–R04. If any fails → claim outcome **REJECT**; stop.
 2. **Group B (hard requirements)**: R05–R10. Evaluate **all**, record every failure.
    Outcome precedence: DENY over PEND. Any failure → claim stops with that outcome.
-3. **Group C (line level)**: R11–R13. A failing line is denied; the claim continues with the
-   remaining lines. If every line is denied → claim outcome DENY.
+3. **Group C (line level)**: R11–R13, then rules v2 R14–R20 (P2.3b; D-RULE-2 to D-RULE-7). Every
+   rule runs on every line; a line's reason codes and flags are listed in rule order and the first
+   reason is the primary one. A failing line is denied; the claim continues with the remaining
+   lines. If every line is denied → claim outcome DENY. A flag never denies: a rule denies only
+   when the LCD or article is explicit and the check needs nothing beyond the claim; a limit
+   worded "usually" or with a documented exception gives a flag for the model and the reviewer.
 4. **H5 conversion**: if a failing rule's `fields_used` includes a field below the confidence
    threshold → outcome becomes **REJECT** with reason `RJ_LOW_CONFIDENCE_FIELD`.
 
@@ -308,9 +312,19 @@ no network calls other than the database.
 | R11 | NCCI procedure-to-procedure pair on the same claim: if the pair allows a bypass modifier and one is present → PASS with flag `NCCI_BYPASS` (SLM checks documentation); otherwise deny the column-2 line | Line DENY | `DN_NCCI_BUNDLED` |
 | R12 | Units exceed the medically unlikely edit limit | Line DENY | `DN_MUE_EXCEEDED` |
 | R13 | Procedure code on the plan's fixed exclusion list | Line DENY | `DN_EXCLUDED` |
+| R14 | ESI line with another block on the same date: a different ESI code or a facet joint injection (add-on level codes, radiofrequency denervation and the same code on another line are not blocks; a facet injection for a facet synovial cyst is the LCD's exception); the denied ESI's own add-on lines go with it (D-RULE-7) | Line DENY | `DN_MULTIPLE_BLOCKS` |
+| R15 | The line's own diagnoses (its pointers) meet none of its code's billing-article alternatives (D-DX-1, D-RULE-4); codes without an article are not checked | Line DENY | `DN_DX_NOT_SUPPORTED` |
+| R16 | Home sleep test line with a parasomnia diagnosis (G47.50–G47.59) among its own | Line DENY | `DN_HOME_TEST_PARASOMNIA` |
+| R17 | Nerve conduction line with no needle EMG line anywhere on the claim → PASS with flag `NCS_WITHOUT_EMG` | Flag | — |
+| R18 | Transforaminal ESI levels per date above 2 on a side deny the add-on lines on that side (an RT or LT line counts on its side, modifier 50 or no side modifier on both; each unit of an add-on level code is one level, the primary code the first); an interlaminar or caudal ESI with modifier 50 | Line DENY | `DN_ESI_LEVELS` |
+| R19 | Third-level facet code (64492, 64495) → DENY; facet codes of both spinal regions on one date → PASS with flag `FACET_TWO_REGIONS` | Line DENY / Flag | `DN_FACET_LEVELS` |
+| R20 | More than 8 hours from the testing codes on the claim (96130, 96131 one hour per unit; 96136 30 minutes) → PASS with flag `EXTENDED_TESTING` | Flag | — |
 
 - **Conditional exclusions** (e.g. cosmetic vs. reconstructive, depending on diagnosis) are **not**
   rules. They belong to the SLM via coverage criteria.
+- Code roles and diagnosis sets for R14–R20 are curated (`data/curated/rule_code_roles.csv`,
+  `rule_diagnosis_sets.csv`, R15's columns in `diagnosis_support.csv`), each row citing its source
+  in `data/raw/`; the billing articles' covered codes are the `article_icd10_covered` table.
 - **Duplicate claims** (same member, provider, date of service, procedure code as an existing
   claim) → REJECT `RJ_DUPLICATE`.
 - **External reason codes (CARC/RARC):** map each internal reason code to a code from the official
