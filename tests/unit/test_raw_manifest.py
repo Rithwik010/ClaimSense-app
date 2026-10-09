@@ -13,6 +13,7 @@ from scripts.verify.raw_manifest import (
     RAW_DIR,
     Entry,
     compare,
+    keep_source_urls,
     read_manifest,
     scan,
     write_manifest,
@@ -76,3 +77,18 @@ def test_data_raw_matches_the_manifest() -> None:
     assert not report.changed, f"changed since {MANIFEST.name} was written: {report.changed}"
     if report.unlisted:
         warnings.warn(f"in data/raw/ but not in {MANIFEST.name}: {report.unlisted}", stacklevel=1)
+
+
+def test_source_urls_round_trip_and_survive_an_update(tmp_path: Path) -> None:
+    path = tmp_path / "manifest.csv"
+    url = "https://www.cms.gov/files/zip/2027-code-tables-tabular-index.zip"
+    old = [Entry("icd10cm/a.zip", 3, "a" * 64, url), Entry("mue/b.csv", 4, "b" * 64)]
+    write_manifest(old, path)
+
+    scanned = [Entry("icd10cm/a.zip", 3, "a" * 64), Entry("pos/c.pdf", 5, "c" * 64)]
+
+    assert read_manifest(path) == old
+    assert keep_source_urls(scanned, old) == [
+        Entry("icd10cm/a.zip", 3, "a" * 64, url),
+        Entry("pos/c.pdf", 5, "c" * 64),
+    ]
