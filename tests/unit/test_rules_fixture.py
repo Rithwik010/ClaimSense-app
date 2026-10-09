@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+from app.db.curated import GLOBAL_DAYS
 from scripts.verify.raw_manifest import MANIFEST, read_manifest
 from scripts.verify.rules_fixture import (
     FIXTURE,
@@ -59,6 +60,8 @@ def test_the_fixture_holds_only_codes_dates_indicators_and_limits() -> None:
     assert all(type(units) is int and units >= 1 for units in DATA["mue"].values())
     for article, group, code in DATA["article_icd10_covered"]:
         assert ARTICLE.fullmatch(article) and type(group) is int and ICD10.fullmatch(code)
+    assert set(DATA["global_days"]) == set(DATA["procedure_codes"])
+    assert set(DATA["global_days"].values()) <= set(GLOBAL_DAYS)
 
 
 def test_no_text_beyond_codes_and_dates_outside_the_note_and_source_paths() -> None:

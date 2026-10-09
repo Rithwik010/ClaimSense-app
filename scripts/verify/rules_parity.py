@@ -34,7 +34,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-from app.db.curated import CuratedData, load_curated
+from app.db.curated import CuratedData, load_curated, rule_codes
 from app.db.rules_reference import build_reference, load_code_tables, reference_for_claim
 from app.domain.contracts import IntakeClaim, RuleOutcomeValue, RuleResult, RulesOutcome
 from app.ml.prompt import _rule_line
@@ -173,7 +173,7 @@ def dataset_reference(reference_dir: Path = REFERENCE_DIR) -> RulesReference:
     curated = load_curated()
     return build_reference(
         curated,
-        load_code_tables(frozenset(curated.scope)),
+        load_code_tables(rule_codes(curated)),  # the dataset bills in-scope codes only
         _jsonl(reference_dir / "members.jsonl"),
         _jsonl(reference_dir / "providers.jsonl"),
         _jsonl(reference_dir / "provider_networks.jsonl"),

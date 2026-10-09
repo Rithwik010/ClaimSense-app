@@ -73,20 +73,21 @@ GROUP_1_ONLY = {"66982"}  # A56544: group 2 is reported "if applicable" (Q6)
 CARPAL_TUNNEL = {"G5600", "G5601", "G5602", "G5603"}  # the L34594 exception (report only)
 SYNOVIAL_CYST = {"M7130", "M7138"}  # M71.3 other bursal cyst, covered by A57787 (to confirm)
 FOOT_CLASS_MODIFIERS = {"Q7", "Q8", "Q9"}  # A57188 group 2 "only with modifier Q7, Q8, or Q9"
-ADDON_PRIMARIES = {  # add-on code -> its primary codes (PFS global ZZZ; CPT descriptor, not copied)
-    "96131": {"96130"},
-    "95886": NERVE_CONDUCTION,
-    "64480": {"64479"},
-    "64484": {"64483"},
-    "64491": {"64490"},
-    "64494": {"64493"},
-    "64634": {"64633"},
-    "64636": {"64635"},
-}
+AOC_DAY = date(2026, 10, 1)  # the CMS add-on code edits effective 2026-10-01 (2026 Q4)
 VEINS = {"36475", "36478", "37765"}  # SURG-003.F4: ablation and stab phlebectomy
 IMAGING = {"70450", "70551", "70553", "72141"}  # IMG-001.F2: the in-scope imaging codes
 D_GOLD_1 = {"R11-02", "R11-03", "R11-07", "R11-08", "X-02"}  # their L97419 becomes REPLACEMENT
 REPLACEMENT = {"L97419": "L97412"}  # proposed: a code of A58565 group 1 (D-GOLD-1)
+
+
+def addon_primaries(day: date = AOC_DAY) -> dict[str, set[str]]:
+    """Add-on code -> its primary codes, from the CMS add-on code edits active on `day`
+    (data/raw/ncci-aoc/2026-10, every edit type; contractor-defined primaries CCCCC left out)."""
+    primaries: dict[str, set[str]] = {}
+    for edit in raw.read_add_on_edits():
+        if edit.active_on(day) and edit.primary != "CCCCC":
+            primaries.setdefault(edit.add_on, set()).add(edit.primary)
+    return primaries
 
 
 # --- Checks -----------------------------------------------------------------------------------
@@ -693,6 +694,10 @@ def main() -> None:
     ]
 
     orphans: Counter[str] = Counter()
+    add_on_primaries = addon_primaries()
+    add_ons_billed = Counter(
+        x.code for r in records for x in lines_of(r.claim) if x.code in add_on_primaries
+    )
     for r in records:
         lines = lines_of(r.claim)
         denied = {
@@ -702,13 +707,15 @@ def main() -> None:
         } | {n for n, label in r.labels.items() if label == "RULE DENY"}  # R11-R13 (stored)
         for x in lines:
             primaries = [
-                y for y in lines if y.code in ADDON_PRIMARIES.get(x.code, set()) and y.day == x.day
+                y for y in lines if y.code in add_on_primaries.get(x.code, set()) and y.day == x.day
             ]
             if x.line_no not in denied and any(y.line_no in denied for y in primaries):
                 orphans[f"{x.code} {r.split} {r.labels.get(x.line_no, '?')}"] += 1
     out += [
+        "- Add-on codes billed in the dataset (CMS add-on code edits 2026 Q4): "
+        + ", ".join(f"{c} x {n}" for c, n in sorted(add_ons_billed.items())),
         "- Add-on lines that pass while their primary on the same date is denied by a rule "
-        "(R11-R19): "
+        "(R11-R19; primaries from the CMS add-on code edits): "
         + (", ".join(f"{k} {n}" for k, n in sorted(orphans.items())) or "none")
         + f" (total {sum(orphans.values())})",
     ]

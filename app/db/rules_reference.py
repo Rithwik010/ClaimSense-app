@@ -19,7 +19,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import raw
-from app.db.curated import CuratedData, billing_articles, load_curated
+from app.db.curated import CuratedData, billing_articles, em_codes, load_curated
 from app.db.models import (
     ArticleIcd10Covered,
     Authorization,
@@ -46,6 +46,7 @@ from app.rules.reference import (
     NcciEdit,
     PlanRef,
     ProviderRef,
+    PtpModifierRef,
     RulesReference,
 )
 
@@ -58,13 +59,18 @@ class CodeTables:
     ncci: Mapping[tuple[str, str], tuple[NcciEdit, ...]]
     mue: Mapping[str, int]
     article_covered: Mapping[str, Mapping[int, frozenset[str]]]  # article -> group -> codes
+    global_days: Mapping[str, str]  # PFS global days
 
 
 @cache
-def load_code_tables(scope: frozenset[str]) -> CodeTables:
-    """The code tables from `data/raw/` (slow: the NCCI table has 2.6 million rows)."""
+def load_code_tables(codes: frozenset[str]) -> CodeTables:
+    """The code tables from `data/raw/` (slow: the NCCI table has 2.6 million rows): ICD-10-CM,
+    the procedure code table and places of service in full; NCCI edits between `codes`, and their
+    MUE limits and PFS global days. Pass every code the evaluated claims bill (with the rules' own
+    codes, `rule_codes`), so the tables equal what the database reference reads per claim
+    (D-CI-5)."""
     ncci: dict[tuple[str, str], list[NcciEdit]] = {}
-    for pair in raw.read_ncci_pairs(set(scope)):
+    for pair in raw.read_ncci_pairs(set(codes)):
         ncci.setdefault((pair.column1, pair.column2), []).append(
             NcciEdit(
                 column1=pair.column1,
@@ -79,13 +85,14 @@ def load_code_tables(scope: frozenset[str]) -> CodeTables:
         procedure_codes=raw.read_procedure_code_table(),
         place_of_service_codes=frozenset(raw.read_place_of_service_codes()),
         ncci={key: tuple(edits) for key, edits in ncci.items()},
-        mue={code: entry.max_units for code, entry in raw.read_mue(set(scope)).items()},
+        mue={code: entry.max_units for code, entry in raw.read_mue(set(codes)).items()},
         article_covered={
             article: dict(found.covered)
             for article, found in raw.read_article_diagnoses(
                 billing_articles(load_curated())
             ).items()
         },
+        global_days=raw.read_pfs_global_days(set(codes)),
     )
 
 
@@ -108,6 +115,15 @@ def rule_refs(
         for code, r in curated.code_roles.items()
     }
     return support, roles, dict(curated.diagnosis_sets)
+
+
+def ptp_refs(curated: CuratedData) -> tuple[dict[str, PtpModifierRef], frozenset[str]]:
+    """R11's NCCI PTP-associated modifiers and the E&M codes (D-RULE-8)."""
+    modifiers = {
+        name: PtpModifierRef(m.group, m.placement, m.paired_global_days)
+        for name, m in curated.ptp_modifiers.items()
+    }
+    return modifiers, em_codes(curated)
 
 
 def _day(value: str | None) -> date | None:
@@ -143,6 +159,7 @@ def build_reference(
     """`existing_claims` holds one dict per claim line on file: claim_id, member_id, billing_npi,
     date_of_service, procedure_code, status."""
     support, roles, diagnosis_sets = rule_refs(curated)
+    ptp_modifiers, em = ptp_refs(curated)
     return RulesReference(
         members={
             m["member_id"]: MemberRef(
@@ -191,6 +208,9 @@ def build_reference(
         article_covered=codes.article_covered,
         code_roles=roles,
         diagnosis_sets=diagnosis_sets,
+        ptp_modifiers=ptp_modifiers,
+        em_codes=em,
+        global_days=codes.global_days,
     )
 
 
@@ -317,6 +337,7 @@ def reference_for_claim(
     )
     years = session.scalars(select(Icd10Code.fiscal_year).distinct()).all()
     support, roles, diagnosis_sets = rule_refs(curated)
+    ptp_modifiers, em = ptp_refs(curated)
     articles = {support[code].billing_article for code in codes if code in support}
     covered: dict[str, dict[int, set[str]]] = defaultdict(lambda: defaultdict(set))
     for row in session.scalars(
@@ -389,4 +410,14 @@ def reference_for_claim(
         },
         code_roles=roles,
         diagnosis_sets=diagnosis_sets,
+        ptp_modifiers=ptp_modifiers,
+        em_codes=em,
+        global_days={
+            code: days
+            for code, days in session.execute(
+                select(ProcedureCode.code, ProcedureCode.global_days).where(
+                    ProcedureCode.code.in_(codes), ProcedureCode.global_days.is_not(None)
+                )
+            ).all()
+        },
     )

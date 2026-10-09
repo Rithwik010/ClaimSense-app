@@ -12,7 +12,10 @@ codes the cases and claims use:
   edit active on the date of service applies);
 - MUE unit limits for the cases' procedure codes;
 - the billing articles' covered ICD-10-CM rows (article, group, code) for the cases' procedure
-  codes and diagnoses, which R15 reads (D-CI-4). A diagnosis no group covers stays absent.
+  codes and diagnoses, which R15 reads (D-CI-4). A diagnosis no group covers stays absent;
+- the PFS global days of the cases' procedure codes, which R11 reads for modifiers 25 and 57.
+NCCI edits, MUE limits and global days are read for every code the cases bill (with the rules' own
+codes), as the database reference reads them per claim, in or out of scope (D-CI-5).
 Codes, dates, indicators and limits only: no descriptions are read or written (H10). NCCI edits
 and MUE limits cover the in-scope codes, as the engine's reference does (app/db/rules_reference).
 
@@ -34,7 +37,7 @@ from pathlib import Path
 from typing import Any
 
 from app.db import raw
-from app.db.curated import load_curated
+from app.db.curated import load_curated, rule_codes
 from app.db.rules_reference import CodeTables, load_code_tables
 from app.rules.reference import NcciEdit
 
@@ -57,6 +60,7 @@ KEYS = (
     "ncci",
     "mue",
     "article_icd10_covered",
+    "global_days",
 )
 
 
@@ -145,6 +149,11 @@ def extract(
             for group, codes in sorted(tables.article_covered.get(article, {}).items())
             for code in sorted(used.diagnoses & codes)
         ],
+        "global_days": {
+            code: tables.global_days[code]
+            for code in sorted(used.procedure_codes)
+            if code in tables.global_days
+        },
     }
 
 
@@ -157,8 +166,9 @@ def raw_sources() -> list[str]:
 
 def fresh_fixture() -> dict[str, Any]:
     """The fixture extracted from data/raw/ now (slow: reads the NCCI table)."""
-    tables = load_code_tables(frozenset(load_curated().scope))
-    return extract(fixture_cases(), tables, raw_sources())
+    cases = fixture_cases()
+    tables = load_code_tables(rule_codes(load_curated()) | case_codes(cases).procedure_codes)
+    return extract(cases, tables, raw_sources())
 
 
 def code_tables(fixture: Mapping[str, Any]) -> CodeTables:
@@ -181,6 +191,7 @@ def code_tables(fixture: Mapping[str, Any]) -> CodeTables:
         ncci={key: tuple(edits) for key, edits in ncci.items()},
         mue=dict(fixture["mue"]),
         article_covered=article_covered(fixture),
+        global_days=dict(fixture["global_days"]),
     )
 
 
@@ -231,7 +242,8 @@ def summary(fixture: Mapping[str, Any]) -> str:
         f"{len(fixture['procedure_codes'])} procedure codes, "
         f"{len(fixture['place_of_service_codes'])} place-of-service codes, "
         f"{len(fixture['ncci'])} NCCI edits, {len(fixture['mue'])} MUE limits, "
-        f"{len(fixture['article_icd10_covered'])} covered article rows"
+        f"{len(fixture['article_icd10_covered'])} covered article rows, "
+        f"{len(fixture['global_days'])} global days"
     )
 
 

@@ -2,7 +2,7 @@
 
 from dataclasses import replace
 
-from app.db.curated import CodeRole, load_curated, parse_policy, validate_curated
+from app.db.curated import CodeRole, em_codes, load_curated, parse_policy, validate_curated
 
 
 def test_curated_files_are_consistent() -> None:
@@ -110,3 +110,22 @@ def test_every_rules_v2_reason_code_has_a_carc_mapping() -> None:
         "DN_HOME_TEST_PARASOMNIA": ("50", "N115"),
         "DN_MULTIPLE_BLOCKS": ("50", "N115"),
     }
+
+
+# --- R11's modifiers (D-RULE-8) -------------------------------------------------------------------
+
+
+def test_the_ncci_ptp_associated_modifiers_and_their_placement() -> None:
+    data = load_curated()
+    modifiers = data.ptp_modifiers
+
+    assert len(modifiers) == 44  # NCCI Policy Manual 2026, Chapter I section E, page I-14
+    assert {m for m, x in modifiers.items() if x.group == "GLOBAL_SURGERY"} == {
+        "24", "25", "57", "58", "78", "79",
+    }  # fmt: skip
+    assert modifiers["25"].paired_global_days == {"000", "010", "XXX"}  # page I-16
+    assert modifiers["57"].paired_global_days == {"090"}  # page I-13
+    assert {modifiers[m].placement for m in ("59", "XE", "XP", "XS", "XU")} == {"NOT_EM"}
+    assert {x.placement for x in modifiers.values() if x.group == "ANATOMIC"} == {"DIFFERENT_SITES"}
+    assert data.bypass_modifiers <= set(modifiers)  # the frozen v1 list stays for the generator
+    assert em_codes(data) == {f"9920{n}" for n in (2, 3, 4, 5)} | {f"9921{n}" for n in range(1, 6)}

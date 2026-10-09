@@ -37,6 +37,7 @@ def fixture_rule_tables() -> RuleTableData:
         article_covered={
             article: ("", groups) for article, groups in article_covered(data).items()
         },
+        global_days=dict(data["global_days"]),
         sources={
             table: source
             for table in (

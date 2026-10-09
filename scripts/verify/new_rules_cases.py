@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from app.db import raw
-from app.db.curated import CuratedData, billing_articles, load_curated
+from app.db.curated import CuratedData, billing_articles, load_curated, rule_codes
 from scripts.verify.rules_v2_impact import CONFIDENCE_MIN, Hit, Lookups, low_confidence
 from scripts.verify.rules_v2_impact import proposed as v2_checks
 
@@ -1060,7 +1060,8 @@ def check_inputs_with_the_v1_engine(cases: Sequence[Mapping[str, Any]]) -> None:
     from app.rules.engine import evaluate
 
     shared = reference()
-    tables = load_code_tables(frozenset(load_curated().scope))
+    codes = {x["procedure_code"] for c in cases for x in c["given"]["claim"]["service_lines"]}
+    tables = load_code_tables(rule_codes(load_curated()) | codes)
     for case in cases:
         given = case["given"]
         additions = given["reference_additions"]

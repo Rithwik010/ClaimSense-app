@@ -7,6 +7,7 @@ tabular in data/raw/icd10cm/FY2027/ and are skipped until it is there."""
 
 import zipfile
 from functools import cache
+from pathlib import Path
 
 import pytest
 
@@ -118,3 +119,89 @@ def test_the_tabular_confirms_the_parasomnia_and_synovial_cyst_codes() -> None:
     assert children("G47.5") == data.diagnosis_sets["PARASOMNIA"]
     assert "Synovial cyst NOS" in inclusions
     assert data.diagnosis_sets["FACET_SYNOVIAL_CYST"] <= children("M71.3")
+
+
+# --- The NCCI add-on code edits and the Policy Manual (P2.3c) -------------------------------------
+
+AOC_PRESENT = raw.AOC_ZIP.exists()
+MANUAL = (
+    raw.RAW_DIR
+    / "ncci-policy-manual"
+    / "2026"
+    / "2026_ncci_medicare_policy_manual_all-chapters.pdf"
+)
+
+
+@pytest.mark.skipif(not AOC_PRESENT, reason="NCCI add-on code edits not in data/raw/")
+def test_the_add_on_code_edits_text_equals_the_excel_file() -> None:
+    """The fixed-width text reader (app/db/raw.py) against the Excel copy in the same zip."""
+    import tempfile
+
+    with zipfile.ZipFile(raw.AOC_ZIP) as archive, tempfile.TemporaryDirectory() as folder:
+        name = next(n for n in archive.namelist() if n.lower().endswith(".xlsx"))
+        path = Path(folder) / "aoc.xlsx"
+        path.write_bytes(archive.read(name))
+        rows = list(raw._xlsx_rows(path))
+    header = rows.index(next(r for r in rows if r and r[0] == "AOC_Edit_Type"))
+    excel = []
+    for row in rows[header + 1 :]:
+        row = (row + [""] * 8)[:8]
+        deleted = [d for d in (raw._julian(row[2]), raw._julian(row[4]), raw._julian(row[6])) if d]
+        excel.append(
+            (row[0], row[1], row[3], raw._julian(row[5]), min(deleted) if deleted else None)
+        )
+    text = [
+        (e.edit_type, e.add_on, e.primary, e.effective, e.deleted) for e in raw.read_add_on_edits()
+    ]
+
+    assert text == excel and len(text) == 9003
+
+
+@pytest.mark.skipif(not AOC_PRESENT, reason="NCCI add-on code edits not in data/raw/")
+def test_every_curated_add_on_primary_is_in_the_add_on_code_edits() -> None:
+    from datetime import date
+
+    day = date(2026, 10, 1)
+    primaries: dict[str, set[str]] = {}
+    for edit in raw.read_add_on_edits():
+        if edit.active_on(day):
+            primaries.setdefault(edit.add_on, set()).add(edit.primary)
+    roles = load_curated().code_roles
+
+    for code, role in roles.items():
+        if role.role.endswith("_ADDON"):
+            assert role.primary_code in primaries[code], code
+
+
+@pytest.mark.skipif(not MANUAL.exists(), reason="NCCI Policy Manual not in data/raw/")
+def test_the_curated_modifiers_are_the_manuals_list() -> None:
+    """Page I-14 (Chapter I section E): the NCCI PTP-associated modifiers, group by group."""
+    import re
+
+    import pymupdf
+
+    with pymupdf.open(MANUAL) as doc:
+        text = " ".join(re.sub(r"\s+", " ", page.get_text()) for page in doc.pages(29, 30))
+    listing = text[text.index("Anatomic modifiers") : text.index("These modifiers are referred to")]
+
+    def expand(part: str) -> set[str]:
+        out = set()
+        for item in re.findall(r"[A-Z0-9]{2}(?:-[A-Z0-9]{2})?", part):
+            if "-" in item:
+                first, last = item.split("-")
+                out |= {f"{first[0]}{n}" for n in range(int(first[1]), int(last[1]) + 1)}
+            else:
+                out.add(item)
+        return out
+
+    anatomic, rest = listing.split("Global surgery modifiers")
+    global_surgery, other = rest.split("Other modifiers")
+    modifiers = load_curated().ptp_modifiers
+    by_group = {
+        g: {m for m, x in modifiers.items() if x.group == g}
+        for g in ("ANATOMIC", "GLOBAL_SURGERY", "OTHER")
+    }
+
+    assert expand(anatomic.split(":", 1)[1]) == by_group["ANATOMIC"]
+    assert expand(global_surgery.split(":", 1)[1]) == by_group["GLOBAL_SURGERY"]
+    assert expand(other.split(":", 1)[1]) == by_group["OTHER"]
