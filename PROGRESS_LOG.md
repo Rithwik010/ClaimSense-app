@@ -421,6 +421,12 @@ Kaggle copy for anything model-related.
   - **CARC/RARC draft** (`scripts/verify/carc_draft.py` against the official X12 lists saved on 2026-10-11, manifest entries with URL and SHA-256): all 24 numbers in the team's map exist and none is stopped; the CSV is unchanged and nothing shows in the UI until the draft is approved (D-CARC-1).
   - **Tests:** 2,310 pass, 1 skipped (local).
 
+- 2026-10-11 01:38 | Manideep3183 | Demo readiness | **Clean-clone run passed; runbook and backup video merged (branch `p6.3-clean-clone`; merged into `main` as `d93690b`, `--no-ff`; CI run 38082267913 passed: Python 1,946 passed, 66 skipped; web app passed).** D-PROC-3.
+  - **Clean clone:** SETUP.md Part I only (new: SETUP.md had no steps to run the app); `make demo-reset` from empty volumes; 2,307 passed, 4 skipped; all nine demo claims through the UI on model v2. Fixed on the way: the smoke test skips without the claim corpus.
+  - **Runbook:** `docs/DEMO.md`, about 10 minutes, what to say and what to do if a step fails; `make demo-video` records it (`demo-video/demo.webm`, git-ignored; 2.1 min recorded).
+  - **Tag:** `demo-2026-10-14` waits for the E4B decision and the CARC/RARC approval, at the latest the model freeze on Mon 12 Oct 21:00 IST (D-PROC-3).
+  - **Tests:** 2,310 pass, 1 skipped (local).
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
