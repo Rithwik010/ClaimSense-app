@@ -1,8 +1,11 @@
 """Decision-model evaluation on the test split (INSTRUCTIONS.md §10; P4.2 baseline, P4.4).
 
 Each test record's system and user messages go to the model through the pipeline's Ollama client
-(SLMOutput schema, temperature 0, fixed seed, thinking off). The answer is validated exactly as in
-the pipeline: an invalid answer turns every line into PEND. Metrics:
+(SLMOutput schema, temperature 0, fixed seed, thinking off). The answer is used exactly as in the
+pipeline: validated, asked once more when invalid (D-DEC-1: another seed), an answer still invalid
+turns every line into PEND, and each valid line's decision is derived from its statuses (D-DEC-1,
+with the indication-group rule when the criteria carry group tags). `--prompt decision_v2`
+re-renders a v2 record's inputs with model v1's prompt (the v2 comparison, D-POL-2). Metrics:
 
 - line decisions (the pipeline's effective decisions): accuracy, macro-F1, per-class precision and
   recall, confusion matrix; also on valid answers only
@@ -21,6 +24,7 @@ twice before the run stops.
 """
 
 import argparse
+import hashlib
 import json
 import statistics
 import time
@@ -52,12 +56,17 @@ RETRY_WAITS_SECONDS = (15, 45)
 
 
 def complete_with_retry(
-    model: DecisionModel, system: str, user: str, sleep: Callable[[float], None] = time.sleep
+    model: DecisionModel,
+    system: str,
+    user: str,
+    sleep: Callable[[float], None] = time.sleep,
+    attempt: int = 1,
 ) -> str:
-    """Transport failures only (the server restarting); the answer itself is never retried."""
+    """Transport failures only (the server restarting); an invalid answer's one retry is the
+    caller's (`attempt=2`, as in the pipeline)."""
     for wait in (*RETRY_WAITS_SECONDS, None):
         try:
-            return model.complete(system, user)
+            return model.complete(system, user, attempt=attempt)
         except ModelUnavailable:
             if wait is None:
                 raise
@@ -125,14 +134,15 @@ def ablated_user_message(inputs: dict[str, Any], lookups: Any) -> str:
 
 
 def score_record(record: dict[str, Any], inputs: dict[str, Any], text: str) -> dict[str, Any]:
-    """Compare one answer with the record's target, the way the pipeline would use it."""
+    """Compare one answer with the record's target, the way the pipeline would use it (decisions
+    derived from the statuses, D-DEC-1)."""
     rules = RulesOutcome.model_validate(inputs["rules_outcome"])
     context = ContextPackage.model_validate(inputs["context"])
     target = json.loads(record["messages"][-1]["content"])
     result = validate_output(text, rules, context)
     effective = {
         d.line_no: d.decision.value
-        for d in final_line_decisions(rules, result)
+        for d in final_line_decisions(rules, result, context)
         if d.source != "RULE"
     }
     gold_lines = {line["line_no"]: line for line in target["lines"]}
@@ -214,8 +224,14 @@ def score_record(record: dict[str, Any], inputs: dict[str, Any], text: str) -> d
     }
 
 
-def summarize(scored: list[dict[str, Any]], metas: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    test_only = {p for p, x in load_curated().policies.items() if x.split == "TEST_ONLY"}
+def summarize(
+    scored: list[dict[str, Any]],
+    metas: dict[str, dict[str, Any]],
+    test_only: set[str] | None = None,
+) -> dict[str, Any]:
+    """`test_only`: the policies never seen in training (default: policy set v1's TEST_ONLY)."""
+    if test_only is None:
+        test_only = {p for p, x in load_curated().policies.items() if x.split == "TEST_ONLY"}
     lines = [line for s in scored for line in s["lines"]]
     valid_lines = [line for s in scored if s["valid"] for line in s["lines"]]
     criteria = [c for s in scored if s["valid"] for c in s["criteria"]]
@@ -227,6 +243,8 @@ def summarize(scored: list[dict[str, Any]], metas: dict[str, dict[str, Any]]) ->
         seen = "unseen_policies" if set(meta["policy_ids"]) & test_only else "seen_policies"
         groups.setdefault(seen, []).append(s)
         groups.setdefault(f"scenario:{meta['scenario_type']}", []).append(s)
+        if "note_style" in meta:
+            groups.setdefault(f"style:{meta['note_style']}", []).append(s)
 
     def flags(key: str) -> float | None:
         values = [line[key] for line in valid_lines if line[key] is not None]
@@ -288,10 +306,18 @@ def run(
     sleep: Callable[[float], None] = time.sleep,
     split: str = "test",
     ablate_criteria: bool = False,
+    prompt: str = "record",
+    retry: bool = True,
+    test_only: set[str] | None = None,
 ) -> dict[str, Any]:
+    """`prompt`: "record" sends the record's own messages; "decision_v2" re-renders the record's
+    inputs with model v1's prompt (for a v2 dataset)."""
     records = read_jsonl(dataset_dir / f"{split}.jsonl")
     inputs = {i["record_id"]: i for i in read_jsonl(dataset_dir / f"{split}_inputs.jsonl")}
     lookups = None
+    v1_render = None
+    if prompt == "decision_v2":
+        v1_render = v1_prompt_renderer()
     if ablate_criteria:
         from training.generate.decision_dataset import prompt_lookups
 
@@ -307,6 +333,13 @@ def run(
         if predictions_path.exists()
         else {}
     )
+    fingerprint = hashlib.sha256((dataset_dir / f"{split}.jsonl").read_bytes()).hexdigest()[:12]
+    stale = {p.get("dataset_sha") for p in done.values()} - {fingerprint}
+    if stale:
+        raise SystemExit(
+            f"{label}: earlier predictions were made on another version of {split}.jsonl "
+            f"({sorted(map(str, stale))}, now {fingerprint}); use a new --label or delete them"
+        )
     engines = {p.get("engine") for p in done.values()}
     if engines and engines != {engine}:
         raise SystemExit(
@@ -323,11 +356,24 @@ def run(
             system, user = record["messages"][0]["content"], record["messages"][1]["content"]
             if lookups is not None:
                 user = ablated_user_message(inputs[record_id], lookups)
+            if v1_render is not None:
+                system, user = v1_render(inputs[record_id])
             t0 = time.perf_counter()
             text = complete_with_retry(model, system, user, sleep)
+            attempts = 1
+            if retry and not answer_valid(text, inputs[record_id]):
+                text = complete_with_retry(model, system, user, sleep, attempt=2)
+                attempts = 2
             latency = round((time.perf_counter() - t0) * 1000, 1)
             scored = score_record(record, inputs[record_id], text)
-            row = {**scored, "latency_ms": latency, "engine": engine, "output": text}
+            row = {
+                **scored,
+                "latency_ms": latency,
+                "engine": engine,
+                "dataset_sha": fingerprint,
+                "attempts": attempts,
+                "output": text,
+            }
             predictions.write(json.dumps(row) + "\n")
             predictions.flush()
             done[record_id] = row
@@ -340,12 +386,15 @@ def run(
     log.close()
     metas = {r["metadata"]["record_id"]: r["metadata"] for r in records}
     scored_rows = [done[r["metadata"]["record_id"]] for r in records]
+    retried = sum(1 for row in scored_rows if row.get("attempts", 1) > 1)
     report = {
         "label": label,
         "model": model.name,
         "engine": engine,
         "split": split,
         "context": "no retrieved criteria" if ablate_criteria else "full",
+        "prompt": prompt if prompt != "record" else summary_meta.get("prompt_version"),
+        "retried_records": retried,
         "dataset": {
             "generator_version": summary_meta.get("generator_version"),
             "prompt_version": summary_meta.get("prompt_version"),
@@ -353,10 +402,39 @@ def run(
             "seed": summary_meta.get("seed"),
             "test_records": len(records),
         },
-        "metrics": summarize(scored_rows, metas),
+        "metrics": summarize(scored_rows, metas, test_only),
     }
     (out_dir / f"{label}.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
+
+
+def answer_valid(text: str, inputs: dict[str, Any]) -> bool:
+    rules = RulesOutcome.model_validate(inputs["rules_outcome"])
+    context = ContextPackage.model_validate(inputs["context"])
+    return validate_output(text, rules, context).valid
+
+
+def v1_prompt_renderer() -> Callable[[dict[str, Any]], tuple[str, str]]:
+    """(system, user) of model v1's prompt decision_v2 for a v2 record's inputs: the same claim,
+    rules outcome and v2 criteria, rendered the way model v1 was trained (D-POL-2)."""
+    from app.domain.contracts import IntakeClaim
+    from app.ml.prompt import PROMPT_VERSION, render_user_message, system_prompt
+    from training.generate.decision_dataset_v2 import lookups_v2
+
+    lookups = lookups_v2()
+    system = system_prompt(PROMPT_VERSION)
+
+    def render(inputs: dict[str, Any]) -> tuple[str, str]:
+        user = render_user_message(
+            IntakeClaim.model_validate(inputs["claim"]),
+            RulesOutcome.model_validate(inputs["rules_outcome"]),
+            ContextPackage.model_validate(inputs["context"]),
+            lookups,
+            PROMPT_VERSION,
+        )
+        return system, user
+
+    return render
 
 
 def results_markdown(eval_dir: Path = EVAL_DIR) -> str:

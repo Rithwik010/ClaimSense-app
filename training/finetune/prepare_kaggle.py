@@ -4,6 +4,12 @@ The records contain CPT codes, so the dataset must stay private (SOURCES.md). Th
 writes files under `data/generated/kaggle/`; uploading is done by a team member.
 
     uv run python -m training.finetune.prepare_kaggle --kaggle-user <username>
+    uv run python -m training.finetune.prepare_kaggle --kaggle-user <username> --model-version 2
+
+Model v2 (Part 2 step 5): the v2 dataset (data/generated/decision_v2/, prompt decision_v3, policy
+set v2), the same QLoRA settings as model v1 (its longest record is 2,761 tokens, under the max
+length 3,072), the dataset also as a zip to upload, and a notebook writing to
+`/kaggle/working/claimsense-v2`.
 """
 
 import argparse
@@ -15,6 +21,13 @@ from training.generate.common import GENERATED_DIR
 
 HERE = Path(__file__).resolve().parent
 DATASET_SLUG = "claimsense-decision"
+V2 = {
+    "slug": "claimsense-decision-v2",
+    "notebook": "claimsense-finetune-v2.ipynb",
+    "out": "/kaggle/working/claimsense-v2",
+    "prompt_version": "decision_v3",
+    "policy_set": "v2",
+}
 
 
 FIND_DATASET = """import glob, os
@@ -34,22 +47,27 @@ print(sorted(os.listdir(DATA)))
 # Smoke test first (a few minutes): SMOKE = True. Full training run: SMOKE = False.
 SMOKE = True
 EXTRA = "--limit 50 --epochs 1 --eval-limit 20 --eval-steps 3 --no-gguf" if SMOKE else ""
-OUT = "/kaggle/working/claimsense-smoke" if SMOKE else "/kaggle/working/claimsense"
+OUT = "/kaggle/working/claimsense-smoke" if SMOKE else "{out}"
 """
 
 
-def notebook(dataset_slug: str) -> dict:
+def notebook(dataset_slug: str, version: int = 1, out: str = "/kaggle/working/claimsense") -> dict:
+    title = (
+        "# ClaimSense decision model v2: QLoRA fine-tuning (dataset v2, prompt decision_v3)"
+        if version == 2
+        else "# ClaimSense decision model: QLoRA fine-tuning (P4.3)"
+    )
     cells = [
         (
             "markdown",
-            "# ClaimSense decision model: QLoRA fine-tuning (P4.3)\n\n"
+            f"{title}\n\n"
             "Accelerator: GPU T4 (the script uses one GPU). Internet: on. Input: the private "
             f"`{dataset_slug}` dataset.\nRun the smoke test first (`SMOKE = True`), then the full "
             "run (`SMOKE = False`). Outputs: `adapter/`, `gguf/`, `training-log.json`, "
             "`lengths.json`, `config.json`, `pip-freeze.txt`.",
         ),
         ("code", "!nvidia-smi\n!pip install --upgrade --quiet unsloth unsloth_zoo"),
-        ("code", FIND_DATASET),
+        ("code", FIND_DATASET.replace("{out}", out)),
         ("code", "!python {TRAIN} --data {DATA} --out {OUT} {EXTRA}"),
         (
             "code",
@@ -89,23 +107,40 @@ def notebook(dataset_slug: str) -> dict:
     }
 
 
-def prepare(decision_dir: Path, out_dir: Path, kaggle_user: str, slug: str = DATASET_SLUG) -> Path:
+def prepare(
+    decision_dir: Path,
+    out_dir: Path,
+    kaggle_user: str,
+    slug: str = DATASET_SLUG,
+    version: int = 1,
+) -> Path:
     summary = json.loads((decision_dir / "summary.json").read_text())
     if summary.get("retrieval", "simulated") == "simulated":
         raise SystemExit("the dataset was built with simulated retrieval; regenerate it first")
-    dataset = out_dir / DATASET_SLUG
+    if version == 2:
+        for key in ("prompt_version", "policy_set"):
+            if summary.get(key) != V2[key]:
+                raise SystemExit(f"not a v2 dataset: {key} is {summary.get(key)!r}")
+        if summary["checks"]["problems"]:
+            raise SystemExit("the v2 dataset has check problems; regenerate it")
+    dataset = out_dir / (V2["slug"] if version == 2 else DATASET_SLUG)
     if dataset.exists():
         shutil.rmtree(dataset)
     (dataset / "finetune").mkdir(parents=True)
     for split in ("train", "validation", "test"):
         shutil.copy(decision_dir / f"{split}.jsonl", dataset / f"{split}.jsonl")
     shutil.copy(decision_dir / "summary.json", dataset / "summary.json")
+    for extra in ("data-card.md", "token_lengths.json"):
+        if version == 2 and (decision_dir / extra).exists():
+            shutil.copy(decision_dir / extra, dataset / extra)
     for name in ("train.py", "data.py"):
         shutil.copy(HERE / name, dataset / "finetune" / name)
     (dataset / "dataset-metadata.json").write_text(
         json.dumps(
             {
-                "title": "ClaimSense decision dataset (private)",
+                "title": "ClaimSense decision dataset"
+                + (" v2" if version == 2 else "")
+                + " (private)",
                 "id": f"{kaggle_user}/{slug}",
                 "isPrivate": True,
                 "licenses": [{"name": "other"}],
@@ -113,20 +148,30 @@ def prepare(decision_dir: Path, out_dir: Path, kaggle_user: str, slug: str = DAT
             indent=2,
         )
     )
-    (out_dir / "claimsense-finetune.ipynb").write_text(json.dumps(notebook(slug), indent=1))
+    if version == 2:
+        (out_dir / V2["notebook"]).write_text(json.dumps(notebook(slug, 2, V2["out"]), indent=1))
+        shutil.make_archive(str(out_dir / V2["slug"]), "zip", dataset)
+    else:
+        (out_dir / "claimsense-finetune.ipynb").write_text(json.dumps(notebook(slug), indent=1))
     return dataset
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--kaggle-user", required=True)
-    parser.add_argument("--slug", default=DATASET_SLUG, help="the dataset's name in its URL")
-    parser.add_argument("--decision-dir", type=Path, default=GENERATED_DIR / "decision")
+    parser.add_argument("--slug", help="the dataset's name in its URL")
+    parser.add_argument("--decision-dir", type=Path)
     parser.add_argument("--out", type=Path, default=GENERATED_DIR / "kaggle")
+    parser.add_argument("--model-version", type=int, choices=(1, 2), default=1)
     args = parser.parse_args()
-    dataset = prepare(args.decision_dir, args.out, args.kaggle_user, args.slug)
+    v2 = args.model_version == 2
+    decision_dir = args.decision_dir or GENERATED_DIR / ("decision_v2" if v2 else "decision")
+    slug = args.slug or (V2["slug"] if v2 else DATASET_SLUG)
+    dataset = prepare(decision_dir, args.out, args.kaggle_user, slug, args.model_version)
     print(f"dataset folder: {dataset}")
-    print(f"notebook: {args.out / 'claimsense-finetune.ipynb'}")
+    if v2:
+        print(f"zip to upload: {args.out / (V2['slug'] + '.zip')}")
+    print(f"notebook: {args.out / (V2['notebook'] if v2 else 'claimsense-finetune.ipynb')}")
     print("Upload the folder as a PRIVATE Kaggle dataset, then import the notebook.")
 
 

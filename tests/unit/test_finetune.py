@@ -135,6 +135,32 @@ def test_kaggle_folder_needs_real_retrieval_and_is_private(tmp_path) -> None:  #
     assert json.loads((renamed / "dataset-metadata.json").read_text())["id"] == "someone/claimsense"
 
 
+def test_kaggle_v2_package_checks_the_dataset_and_writes_a_zip(tmp_path) -> None:  # noqa: ANN001
+    import zipfile
+
+    from training.finetune.prepare_kaggle import V2, prepare
+
+    decision = tmp_path / "decision_v2"
+    decision.mkdir()
+    for split in ("train", "validation", "test"):
+        (decision / f"{split}.jsonl").write_text("{}\n")
+    summary = {"retrieval": "exact lookup v2", "prompt_version": "decision_v2", "policy_set": "v2"}
+    (decision / "summary.json").write_text(json.dumps({**summary, "checks": {"problems": 0}}))
+    with pytest.raises(SystemExit, match="not a v2 dataset"):
+        prepare(decision, tmp_path / "kaggle", "someone", V2["slug"], version=2)
+
+    summary["prompt_version"] = "decision_v3"
+    (decision / "summary.json").write_text(json.dumps({**summary, "checks": {"problems": 0}}))
+    dataset = prepare(decision, tmp_path / "kaggle", "someone", V2["slug"], version=2)
+
+    assert dataset.name == V2["slug"]
+    names = set(zipfile.ZipFile(tmp_path / "kaggle" / f"{V2['slug']}.zip").namelist())
+    assert {"train.jsonl", "finetune/train.py", "dataset-metadata.json"} <= names
+    notebook = json.loads((tmp_path / "kaggle" / V2["notebook"]).read_text())
+    text = "".join("".join(c["source"]) for c in notebook["cells"])
+    assert V2["out"] in text and "decision_v3" in text
+
+
 class TextTokenizer:
     def __call__(self, text: str, add_special_tokens: bool = True) -> dict:
         return {"input_ids": ([2] if add_special_tokens else []) + [7] * len(text.split())}

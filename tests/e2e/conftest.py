@@ -62,7 +62,8 @@ def api(engine: Engine) -> Iterator[Callable[[DecisionModel], TestClient]]:
     ) -> TestClient:
         """The golden end-to-end cases are pinned to policy set v1 (D-GOLD-8); their v2 versions
         pass policy_set="v2"."""
-        settings = Settings(policy_set=policy_set)
+        prompt = "decision_v2" if policy_set == "v1" else "decision_v3"
+        settings = Settings(policy_set=policy_set, prompt_version=prompt)
         app.dependency_overrides[get_engine] = lambda: engine
         app.dependency_overrides[get_decision_model] = lambda: model
         app.dependency_overrides[get_retriever] = lambda: retriever or StubRetriever()

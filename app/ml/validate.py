@@ -1,12 +1,14 @@
 """Deterministic validation of the model output (INSTRUCTIONS.md §8.5; DECISIONS.md D3 and
 2026-09-22).
 
-Every retrieved criterion must appear exactly once for its line (prompt decision_v2), and an APPROVE
-line cannot have a criterion that is NOT_MET or NOT_DOCUMENTED.
+Every retrieved criterion must appear exactly once for its line (prompts decision_v2 and v3), and an
+APPROVE line cannot have a criterion that is NOT_MET or NOT_DOCUMENTED, except a member of an
+indication group that another member satisfies (MET; D-POL-3, policy set v2).
 
-Any failure makes the whole output invalid: every rules-passed line becomes PEND with reason
-MODEL_OUTPUT_INVALID and the claim goes to FULL review. There are no automatic retries. Error
-messages name lines, fields and IDs only, never the model's text or the clinical notes.
+Any failure makes the whole output invalid. The pipeline then asks the model once more (D-DEC-1);
+if that answer is invalid too, every rules-passed line becomes PEND with reason
+MODEL_OUTPUT_INVALID and the claim goes to FULL review. Error messages name lines, fields and IDs
+only, never the model's text or the clinical notes.
 """
 
 from collections import Counter
@@ -91,10 +93,15 @@ def validate_output(text: str, rules: RulesOutcome, context: ContextPackage) -> 
         if line.decision is LineDecision.PEND and not line.missing_information:
             errors.append(f"line {line.line_no}: PEND needs the missing information")
         if line.decision is LineDecision.APPROVE:
+            grouped = {c.criterion_id for c in line_context.criteria if c.group}
+            group_met = any(
+                r.criterion_id in grouped and r.status is CriterionStatus.MET for r in line.criteria
+            )
             errors += [
                 f"line {line.line_no}: APPROVE with criterion {result.criterion_id} "
                 f"{result.status.value}"
                 for result in line.criteria
                 if result.status in (CriterionStatus.NOT_MET, CriterionStatus.NOT_DOCUMENTED)
+                and not (result.criterion_id in grouped and group_met)
             ]
     return ValidationResult(output=output, errors=tuple(errors))

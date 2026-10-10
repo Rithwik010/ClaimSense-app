@@ -13,6 +13,10 @@ import ollama
 from app.domain.contracts import SLMOutput
 
 MODEL_SEED = 20260921
+# One retry when the first answer is invalid (D-DEC-1): another fixed seed, at temperature 0.7 so
+# the seed matters (the open item's measurement recovered 5-8 of 16 dropped-line records).
+RETRY_SEED = 20261010
+RETRY_TEMPERATURE = 0.7
 MODEL_TIMEOUT_SECONDS = 300.0
 
 # An answer that repeats itself never closes its JSON, so the schema alone does not stop it: the
@@ -31,7 +35,7 @@ class ModelUnavailable(RuntimeError):
 class DecisionModel(Protocol):
     name: str
 
-    def complete(self, system: str, user: str) -> str: ...
+    def complete(self, system: str, user: str, attempt: int = 1) -> str: ...
 
 
 class OllamaDecisionModel:
@@ -41,7 +45,9 @@ class OllamaDecisionModel:
         self.name = name
         self._client = ollama.Client(host=host, timeout=timeout, **client_args)
 
-    def complete(self, system: str, user: str) -> str:
+    def complete(self, system: str, user: str, attempt: int = 1) -> str:
+        """Attempt 1: temperature 0 and MODEL_SEED; a retry: RETRY_TEMPERATURE and RETRY_SEED."""
+        first = attempt == 1
         try:
             response = self._client.chat(
                 model=self.name,
@@ -51,8 +57,8 @@ class OllamaDecisionModel:
                 ],
                 format=SLMOutput.model_json_schema(),
                 options={
-                    "temperature": 0,
-                    "seed": MODEL_SEED,
+                    "temperature": 0 if first else RETRY_TEMPERATURE,
+                    "seed": MODEL_SEED if first else RETRY_SEED,
                     "num_predict": MAX_OUTPUT_TOKENS,
                 },
                 think=False,

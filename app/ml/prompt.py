@@ -5,9 +5,15 @@ The system message is the versioned file `prompts/<version>.txt`. The user messa
 CLAIM, RULES_RESULT, PLAN_BENEFITS and COVERAGE_CRITERIA, then LINES TO DECIDE. Descriptions and
 the codes each policy covers are looked up by the caller (database in the pipeline, curated files
 in the generators). No money appears in the prompt (H1).
+
+decision_v2 (model v1) is rendered byte for byte as it was trained. decision_v3 (model v2, policy
+set v2) also shows each criterion's type and group (no source), words the NCCI_BYPASS flag by the
+modifier that allowed it (D-RULE-8), and explains the flags NCS_WITHOUT_EMG, FACET_TWO_REGIONS
+and EXTENDED_TESTING (D-RULE-6).
 """
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
@@ -15,13 +21,53 @@ from app.domain.contracts import (
     ContextPackage,
     IntakeClaim,
     LineRuleOutcome,
+    RetrievedCriterion,
     RulesOutcome,
 )
 
-PROMPT_VERSION = "decision_v2"  # decision_v1: criteria as met true/false (superseded)
+PROMPT_VERSION = "decision_v2"  # model v1; decision_v1: criteria as met true/false (superseded)
+PROMPT_V3 = "decision_v3"  # model v2 (Part 2 step 2)
+PROMPT_VERSIONS = (PROMPT_VERSION, PROMPT_V3)
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 NOT_DOCUMENTED = "Not documented in the clinical notes."
 NOT_APPLICABLE = "Does not apply to this service."
+
+# decision_v3: what the notes must show for an NCCI_BYPASS line, by the modifier's place in the
+# NCCI Policy Manual (data/curated/ncci_ptp_modifiers.csv; plain-language wording, no CPT text).
+BYPASS_PHRASES = {
+    "DISTINCT": "a separate, distinct service (another session, site or organ, or a separate "
+    "lesion or injury)",
+    "SEPARATE_EM": "a significant, separately identifiable evaluation and management service, "
+    "beyond the usual care of the procedure",
+    "SURGERY_DECISION": "that the visit led to the decision for surgery",
+    "SITES": "that the services were at different anatomic sites",
+    "OTHER": "the situation the modifier reports",
+}
+FLAG_NOTES = {
+    "NCS_WITHOUT_EMG": "a nerve conduction study with no needle EMG on the claim: the criterion "
+    "for a nerve conduction study done alone applies",
+    "FACET_TWO_REGIONS": "facet procedures in two spinal regions on one date: a note for the "
+    "reviewer",
+    "EXTENDED_TESTING": "more than 8 hours of testing on the claim: a note for the reviewer",
+}
+
+
+def bypass_phrase_keys(placements: Mapping[str, tuple[str, frozenset[str]]]) -> dict[str, str]:
+    """Modifier -> BYPASS_PHRASES key, from each NCCI PTP-associated modifier's placement and the
+    paired code's global periods (25: 000, 010, XXX; 57: 090)."""
+    keys = {}
+    for modifier, (placement, global_days) in placements.items():
+        if placement == "NOT_EM":
+            keys[modifier] = "DISTINCT"
+        elif placement == "DIFFERENT_SITES":
+            keys[modifier] = "SITES"
+        elif placement == "EM_WITH_PROCEDURE" and "090" in global_days:
+            keys[modifier] = "SURGERY_DECISION"
+        elif placement == "EM_WITH_PROCEDURE" and global_days:
+            keys[modifier] = "SEPARATE_EM"
+        else:
+            keys[modifier] = "OTHER"
+    return keys
 
 
 @dataclass(frozen=True)
@@ -29,9 +75,12 @@ class PromptLookups:
     icd10_descriptions: dict[str, str]
     procedure_descriptions: dict[str, str]
     policy_codes: dict[str, list[str]]  # policy ID -> procedure codes it covers
+    bypass_keys: dict[str, str] = field(default_factory=dict)  # decision_v3: bypass_phrase_keys
 
 
 def system_prompt(version: str = PROMPT_VERSION) -> str:
+    if version not in PROMPT_VERSIONS:
+        raise ValueError(f"unknown prompt version {version!r}")
     return (PROMPTS_DIR / f"{version}.txt").read_text(encoding="utf-8").strip()
 
 
@@ -63,9 +112,73 @@ def _rule_line(outcome: LineRuleOutcome) -> str:
     return f"Line {outcome.line_no}: PASS"
 
 
+def _bypass_note(claim: IntakeClaim, line_no: int, lookups: PromptLookups) -> str:
+    """decision_v3: the modifiers on the line and the other lines of its date that allow a bypass,
+    and what the notes must show for each."""
+    line = claim.service_lines[line_no - 1]
+    same_day = [x for x in claim.service_lines if x.date_of_service == line.date_of_service]
+    found = sorted(
+        {m for x in same_day for m in x.modifiers if m in lookups.bypass_keys},
+        key=lambda m: (m not in line.modifiers, m),
+    )
+    if not found:
+        return "check that the notes show what the bypass modifier reports"
+    by_key: dict[str, list[str]] = {}
+    for modifier in found:
+        by_key.setdefault(lookups.bypass_keys[modifier], []).append(modifier)
+    return "; ".join(
+        f"modifier {', '.join(mods)}: check that the notes show {BYPASS_PHRASES[key]}"
+        for key, mods in by_key.items()
+    )
+
+
+def _rule_line_v3(outcome: LineRuleOutcome, claim: IntakeClaim, lookups: PromptLookups) -> str:
+    if outcome.outcome == "DENY":
+        return _rule_line(outcome)
+    notes = [
+        f"flag NCCI_BYPASS ({_bypass_note(claim, outcome.line_no, lookups)})"
+        if flag == "NCCI_BYPASS"
+        else f"flag {flag} ({FLAG_NOTES[flag]})"
+        if flag in FLAG_NOTES
+        else f"flag {flag}"
+        for flag in outcome.flags
+    ]
+    return f"Line {outcome.line_no}: PASS" + (f", {', '.join(notes)}" if notes else "")
+
+
+def _criterion_v3(criterion: RetrievedCriterion) -> str:
+    kind = criterion.criterion_type or "requirement"
+    label = f"{kind}; indication group" if criterion.group else kind
+    return f"    [{criterion.criterion_id}] ({label}) {criterion.text}"
+
+
+def _criteria_blocks(context: ContextPackage, v3: bool) -> list[list]:
+    """decision_v3 shows one block for consecutive lines whose criteria are the same (one long
+    policy is not repeated per line); decision_v2 shows every line on its own."""
+    blocks: list[list] = []
+    for line_context in context.lines:
+        previous = blocks[-1][0] if blocks else None
+        if (
+            v3
+            and previous is not None
+            and line_context.criteria
+            and previous.criteria == line_context.criteria
+        ):
+            blocks[-1].append(line_context)
+        else:
+            blocks.append([line_context])
+    return blocks
+
+
 def render_user_message(
-    claim: IntakeClaim, rules: RulesOutcome, context: ContextPackage, lookups: PromptLookups
+    claim: IntakeClaim,
+    rules: RulesOutcome,
+    context: ContextPackage,
+    lookups: PromptLookups,
+    version: str = PROMPT_VERSION,
 ) -> str:
+    """The user message for `version` (decision_v2 unchanged for model v1; decision_v3)."""
+    v3 = version == PROMPT_V3
     first_day = min(line.date_of_service for line in claim.service_lines)
     patient = claim.patient
     parts = [
@@ -92,7 +205,10 @@ def render_user_message(
     parts.append("RULES_RESULT")
     flags = f" (claim flags: {', '.join(rules.flags)})" if rules.flags else ""
     parts.append(f"Claim outcome: {rules.claim_outcome.value}{flags}")
-    parts += [_rule_line(outcome) for outcome in rules.line_outcomes]
+    parts += [
+        _rule_line_v3(outcome, claim, lookups) if v3 else _rule_line(outcome)
+        for outcome in rules.line_outcomes
+    ]
     parts.append("")
 
     parts.append("PLAN_BENEFITS")
@@ -115,8 +231,13 @@ def render_user_message(
     parts.append("")
 
     parts.append("COVERAGE_CRITERIA")
-    for line_context in context.lines:
-        parts.append(f"Line {line_context.line_no} ({line_context.procedure_code}):")
+    for block in _criteria_blocks(context, v3):
+        if len(block) == 1:
+            parts.append(f"Line {block[0].line_no} ({block[0].procedure_code}):")
+        else:
+            listed = ", ".join(f"{b.line_no} ({b.procedure_code})" for b in block)
+            parts.append(f"Lines {listed}:")
+        line_context = block[0]
         if not line_context.criteria:
             parts.append("  No criteria retrieved.")
         policies: dict[str, list] = {}  # retrieval order, grouped under one header per policy
@@ -125,7 +246,10 @@ def render_user_message(
         for policy_id, criteria in policies.items():
             codes = ", ".join(lookups.policy_codes.get(policy_id, []))
             parts.append(f"  Policy {policy_id} {criteria[0].policy_title} (covers {codes}):")
-            parts += [f"    [{c.criterion_id}] {c.text} ({c.source})" for c in criteria]
+            parts += [
+                _criterion_v3(c) if v3 else f"    [{c.criterion_id}] {c.text} ({c.source})"
+                for c in criteria
+            ]
     parts.append("")
     parts.append(f"LINES TO DECIDE: {', '.join(str(n) for n in lines_to_decide(rules))}")
     return "\n".join(parts)

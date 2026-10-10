@@ -64,7 +64,12 @@ from app.domain.contracts import (
     Versions,
 )
 from app.ml.client import DecisionModel
-from app.ml.prompt import PROMPT_VERSION, PromptLookups, render_user_message, system_prompt
+from app.ml.prompt import (
+    PromptLookups,
+    bypass_phrase_keys,
+    render_user_message,
+    system_prompt,
+)
 from app.ml.validate import ValidationResult, validate_output
 from app.rag.knowledge import curated_knowledge_version
 from app.rag.retrieve import Retriever
@@ -273,16 +278,29 @@ def _context_payload(context: ContextPackage, settings: Settings) -> dict:
     }
 
 
-def _model_payload(result: ValidationResult, duration_ms: float) -> dict:
+def _model_payload(
+    result: ValidationResult,
+    duration_ms: float,
+    attempts: list[ValidationResult],
+    decisions: list[FinalLineDecision],
+) -> dict:
+    """The model's answer, each line's own and derived decision (D-DEC-1), and the attempts (a
+    retry follows an invalid first answer)."""
+    tries = {
+        "attempts": len(attempts),
+        "earlier_errors": [list(a.errors) for a in attempts[:-1]],
+    }
     if not result.valid:
-        return {"errors": list(result.errors), "duration_ms": duration_ms}
+        return {"errors": list(result.errors), "duration_ms": duration_ms, **tries}
     assert result.output is not None
+    derived = {d.line_no: d.decision.value for d in decisions if d.source == "MODEL"}
     return {
         "complexity": result.output.complexity.value,
         "lines": [
             {
                 "line_no": line.line_no,
                 "decision": line.decision.value,
+                "derived_decision": derived.get(line.line_no),
                 "benefit_category": line.benefit_category,
                 "reasons": list(line.reasons),
                 "criteria": [
@@ -293,6 +311,7 @@ def _model_payload(result: ValidationResult, duration_ms: float) -> dict:
             for line in result.output.lines
         ],
         "duration_ms": duration_ms,
+        **tries,
     }
 
 
@@ -353,6 +372,16 @@ def _calculate(
     return calculate(lines, network, terms, benefits, fees, accumulators, claim.other_coverage)
 
 
+def bypass_keys() -> dict[str, str]:
+    """decision_v3's NCCI_BYPASS wording keys, from the curated NCCI PTP-associated modifiers."""
+    return bypass_phrase_keys(
+        {
+            m.modifier: (m.placement, m.paired_global_days)
+            for m in load_curated().ptp_modifiers.values()
+        }
+    )
+
+
 def prompt_lookups(session: Session, claim: IntakeClaim, policy_set: str) -> PromptLookups:
     first_day = min(line.date_of_service for line in claim.service_lines)
     codes = sorted({line.procedure_code for line in claim.service_lines})
@@ -365,6 +394,7 @@ def prompt_lookups(session: Session, claim: IntakeClaim, policy_set: str) -> Pro
             policy_id: list(policy.procedure_codes)
             for policy_id, policy in load_curated(policy_set).policies.items()
         },
+        bypass_keys=bypass_keys(),
     )
 
 
@@ -443,15 +473,21 @@ def process_claim(
         versions,
     )
 
-    user_message = render_user_message(claim, rules, context, claim_lookups)
+    prompt = settings.prompt_version
+    user_message = render_user_message(claim, rules, context, claim_lookups, prompt)
+    system = system_prompt(prompt)
     model_started = time.perf_counter()
-    text = model.complete(system_prompt(), user_message)
+    attempts = [validate_output(model.complete(system, user_message), rules, context)]
+    if not attempts[0].valid:  # one retry with another fixed seed (D-DEC-1)
+        retry = model.complete(system, user_message, attempt=2)
+        attempts.append(validate_output(retry, rules, context))
     model_ms = round((time.perf_counter() - model_started) * 1000, 1)
-    result = validate_output(text, rules, context)
+    result = attempts[-1]
+    decisions = final_line_decisions(rules, result, context)
     versions = Versions(
         rules_version=RULES_VERSION,
         model_name=model.name,
-        prompt_version=PROMPT_VERSION,
+        prompt_version=prompt,
         policy_versions={  # <policy set>@<effective date> (D-POL-2)
             c.policy_id: f"{settings.policy_set}@{c.effective_date.isoformat()}"
             for line in context.lines
@@ -462,11 +498,9 @@ def process_claim(
         session,
         claim_id,
         EventType.SLM_RECOMMENDED if result.valid else EventType.OUTPUT_INVALID,
-        _model_payload(result, model_ms),
+        _model_payload(result, model_ms, attempts, decisions),
         versions,
     )
-
-    decisions = final_line_decisions(rules, result)
     output_errors = list(result.errors)
     try:
         calculation: CalculationResult | None = _calculate(

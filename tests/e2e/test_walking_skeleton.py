@@ -359,7 +359,7 @@ def test_model_unavailable_returns_503_and_the_claim_can_run_later(api, load_cas
     load_case_reference(case)
 
     class DownModel(StubModel):
-        def complete(self, system: str, user: str) -> str:
+        def complete(self, system: str, user: str, attempt: int = 1) -> str:
             raise ModelUnavailable("model stub-model unavailable (ConnectError)")
 
     claim = new_claim("E2E-14", "CLM-SKEL-DOWN")
@@ -438,3 +438,51 @@ def test_retrieval_unavailable_returns_503(api, load_case_reference) -> None:
 
     assert client.post("/v1/claims/CLM-SKEL-NORAG/process").status_code == 503
     assert client.get("/v1/claims/CLM-SKEL-NORAG").json()["status"] == "RECEIVED"
+
+
+class SecondTimeModel(StubModel):
+    """Answers `first` on attempt 1 and the stored answer on the retry; records the attempts."""
+
+    def __init__(self, answer: str, first: str) -> None:
+        super().__init__(answer)
+        self.first = first
+        self.attempts: list[int] = []
+
+    def complete(self, system: str, user: str, attempt: int = 1) -> str:
+        self.attempts.append(attempt)
+        self.prompts.append((system, user))
+        return self.first if attempt == 1 else self.answer
+
+
+def test_an_invalid_first_answer_is_retried_once(api, load_case_reference) -> None:
+    """D-DEC-1: one retry with another fixed seed; a valid retry is used."""
+    case = E2E_CASES["E2E-14"]
+    load_case_reference(case)
+    model = SecondTimeModel(json.dumps(case["given"]["model_answer"]), "not json")
+    client = api(model)
+    claim = new_claim("E2E-14", "CLM-SKEL-RETRY")
+    client.post("/v1/claims/intake", json=claim)
+
+    record = DecisionRecord.model_validate(client.post("/v1/claims/CLM-SKEL-RETRY/process").json())
+
+    assert model.attempts == [1, 2]
+    assert record.output_errors == [] and record.claim_decision.value == "APPROVE"
+    event = next(e for e in audit(client, "CLM-SKEL-RETRY") if e["event_type"] == "SLM_RECOMMENDED")
+    assert event["payload"]["attempts"] == 2 and event["payload"]["earlier_errors"][0]
+    assert event["payload"]["lines"][0]["derived_decision"] == "APPROVE"
+
+
+def test_two_invalid_answers_pend_for_full_review(api, load_case_reference) -> None:
+    case = E2E_CASES["E2E-14"]
+    load_case_reference(case)
+    model = SecondTimeModel("still not json", "not json")
+    client = api(model)
+    client.post("/v1/claims/intake", json=new_claim("E2E-14", "CLM-SKEL-TWICE"))
+
+    record = DecisionRecord.model_validate(client.post("/v1/claims/CLM-SKEL-TWICE/process").json())
+
+    assert model.attempts == [1, 2]
+    assert record.review_tier.value == "FULL"
+    assert [d.reason_codes for d in record.line_decisions] == [["MODEL_OUTPUT_INVALID"]]
+    event = next(e for e in audit(client, "CLM-SKEL-TWICE") if e["event_type"] == "OUTPUT_INVALID")
+    assert event["payload"]["attempts"] == 2

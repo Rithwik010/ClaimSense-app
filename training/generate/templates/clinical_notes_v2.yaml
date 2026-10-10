@@ -1,0 +1,1403 @@
+# Synthetic clinical-note templates for generator v2 (training/generate/scenarios_v2.py), policy set v2.
+#
+# Written for ClaimSense (synthetic data only). The criteria come from data/curated/coverage_policies/v2;
+# these sentences only describe a fictional patient so a criterion is met, not met, in its situation,
+# or absent. Wording sets: A (plain sentences) and B (clinical shorthand); the note styles of
+# scenarios_v2.py lay them out (A, B and C in training; D only in the test split). Leakage rule: no
+# sentence may contain approve, deny, reject, pend or their forms, "not covered" or "medically
+# necessary" (checked by checks.py).
+#
+# Slots as in clinical_notes.yaml. The shared sections (filler, plan line, office visit, distinct
+# service, unrelated conditions) are read from clinical_notes.yaml.
+#
+# Criterion fields, read with the criterion's v2 type (requirement, exclusion, conditional; group):
+#   met        sentences that show the criterion satisfied (never used for an exclusion);
+#   not_met    sentences that show it not satisfied, or, for an exclusion, the excluded situation;
+#   situation  conditionals: a sentence that shows the situation without what it needs (NOT_DOCUMENTED);
+#   missing    the missing-information text when it is NOT_DOCUMENTED;
+#   with_not_met, diagnoses_when_not_met: as in clinical_notes.yaml.
+# Profile fields: indication (the group member that is the patient's indication), conditionals (the
+# conditionals whose situation the profile is in), flag_conditionals (conditionals a rule flag puts in
+# their situation), exclusions (those a deny_exclusion scenario may show), modifiers (on every line).
+
+bypass_documentation:
+  SEPARATE_EM:
+    met:
+      A: "Separately from the procedure, the visit addressed {problem}, with its own history, exam and treatment plan."
+      B: "Separate E/M: {problem} addressed w/ own hx, exam, plan."
+    missing: "Documentation of a significant, separately identifiable evaluation and management service on the procedure day"
+  SURGERY_DECISION:
+    met:
+      A: "After the findings and options were reviewed at this visit, the patient and surgeon decided to go ahead with surgery."
+      B: "Decision for surgery made at this visit after reviewing findings/options."
+    missing: "Documentation that this visit led to the decision for surgery"
+  SITES:
+    met:
+      A: "The second wound treated today is on the {site2}, a separate site from the first."
+      B: "2nd wound tx'd today at {site2}, separate site."
+    missing: "Documentation that the two services were at different anatomic sites"
+
+problems: ["poorly controlled blood pressure", "a new cough with fever", "worsening knee pain", "a diabetes check with medication changes", "new dizzy spells"]
+
+policies:
+  POL-BH-001:
+    criteria:
+      c2:
+        not_met:
+          A:
+            - "The only tests planned are self-scored questionnaires the patient fills in at home."
+            - "No problem with memory, thinking or mood is suspected; testing is requested as a general check."
+          B:
+            - "Self-scored screening questionnaires only."
+            - "No cognitive/mood concern; testing as general check."
+      c3:
+        not_met:
+          A:
+            - "This is a routine yearly re-test for a stable, long-standing condition with no planned change in care."
+          B:
+            - "Routine annual re-test; stable chronic condition; no change planned."
+      c4:
+        met:
+          A:
+            - "Memory problems have grown over {months} months; the physician cannot tell early dementia from depression, and the results will guide treatment."
+            - "Forgetfulness and slowed thinking have worsened over {months} months, and the results will decide between treatment for dementia and for depression."
+          B:
+            - "Memory decline x{months} mo; dementia vs depression unclear; results to guide tx."
+        not_met:
+          A:
+            - "The diagnosis is already clear, and the results would not change the treatment plan."
+          B:
+            - "Dx established; results won't change mgmt."
+        missing: "Why testing is needed and how the results will change diagnosis or treatment"
+    profiles:
+      - id: new_evaluation
+        codes: ["96130", "96136", "96131"]
+        diagnoses: [R413, G3184, F0390, R4189]
+        units: {"96131": "1-4"}
+        pos: ["11"]
+        exclusions: [c2]
+        slots:
+          months: "4-18"
+        lead:
+          A: ["The patient is referred for psychological testing."]
+          B: ["Referred for neuropsych testing."]
+      - id: re_evaluation
+        codes: ["96130"]
+        diagnoses: [F0390, G3184]
+        pos: ["11"]
+        exclusions: [c3]
+        slots:
+          months: "12-24"
+        lead:
+          A: ["The patient returns for repeat psychological testing."]
+          B: ["Repeat neuropsych testing."]
+
+  POL-CAR-001:
+    criteria:
+      c4:
+        met:
+          A:
+            - "The patient has {symptom}, and exam finds {finding}, raising concern for heart muscle or valve disease."
+            - "New {symptom} with {finding} on exam suggests the heart may not be pumping normally."
+          B:
+            - "{symptom}; exam: {finding}; ?cardiomyopathy/valve dz."
+        not_met:
+          A:
+            - "The echocardiogram is ordered as a routine check; there are no heart symptoms and no known heart condition."
+          B:
+            - "Routine echo; no cardiac sx or known heart dz."
+        missing: "Heart symptoms or a known heart condition that call for an echocardiogram"
+      c5:
+        not_met:
+          A:
+            - "Blood pressure is high, but there are no heart symptoms and the heart exam is normal."
+          B:
+            - "HTN only; no cardiac sx, nl cardiac exam."
+        diagnoses_when_not_met: [I10]
+        with_not_met: [c4]
+      c6:
+        situation:
+          A:
+            - "An echocardiogram was done {months_short} months ago."
+          B:
+            - "Prior echo {months_short} mo ago."
+        met:
+          A:
+            - "An echocardiogram {months_short} months ago was normal, but breathlessness suddenly got much worse last week."
+            - "An echocardiogram {months_short} months ago showed a leaking valve, and surgery on the valve is scheduled next month."
+          B:
+            - "Echo {months_short} mo ago nl; abrupt worsening of dyspnea last wk."
+        not_met:
+          A:
+            - "An echocardiogram {months_short} months ago was normal, and symptoms have not changed."
+          B:
+            - "Echo {months_short} mo ago nl; sx unchanged."
+        missing: "Why the echocardiogram is repeated within a year (an abrupt change, a check of treatment, or upcoming valve surgery)"
+      c7:
+        met:
+          A:
+            - "A treadmill stress test last month did not give a clear answer, and chest pressure with exertion continues."
+          B:
+            - "Treadmill ETT nondiagnostic last mo; exertional CP persists."
+        not_met:
+          A:
+            - "There are no chest symptoms; the stress study is requested as a routine check."
+          B:
+            - "No CP/SOB; stress echo as routine screen."
+        missing: "Symptoms and prior test results that suggest coronary artery disease"
+    profiles:
+      - id: resting_echo
+        codes: ["93306", "93308"]
+        diagnoses: [I5022, I509, R0602, R011, I350]
+        pos: ["11", "22"]
+        exclusions: [c5]
+        slots:
+          symptom: ["shortness of breath on stairs", "ankle swelling and tiredness", "breathlessness when lying flat"]
+          finding: ["a new heart murmur", "leg swelling", "crackles at both lung bases"]
+          months_short: "3-8"
+        lead:
+          A: ["The patient is seen in the heart clinic."]
+          B: ["Cardiology f/u."]
+      - id: repeat_echo
+        codes: ["93306"]
+        diagnoses: [I5022, I509, I350]
+        pos: ["11", "22"]
+        conditionals: [c6]
+        slots:
+          symptom: ["shortness of breath on stairs", "ankle swelling and tiredness"]
+          finding: ["a heart murmur", "leg swelling"]
+          months_short: "3-8"
+        lead:
+          A: ["The patient returns to the heart clinic."]
+          B: ["Cardiology f/u, repeat echo requested."]
+      - id: stress_echo
+        codes: ["93350"]
+        diagnoses: [R0789, R079, I209]
+        pos: ["11", "22"]
+        slots:
+          symptom: ["chest pressure when walking uphill", "exertional chest tightness"]
+        lead:
+          A: ["The patient reports chest discomfort."]
+          B: ["CC: chest discomfort."]
+
+  POL-CAR-002:
+    criteria:
+      c4:
+        met:
+          A:
+            - "The patient reports episodes of {symptom}."
+            - "Recurrent {symptom} prompted the request for rhythm monitoring."
+          B:
+            - "Episodic {symptom}."
+        not_met:
+          A:
+            - "There are no palpitations, fainting, dizziness or other rhythm symptoms; monitoring is requested before a routine sports physical."
+          B:
+            - "No palpitations/syncope/dizziness; monitor for routine sports clearance."
+        missing: "Symptoms or a known heart condition that call for rhythm monitoring"
+      c5:
+        met:
+          A:
+            - "Monitoring is to look for symptom-free episodes of the irregular rhythm {weeks} weeks after a catheter ablation, to check how well it worked."
+            - "Several days of recording will show whether the new rhythm medicine controls the symptom-free episodes."
+          B:
+            - "Post-ablation monitoring {weeks}wk out for asymptomatic recurrence."
+            - "Multi-day recording to assess response to antiarrhythmic tx."
+        not_met:
+          A:
+            - "The episodes happen only about once every {days} days, too rarely to catch on a 48-hour recording."
+          B:
+            - "Sx q{days}d, too infrequent for 48h Holter."
+        missing: "The treatment whose response the extended recording will check"
+      c6:
+        met:
+          A:
+            - "Brief episodes of {symptom} happen about once every {days} days."
+          B:
+            - "Episodic {symptom} q{days}d."
+        not_met:
+          A:
+            - "There are no palpitations, fainting, dizziness or other rhythm symptoms; monitoring is requested before a routine sports physical."
+          B:
+            - "No palpitations/syncope/dizziness; monitor for routine sports clearance."
+        missing: "Symptoms or a heart condition that call for 30-day event monitoring"
+    profiles:
+      - id: short_recording
+        codes: ["93224"]
+        diagnoses: [R002, R42, R55, I4891]
+        pos: ["11"]
+        slots:
+          symptom: ["a racing heartbeat", "palpitations with lightheadedness", "near fainting"]
+        lead:
+          A: ["The patient is seen for heart rhythm symptoms."]
+          B: ["CC: palpitations."]
+      - id: treatment_response
+        codes: ["93241"]
+        diagnoses: [I480, I4891]
+        pos: ["11"]
+        slots:
+          weeks: "6-12"
+          days: "4-12"
+        lead:
+          A: ["The patient returns after atrial fibrillation treatment."]
+          B: ["AF s/p tx f/u."]
+      - id: event_monitor
+        codes: ["93268"]
+        diagnoses: [R002, R55, R42]
+        pos: ["11"]
+        slots:
+          symptom: ["a pounding heartbeat", "sudden dizziness with palpitations", "brief fainting spells"]
+          days: "4-12"
+        lead:
+          A: ["The patient is seen for heart rhythm symptoms."]
+          B: ["CC: intermittent palpitations."]
+
+  POL-DX-001:
+    criteria:
+      c1:
+        met:
+          B:
+            - "Sleep eval: loud snoring, witnessed apneas, daytime sleepiness (ESS {ess})."
+            - "Sleep eval: excessive daytime sleepiness, ESS {ess}, apneas per partner."
+        not_met:
+          B:
+            - "Sleeps well; no snoring, apneas or daytime sleepiness; study at pt request."
+        missing: "The sleep evaluation findings that led to the test"
+      c4:
+        not_met:
+          B:
+            - "Moderate COPD on home O2 and CHF; home study requested."
+      c5:
+        met:
+          B:
+            - "Loud snoring, witnessed apneas, BMI {bmi}, crowded airway; high suspicion of mod-severe OSA."
+        not_met:
+          B:
+            - "Mild snoring only, no apneas or sleepiness; low pretest prob of OSA."
+        missing: "Symptoms and exam that show a high likelihood of moderate to severe sleep apnea"
+      c6:
+        situation:
+          B:
+            - "Prior sleep study {months} mo ago."
+        met:
+          B:
+            - "Dx PSG last mo: moderate OSA; CPAP titration needed."
+            - "Prior home test technically inadequate (sensor failure); repeat needed."
+        not_met:
+          B:
+            - "Prior study adequate/complete; doing well on CPAP."
+        missing: "Why a repeat sleep study is needed (an inadequate first study, therapy titration, or inconclusive results)"
+    profiles:
+      - id: home
+        codes: ["95806"]
+        diagnoses: [G4733, G4730]
+        pos: ["12", "11"]
+        exclusions: [c4]
+        slots:
+          ess: "11-19"
+          bmi: "33-41"
+        lead:
+          B: ["Referred for home sleep testing."]
+      - id: facility
+        codes: ["95810"]
+        diagnoses: [G4733, G4730]
+        pos: ["11", "22"]
+        slots:
+          ess: "11-19"
+        lead:
+          B: ["Referred for sleep testing."]
+      - id: titration
+        codes: ["95811"]
+        diagnoses: [G4733]
+        pos: ["22"]
+        conditionals: [c6]
+        slots:
+          ess: "11-19"
+          months: "1-3"
+        lead:
+          B: ["OSA, returns for CPAP study."]
+
+  POL-DX-002:
+    criteria:
+      c2:
+        not_met:
+          A:
+            - "The arm pain began after a fall {days} days ago, with swelling of the wrist."
+          B:
+            - "Pain began after fall {days}d ago w/ wrist swelling."
+      c3:
+        not_met:
+          A:
+            - "This is a routine yearly check of the diabetic nerve damage; symptoms are unchanged."
+          B:
+            - "Routine annual check for diabetic neuropathy; sx unchanged."
+        diagnoses_when_not_met: [E1142]
+      c4:
+        met:
+          A:
+            - "Numbness of the thumb and first two fingers wakes the patient at night, with a positive Phalen sign; carpal tunnel syndrome is strongly suspected."
+          B:
+            - "Nocturnal median-distribution numbness, +Phalen/Tinel; high suspicion CTS."
+        not_met:
+          A:
+            - "The symptoms fit the patient's known diabetic nerve damage, and carpal tunnel syndrome is not suspected."
+          B:
+            - "Sx c/w known diabetic polyneuropathy; CTS not suspected."
+        missing: "Documented carpal tunnel syndrome with a high pre-test probability, for a nerve conduction study without needle EMG"
+        diagnoses_when_not_met: [E1142]
+      c5:
+        met:
+          A:
+            - "{complaint} for {months} months, and the exam suggests a nerve problem."
+          B:
+            - "{complaint_b} x{months} mo; exam suggests nerve lesion."
+        not_met:
+          A:
+            - "The order says only 'rule out neuropathy', and no symptoms or exam findings are recorded."
+          B:
+            - "Order says 'r/o neuropathy'; no sx or exam findings recorded."
+        missing: "History and exam findings that show why nerve testing is needed"
+    profiles:
+      - id: hand
+        codes: ["95907", "95910", "95886"]
+        diagnoses: [G5601, G5602, R202]
+        pos: ["11"]
+        exclusions: [c2]
+        flag_conditionals: {c4: NCS_WITHOUT_EMG}
+        slots:
+          side: ["right", "left"]
+          months: "2-9"
+          days: "2-6"
+          hand: [{complaint: "Numbness and tingling in the hand with a weak grip", complaint_b: "Hand numbness/tingling, weak grip"}]
+        lead:
+          A: ["The patient is seen for hand numbness."]
+          B: ["CC: hand numbness."]
+      - id: diabetic
+        codes: ["95907", "95910"]
+        diagnoses: [E1142]
+        pos: ["11"]
+        exclusions: [c3]
+        flag_conditionals: {c4: NCS_WITHOUT_EMG}
+        flag_states: {c4: not_met}
+        slots:
+          side: ["right", "left"]
+          months: "2-9"
+          feet: [{complaint: "New weakness of the {side} foot with tingling, unlike the patient's usual symptoms", complaint_b: "New {side} foot weakness + tingling, atypical for baseline"}]
+        lead:
+          A: ["The patient with type 2 diabetes is seen for nerve symptoms."]
+          B: ["T2DM w/ neuropathy f/u."]
+
+  POL-DX-003:
+    criteria:
+      c4:
+        met:
+          A:
+            - "Sneezing, itchy eyes and congestion return every {season}, worse outdoors, pointing to an allergy to airborne allergens."
+          B:
+            - "Seasonal rhinitis sx each {season}, worse outdoors."
+        not_met:
+          A:
+            - "The runny nose is constant with no seasonal pattern or trigger, and there is no allergic history."
+          B:
+            - "Perennial rhinorrhea, no triggers, no atopic hx."
+        missing: "History that links the symptoms to allergen exposure"
+      c5:
+        not_met:
+          A:
+            - "Intradermal tests are planned to check for a peanut allergy after hives with peanut butter."
+          B:
+            - "Intradermal testing planned for suspected peanut allergy."
+      c6:
+        met:
+          A:
+            - "An itchy rash appears wherever the skin touches {substance}, suggesting allergic contact dermatitis."
+          B:
+            - "Rash at sites of contact w/ {substance}; ?ACD."
+        not_met:
+          A:
+            - "The rash is spread over the whole body, started with a viral illness and follows no contact pattern."
+          B:
+            - "Diffuse rash after viral illness, no contact pattern."
+        missing: "Findings that suggest allergic contact dermatitis"
+      c7:
+        met:
+          A:
+            - "The {units} allergens tested were chosen from the patient's exposures at home and work."
+          B:
+            - "{units} allergens selected per exposure hx."
+        not_met:
+          A:
+            - "A standard panel was run without linking the tests to the patient's history."
+          B:
+            - "Std panel run, not tied to hx."
+        missing: "Why each allergen tested was chosen and why this number of tests is needed"
+    profiles:
+      - id: airborne
+        codes: ["95004", "95024"]
+        diagnoses: [J301, J3089, J302, J4530]
+        units: {"95004": "20-60", "95024": "10-30"}
+        pos: ["11"]
+        exclusions: [c5]
+        slots:
+          season: ["spring", "fall", "summer"]
+        lead:
+          A: ["The patient is seen in the allergy clinic."]
+          B: ["Allergy consult."]
+      - id: contact
+        codes: ["95044"]
+        diagnoses: [L237, L239, L250, L247]
+        units: {"95044": "20-60"}
+        pos: ["11"]
+        slots:
+          substance: ["nickel jewelry", "hair dye", "rubber gloves", "a new skin cream"]
+        lead:
+          A: ["The patient has a recurring rash."]
+          B: ["CC: recurrent dermatitis."]
+
+  POL-FOOT-001:
+    criteria:
+      c1:
+        met:
+          A:
+            - "Monofilament testing shows no feeling at {sites} of 5 sites on the {side} foot."
+          B:
+            - "Monofilament: absent at {sites}/5 sites {side} foot."
+        not_met:
+          A:
+            - "Monofilament testing shows normal feeling at every site on both feet."
+          B:
+            - "Monofilament intact 5/5 bilat."
+        missing: "Monofilament or other testing that shows loss of protective sensation"
+      c2:
+        met:
+          A:
+            - "The patient takes {anticoagulant}, and a small cut during nail care could bleed heavily."
+          B:
+            - "On {anticoagulant}; bleeding risk w/ nail care."
+        not_met:
+          A:
+            - "The patient takes {anticoagulant}, but nothing in the record shows a risk from careful nail care at home."
+          B:
+            - "On {anticoagulant}; no documented risk w/ home nail care."
+        missing: "Why non-professional nail care is risky while on blood thinners"
+      c4:
+        met:
+          A:
+            - "Diabetes has left both feet with absent dorsalis pedis and posterior tibial pulses, and the patient's physician manages the diabetes actively."
+            - "Pulses are absent at both ankles and the skin of the feet is thin and shiny, from the patient's peripheral artery disease."
+          B:
+            - "DM; DP/PT pulses absent bilat; under active MD care for DM."
+            - "PAD: absent pedal pulses bilat, advanced trophic changes."
+        not_met:
+          A:
+            - "The patient has diabetes, but pulses and sensation in the feet are normal."
+          B:
+            - "DM; pedal pulses/sensation intact."
+        missing: "Findings that show how severe the circulatory or sensory problem in the feet is"
+      c5:
+        met:
+          A:
+            - "Several toenails are thick, crumbly and fungal, and walking is painful because of the thickened nails."
+            - "The thick fungal toenails press on the nail beds and make every step painful."
+          B:
+            - "Mycotic dystrophic nails x{nails}; painful ambulation."
+        not_met:
+          A:
+            - "The toenails are thickened and fungal, but they cause no pain, walking problem or infection."
+          B:
+            - "Onychomycosis, asymptomatic."
+        missing: "Pain, a walking limitation or an infection caused by the fungal nails"
+      c6:
+        not_met:
+          A:
+            - "The patient has no condition that makes home nail care risky; the visit is for routine trimming."
+          B:
+            - "No at-risk condition; routine trim only."
+    profiles:
+      - id: neuropathy
+        codes: ["11721", "11720"]
+        diagnoses_all_of: [[E1142, E1140, G609], [B351]]
+        pos: ["11"]
+        indication: c1
+        exclusions: [c6]
+        slots:
+          sites: "2-5"
+          side: ["right", "left"]
+        lead:
+          A: ["The patient is seen for thick, painful toenails."]
+          B: ["Onychomycotic nails, painful."]
+      - id: anticoagulated
+        codes: ["11720", "11721"]
+        diagnoses_all_of: [[Z7901], [B351]]
+        pos: ["11"]
+        indication: c2
+        slots:
+          anticoagulant: ["warfarin", "apixaban", "rivaroxaban"]
+        lead:
+          A: ["The patient is seen for thick toenails."]
+          B: ["Dystrophic nails."]
+      - id: systemic
+        codes: ["11720", "11721"]
+        diagnoses_all_of: [[E1151, I70203, I739], [B351]]
+        modifiers: ["Q8"]
+        pos: ["11"]
+        indication: c4
+        slots: {}
+        lead:
+          A: ["The patient is seen for foot care with poor circulation in the feet."]
+          B: ["At-risk foot care; poor circulation."]
+      - id: mycotic
+        codes: ["11720", "11721"]
+        diagnoses_all_of: [[B351], [M79671, M79672]]
+        pos: ["11"]
+        indication: c5
+        exclusions: [c6]
+        slots:
+          nails: "3-6"
+        lead:
+          A: ["The patient is seen for painful toenails."]
+          B: ["CC: painful toenails."]
+
+  POL-IMG-001:
+    criteria:
+      c1:
+        met:
+          A:
+            - "The scan is ordered to evaluate {symptom}, and the provisional diagnosis on the order matches these symptoms."
+            - "Symptoms written on the order ({symptom}) are the same ones described in today's exam."
+          B:
+            - "Indication: {symptom}; provisional dx matches order."
+        not_met:
+          A:
+            - "The patient has no symptoms today; the scan is requested only for reassurance."
+          B:
+            - "Asymptomatic; imaging for reassurance only."
+        missing: "Symptoms and provisional diagnosis that support the scan as ordered"
+      c2:
+        met:
+          A:
+            - "Headaches have continued for {weeks} weeks without relief from {medicine}, and exam shows {deficit}."
+            - "The headache pattern changed sharply {days} days ago, and exam shows {deficit}."
+          B:
+            - "HA x{weeks}wk, refractory to {medicine}; exam: {deficit}."
+        not_met:
+          A:
+            - "Headaches match the patient's usual migraines, respond to {medicine}, and the neurological exam is normal."
+          B:
+            - "Typical migraine pattern, responds to {medicine}; neuro exam nl."
+        missing: "Findings that justify imaging for headache: focal neurological signs, a change in pattern, or headache lasting over two weeks despite treatment"
+      c4:
+        not_met:
+          A:
+            - "Brain imaging is requested to stage a newly found prostate cancer; there are no neurological symptoms."
+          B:
+            - "Brain MRI for staging of prostate CA; no neuro sx."
+        diagnoses_when_not_met: [C61]
+      c5:
+        met:
+          A:
+            - "Contrast is ordered to characterize a {lesion} seen on the non-contrast study {days} days ago."
+          B:
+            - "Contrast to characterize {lesion} seen on prior non-contrast study."
+        not_met:
+          A:
+            - "A contrast MRI of the brain was already done for this same illness {weeks} weeks ago, and nothing new has happened since."
+          B:
+            - "Contrast MRI brain already done this episode {weeks}wk ago; no interval change."
+        missing: "The reason contrast is needed (for example a lesion to characterize, a stroke, a tumor or an infection)"
+    profiles:
+      - id: headache
+        codes: ["70551", "70450"]
+        diagnoses: [G43909, R519, G44209, G43009]
+        pos: ["22", "11"]
+        conditionals: [c2]
+        exclusions: [c4]
+        slots:
+          symptom: ["worsening headaches", "daily headaches with nausea", "new severe headaches"]
+          weeks: "3-10"
+          days: "3-10"
+          medicine: ["ibuprofen", "acetaminophen", "sumatriptan", "naproxen"]
+          deficit: ["weakness of the left hand", "a new visual field cut", "unsteady gait", "slurred speech"]
+        lead:
+          A: ["The patient is seen for headaches."]
+          B: ["CC: headache."]
+      - id: contrast
+        codes: ["70553"]
+        diagnoses: [R569, G40909, R4701, D496]
+        pos: ["22"]
+        slots:
+          symptom: ["a first seizure", "new trouble finding words", "recurrent seizures"]
+          lesion: ["small enhancing area", "possible mass", "focal abnormality"]
+          weeks: "2-8"
+          days: "3-14"
+        lead:
+          A: ["The patient returns after a recent brain scan."]
+          B: ["F/u after recent brain imaging."]
+      - id: neck
+        codes: ["72141"]
+        diagnoses: [M5412, M50121, M50122, M4802]
+        pos: ["22", "11"]
+        slots:
+          symptom: ["neck pain spreading into the arm with numbness", "arm weakness and tingling from the neck"]
+        lead:
+          A: ["The patient has neck and arm symptoms."]
+          B: ["CC: neck/arm sx."]
+
+  POL-IMG-002:
+    criteria:
+      c3:
+        met:
+          B:
+            - "Heel pain persists after {weeks}wk stretching, orthotics, NSAIDs; dx still uncertain."
+        not_met:
+          B:
+            - "First visit for heel pain; US for initial dx."
+        missing: "Failed conservative treatment and an uncertain diagnosis for plantar fasciitis imaging"
+      c4:
+        situation:
+          B:
+            - "US of both limbs requested."
+        met:
+          B:
+            - "Masses on exam in both limbs, both symptomatic; bilat US."
+        not_met:
+          B:
+            - "Other limb to be scanned only for comparison."
+        missing: "Documented disease in both limbs"
+      c5:
+        not_met:
+          B:
+            - "Obvious superficial abscess on exam; US for routine mgmt."
+      c6:
+        met:
+          B:
+            - "US to eval {size} cm soft-tissue mass near {joint}."
+            - "US for suspected {joint} effusion vs cyst."
+        not_met:
+          B:
+            - "No mass, effusion, tendon or joint problem noted; US as general screen."
+        missing: "The specific condition the ultrasound is meant to evaluate"
+    profiles:
+      - id: mass
+        codes: ["76882", "76881"]
+        diagnoses: [M67431, M67432, R2231, R2232, M25461, M25462]
+        pos: ["11", "22"]
+        exclusions: [c5]
+        slots:
+          size: "1-4"
+          joint: ["wrist", "knee", "ankle", "elbow"]
+        lead:
+          B: ["CC: lump/swelling."]
+      - id: heel
+        codes: ["76882"]
+        diagnoses: [M7671, M79671]
+        pos: ["11"]
+        conditionals: [c3]
+        slots:
+          size: "1-2"
+          joint: ["heel"]
+          weeks: "8-16"
+        lead:
+          B: ["CC: heel pain."]
+
+  POL-PAIN-001:
+    criteria:
+      c1:
+        met:
+          A:
+            - "MRI shows a disc herniation at {level} pressing on the {side} {root} nerve root, matching the exam."
+            - "Imaging shows narrowing at {level} with pressure on the {root} nerve root, which fits the pain pattern on exam."
+          B:
+            - "MRI: {level} HNP compressing {side} {root} root; concordant w/ exam."
+        not_met:
+          A:
+            - "Imaging shows only mild wear with no nerve root pressure to explain the symptoms."
+          B:
+            - "MRI: mild DDD, no root compression; nonconcordant."
+        missing: "Imaging and exam findings that confirm nerve-root pain"
+      c6:
+        met:
+          A:
+            - "Pain is {pain}/10, and the {scale} disability score is {odi}%, limiting walking and work."
+            - "The patient rates pain {pain}/10 and cannot work a full day; {scale} score {odi}%."
+          B:
+            - "Pain {pain}/10; {scale} {odi}%; unable to work full days."
+        not_met:
+          A:
+            - "Pain is {low}/10, and the patient reports no limits on daily activities."
+          B:
+            - "Pain {low}/10, ADLs unaffected."
+        missing: "A pain or function score recorded before treatment"
+      c7:
+        met:
+          A:
+            - "The injection is planned under fluoroscopy with contrast at a single level."
+            - "The patient has a documented allergy to contrast dye, so the injection will be done under ultrasound guidance without contrast at one level."
+          B:
+            - "Fluoro-guided w/ contrast, single level."
+            - "Contrast allergy documented; US-guided, no contrast, 1 level."
+        not_met:
+          A:
+            - "Injections at four levels in the same region are planned for one session."
+            - "The injection is planned under ultrasound guidance without contrast, and no reason to avoid contrast is recorded."
+          B:
+            - "4-level injection planned same session."
+            - "US-guided w/o contrast; no contraindication to contrast noted."
+        missing: "Imaging guidance with contrast (or a documented reason to avoid contrast) and the number of levels"
+      c8:
+        situation:
+          A:
+            - "This is a repeat injection at the same level."
+          B:
+            - "Repeat ESI, same level."
+        met:
+          A:
+            - "The first injection {months} months ago gave {pct}% pain relief that lasted about {months} months, on the same scale as the baseline."
+          B:
+            - "Prior ESI {months} mo ago: {pct}% relief x{months} mo (same scale)."
+        not_met:
+          A:
+            - "The first injection {weeks_short} weeks ago gave only about 20% relief, and the same approach and level are planned again with no reason recorded."
+          B:
+            - "Prior ESI {weeks_short}wk ago ~20% relief; same approach/level, no rationale."
+        missing: "The result of the previous injection on the baseline scale, or the reason for a changed approach"
+      c9:
+        not_met:
+          A:
+            - "The pain stays in the middle of the low back and does not travel into the legs."
+          B:
+            - "Axial LBP only, no radicular sx."
+      c10:
+        met:
+          A:
+            - "Symptoms have lasted {weeks} weeks despite {therapy} and anti-inflammatory medicine."
+            - "{weeks} weeks of {therapy} and medication have not helped."
+          B:
+            - "Sx x{weeks}wk despite {therapy} + NSAIDs."
+        not_met:
+          A:
+            - "Pain started {days} days ago, and no other treatment has been tried."
+          B:
+            - "Onset {days}d ago; no conservative tx tried."
+        missing: "How long symptoms have lasted and which conservative treatments were tried"
+    profiles:
+      - id: lumbar
+        codes: ["62323", "64483"]
+        diagnoses: [M5416, M5417, M5116, M48062]
+        pos: ["11", "22", "24"]
+        slots:
+          side: ["left", "right"]
+          spot: [{level: "L4-L5", root: "L5"}, {level: "L5-S1", root: "S1"}, {level: "L3-L4", root: "L4"}]
+          pain: "6-9"
+          low: "1-2"
+          odi: "32-64"
+          scale: ["Oswestry"]
+          weeks: "6-20"
+          days: "3-12"
+          therapy: ["physical therapy", "a home exercise program", "chiropractic care"]
+        lead:
+          A: ["The patient has low back pain that travels down the {side} leg."]
+          B: ["CC: LBP radiating to {side} leg."]
+      - id: cervical
+        codes: ["62321"]
+        diagnoses: [M5412, M5413, M50121, M50122]
+        pos: ["11", "22", "24"]
+        slots:
+          side: ["left", "right"]
+          spot: [{level: "C5-C6", root: "C6"}, {level: "C6-C7", root: "C7"}]
+          pain: "6-9"
+          low: "1-2"
+          odi: "30-58"
+          scale: ["Neck Disability Index"]
+          weeks: "6-16"
+          days: "3-12"
+          therapy: ["physical therapy", "cervical traction"]
+        lead:
+          A: ["The patient has neck pain that travels down the {side} arm."]
+          B: ["CC: neck pain radiating to {side} arm."]
+      - id: repeat
+        codes: ["62323"]
+        diagnoses: [M5416, M5116]
+        pos: ["11", "22", "24"]
+        conditionals: [c8]
+        slots:
+          side: ["left", "right"]
+          spot: [{level: "L4-L5", root: "L5"}, {level: "L5-S1", root: "S1"}]
+          pain: "6-9"
+          low: "1-2"
+          odi: "32-60"
+          scale: ["Oswestry"]
+          weeks: "12-30"
+          weeks_short: "2-5"
+          days: "3-12"
+          therapy: ["physical therapy", "a home exercise program"]
+          months: "3-5"
+          pct: "55-80"
+        lead:
+          A: ["The patient returns to discuss a repeat injection for leg pain."]
+          B: ["Returns for repeat ESI."]
+
+  POL-PAIN-002:
+    criteria:
+      c1:
+        met:
+          A:
+            - "Pain is mainly in the {region} itself, {pain}/10, worse with bending back and twisting, with a disability score of {odi}%."
+          B:
+            - "Axial {region} pain {pain}/10, worse w/ extension/rotation; disability {odi}%."
+        not_met:
+          A:
+            - "{region_cap} pain is mild ({low}/10) and does not limit daily activities."
+          B:
+            - "Mild {region} pain {low}/10, no functional limits."
+        missing: "Severity of axial pain and the functional deficit on a pain or disability scale"
+      c3:
+        met:
+          A:
+            - "There is no pain or numbness down the limbs, and imaging shows no fracture, tumor or infection."
+          B:
+            - "No radicular sx; imaging neg for fx/tumor/infection."
+        not_met:
+          A:
+            - "Pain shoots down the {side} leg below the knee with numbness, and the nerve-root pressure has not been treated."
+          B:
+            - "Untreated radicular pain to {side} leg below knee w/ numbness."
+        missing: "Whether nerve-root pain or other causes such as fracture, tumor or infection were ruled out"
+      c5:
+        met:
+          A:
+            - "The diagnostic block is planned with the intent to go on to radiofrequency ablation at the same level if it gives good relief."
+          B:
+            - "Dx MBB; plan RFA same level if positive."
+        not_met:
+          A:
+            - "A confirming block at the same level is planned only {days} days after the first one, with no reason given for the short interval."
+          B:
+            - "Confirmatory block {days}d after 1st, no rationale."
+        missing: "Whether the diagnostic block is planned with the intent to go on to ablation, and the timing of any repeat block"
+      c6:
+        met:
+          A:
+            - "Pain has lasted {months} months despite physical therapy and medication."
+          B:
+            - "Sx x{months} mo, failed PT + meds."
+        not_met:
+          A:
+            - "Pain began {weeks_short} weeks ago, and no therapy has been tried."
+          B:
+            - "Onset {weeks_short}wk ago; no PT tried."
+        missing: "How long the pain has lasted and which conservative care failed"
+    profiles:
+      - id: lumbar_facet
+        codes: ["64493", "64635"]
+        diagnoses: [M47816, M47817, M47896]
+        pos: ["11", "22", "24"]
+        slots:
+          region: ["low back"]
+          region_cap: ["Low back"]
+          side: ["left", "right"]
+          pain: "6-9"
+          low: "1-2"
+          odi: "30-60"
+          months: "4-12"
+          weeks_short: "2-5"
+          days: "3-10"
+        lead:
+          A: ["The patient has chronic low back pain."]
+          B: ["CC: chronic axial LBP."]
+      - id: cervical_facet
+        codes: ["64490"]
+        diagnoses: [M47812, M47813]
+        pos: ["11", "22", "24"]
+        slots:
+          region: ["neck"]
+          region_cap: ["Neck"]
+          side: ["left", "right"]
+          pain: "6-9"
+          low: "1-2"
+          odi: "30-55"
+          months: "4-12"
+          weeks_short: "2-5"
+          days: "3-10"
+        lead:
+          A: ["The patient has chronic neck pain."]
+          B: ["CC: chronic axial neck pain."]
+      - id: two_regions
+        codes: ["64490", "64493"]
+        diagnoses_all_of: [[M47812, M47813], [M47816, M47817]]
+        pos: ["22", "24"]
+        slots:
+          region: ["neck and low back"]
+          region_cap: ["Neck and low back"]
+          side: ["left", "right"]
+          pain: "6-9"
+          low: "1-2"
+          odi: "34-60"
+          months: "5-12"
+          weeks_short: "2-5"
+          days: "3-10"
+        lead:
+          A: ["The patient has chronic neck pain and chronic low back pain."]
+          B: ["CC: chronic axial neck + LBP."]
+
+  POL-REHAB-001:
+    criteria:
+      c4:
+        met:
+          A:
+            - "A written plan of care from the evaluation sets goals ({goal}) and plans therapeutic exercise {freq} times a week for {weeks} weeks."
+          B:
+            - "POC from eval: goals {goal}; ther ex {freq}x/wk x{weeks}wk."
+        not_met:
+          A:
+            - "Treatment continues without a written plan of care."
+          B:
+            - "No written POC."
+        missing: "A written plan of care with specific goals and the type, frequency and duration of treatment"
+      c5:
+        met:
+          A:
+            - "The referring physician signed and certified the plan of care."
+          B:
+            - "POC certified by referring MD."
+        not_met:
+          A:
+            - "The plan of care has not been signed by a physician."
+          B:
+            - "POC unsigned by MD/NPP."
+        missing: "Physician or NPP certification of the plan of care"
+      c6:
+        met:
+          A:
+            - "Treatment includes guided strengthening and balance training that need a physical therapist's skills."
+            - "Exercises are progressed each session by the therapist based on the patient's response."
+          B:
+            - "Skilled tx: progressive strengthening, balance/gait training."
+        not_met:
+          A:
+            - "The program is simple walking and stretching the patient can do alone at home."
+          B:
+            - "Program = walking/stretching pt can do alone at home."
+        missing: "Why the services need a physical therapist's skills"
+      c7:
+        met:
+          A:
+            - "Function improved from {a} to {b} on the {scale} over {weeks} weeks, and more gains are expected."
+          B:
+            - "{scale} {a} -> {b} over {weeks}wk; further gains expected."
+        not_met:
+          A:
+            - "Function has not changed in {weeks} weeks, and no further improvement is expected."
+          B:
+            - "No functional change x{weeks}wk; plateaued."
+        missing: "Measured progress and the expected improvement"
+    profiles:
+      - id: treatment
+        codes: ["97110", "97530", "97140"]
+        diagnoses: [M5416, M25561, M25562, M6281, S83511D, R262]
+        units: {"97110": "1-4", "97530": "1-3", "97140": "1-2"}
+        pos: ["11"]
+        slots:
+          goal: ["walk 30 minutes without a cane", "climb stairs without pain", "return to work lifting 20 pounds"]
+          a: "30-45"
+          b: "50-70"
+          scale: ["lower extremity function scale", "patient-specific function scale"]
+          weeks: "3-6"
+          freq: "2-3"
+        lead:
+          A: ["The patient continues outpatient physical therapy."]
+          B: ["PT visit."]
+      - id: evaluation
+        codes: ["97161", "97162"]
+        diagnoses: [M5416, M25561, M6281, R262]
+        pos: ["11"]
+        slots:
+          goal: ["walk 30 minutes without a cane", "climb stairs without pain"]
+        lead:
+          A: ["The patient starts physical therapy with an initial evaluation."]
+          B: ["PT initial eval."]
+
+  POL-SURG-001:
+    criteria:
+      c1:
+        met:
+          A:
+            - "Glare and blurred vision in the {side} eye make night driving and reading hard, and vision is 20/{va} even with new glasses; other eye diseases were ruled out."
+          B:
+            - "{side} eye glare/blur limits driving + reading; BCVA 20/{va} w/ new Rx; other pathology excluded."
+        not_met:
+          A:
+            - "Vision is 20/25 with glasses, and the patient drives and reads without trouble."
+          B:
+            - "BCVA 20/25; no functional limits."
+        missing: "How the cataract limits daily activities and the best-corrected vision"
+      c2:
+        not_met:
+          A:
+            - "The lens is slightly cloudy on exam, but the patient has no vision complaints."
+          B:
+            - "Mild lens opacity on exam; pt asymptomatic."
+      c3:
+        met:
+          A:
+            - "The cataract blocks the view of the retina, so the diabetic retinopathy in the {side} eye cannot be monitored or treated."
+          B:
+            - "Cataract obscures fundus {side} eye; can't monitor/tx DR."
+        not_met:
+          A:
+            - "The retina is seen clearly through the lens, and the retinopathy treatment is going without difficulty."
+          B:
+            - "Fundus view adequate; DR tx unaffected."
+        missing: "How the cataract interferes with monitoring or treating the other eye disease"
+      c4:
+        met:
+          A:
+            - "A vitrectomy is planned in the {side} eye, which makes faster cataract growth highly likely."
+          B:
+            - "PPV planned {side} eye; accelerated cataract expected."
+        not_met:
+          A:
+            - "No other eye surgery or treatment is planned or under way."
+          B:
+            - "No other ocular procedure/tx planned."
+        missing: "The other eye procedure or treatment that makes faster cataract growth likely"
+    profiles:
+      - id: routine
+        codes: ["66984"]
+        diagnoses: [H2511, H2512, H25811, H25812]
+        pos: ["24", "22"]
+        indication: c1
+        exclusions: [c2]
+        slots:
+          side: ["right", "left"]
+          va: ["50", "60", "70", "80"]
+        lead:
+          A: ["The patient is seen for cataract surgery planning."]
+          B: ["Pre-op cataract eval."]
+      - id: complex
+        codes: ["66982"]
+        diagnoses_all_of: [[H2511, H2512], [H2181, H5700]]
+        pos: ["24", "22"]
+        indication: c1
+        slots:
+          side: ["right", "left"]
+          va: ["60", "70", "100"]
+        lead:
+          A: ["The patient is seen for cataract surgery planning; the pupil dilates poorly, which makes surgery more complex."]
+          B: ["Pre-op cataract eval; poor dilation, complex case."]
+      - id: retinopathy
+        codes: ["66984"]
+        diagnoses: [H2511, H2512, H25811, H25812]
+        pos: ["24", "22"]
+        indication: c3
+        slots:
+          side: ["right", "left"]
+        lead:
+          A: ["The patient with diabetic eye disease is seen for cataract surgery planning."]
+          B: ["Pre-op cataract eval; diabetic retinopathy."]
+      - id: vitrectomy
+        codes: ["66984"]
+        diagnoses: [H2511, H2512, H25811, H25812]
+        pos: ["24", "22"]
+        indication: c4
+        slots:
+          side: ["right", "left"]
+        lead:
+          A: ["The patient is seen for cataract surgery planning before retinal surgery."]
+          B: ["Pre-op cataract eval before retinal surgery."]
+
+  POL-SURG-002:
+    criteria:
+      c3:
+        met:
+          A:
+            - "The patient's mother and brother both had colon cancer, and the last colonoscopy was {years} years ago."
+          B:
+            - "High risk: 1st-degree FHx CRC x2; last scope {years}y ago."
+        not_met:
+          A:
+            - "Colon cancer runs in the family, but the last colonoscopy was only {months_short} months ago."
+          B:
+            - "High-risk FHx; last scope {months_short} mo ago."
+        missing: "The high-risk history and the date of the last colonoscopy"
+      c4:
+        met:
+          A:
+            - "The patient has {finding}."
+            - "Colonoscopy is needed to find the source of {finding}."
+          B:
+            - "Indication: {finding}."
+        not_met:
+          A:
+            - "There is mild abdominal discomfort, but no bleeding, anemia, imaging abnormality or other finding that calls for a colonoscopy."
+          B:
+            - "Mild abd discomfort; no bleeding/anemia/imaging abnl."
+        missing: "The symptom or finding the colonoscopy is meant to investigate"
+      c5:
+        met:
+          A:
+            - "A large adenomatous polyp was removed {years} years ago, and follow-up colonoscopy is now due."
+            - "Colon cancer was removed by surgery a year ago, and the one-year follow-up colonoscopy is due."
+          B:
+            - "Hx large adenoma removed {years}y ago; surveillance due."
+        not_met:
+          A:
+            - "Ulcerative colitis has been limited to the rectum and sigmoid colon for {years} years."
+          B:
+            - "UC limited to rectosigmoid x{years}y."
+        missing: "The history that makes surveillance colonoscopy due now"
+      c6:
+        not_met:
+          A:
+            - "The patient has long-standing, stable irritable bowel syndrome with the same symptoms for years and asks for a colonoscopy."
+            - "Bright red blood on the toilet paper is explained by hemorrhoids seen on sigmoidoscopy, and there are no other symptoms."
+          B:
+            - "Chronic stable IBS, unchanged sx; pt requests scope."
+            - "BRBPR from hemorrhoids on flex sig; no other sx."
+      c7:
+        met:
+          A:
+            - "A {size} mm polyp seen on CT colonography will be removed with a snare."
+          B:
+            - "{size} mm polyp on CTC -> snare removal planned."
+        not_met:
+          A:
+            - "No polyp, bleeding lesion or other lesion to treat has been found."
+          B:
+            - "No lesion identified for therapy."
+        missing: "The lesion to be treated during the colonoscopy"
+    profiles:
+      - id: diagnostic
+        codes: ["45378", "45380", "45385"]
+        diagnoses: [K921, D509, R195, K625, K922]
+        pos: ["22", "24"]
+        indication: c4
+        exclusions: [c6]
+        slots:
+          finding: ["black, tarry stools", "iron-deficiency anemia with a hemoglobin of 9.8", "a positive stool blood test", "rectal bleeding mixed with the stool"]
+        lead:
+          A: ["The patient is seen for a colonoscopy."]
+          B: ["Colonoscopy."]
+      - id: surveillance
+        codes: ["45378", "45385"]
+        diagnoses: [Z860101, Z85038]
+        pos: ["22", "24"]
+        indication: c5
+        slots:
+          years: "3-5"
+        lead:
+          A: ["The patient is seen for a follow-up colonoscopy."]
+          B: ["Surveillance colonoscopy."]
+      - id: high_risk
+        codes: ["45378"]
+        diagnoses: [Z800]
+        pos: ["22", "24"]
+        indication: c3
+        slots:
+          years: "2-4"
+          months_short: "6-12"
+        lead:
+          A: ["The patient is seen for a screening colonoscopy because of family history."]
+          B: ["High-risk screening colonoscopy."]
+      - id: therapeutic
+        codes: ["45385"]
+        diagnoses: [K635, D126]
+        pos: ["22", "24"]
+        indication: c7
+        slots:
+          size: "8-18"
+        lead:
+          A: ["The patient is seen for removal of a colon polyp."]
+          B: ["Colonoscopy for polypectomy."]
+
+  POL-SURG-003:
+    criteria:
+      c1:
+        met:
+          B:
+            - "{side} GSV varicosities w/ aching, swelling, heaviness; duplex: reflux."
+        not_met:
+          B:
+            - "Veins only in small branches, no GSV/SSV reflux on duplex."
+        missing: "Symptoms and ultrasound findings in the great or small saphenous vein"
+      c2:
+        not_met:
+          B:
+            - "Compression never tried; pt wants procedure now."
+      c3:
+        not_met:
+          B:
+            - "Small red/blue spider veins both thighs; cosmetic concern."
+        diagnoses_when_not_met: [I781]
+        with_not_met: [c1, c4]
+      c4:
+        met:
+          B:
+            - "Sx persist after 3 mo compression, elevation, exercise; aching limits walking."
+        not_met:
+          B:
+            - "Mild cosmetic concern only; no pain, edema, ulcer or bleeding."
+        missing: "A failed 3-month conservative trial and the qualifying symptoms"
+    profiles:
+      - id: saphenous
+        codes: ["36475", "36478", "37765"]
+        diagnoses: [I83811, I83812, I83891, I83813]
+        pos: ["11", "24"]
+        exclusions: [c2, c3]
+        slots:
+          side: ["R", "L"]
+        lead:
+          B: ["Vein clinic eval."]
+
+  POL-SURG-004:
+    criteria:
+      c5:
+        met:
+          A:
+            - "Excess upper eyelid skin rests on the lashes of both eyes."
+            - "The {side} upper eyelid droops over the pupil."
+          B:
+            - "Dermatochalasis resting on lashes OU."
+            - "{side} upper lid ptosis over pupil."
+        not_met:
+          A:
+            - "The eyelids sit in a normal position on exam."
+          B:
+            - "Lids in nl position."
+        missing: "The eyelid condition causing the visual problem"
+      c6:
+        met:
+          A:
+            - "The patient says the eyelids block the upper vision, making reading and driving hard."
+          B:
+            - "Pt reports superior VF obstruction, trouble reading/driving."
+        not_met:
+          A:
+            - "The patient has no vision complaints."
+          B:
+            - "No visual complaints."
+        missing: "The patient's functional complaints from the eyelids"
+      c7:
+        met:
+          A:
+            - "Visual field testing with the lids taped up improves the upper field by {deg} degrees."
+          B:
+            - "VF: {deg} deg superior improvement w/ lids taped."
+        not_met:
+          A:
+            - "Visual fields are full, with only {small} degrees of upper loss."
+          B:
+            - "VF full; {small} deg superior loss only."
+        missing: "Visual field results with and without the eyelids taped"
+      c8:
+        not_met:
+          A:
+            - "The patient wants surgery to look less tired."
+          B:
+            - "Pt wants to look less tired; appearance only."
+        with_not_met: [c6, c7]
+    profiles:
+      - id: blepharoplasty
+        codes: ["15823", "15822"]
+        diagnoses: [H02831, H02834]
+        pos: ["24", "11"]
+        conditionals: [c6, c7]
+        exclusions: [c8]
+        slots:
+          side: ["right", "left"]
+          deg: "14-30"
+          small: "2-6"
+        lead:
+          A: ["The patient is seen about drooping upper eyelids."]
+          B: ["CC: droopy upper lids."]
+      - id: ptosis
+        codes: ["67904"]
+        diagnoses: [H02401, H02402, H02411]
+        pos: ["24", "11"]
+        conditionals: [c6, c7]
+        exclusions: [c8]
+        slots:
+          side: ["right", "left"]
+          deg: "14-30"
+          small: "2-6"
+        lead:
+          A: ["The patient is seen about a drooping eyelid."]
+          B: ["CC: lid ptosis."]
+
+  POL-WOUND-001:
+    criteria:
+      c1:
+        met:
+          A:
+            - "Dead tissue was cut away from a {size} cm ulcer on the {site} down to the fat layer, with the patient seen one on one."
+          B:
+            - "Sharp debridement {site} ulcer {size} cm to subcut; 1:1 contact."
+        not_met:
+          A:
+            - "Only a dressing change was done; no dead tissue was removed."
+          B:
+            - "Dressing change only; no debridement."
+        missing: "What was removed from the wound, how deep, and the wound size"
+      c2:
+        met:
+          A:
+            - "The care plan covers off-loading, infection control and blood-sugar management to help the wound close."
+          B:
+            - "POC: offloading, infection ctrl, glycemic mgmt; goal closure."
+        not_met:
+          A:
+            - "There is no plan for off-loading, infection or blood-sugar control."
+          B:
+            - "No POC addressing offloading/infection/glycemia."
+        missing: "A care plan that addresses the factors slowing healing"
+      c4:
+        situation:
+          A:
+            - "Wound care has continued for {many} weeks."
+          B:
+            - "Wound care x{many}wk."
+        met:
+          A:
+            - "This is the {nth} debridement; the ulcer has shrunk week by week, and the treatment plan was reviewed and revised last week."
+          B:
+            - "Debridement #{nth}; ulcer shrinking; POC revised last wk."
+        not_met:
+          A:
+            - "Debridement has been repeated weekly for {many} weeks without improvement and with no review of the treatment plan."
+          B:
+            - "Weekly debridement x{many}wk, no improvement, no POC revision."
+        missing: "Documented progress toward healing and a revision of the treatment plan for continued debridement"
+    profiles:
+      - id: new_ulcer
+        codes: ["11042", "97597"]
+        diagnoses: [L97412, L97312, E11621, L89153]
+        pos: ["11"]
+        slots:
+          size: "2-6"
+          site: ["right heel", "left heel", "right ankle", "left foot"]
+          site2: ["left lower leg", "right shin", "left ankle"]
+        lead:
+          A: ["The patient is seen in the wound clinic for a foot ulcer."]
+          B: ["Wound clinic: foot ulcer."]
+      - id: repeat_debridement
+        codes: ["11042", "97597"]
+        diagnoses: [L97412, L97312, E11621]
+        pos: ["11"]
+        conditionals: [c4]
+        slots:
+          size: "2-5"
+          site: ["right heel", "left heel", "right ankle"]
+          site2: ["left lower leg", "right shin"]
+          nth: ["third", "fourth", "fifth"]
+          many: "6-14"
+        lead:
+          A: ["The patient returns to the wound clinic."]
+          B: ["Wound clinic f/u."]
+      - id: compression
+        codes: ["29581"]
+        diagnoses: [I83013, L97312, I87311]
+        pos: ["11"]
+        slots: {}
+        lead:
+          A: ["The patient has a leg ulcer from vein disease and needs a compression wrap."]
+          B: ["Venous leg ulcer; compression wrap."]

@@ -14,7 +14,8 @@ training) and the rest from TRAIN policies. The leakage and quality checks run b
 written; a failing dataset is not written.
 
     uv run python -m app.rag.knowledge            # build the collection first
-    uv run python -m training.generate.decision_dataset [--seed N] [--train N] [--out DIR]
+    uv run python -m training.generate.decision_dataset --policy-set v1 [--seed N] [--train N]
+    uv run python -m training.generate.decision_dataset --policy-set v2   # generator v2
 """
 
 import argparse
@@ -317,8 +318,20 @@ def main() -> None:
         "--card", type=Path, default=Path(__file__).resolve().parents[2] / "docs" / "data-card.md"
     )
     parser.add_argument("--simulated-retrieval", action="store_true", help="no Qdrant (tests)")
+    parser.add_argument(
+        "--policy-set",
+        required=True,
+        choices=("v1", "v2"),
+        help="v1: model v1's dataset (frozen); v2: generator v2 (D-POL-2)",
+    )
     args = parser.parse_args()
     sizes = {"train": args.train, "validation": args.validation, "test": args.test}
+    if args.policy_set == "v2":
+        from training.generate import decision_dataset_v2
+
+        out = args.out if args.out != GENERATED_DIR / "decision" else decision_dataset_v2.OUT_DIR
+        decision_dataset_v2.main(args.seed, sizes, out)
+        return
     retriever, retrieval = None, "simulated"
     if not args.simulated_retrieval:
         retriever, retrieval = live_retriever()
