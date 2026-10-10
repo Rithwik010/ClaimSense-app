@@ -34,7 +34,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
 | Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). `p5.3-review-finalization` (P5.3) merged into `main` (`--no-ff`, normal push; merge `7575d36`). `p2.3b-rules-v2` (P2.3b) merged into `main` (`--no-ff`, normal push; merge `00a0201`). `p2.3c-ncci-modifiers` (P2.3c) merged into `main` (`--no-ff`, normal push; merge `28af00f`). `v2-policies-retrieval` (policies v2) merged into `main` (`--no-ff`, normal push; merge `1a56055`; D-PROC-2). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 2,221 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running (data/raw, Postgres, Qdrant). CI (run 38046540875 on `main` `2bc1a6a`): 1,857 passed, 66 skipped. |
+| Tests | 2,225 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running (data/raw, Postgres, Qdrant). CI (run 38057325562 on `v2-model-train` `90c10a3`, merged as `d65f18d`): 1,861 passed, 66 skipped. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -375,6 +375,13 @@ Kaggle copy for anything model-related.
 - 16:25 | Manideep3183 | Part 2 | **Part 2 merged (branch `v2-model-data`, `67dca2c`..`9d8f032`; merged into `main` as `2bc1a6a`, `--no-ff`; CI run 38046388955 on the branch and 38046540875 on `main` pass, 1,857 passed, 66 skipped).** Derived line decisions (D-DEC-1), prompt `decision_v3`, generator v2 and its checks, the model v2 Kaggle package and the v2 evaluation.
   - **Dataset v2:** 2,000 / 300 / 300 records; model lines train APPROVE 1,584, PEND 689, DENY 570 (validation 246 / 98 / 77, test 222 / 106 / 88); 0 check problems; test holds 100 records on unseen policies and note style D only (150 records); longest record 2,761 tokens < 3,072. Fingerprints train `2f190ad6a0c1`, validation `400eae4e118c`, test `221bb0da4243`.
   - **Tests:** 2,221 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
+
+- 19:24 | Manideep3183 | Model v2 | **Model v2 training branch merged (branch `v2-model-train`, `3b75915`..`90c10a3`; merged into `main` as `d65f18d`, `--no-ff`; CI run 38057325562 on the branch passed, 1,861 passed, 66 skipped).** Kaggle kernels via the CLI with an upload check (D-TRAIN-1), num_ctx 8192 (D-MODEL-1), model v1 on the v2 test set.
+  - **Kaggle:** private dataset `claimsense-decision-v2` (upload check: 17 files, 2,600 records, 0 problems: no AMA descriptor text, our own line descriptions only, synthetic IDs and patients); smoke run 23 min (about 30 s/step on the T4, GGUF export works); full run (500 steps) started 16:54, expected about 22:00. E4B (4-bit QLoRA) kernels prepared, not run.
+  - **Context window:** v1 ran with Ollama's default 4,096 tokens; counted exactly, the longest v2 test prompt plus answer is 3,414 for v1 and 2,722 for v2, so no record was cut and nothing was rerun. num_ctx 8,192 now goes with every request and into the Modelfiles, since prompt plus the 1,536-token answer cap can reach 4,252 (`scripts/verify/context_fit.py`).
+  - **Model v1 on the v2 test set:** valid output 0.9167, line accuracy 0.7188, macro-F1 0.694, criterion status 0.7608 (`docs/results-v2.md`).
+  - **Fixed:** `claimsense-decision:v1` was briefly re-created from the vision projector GGUF; restored from the Q4_K_M file (same weights blob as evaluated); the Modelfile writer now refuses projector files.
+  - **Tests:** 2,225 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
