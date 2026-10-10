@@ -138,7 +138,9 @@ def prepare(
     (dataset / "dataset-metadata.json").write_text(
         json.dumps(
             {
-                "title": "ClaimSense decision dataset (private)",
+                "title": "ClaimSense decision dataset"
+                + (" v2" if version == 2 else "")
+                + " (private)",
                 "id": f"{kaggle_user}/{slug}",
                 "isPrivate": True,
                 "licenses": [{"name": "other"}],
