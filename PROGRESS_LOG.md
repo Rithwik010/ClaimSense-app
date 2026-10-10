@@ -34,7 +34,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
 | Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). `p5.3-review-finalization` (P5.3) merged into `main` (`--no-ff`, normal push; merge `7575d36`). `p2.3b-rules-v2` (P2.3b) merged into `main` (`--no-ff`, normal push; merge `00a0201`). `p2.3c-ncci-modifiers` (P2.3c) merged into `main` (`--no-ff`, normal push; merge `28af00f`). `v2-policies-retrieval` (policies v2) merged into `main` (`--no-ff`, normal push; merge `1a56055`; D-PROC-2). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 2,315 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running (data/raw, Postgres, Qdrant). CI (run 38060936704 on `p5.4-explain-ocr` `4cfd2e4`, merged as `df6f7d6`): Python 1,951 passed, 66 skipped; web app 17 passed. |
+| Tests | 2,310 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running (data/raw, Postgres, Qdrant). CI (run 38077872777 on `p6.1-decisions-streamlit`, merged as `aee9cbe`): Python 1,946 passed, 66 skipped; web app passed. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -402,6 +402,13 @@ Kaggle copy for anything model-related.
   - **v1 vs v2 on the 300 v2 test claims:** valid output 0.9167 -> **0.98**; line accuracy 0.7188 -> **0.8726**; macro-F1 0.694 -> **0.8532** (target 0.90); criterion status 0.7608 -> **0.9261**; DENY precision 0.7966 -> **1.000**; median time per claim 6.4 s -> **5.7 s** (p95 46.7 s -> 13.3 s). Unseen policies 0.68 -> 0.81 line accuracy; held-out note style D 0.73 -> 0.875.
   - **Where v2 still errs:** 24 of 88 DENY lines not denied (10 approved, 14 pended) and 19 of 106 PEND lines approved; it never denies a line that should not be denied. Every recommendation still goes to a reviewer.
   - **Checks with v2:** live-model test and Playwright smoke test pass through the full v2 pipeline (policy set v2, prompt `decision_v3`).
+
+- 2026-10-11 00:31 | Manideep3183 | Demo plan, Sat night | **Decisions recorded, Streamlit removed, v2 error breakdown and evidence guard merged (branch `p6.1-decisions-streamlit`; merged into `main` as `aee9cbe`, `--no-ff`; CI run 38077872777 passed: Python 1,946 passed, 66 skipped; web app passed).** D-MODEL-3 (v2 is the demo model, frozen Mon 12 Oct 21:00 IST; E4B side run), D-UI-2 (React replaces Streamlit; shadcn/ui and Motion), D-CARC-1 (CARC/RARC on DENY and REJECT lines only), D-EVID-1 (evidence guard).
+  - **Streamlit removed:** pages, dependency, tests and import contract; the sample claim moved to `tests/e2e/`.
+  - **Where v2 goes wrong** (`docs/results-v2-errors.md`): 53 of 416 lines wrong; pend predicted as approve 19, deny as pend 14, deny as approve 10, approve as pend 10; most wrong lines on POL-IMG-001 (10 of 43); 84 claims route to QUICK, 14 of them hold a wrong line.
+  - **Evidence guard adopted:** wrong approvals 29 -> 28, macro-F1 0.8532 -> 0.8487; no golden value changed; 0 of 2,600 gold labels affected.
+  - **E4B:** timing run 55 s/step (E2B 30.4), its evaluation ran out of T4 memory, so E4B trains without evaluations; the export test is running. Projection for the full run in the next entry.
+  - **Tests:** 2,310 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
