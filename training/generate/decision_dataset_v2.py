@@ -51,6 +51,7 @@ from training.generate.scenarios_v2 import (
 
 GENERATOR_VERSION = "decision-dataset-v3"
 OUT_DIR = GENERATED_DIR / "decision_v2"
+DOCS_CARD = Path(__file__).resolve().parents[2] / "docs" / "data-card-v2.md"
 DEFAULT_SIZES = {"train": 2000, "validation": 300, "test": 300}
 TEST_UNSEEN_POLICY_RECORDS = 100
 TEST_STYLES = (TEST_ONLY_STYLE,) * 3 + TRAIN_STYLES  # half of the test notes in style D
@@ -431,7 +432,10 @@ def write_dataset_v2(
         "checks": {"problems": 0, **{k: v for k, v in checks.items() if k != "problems"}},
     }
     write_json(out_dir / "summary.json", summary)
-    (out_dir / "data-card.md").write_text(data_card_v2(summary), encoding="utf-8")
+    card = data_card_v2(summary)
+    (out_dir / "data-card.md").write_text(card, encoding="utf-8")
+    if out_dir == OUT_DIR:  # the committed copy (aggregates only, no claim data)
+        DOCS_CARD.write_text(card, encoding="utf-8")
     return summary
 
 

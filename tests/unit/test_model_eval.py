@@ -155,3 +155,72 @@ def test_a_dropped_connection_is_retried_then_fails() -> None:
     assert waits == [15, 45]
     with pytest.raises(ModelUnavailable):
         complete_with_retry(Flaky(3), "s", "u", waits.append)
+
+
+def test_an_invalid_answer_is_retried_once_as_in_the_pipeline(dataset, tmp_path) -> None:  # noqa: ANN001
+    """D-DEC-1: the second attempt (another seed) is used when the first is invalid."""
+    from training.evaluate.model import run
+
+    directory, targets, count = dataset
+
+    class SecondTime(Answers):
+        def complete(self, system: str, user: str, attempt: int = 1) -> str:
+            self.calls += 1
+            return "not json" if attempt == 1 else self.targets.get(user, "")
+
+    model = SecondTime(targets)
+    report = run(model, "retried", directory, tmp_path)
+
+    assert model.calls == 2 * count and report["retried_records"] == count
+    assert report["metrics"]["valid_output_rate"] == 1.0
+
+
+@pytest.fixture(scope="module")
+def dataset_v2(tmp_path_factory) -> tuple:  # noqa: ANN001
+    from training.generate.common import write_jsonl
+    from training.generate.decision_dataset_v2 import build_dataset_v2
+
+    out = tmp_path_factory.mktemp("decision_v2")
+    built = build_dataset_v2(seed=5, sizes={"train": 3, "validation": 3, "test": 18})
+    records, inputs = built["splits"]["test"]
+    write_jsonl(out / "test.jsonl", records)
+    write_jsonl(out / "test_inputs.jsonl", inputs)
+    summary = {"generator_version": "t", "seed": 5, "prompt_version": "decision_v3"}
+    (out / "summary.json").write_text(json.dumps(summary))
+    return out, records, inputs
+
+
+def test_the_v2_comparison_renders_model_v1_prompt_and_scores_both(dataset_v2, tmp_path) -> None:  # noqa: ANN001
+    """Model v1 sees decision_v2 rendered from the v2 inputs; model v2 sees decision_v3; the table
+    has one row per model."""
+    from app.ml.prompt import PROMPT_VERSION, system_prompt
+    from training.evaluate.compare_v2 import table
+    from training.evaluate.model import run
+    from training.generate.scenarios_v2 import TEST_ONLY_POLICIES
+
+    directory, records, _ = dataset_v2
+    targets = {r["messages"][1]["content"]: r["messages"][2]["content"] for r in records}
+    seen: list[tuple[str, str]] = []
+
+    class Recorder(Answers):
+        def complete(self, system: str, user: str, attempt: int = 1) -> str:
+            seen.append((system, user))
+            return super().complete(system, user)
+
+    v1 = run(
+        Recorder(text="{}"),
+        "m1",
+        directory,
+        tmp_path,
+        prompt="decision_v2",
+        test_only=set(TEST_ONLY_POLICIES),
+    )
+    v2 = run(Answers(targets), "m2", directory, tmp_path, test_only=set(TEST_ONLY_POLICIES))
+
+    assert all(system == system_prompt(PROMPT_VERSION) for system, _ in seen)
+    assert all("(requirement)" not in user for _, user in seen)  # no v3 type labels
+    assert v1["prompt"] == "decision_v2" and v2["prompt"] == "decision_v3"
+    assert v2["metrics"]["decisions"]["macro_f1"] == 1.0
+    assert v2["metrics"]["groups"]["unseen_policies"]["records"] == 6
+    text = table([v1, v2])
+    assert text.count("| stub |") == 2 and "Style D (held out)" in text
