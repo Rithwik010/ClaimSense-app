@@ -179,3 +179,54 @@ Work on branch p1.1-project-setup.
 ```
 
 After the task report, review the pull request, merge it, and run `/clear` before starting P1.2.
+
+---
+
+## Part I — Run the demo from a fresh clone
+
+Needs Parts B, F and G (Docker and Ollama running, `gemma4:e2b` pulled) and Node.js 22 or later.
+Synthetic data only; `data/raw/` and model files never go into git.
+
+1. Clone and install:
+   ```bash
+   git clone https://github.com/Manideep3183/ClaimSense.git claimsense
+   cd claimsense
+   uv sync
+   (cd frontend-web && npm ci && npx playwright install chromium)
+   ```
+2. Public source files: copy the team's `data/raw/` folder (shared drive) into the repository,
+   then check it against the manifest:
+   ```bash
+   uv run python -m scripts.verify.raw_manifest      # expect: missing 0, changed 0
+   ```
+3. Embedding model for the policy collections:
+   ```bash
+   uv run python -m scripts.verify.embedding_model fetch
+   ```
+4. Demo model (skip when `ollama list` already shows `claimsense-decision:v2`): copy the model v2
+   GGUF from the shared drive (the Kaggle run's `gguf/gemma-4-E2B-it.Q4_K_M.gguf`, never the
+   `mmproj` file) into `data/generated/models/claimsense-decision-v2/`, then
+   ```bash
+   uv run python -m training.finetune.modelfile \
+       --gguf data/generated/models/claimsense-decision-v2/gemma-4-E2B-it.Q4_K_M.gguf --version 2
+   ollama create claimsense-decision:v2 -f data/generated/models/claimsense-decision-v2/Modelfile
+   ```
+5. Database, seeds, policy collections and the model check:
+   ```bash
+   make demo-reset
+   ```
+6. All tests, golden cases included:
+   ```bash
+   uv run pytest
+   ```
+7. Start the app (database containers, API on :8000, web app on http://localhost:5173):
+   ```bash
+   make demo
+   ```
+8. Demo claims, right after a `make demo-reset` (each claim can be filed once), with `make demo`
+   running in another terminal:
+   ```bash
+   cd frontend-web && npx playwright test e2e/demo-claims.spec.ts
+   ```
+   Or upload the files in `demo/claims/` by hand on Submit claim, in file order. `docs/DEMO.md`
+   is the click-by-click runbook.
