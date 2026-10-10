@@ -41,11 +41,15 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | Phase | Done | Partly done | Not started |
 |---|---|---|---|
 | 1 Foundations | P1.1, P1.2, P1.3, P1.4 (contracts approved 2026-09-22), P1.5 | | |
-| 2 Rules and calculator | P2.1, P2.2, P2.3 (P2.3a v1 rules, P2.3b rules v2), P2.4, P2.5 | | |
-| 3 Knowledge and datasets | P3.1, P3.2, P3.3 (coverage_policies collection), P3.4, P3.5 (v2, real retrieval) | | |
-| 4 Model | P4.1, P4.2, P4.3, P4.5 | **P4.4 (measured; below the 0.90 target)** | |
-| 5 Integration | P5.3 | P5.1 (digital PDF only), P5.2 (context with retrieval), P5.5 (skeleton page), P5.6 (golden set written) | P5.4 |
+| 2 Rules and calculator | P2.1, P2.2, P2.3 (P2.3a v1 rules, P2.3b rules v2, P2.3c NCCI modifiers), P2.4, P2.5 | | |
+| 3 Knowledge and datasets | P3.1, P3.2, P3.3 (coverage policy collections v1 and v2), P3.4, P3.5 (v2, real retrieval) | | |
+| 4 Model | P4.1, P4.2, P4.3, P4.5 (model v1) | **P4.4: model v1 measured below the 0.90 target (0.694 on the v2 test set); model v2 training on Kaggle** | |
+| 5 Integration | P5.1 (OCR 0.9378 held-out), P5.2, P5.3, P5.4 (explanation), P5.5 (React web app; redesign planned), P5.6 (31 golden e2e cases, 10 with v2 versions) | | |
 | 6 Evaluation and demo | | | P6.1, P6.2, P6.3 |
+
+Not built yet, though planned with P5.4 (§9.3): the explanation collections `plan_documents`,
+`code_reference` and `carc_rarc`; the explanation shows internal reason codes, not their CARC/RARC
+codes (`data/curated/reason_code_map.csv` is filled).
 
 ---
 
@@ -389,6 +393,10 @@ Kaggle copy for anything model-related.
   - **React web app (P5.5):** `frontend-web/` (Vite, React, TypeScript, Tailwind, TanStack Query); all seven pages; Playwright smoke test (submit JSON, process, review queue, accept, explanation and audit trail) passes locally; `make demo` starts everything. Streamlit app kept as a fallback.
   - **Fixed on the way:** model v1's free-text `reasons` no longer become reason codes (D-DEC-2, H15); a scanned value that fails its format check is filed for the rules instead of refusing the claim; the demo database was migrated to head (0003 to 0006) and re-seeded.
   - **Tests:** 2,315 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
+
+- 21:05 | Manideep3183 | Demo readiness | **Check of every task and cross-check before the demo.** All automated checks pass: local suite 2,315 passed, 1 skipped; live-model end-to-end test (model v1) passes; Playwright smoke test passes; web app 22 unit tests, lint, typecheck, build; golden checks 134 rules + 56 calculator cases, 0 violations; rules parity 0 differences; v2 policy source checker 0 problems; stored v2 dataset matches the pipeline's derivation on all 2,600 records (new `scripts/verify/derive_parity.py`, after D-DEC-2).
+  - **Fixed:** `golden_checks.py` crashed on the rules v2 cases (R14-R20 added to Group C); the web app now shows an error instead of crashing when the API proxy is down (an error boundary on every page).
+  - **Still open for the demo:** model v2 (training), P6.1 metrics report, P6.2 demo scenarios and rehearsal, P6.3 README, architecture and limitations, the explanation collections and CARC/RARC codes (§9.3), the UI redesign.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.

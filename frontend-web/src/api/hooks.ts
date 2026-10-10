@@ -53,7 +53,10 @@ export function useAudit(claimId: string) {
 export function useExplanation(claimId: string, enabled: boolean) {
   return useQuery({
     queryKey: ["explanation", claimId],
-    queryFn: () => request<string>(`/v1/claims/${encodeURIComponent(claimId)}/explanation`),
+    queryFn: () =>
+      request<string>(`/v1/claims/${encodeURIComponent(claimId)}/explanation`, {
+        expect: "text",
+      }),
     enabled,
   });
 }
