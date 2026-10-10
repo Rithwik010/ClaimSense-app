@@ -152,9 +152,9 @@ Everything runs on a laptop. There are **no external AI APIs**: the model runs l
       │
       ▼
  ┌───────────────┐   HTTP only    ┌────────────────────────────┐
- │ Streamlit UI  │ ─────────────▶ │ FastAPI  (app/api)          │
- │ frontend/     │    (httpx)     │ runs the synchronous        │
- │ :8501         │                │ pipeline (app/workflow)     │
+ │ React web app │ ─────────────▶ │ FastAPI  (app/api)          │
+ │ frontend-web/ │ (Vite proxy)   │ runs the synchronous        │
+ │ :5173         │                │ pipeline (app/workflow)     │
  └───────────────┘                └──────┬────────┬────────┬───┘
                                          │        │        │
                               SQLAlchemy │        │ qdrant │ ollama
@@ -178,7 +178,7 @@ Everything runs on a laptop. There are **no external AI APIs**: the model runs l
 | Vector search | Qdrant, fastembed with `BAAI/bge-small-en-v1.5` |
 | Model serving | Ollama (local) |
 | Model training | Unsloth QLoRA on a Kaggle T4 GPU |
-| Frontend | Streamlit |
+| Frontend | React web app (Vite, TypeScript; D-UI-1, D-UI-2; Streamlit until 2026-10-10) |
 | Quality gates | ruff, pytest, import-linter, pre-commit, GitHub Actions CI |
 
 ### 3.3 Code structure and built-in guardrails
@@ -199,7 +199,7 @@ app/
 ├── db/           tables, migration, seed loaders, policy format checker
 ├── api/          FastAPI routes
 └── core/         settings, logging
-frontend/         Streamlit — talks to the API over HTTP only, never imports app/
+frontend-web/     React web app — talks to the API over HTTP only, never imports app/
 training/
 ├── generate/     synthetic members, providers, claims, notes, forms, dataset
 ├── finetune/     Kaggle QLoRA training + GGUF export + Ollama Modelfile
@@ -259,7 +259,7 @@ POST /v1/claims/{id}/process     → R05 → context + retrieval → model → v
                                    → copay calculator → decision record → AWAITING_REVIEW
 GET  /v1/claims/{id}             → the decision record
 GET  /v1/claims/{id}/audit       → the audit trail
-Streamlit page                   → submit, process, view record and audit trail
+Web page (Streamlit at the time) → submit, process, view record and audit trail
 ```
 
 Not yet possible: rules other than R05 (an unknown member or provider returns an error),
@@ -473,7 +473,7 @@ uv run python -m app.rag.knowledge
 uv run pytest
 
 uv run uvicorn app.api.main:app            # API on :8000
-uv run streamlit run frontend/app.py       # UI on :8501
+cd frontend-web && npm run dev            # web app on :5173 (or: make demo)
 ```
 
 Ollama must be running with the model pulled or created. Known hiccups: quitting the Ollama app stops

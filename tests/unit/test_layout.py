@@ -20,7 +20,6 @@ PACKAGES = [
     "app.db",
     "app.api",
     "app.core",
-    "frontend",
 ]
 
 

@@ -171,8 +171,8 @@ transition raises an error. No state-machine library is used.
 | Model serving | Ollama (native install), `ollama` Python client |
 | Intake | `pymupdf`, `pytesseract` (+ Tesseract binary), `pillow` |
 | Templates | `jinja2` |
-| HTTP client (frontend → API) | the browser's `fetch` through the Vite dev proxy (`httpx` in the Streamlit fallback) |
-| Frontend | React web app in `frontend-web/` (D-UI-1): Node.js + npm, Vite, React, TypeScript, React Router, Tailwind CSS, TanStack Query; no component kit, no animation library. Tests: Vitest, React Testing Library, Playwright; lint: ESLint. `streamlit` (`frontend/`) stays as a fallback until the React smoke test passes |
+| HTTP client (frontend → API) | the browser's `fetch` through the Vite dev proxy |
+| Frontend | React web app in `frontend-web/` (D-UI-1, D-UI-2): Node.js + npm, Vite, React, TypeScript, React Router, Tailwind CSS, TanStack Query, shadcn/ui components (Radix), Motion for animation, fonts bundled with @fontsource; light theme only. Tests: Vitest, React Testing Library, Playwright; lint: ESLint. Streamlit was removed (D-UI-2) |
 | Logging | `structlog` |
 | Synthetic data | `faker`, `reportlab`, `pyyaml` |
 | Evaluation | `pandas`, `scikit-learn` |
@@ -212,7 +212,6 @@ claimsense/
 │   ├── api/                  # FastAPI routes
 │   └── core/                 # settings, logging
 ├── migrations/               # Alembic
-├── frontend/                 # Streamlit pages (fallback until the React smoke test passes)
 ├── frontend-web/             # React web app (Vite, TypeScript; D-UI-1)
 ├── training/
 │   ├── generate/             # synthetic data generators
@@ -483,13 +482,13 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 Authentication: a simple role header (`provider`, `reviewer`, `admin`) checked by a dependency.
 Prototype only; documented as such.
 
-### 8.11 Frontend (`frontend-web/`, React; D-UI-1)
+### 8.11 Frontend (`frontend-web/`, React; D-UI-1, D-UI-2)
 
-Vite + React + TypeScript, React Router, Tailwind CSS, TanStack Query; no component kit and no
-animation library. The web app talks only to the FastAPI API, through the Vite dev proxy; it never
-imports app code or touches the database. `make demo` starts the database containers, the API and
-the web app. The Streamlit app in `frontend/` stays untouched as a fallback until the React smoke
-test passes.
+Vite + React + TypeScript, React Router, Tailwind CSS, TanStack Query; components from shadcn/ui
+(Radix), Motion as the only animation library, fonts bundled with @fontsource; light theme only.
+The web app talks only to the FastAPI API, through the Vite dev proxy; it never imports app code or
+touches the database. `make demo` starts the database containers, the API and the web app. The
+earlier Streamlit app was removed (D-UI-2).
 
 **Layout.** Top bar: app name, role switcher (Provider / Reviewer / Admin, sent as `X-Role`) and the
 reviewer ID (remembered in the browser). Left navigation: Submit claim, Review queue, Claims, Rule
@@ -677,7 +676,7 @@ Accounts, tools, repository, model pull, verification. Not a Claude Code phase.
 | P1.2 | `docker-compose.yml` (Postgres, Qdrant), `.env.example`, settings (§8.12), structlog setup, `/health` endpoint | `docker compose up -d` then `/health` reports DB, Qdrant, Ollama status |
 | P1.3 | SQLAlchemy models + first Alembic migration: plans, benefits, fee_schedule, members, providers, authorizations, other_coverage, accumulators, code tables, claims, decision_records, audit_events | `alembic upgrade head` on a fresh DB succeeds; downgrade works |
 | P1.4 | Draft `app/domain/contracts.py` per §8.1 with validators (NPI check digit, code formats, cents ≥ 0). **Stop for team review; contracts are frozen after approval.** | Team approval recorded in `DECISIONS.md` |
-| P1.5 | **Walking skeleton**: JSON claim → R05 only → base `gemma4:e2b` call with the `SLMOutput` schema → COPAY-only calculator → decision record → audit events → Streamlit page showing the record | One sample claim runs end to end; e2e test passes |
+| P1.5 | **Walking skeleton**: JSON claim → R05 only → base `gemma4:e2b` call with the `SLMOutput` schema → COPAY-only calculator → decision record → audit events → a page showing the record (Streamlit then; the React app since D-UI-2) | One sample claim runs end to end; e2e test passes |
 
 ### Phase 2 — Rules engine and calculator (Week 2)
 

@@ -4,7 +4,7 @@ pipeline leaves it RECEIVED with a 503 until FY2026 is loaded.
 
 Counts every claim set: the model v1 decision dataset, the claim corpus, the golden rules cases,
 the golden end-to-end claims, the blind-review claims (only their dates of service are read) and
-the review page's sample claim. Report only.
+the live-model test's sample claim. Report only.
 
     uv run python -m scripts.verify.early_dates
 """
@@ -57,8 +57,8 @@ def claim_sets(root: Path = ROOT) -> dict[str, list[list[str]]]:
     ]
     blind = json.loads((golden / "blind_review" / "claims.json").read_text(encoding="utf-8"))
     sets["blind-review claims"] = [dates_of_service(item["claim"]) for item in blind["claims"]]
-    sample = root / "frontend" / "sample_claim.json"
-    sets["review page sample claim"] = [
+    sample = root / "tests" / "e2e" / "sample_claim.json"
+    sets["live-model test sample claim"] = [
         dates_of_service(json.loads(sample.read_text(encoding="utf-8")))
     ]
     return sets

@@ -23,7 +23,7 @@ pytestmark = pytest.mark.skipif(
     os.environ.get("CLAIMSENSE_LIVE_MODEL") != "1", reason="set CLAIMSENSE_LIVE_MODEL=1"
 )
 
-SAMPLE = Path(__file__).resolve().parents[2] / "frontend" / "sample_claim.json"
+SAMPLE = Path(__file__).resolve().parent / "sample_claim.json"
 
 
 def test_sample_claim_runs_through_the_base_model(api, load_case_reference) -> None:
