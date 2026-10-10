@@ -1,0 +1,33 @@
+# ClaimSense local commands (D-UI-1). `make demo` starts the database containers, the API and the
+# React web app together; Ctrl-C stops the API and the web app. Ollama runs natively (`ollama serve`).
+# First time on a machine: `make setup`.
+SHELL := /bin/bash
+MODEL_NAME ?= claimsense-decision:v2
+API_PORT ?= 8000
+
+.PHONY: setup demo web-check smoke
+
+setup: ## Python and web dependencies, database schema, reference data, policy collections
+	uv sync
+	cd frontend-web && npm ci
+	docker compose up -d --wait
+	uv run alembic upgrade head
+	uv run python -m app.db.seed
+	uv run python -m app.rag.knowledge
+
+demo: ## database containers, then the API (port $(API_PORT)) and the web app (port 5173)
+	docker compose up -d --wait
+	uv run alembic upgrade head
+	@test -d frontend-web/node_modules || (cd frontend-web && npm ci)
+	@curl -sf http://localhost:11434/api/version >/dev/null || echo "Ollama is not running: start it with 'ollama serve'."
+	@echo "Web app http://localhost:5173 · API http://localhost:$(API_PORT)/docs · model $(MODEL_NAME)"
+	@trap 'kill 0' INT TERM EXIT; \
+	MODEL_NAME=$(MODEL_NAME) uv run uvicorn app.api.main:app --port $(API_PORT) & \
+	(cd frontend-web && npm run dev) & \
+	wait
+
+web-check: ## what CI runs for the web app: install, lint, typecheck, unit tests, build
+	cd frontend-web && npm ci && npm run lint && npm run typecheck && npm test && npm run build
+
+smoke: ## Playwright smoke test against a running `make demo`
+	cd frontend-web && npx playwright test

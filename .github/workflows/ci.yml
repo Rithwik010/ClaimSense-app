@@ -34,6 +34,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
+      # P5.1 (D-OCR-1): the scanned-form OCR calls the Tesseract program through pytesseract.
+      - name: Tesseract
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr
+
       # D-RAG-2: the embedding model is cached, its SHA-256 checked, and the retrieval tests fail
       # instead of skipping when it is missing.
       - name: Cache the embedding model
@@ -59,3 +63,33 @@ jobs:
         env:
           CLAIMSENSE_REQUIRE_DB: "1"
           CLAIMSENSE_REQUIRE_EMBEDDING: "1"
+
+  web:
+    name: Web app (lint, typecheck, unit tests, build)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend-web
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend-web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

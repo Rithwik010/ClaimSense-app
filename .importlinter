@@ -37,6 +37,20 @@ forbidden_modules =
     app.api
     app.core
 
+[importlinter:contract:explain-record-only]
+name = app.explain renders from the decision record only (H15)
+type = forbidden
+source_modules =
+    app.explain
+forbidden_modules =
+    app.ml
+    app.rag
+    app.db
+    app.workflow
+    app.api
+    ollama
+    qdrant_client
+
 [importlinter:contract:frontend-http-only]
 name = frontend must not import app (it calls the API over HTTP only)
 type = forbidden

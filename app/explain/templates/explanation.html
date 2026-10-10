@@ -1,0 +1,158 @@
+<article class="explanation" data-claim-id="{{ claim_id }}">
+<section class="explanation-summary">
+<h2>Summary</h2>
+<dl>
+<dt>Status</dt><dd data-status="{{ status }}">{{ status_label }} ({{ status }})</dd>
+{% if claim_decision %}
+<dt>Claim decision</dt><dd>{{ claim_decision }}</dd>
+{% endif %}
+{% if review_tier %}
+<dt>Review tier</dt><dd>{{ review_tier }}</dd>
+{% endif %}
+<dt>Received</dt><dd>{{ timestamps.received }}</dd>
+{% if timestamps.processed %}
+<dt>Processed</dt><dd>{{ timestamps.processed }}</dd>
+{% endif %}
+{% if timestamps.finalized %}
+<dt>Finalized</dt><dd>{{ timestamps.finalized }}</dd>
+{% endif %}
+</dl>
+</section>
+{% if processed or awaiting %}
+<section class="explanation-pended">
+<h2>Lines processed</h2>
+<ul>
+{% for line in processed %}
+<li>Line {{ line.line_no }} ({{ line.procedure_code }}): {{ line.decision_label }}</li>
+{% else %}
+<li>None</li>
+{% endfor %}
+</ul>
+<h2>Lines awaiting documentation</h2>
+<ul>
+{% for line in awaiting %}
+<li>Line {{ line.line_no }} ({{ line.procedure_code }}): {{ line.decision_label }}
+{% if line.missing_information %}
+<ul>
+{% for need in line.missing_information %}
+<li>Needs: {{ need }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+</li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+<section class="explanation-rules">
+<h2>Rule checks</h2>
+<table>
+<thead><tr><th scope="col">Rule</th><th scope="col">Result</th><th scope="col">Line</th><th scope="col">Reason</th><th scope="col">Detail</th></tr></thead>
+<tbody>
+{% for rule in rules %}
+<tr data-result="{{ rule.result }}"><td>{{ rule.rule_id }}</td><td>{{ rule.result }}{% if rule.result == "failed" %} ({{ rule.outcome }}){% endif %}</td><td>{{ rule.line_no or "" }}</td><td>{{ rule.reason }}</td><td>{{ rule.detail }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</section>
+{% if output_errors %}
+<section class="explanation-output-errors">
+<h2>The model's recommendation could not be used</h2>
+<ul>
+{% for error in output_errors %}
+<li>{{ error }}</li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+<section class="explanation-lines">
+<h2>Lines</h2>
+{% for line in lines %}
+<section class="explanation-line" data-line-no="{{ line.line_no }}" data-decision="{{ line.decision }}">
+<h3>Line {{ line.line_no }} ({{ line.procedure_code }}): {{ line.decision_label }}</h3>
+<p>Decided by {{ line.source }}.{% if line.benefit_category %} Benefit category: {{ line.benefit_category }}.{% endif %}</p>
+{% if line.reasons %}
+<ul class="reasons">
+{% for r in line.reasons %}
+<li>Reason: {{ r }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if line.criteria %}
+<table class="criteria">
+<thead><tr><th scope="col">Criterion</th><th scope="col">Status</th><th scope="col">Evidence</th><th scope="col">Policy</th></tr></thead>
+<tbody>
+{% for c in line.criteria %}
+<tr><td>{{ c.criterion_id }}{% if c.text %}<br><small>{{ c.text }}</small>{% endif %}</td><td>{{ c.status }}</td><td>{{ c.evidence }}</td><td>{{ c.policy_id }}{% if c.policy_title %}: {{ c.policy_title }}{% endif %}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+{% if line.missing_information %}
+<ul class="missing">
+{% for need in line.missing_information %}
+<li>Needs: {{ need }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if line.amounts %}
+<table class="amounts">
+<tbody>
+{% for label, value in line.amounts %}
+<tr><th scope="row">{{ label }}</th><td>{{ value }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+</section>
+{% else %}
+<p>No line decisions.</p>
+{% endfor %}
+</section>
+{% if totals %}
+<section class="explanation-totals">
+<h2>Totals</h2>
+<table class="amounts">
+<tbody>
+{% for label, value in totals %}
+<tr><th scope="row">{{ label }}</th><td>{{ value }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</section>
+{% endif %}
+{% if review %}
+<section class="explanation-review">
+<h2>Review</h2>
+<dl>
+<dt>Reviewer</dt><dd>{{ review.reviewer_id }}</dd>
+<dt>Action</dt><dd>{{ review.action }} at {{ review.timestamp }}</dd>
+{% if review.reason %}
+<dt>Comment</dt><dd>{{ review.reason }}</dd>
+{% endif %}
+</dl>
+{% if review.overrides %}
+<ul>
+{% for o in review.overrides %}
+<li>Line {{ o.line_no }} changed to {{ o.decision }}{% if o.benefit_category %} ({{ o.benefit_category }}){% endif %}: {{ o.reason }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+</section>
+{% endif %}
+<section class="explanation-versions">
+<h2>Versions</h2>
+<dl>
+<dt>Rules</dt><dd>{{ versions.rules_version }}</dd>
+{% if versions.model_name %}
+<dt>Model</dt><dd>{{ versions.model_name }}</dd>
+{% endif %}
+{% if versions.prompt_version %}
+<dt>Prompt</dt><dd>{{ versions.prompt_version }}</dd>
+{% endif %}
+{% for policy, version in versions.policy_versions | dictsort %}
+<dt>Policy {{ policy }}</dt><dd>{{ version }}</dd>
+{% endfor %}
+</dl>
+</section>
+</article>

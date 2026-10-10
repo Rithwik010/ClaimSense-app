@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum
 
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -38,12 +39,16 @@ class QueueItem:
 def review_queue(
     session: Session, tier: ReviewTier | None = None, sort: QueueSort = QueueSort.TIER
 ) -> list[QueueItem]:
-    """Every claim AWAITING_REVIEW, optionally of one tier."""
+    """Every claim AWAITING_REVIEW, optionally of one tier (a decision record stored under an older
+    contract, which no longer validates, is left out)."""
     items = []
     for row in session.scalars(
         select(Claim).where(Claim.status == ClaimStatus.AWAITING_REVIEW.value)
     ):
-        record = latest_record(session, row.claim_id)
+        try:
+            record = latest_record(session, row.claim_id)
+        except ValidationError:  # stored under an older contract: it cannot be reviewed here
+            continue
         if record is None or record.review_tier is None:
             continue
         if tier is not None and record.review_tier is not tier:

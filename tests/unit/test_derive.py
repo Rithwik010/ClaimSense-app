@@ -87,12 +87,14 @@ def test_the_ncci_bypass_pend_is_kept() -> None:
     """The bypass documentation is not a criterion: a PEND under NCCI_BYPASS with every criterion
     MET stays PEND (the v1 labels' rule)."""
     statuses = {1: S.MET, 2: S.MET, 3: S.MET}
-    with_flag = derive_line(line("PEND", statuses, ["PD"], ["distinct"]), V1, ["NCCI_BYPASS"])
+    with_flag = derive_line(
+        line("PEND", statuses, ["PD_MISSING_DOCUMENTATION"], ["distinct"]), V1, ["NCCI_BYPASS"]
+    )
     approve = derive_line(line("APPROVE", statuses), V1, ["NCCI_BYPASS"])
 
     assert (with_flag.decision, with_flag.reasons, with_flag.missing_information) == (
         LineDecision.PEND,
-        ["PD"],
+        ["PD_MISSING_DOCUMENTATION"],
         ["distinct"],
     )
     assert approve.decision is LineDecision.APPROVE
@@ -104,6 +106,36 @@ def test_an_unchanged_decision_keeps_the_model_reasons() -> None:
     )
 
     assert derived.reasons == ["DN_CONDITIONAL_EXCLUSION"] and derived.changed is False
+
+
+@pytest.mark.parametrize(
+    ("decision", "statuses", "reasons", "expected"),
+    [
+        (
+            "DENY",
+            {1: S.NOT_MET},
+            ["The lens is only slightly cloudy."],
+            ["DN_NOT_MEDICALLY_NECESSARY"],
+        ),
+        ("DENY", {1: S.NOT_MET}, ["PD_MISSING_DOCUMENTATION"], ["DN_NOT_MEDICALLY_NECESSARY"]),
+        ("PEND", {1: S.NOT_DOCUMENTED}, ["Need the exam notes."], ["PD_MISSING_DOCUMENTATION"]),
+        (
+            "PEND",
+            {1: S.NOT_DOCUMENTED},
+            ["PD_MISSING_DOCUMENTATION", "x"],
+            ["PD_MISSING_DOCUMENTATION"],
+        ),
+        ("APPROVE", {1: S.MET}, ["Criteria met."], []),
+    ],
+)
+def test_model_reasons_that_are_not_fitting_codes_never_become_reason_codes(
+    decision: str, statuses: dict, reasons: list[str], expected: list[str]
+) -> None:
+    """D-DEC-2 (H15): free text or a code of another decision is replaced by the derived code."""
+    derived = derive_line(line(decision, statuses, reasons), V1, [])
+
+    assert derived.decision is LineDecision(decision) and derived.changed is False
+    assert derived.reasons == expected
 
 
 def test_a_satisfied_group_ignores_the_other_members() -> None:
