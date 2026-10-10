@@ -5,7 +5,7 @@ SHELL := /bin/bash
 MODEL_NAME ?= claimsense-decision:v2
 API_PORT ?= 8000
 
-.PHONY: setup demo demo-reset demo-claims web-check smoke
+.PHONY: setup demo demo-reset demo-claims demo-video web-check smoke
 
 setup: ## Python and web dependencies, database schema, reference data, policy collections
 	uv sync
@@ -32,6 +32,11 @@ demo-reset: ## clean database (migrations, seeds, demo authorizations), Qdrant r
 
 demo-claims: ## rebuild demo/claims/ from the synthetic claim corpus
 	uv run python -m scripts.demo.build_claims
+
+demo-video: demo-reset ## backup video of docs/DEMO.md (needs `make demo` running): demo-video/demo.webm
+	cd frontend-web && DEMO_VIDEO=1 npx playwright test e2e/demo-runbook.spec.ts
+	mkdir -p demo-video && cp "$$(ls -t frontend-web/test-results/*/video.webm | head -1)" demo-video/demo.webm
+	@echo "Backup video: demo-video/demo.webm"
 
 web-check: ## what CI runs for the web app: install, lint, typecheck, unit tests, build
 	cd frontend-web && npm ci && npm run lint && npm run typecheck && npm test && npm run build
