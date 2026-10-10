@@ -5,7 +5,7 @@ SHELL := /bin/bash
 MODEL_NAME ?= claimsense-decision:v2
 API_PORT ?= 8000
 
-.PHONY: setup demo web-check smoke
+.PHONY: setup demo demo-reset demo-claims web-check smoke
 
 setup: ## Python and web dependencies, database schema, reference data, policy collections
 	uv sync
@@ -25,6 +25,13 @@ demo: ## database containers, then the API (port $(API_PORT)) and the web app (p
 	MODEL_NAME=$(MODEL_NAME) uv run uvicorn app.api.main:app --port $(API_PORT) & \
 	(cd frontend-web && npm run dev) & \
 	wait
+
+demo-reset: ## clean database (migrations, seeds, demo authorizations), Qdrant ready, demo model present
+	docker compose up -d --wait
+	MODEL_NAME=$(MODEL_NAME) uv run python -m scripts.demo.reset
+
+demo-claims: ## rebuild demo/claims/ from the synthetic claim corpus
+	uv run python -m scripts.demo.build_claims
 
 web-check: ## what CI runs for the web app: install, lint, typecheck, unit tests, build
 	cd frontend-web && npm ci && npm run lint && npm run typecheck && npm test && npm run build

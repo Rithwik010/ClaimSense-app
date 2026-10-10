@@ -1,0 +1,59 @@
+{
+  "claim_id": "CLM-DEMO-04",
+  "member_id": "MBR-000150",
+  "patient": {
+    "first_name": "Stephanie",
+    "last_name": "Wilson",
+    "date_of_birth": "1956-03-10",
+    "sex": "F",
+    "address": {
+      "line1": "019 Lyons Grove Suite 183",
+      "city": "Andreborough",
+      "state": "UT",
+      "zip_code": "02349"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "1816701100",
+  "billing_tin": "991233153",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "E1140",
+    "B351"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-10-02",
+      "place_of_service": "11",
+      "procedure_code": "11721",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A",
+        "B"
+      ],
+      "units": 1,
+      "charge_cents": 11500,
+      "rendering_npi": "1816701100"
+    },
+    {
+      "line_no": 2,
+      "date_of_service": "2026-10-02",
+      "place_of_service": "11",
+      "procedure_code": "11720",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A",
+        "B"
+      ],
+      "units": 1,
+      "charge_cents": 7500,
+      "rendering_npi": "1816701100"
+    }
+  ],
+  "clinical_notes": "Onychomycotic nails, painful. PMH reviewed, no change. Monofilament: absent at 5/5 sites right foot. Non-professional care unsafe. Plan -> trimming and cleaning of thickened toenails, 6 or more nails.",
+  "received_date": "2026-10-10",
+  "frequency_code": "1",
+  "other_coverage": null
+}
