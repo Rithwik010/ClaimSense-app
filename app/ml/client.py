@@ -26,6 +26,10 @@ MODEL_TIMEOUT_SECONDS = 300.0
 # this cap is roughly twice the longest real answer: it ends a loop early without truncating any
 # answer that would have been usable.
 MAX_OUTPUT_TOKENS = 1536
+# Context window for every request (D-MODEL-1): the longest v2 prompt (about 2,700 tokens) plus the
+# answer cap fit with room to spare; Ollama's 4,096 default would leave no margin and shifts the
+# context silently when it overflows.
+MODEL_NUM_CTX = 8192
 
 
 class ModelUnavailable(RuntimeError):
@@ -60,6 +64,7 @@ class OllamaDecisionModel:
                     "temperature": 0 if first else RETRY_TEMPERATURE,
                     "seed": MODEL_SEED if first else RETRY_SEED,
                     "num_predict": MAX_OUTPUT_TOKENS,
+                    "num_ctx": MODEL_NUM_CTX,
                 },
                 think=False,
             )

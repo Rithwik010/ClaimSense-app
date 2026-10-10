@@ -10,6 +10,7 @@ import pytest
 from app.domain.contracts import SLMOutput
 from app.ml.client import (
     MAX_OUTPUT_TOKENS,
+    MODEL_NUM_CTX,
     MODEL_SEED,
     RETRY_SEED,
     RETRY_TEMPERATURE,
@@ -47,6 +48,7 @@ def test_request_carries_schema_and_deterministic_options() -> None:
         "temperature": 0,
         "seed": MODEL_SEED,
         "num_predict": MAX_OUTPUT_TOKENS,  # a repeating answer is cut off, not left to run
+        "num_ctx": MODEL_NUM_CTX,  # prompt plus answer cap never shift the context (D-MODEL-1)
     }
     assert seen["think"] is False
     assert seen["stream"] is False

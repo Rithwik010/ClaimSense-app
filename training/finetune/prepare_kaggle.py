@@ -5,6 +5,12 @@ writes files under `data/generated/kaggle/`; uploading is done by a team member.
 
     uv run python -m training.finetune.prepare_kaggle --kaggle-user <username>
     uv run python -m training.finetune.prepare_kaggle --kaggle-user <username> --model-version 2
+    uv run python -m training.finetune.prepare_kaggle --kaggle-user <username> --model-version 2 \
+        --kernels   # also the kernel folders to push with the Kaggle CLI
+
+Kernel folders (`kaggle kernels push -p <folder>`): `kernel-v2-smoke` and `kernel-v2-full` (one
+private notebook, claimsense-finetune-v2, pushed as two versions) and the prepared E4B variant
+(`kernel-v2-e4b-smoke`, `kernel-v2-e4b-full`: unsloth/gemma-4-E4B-it, 4-bit QLoRA, same settings).
 
 Model v2 (Part 2 step 5): the v2 dataset (data/generated/decision_v2/, prompt decision_v3, policy
 set v2), the same QLoRA settings as model v1 (its longest record is 2,761 tokens, under the max
@@ -51,7 +57,13 @@ OUT = "/kaggle/working/claimsense-smoke" if SMOKE else "{out}"
 """
 
 
-def notebook(dataset_slug: str, version: int = 1, out: str = "/kaggle/working/claimsense") -> dict:
+def notebook(
+    dataset_slug: str,
+    version: int = 1,
+    out: str = "/kaggle/working/claimsense",
+    smoke: bool = True,
+    base_model: str | None = None,
+) -> dict:
     title = (
         "# ClaimSense decision model v2: QLoRA fine-tuning (dataset v2, prompt decision_v3)"
         if version == 2
@@ -67,8 +79,17 @@ def notebook(dataset_slug: str, version: int = 1, out: str = "/kaggle/working/cl
             "`lengths.json`, `config.json`, `pip-freeze.txt`.",
         ),
         ("code", "!nvidia-smi\n!pip install --upgrade --quiet unsloth unsloth_zoo"),
-        ("code", FIND_DATASET.replace("{out}", out)),
-        ("code", "!python {TRAIN} --data {DATA} --out {OUT} {EXTRA}"),
+        (
+            "code",
+            FIND_DATASET.replace("{out}", out)
+            .replace("SMOKE = True", f"SMOKE = {smoke}")
+            .replace("/kaggle/working/claimsense-smoke", f"{out}-smoke"),
+        ),
+        (
+            "code",
+            "!python {TRAIN} --data {DATA} --out {OUT} {EXTRA}"
+            + (f" --base-model {base_model}" if base_model else ""),
+        ),
         (
             "code",
             "import json\n"
@@ -105,6 +126,51 @@ def notebook(dataset_slug: str, version: int = 1, out: str = "/kaggle/working/cl
         "nbformat": 4,
         "nbformat_minor": 5,
     }
+
+
+E4B = "unsloth/gemma-4-E4B-it"
+KERNELS = {  # folder -> (kernel slug, smoke, base model, output folder)
+    "kernel-v2-smoke": ("claimsense-finetune-v2", True, None, V2["out"]),
+    "kernel-v2-full": ("claimsense-finetune-v2", False, None, V2["out"]),
+    "kernel-v2-e4b-smoke": ("claimsense-finetune-v2-e4b", True, E4B, V2["out"] + "-e4b"),
+    "kernel-v2-e4b-full": ("claimsense-finetune-v2-e4b", False, E4B, V2["out"] + "-e4b"),
+}
+
+
+def kernels(out_dir: Path, kaggle_user: str, dataset_slug: str) -> list[Path]:
+    """The private kernel folders for model v2 (notebook and kernel-metadata.json each)."""
+    folders = []
+    for folder, (slug, smoke, base_model, out) in KERNELS.items():
+        path = out_dir / folder
+        if path.exists():
+            shutil.rmtree(path)
+        path.mkdir(parents=True)
+        code = f"{slug}.ipynb"
+        (path / code).write_text(
+            json.dumps(notebook(dataset_slug, 2, out, smoke, base_model), indent=1)
+        )
+        (path / "kernel-metadata.json").write_text(
+            json.dumps(
+                {
+                    "id": f"{kaggle_user}/{slug}",
+                    "title": slug,
+                    "code_file": code,
+                    "language": "python",
+                    "kernel_type": "notebook",
+                    "is_private": True,
+                    "enable_gpu": True,
+                    "enable_tpu": False,
+                    "enable_internet": True,
+                    "dataset_sources": [f"{kaggle_user}/{dataset_slug}"],
+                    "competition_sources": [],
+                    "kernel_sources": [],
+                    "model_sources": [],
+                },
+                indent=2,
+            )
+        )
+        folders.append(path)
+    return folders
 
 
 def prepare(
@@ -163,6 +229,7 @@ def main() -> None:
     parser.add_argument("--decision-dir", type=Path)
     parser.add_argument("--out", type=Path, default=GENERATED_DIR / "kaggle")
     parser.add_argument("--model-version", type=int, choices=(1, 2), default=1)
+    parser.add_argument("--kernels", action="store_true", help="v2: also the kernel folders")
     args = parser.parse_args()
     v2 = args.model_version == 2
     decision_dir = args.decision_dir or GENERATED_DIR / ("decision_v2" if v2 else "decision")
@@ -172,6 +239,9 @@ def main() -> None:
     if v2:
         print(f"zip to upload: {args.out / (V2['slug'] + '.zip')}")
     print(f"notebook: {args.out / (V2['notebook'] if v2 else 'claimsense-finetune.ipynb')}")
+    if v2 and args.kernels:
+        for folder in kernels(args.out, args.kaggle_user, slug):
+            print(f"kernel folder: {folder}")
     print("Upload the folder as a PRIVATE Kaggle dataset, then import the notebook.")
 
 
