@@ -207,7 +207,7 @@ def test_only_the_final_quantized_gguf_is_kept(tmp_path) -> None:  # noqa: ANN00
 def test_kaggle_v2_kernel_folders_are_private_and_set_their_run(tmp_path) -> None:  # noqa: ANN001
     import json
 
-    from training.finetune.prepare_kaggle import E4B, E4B_TIMING, SMOKE_EXTRA, kernels
+    from training.finetune.prepare_kaggle import E4B, E4B_FULL, E4B_TIMING, SMOKE_EXTRA, kernels
 
     folders = {p.name: p for p in kernels(tmp_path, "someone", "claimsense-decision-v2")}
 
@@ -229,8 +229,9 @@ def test_kaggle_v2_kernel_folders_are_private_and_set_their_run(tmp_path) -> Non
         short = "smoke" in name or "timing" in name
         assert f"\nSMOKE = {short}\n" in code
         assert (f"--base-model {E4B}" in code) == ("e4b" in name)
-        assert (E4B_TIMING in code) == ("timing" in name)
-        assert (SMOKE_EXTRA in code) == ("timing" not in name)
+        assert (f'"{E4B_TIMING}" if SMOKE' in code) == ("e4b" in name)
+        assert (f'else "{E4B_FULL}"' in code) == ("e4b" in name)
+        assert (SMOKE_EXTRA in code) == ("e4b" not in name)
 
 
 def test_modelfile_refuses_the_vision_projector(tmp_path) -> None:  # noqa: ANN001
