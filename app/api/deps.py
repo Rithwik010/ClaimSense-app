@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.settings import Settings, get_settings
 from app.db.session import get_engine
 from app.ml.client import DecisionModel, OllamaDecisionModel
-from app.rag.retrieve import CriteriaRetriever, Retriever
+from app.rag.retrieve import CriteriaRetriever, ExactCriteriaRetriever, Retriever
 
 
 def get_session(engine: Annotated[Engine, Depends(get_engine)]) -> Iterator[Session]:
@@ -27,14 +27,18 @@ def get_decision_model(settings: Annotated[Settings, Depends(get_settings)]) -> 
 
 @lru_cache
 def get_retriever() -> Retriever:
-    """One retriever per process: the embedding model loads on the first query."""
+    """One retriever per process, for the pipeline's policy set (D-POL-2): the v2 exact lookup, or
+    v1's similarity ranking (its embedding model loads on the first query)."""
     from qdrant_client import QdrantClient
 
     from app.rag.embedding import FastEmbedder
 
     settings = get_settings()
+    client = QdrantClient(url=settings.qdrant_url)
+    if settings.policy_set == "v2":
+        return ExactCriteriaRetriever(client)
     return CriteriaRetriever(
-        QdrantClient(url=settings.qdrant_url),
+        client,
         FastEmbedder(settings.embedding_model, settings.embedding_cache_dir),
         top_k=settings.rag_top_k,
         min_score=settings.rag_min_score,

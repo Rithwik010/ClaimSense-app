@@ -20,6 +20,14 @@ CURATED_DIR = Path(__file__).resolve().parents[2] / "data" / "curated"
 
 CRITERION_HEADING = re.compile(r"^## (POL-[A-Z]+-[0-9]{3}\.c[0-9]+)\s*$", re.MULTILINE)
 
+# Coverage policy sets (D-POL-2): v1 is frozen for model v1 and its dataset; the pipeline and the
+# v2 data use v2. Each set is a folder of `POL-*.md` files under `coverage_policies/`.
+POLICY_SETS = ("v1", "v2")
+CRITERION_TYPES = ("requirement", "exclusion", "conditional")  # D-ESI-6, D-GEN-3
+CRITERION_GROUPS = ("indication",)  # D-POL-3
+# The criterion lines of a v2 file besides its text (D-POL-3); v1 files have only `Source:`.
+CRITERION_FIELD = re.compile(r"^(Type|Applies to|Group|Source):\s*(.*)$")
+
 # The line rules R14 to R20 (D-RULE-3): what a code is for them, and their diagnosis sets.
 RULE_ROLES = (
     "ESI_INTERLAMINAR",
@@ -108,6 +116,11 @@ class Criterion:
     criterion_id: str
     text: str
     source: str
+    # Policy set v2 only (D-POL-3): the type, the codes the criterion is shown on (empty: every
+    # code of the policy) and its group.
+    criterion_type: str | None = None
+    applies_to: tuple[str, ...] = ()
+    group: str | None = None
 
 
 @dataclass(frozen=True)
@@ -121,6 +134,12 @@ class CoveragePolicy:
     billing_article: str
     split: str
     criteria: tuple[Criterion, ...]
+    policy_set: str = "v1"
+    replaces: dict[str, tuple[str, ...]] = field(default_factory=dict)  # v2: retired v1 ID -> IDs
+
+    def criterion_codes(self, criterion: Criterion) -> tuple[str, ...]:
+        """The codes a criterion is shown on: its `Applies to` codes, else the policy's."""
+        return criterion.applies_to or self.procedure_codes
 
 
 @dataclass(frozen=True)
@@ -202,6 +221,7 @@ class CuratedData:
     code_roles: dict[str, CodeRole] = field(default_factory=dict)
     diagnosis_sets: dict[str, frozenset[str]] = field(default_factory=dict)
     ptp_modifiers: dict[str, PtpModifier] = field(default_factory=dict)
+    policy_set: str = "v1"
 
     def benefit(self, plan_id: str, category: str) -> BenefitConfig:
         return self.benefits[(plan_id, category)]
@@ -236,18 +256,34 @@ def _terms(raw: dict[str, int] | None) -> NetworkTerms | None:
 
 
 def parse_policy(text: str) -> CoveragePolicy:
-    """Parse a coverage policy file: YAML front matter, then `## <criterion id>` sections that end
-    with a `Source:` line."""
+    """Parse a coverage policy file: YAML front matter, then `## <criterion id>` sections with the
+    criterion text and a `Source:` line, plus in policy set v2 the `Type:`, `Applies to:` and
+    `Group:` lines (D-POL-3). The text joins the other lines, as for v1."""
     _, front, body = text.split("---", 2)
     meta = yaml.safe_load(front)
     parts = CRITERION_HEADING.split(body)
     criteria = []
     for criterion_id, section in zip(parts[1::2], parts[2::2], strict=True):
         lines = [line.strip() for line in section.strip().splitlines() if line.strip()]
-        sources = [line for line in lines if line.startswith("Source:")]
-        criterion_text = " ".join(line for line in lines if not line.startswith("Source:"))
-        source = sources[0].removeprefix("Source:").strip() if sources else ""
-        criteria.append(Criterion(criterion_id, criterion_text, source))
+        fields: dict[str, str] = {}
+        text_lines = []
+        for line in lines:
+            match = CRITERION_FIELD.match(line)
+            if match and match.group(1) not in fields:
+                fields[match.group(1)] = match.group(2).strip()
+            else:
+                text_lines.append(line)
+        applies = fields.get("Applies to", "")
+        criteria.append(
+            Criterion(
+                criterion_id,
+                " ".join(text_lines),
+                fields.get("Source", ""),
+                criterion_type=fields.get("Type") or None,
+                applies_to=tuple(c.strip() for c in applies.split(",") if c.strip()),
+                group=fields.get("Group") or None,
+            )
+        )
     return CoveragePolicy(
         policy_id=meta["policy_id"],
         title=meta["title"],
@@ -258,7 +294,25 @@ def parse_policy(text: str) -> CoveragePolicy:
         billing_article=meta["billing_article"],
         split=meta["split"],
         criteria=tuple(criteria),
+        policy_set=meta.get("policy_set", "v1"),
+        replaces={k: tuple(v) for k, v in (meta.get("replaces") or {}).items()},
     )
+
+
+def policy_dir(policy_set: str) -> Path:
+    if policy_set not in POLICY_SETS:
+        raise ValueError(f"unknown policy set {policy_set!r}; expected one of {POLICY_SETS}")
+    return CURATED_DIR / "coverage_policies" / policy_set
+
+
+def load_policies(policy_set: str) -> dict[str, CoveragePolicy]:
+    return {
+        policy.policy_id: policy
+        for policy in (
+            parse_policy(path.read_text(encoding="utf-8"))
+            for path in sorted(policy_dir(policy_set).glob("POL-*.md"))
+        )
+    }
 
 
 def _parse_alternatives(value: str) -> tuple[tuple[int, ...], ...]:
@@ -289,8 +343,15 @@ def _diagnosis_sets(rows: list[dict[str, str]]) -> dict[str, frozenset[str]]:
     return {name: frozenset(codes) for name, codes in sets.items()}
 
 
+def load_curated(policy_set: str = "v1") -> CuratedData:
+    """The curated data with the coverage policies of one policy set (D-POL-2). The default, v1,
+    keeps model v1's tools unchanged; the pipeline passes its `POLICY_SET` (default v2). Cached
+    per set."""
+    return _load_curated(policy_set)
+
+
 @lru_cache
-def load_curated() -> CuratedData:
+def _load_curated(policy_set: str) -> CuratedData:
     plans_raw = _read_yaml("plans.yaml")
     plans = {
         p["plan_id"]: PlanConfig(
@@ -348,13 +409,7 @@ def load_curated() -> CuratedData:
         for row in _read_csv("reason_code_map.csv")
     }
     fee = _read_yaml("fee_schedule.yaml")
-    policies = {
-        policy.policy_id: policy
-        for policy in (
-            parse_policy(path.read_text(encoding="utf-8"))
-            for path in sorted((CURATED_DIR / "coverage_policies").glob("POL-*.md"))
-        )
-    }
+    policies = load_policies(policy_set)
     support = {
         row["procedure_code"]: DiagnosisSupport(
             procedure_code=row["procedure_code"],
@@ -401,6 +456,7 @@ def load_curated() -> CuratedData:
             )
             for r in _read_csv("ncci_ptp_modifiers.csv")
         },
+        policy_set=policy_set,
     )
 
 
@@ -464,15 +520,62 @@ def validate_curated(data: CuratedData) -> list[str]:
             if support is None or (policy and support.billing_article != policy.billing_article):
                 problems.append(f"{code}: missing or mismatched diagnosis support row")
     for policy in data.policies.values():
-        for number, criterion in enumerate(policy.criteria, start=1):
-            if criterion.criterion_id != f"{policy.policy_id}.c{number}":
-                problems.append(f"{criterion.criterion_id}: IDs must run c1, c2, ...")
-            if not criterion.source or not criterion.text:
-                problems.append(f"{criterion.criterion_id}: missing text or source")
+        if policy.policy_set != data.policy_set:
+            problems.append(f"{policy.policy_id}: file says policy set {policy.policy_set}")
+        problems += (
+            _v2_criteria_problems(policy)
+            if data.policy_set == "v2"
+            else _v1_criteria_problems(policy)
+        )
         for code in policy.procedure_codes:
             if data.scope.get(code) is None or data.scope[code].policy_id != policy.policy_id:
                 problems.append(f"{policy.policy_id}: code {code} not mapped in procedure_scope")
     return problems + _rule_data_problems(data)
+
+
+def _v1_criteria_problems(policy: CoveragePolicy) -> list[str]:
+    problems = []
+    for number, criterion in enumerate(policy.criteria, start=1):
+        if criterion.criterion_id != f"{policy.policy_id}.c{number}":
+            problems.append(f"{criterion.criterion_id}: IDs must run c1, c2, ...")
+        if not criterion.source or not criterion.text:
+            problems.append(f"{criterion.criterion_id}: missing text or source")
+        if criterion.criterion_type or criterion.applies_to or criterion.group:
+            problems.append(f"{criterion.criterion_id}: v1 criteria have no Type, Applies or Group")
+    return problems
+
+
+def _v2_criteria_problems(policy: CoveragePolicy) -> list[str]:
+    """What the loader relies on in a v2 file (D-POL-1, D-POL-3). The ID history and the sources
+    are checked by scripts/verify/policies_v2_sources.py."""
+    problems = []
+    numbers = [int(c.criterion_id.rsplit(".c", 1)[1]) for c in policy.criteria]
+    if numbers != sorted(set(numbers)) or any(
+        not c.criterion_id.startswith(f"{policy.policy_id}.c") for c in policy.criteria
+    ):
+        problems.append(f"{policy.policy_id}: criterion IDs must be the policy's, increasing")
+    groups: dict[str, int] = {}
+    for criterion in policy.criteria:
+        name = criterion.criterion_id
+        if not criterion.source or not criterion.text:
+            problems.append(f"{name}: missing text or source")
+        if criterion.criterion_type not in CRITERION_TYPES:
+            problems.append(f"{name}: type {criterion.criterion_type!r} not in {CRITERION_TYPES}")
+        if not set(criterion.applies_to) <= set(policy.procedure_codes):
+            problems.append(f"{name}: applies to codes the policy does not cover")
+        if criterion.group is not None:
+            if criterion.group not in CRITERION_GROUPS:
+                problems.append(f"{name}: unknown group {criterion.group!r}")
+            if criterion.criterion_type != "conditional":
+                problems.append(f"{name}: an indication-group member must be conditional")
+            groups[criterion.group] = groups.get(criterion.group, 0) + 1
+    problems += [
+        f"{policy.policy_id}: group {g} has one member" for g, n in groups.items() if n < 2
+    ]
+    retired = {c.criterion_id for c in policy.criteria} & set(policy.replaces)
+    if retired:
+        problems.append(f"{policy.policy_id}: retired IDs still present {sorted(retired)}")
+    return problems
 
 
 def _rule_data_problems(data: CuratedData) -> list[str]:

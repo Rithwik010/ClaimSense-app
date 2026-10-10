@@ -20,7 +20,7 @@ the model sees them (DECISIONS.md 2026-09-22).
 
 ## Where the labels come from
 
-- Coverage criteria: `data/curated/coverage_policies/` (each criterion cites its LCD).
+- Coverage criteria: `data/curated/coverage_policies/v1/` (policy set v1; each criterion cites its LCD).
 - Whether a diagnosis supports a procedure: the covered ICD-10-CM groups of each policy's billing
   article (`data/curated/diagnosis_support.csv`, from the MCD download in `data/raw/mcd/`).
 - Lines denied by rules: NCCI PTP v323r0, MUE (October 2026) and plan exclusions, read as in the

@@ -1,6 +1,6 @@
 """Coverage policy format checker (INSTRUCTIONS.md §11, P3.1).
 
-Checks each file in `data/curated/coverage_policies/` on its own: front matter keys and values,
+Checks each file in `data/curated/coverage_policies/v1/` on its own: front matter keys and values,
 criterion headings numbered c1, c2, ... under the policy's ID, and one `Source:` line per criterion
 that cites the policy's own LCD and version. Cross-file consistency (procedure scope, diagnosis
 support) is `validate_curated`'s job.
@@ -152,7 +152,7 @@ def check_policy_file(path: Path) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    directory = Path(argv[0]) if argv else CURATED_DIR / "coverage_policies"
+    directory = Path(argv[0]) if argv else CURATED_DIR / "coverage_policies" / "v1"
     paths = sorted(directory.glob("*.md"))
     total = 0
     for path in paths:

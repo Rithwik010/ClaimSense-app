@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,7 +19,10 @@ class Settings(BaseSettings):
     embedding_cache_dir: Path = (
         Path(__file__).resolve().parents[2] / "data/generated/models/fastembed"
     )
-    # Top 5 within the covering policy: every criterion of the largest policy (P3.3 measurement).
+    # Coverage policy set of the pipeline (D-POL-2): v2 uses the exact lookup (D-RAG-2); v1 is
+    # kept to reproduce model v1.
+    policy_set: Literal["v1", "v2"] = "v2"
+    # Policy set v1 only: top 5 within the covering policy (P3.3); v2 has no cap (D-RAG-1).
     rag_top_k: int = Field(default=5, ge=1)
     rag_min_score: float = Field(
         default=0.0, ge=-1.0, le=1.0

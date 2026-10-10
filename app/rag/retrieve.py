@@ -1,11 +1,17 @@
 """Coverage-criteria retrieval (INSTRUCTIONS.md §8.4).
 
-For one claim line: filter by the line's procedure code (the policy covers it), plan ID (or ALL) and
-effective date <= date of service, then rank that policy's criteria by similarity to the line's
-query and take the top k (5: the largest policy has 5 criteria, so the model sees every criterion of
-the covering policy). Without the code filter, top-3 over all policies missed a criterion the case
-depended on in 27% of lines (P3.3 measurement). The pipeline and the dataset generator use this same
-code, so the model is trained on the criteria it will be shown in live use.
+Policy set v2 (`ExactCriteriaRetriever`, D-RAG-2): an exact lookup in `coverage_policies_v2` of
+every criterion shown on the line's code (the criterion's own codes), for the plan (or ALL) and
+effective on the date of service, with no cap and no score, in policy-file order; the count
+returned must equal the collection's count for the same filter.
+
+Policy set v1 (`CriteriaRetriever`, kept to reproduce model v1). For one claim line: filter by the
+line's procedure code (the policy covers it), plan ID (or ALL) and effective date <= date of
+service, then rank that policy's criteria by similarity to the line's query and take the top k (5:
+the largest policy has 5 criteria, so the model sees every criterion of the covering policy).
+Without the code filter, top-3 over all policies missed a criterion the case depended on in 27% of
+lines (P3.3 measurement). The pipeline and the dataset generator use this same code, so the model
+is trained on the criteria it will be shown in live use.
 """
 
 from collections.abc import Collection, Mapping
@@ -16,9 +22,11 @@ from qdrant_client import QdrantClient, models
 
 from app.domain.contracts import IntakeClaim, RetrievedCriterion
 from app.rag.embedding import Embedder
-from app.rag.knowledge import COVERAGE_COLLECTION, day_number
+from app.rag.knowledge import COVERAGE_COLLECTION, COVERAGE_COLLECTIONS, day_number
 
 QUERY_FORMAT = "procedure+diagnoses+notes-v1; code filter"
+EXACT_FORMAT = "exact lookup v2: plan or ALL, effective date, criterion codes; no cap; file order"
+SCROLL_PAGE = 256
 
 
 class Retriever(Protocol):
@@ -129,4 +137,80 @@ class CriteriaRetriever:
                 effective_date=date.fromisoformat(p.payload["effective_date"]),
             )
             for p in ranked
+        ]
+
+
+class ExactCriteriaRetriever:
+    """Policy set v2 (D-RAG-1, D-RAG-2). Uses no embedding model; `query` is ignored."""
+
+    settings_label = EXACT_FORMAT
+
+    def __init__(self, client: QdrantClient, collection: str = COVERAGE_COLLECTIONS["v2"]) -> None:
+        self.client = client
+        self.collection = collection
+
+    def retrieve(
+        self,
+        query: str,
+        plan_id: str,
+        day: date,
+        procedure_code: str | None = None,
+        exclude_policies: Collection[str] = (),
+    ) -> list[RetrievedCriterion]:
+        """`exclude_policies` is for the dataset generator only (test-only policies)."""
+        if procedure_code is None:
+            raise ValueError("the v2 exact lookup needs the line's procedure code")
+        must = [
+            models.FieldCondition(key="plan_ids", match=models.MatchAny(any=[plan_id, "ALL"])),
+            models.FieldCondition(key="effective_day", range=models.Range(lte=day_number(day))),
+            models.FieldCondition(
+                key="criterion_codes", match=models.MatchAny(any=[procedure_code])
+            ),
+        ]
+        must_not = (
+            [
+                models.FieldCondition(
+                    key="policy_id", match=models.MatchAny(any=sorted(exclude_policies))
+                )
+            ]
+            if exclude_policies
+            else None
+        )
+        query_filter = models.Filter(must=must, must_not=must_not)
+        try:
+            points: list = []
+            offset = None
+            while True:
+                page, offset = self.client.scroll(
+                    self.collection,
+                    scroll_filter=query_filter,
+                    limit=SCROLL_PAGE,
+                    offset=offset,
+                    with_payload=True,
+                    with_vectors=False,
+                )
+                points += page
+                if offset is None:
+                    break
+            expected = self.client.count(self.collection, count_filter=query_filter, exact=True)
+        except Exception as exc:  # connection errors, missing collection
+            raise RetrievalUnavailable(f"retrieval unavailable ({type(exc).__name__})") from exc
+        if len(points) != expected.count:
+            raise RetrievalUnavailable(
+                f"exact lookup returned {len(points)} criteria, the collection holds "
+                f"{expected.count} for the same filter"
+            )
+        ordered = sorted(points, key=lambda p: p.payload["order"])
+        return [
+            RetrievedCriterion(
+                criterion_id=p.payload["criterion_id"],
+                policy_id=p.payload["policy_id"],
+                policy_title=p.payload["policy_title"],
+                text=p.payload["text"],
+                source=p.payload["source"],
+                effective_date=date.fromisoformat(p.payload["effective_date"]),
+                criterion_type=p.payload["criterion_type"],
+                group=p.payload["group"],
+            )
+            for p in ordered
         ]

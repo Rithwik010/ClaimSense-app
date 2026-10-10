@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_decision_model, get_retriever
 from app.api.main import app
+from app.core.settings import Settings, get_settings
 from app.db.models import FeeScheduleEntry
 from app.db.seed import load_reference, load_rule_tables, seed_curated, upsert
 from app.db.session import get_engine
@@ -56,10 +57,16 @@ def load_case_reference(engine: Engine) -> Callable[[dict[str, Any]], None]:
 def api(engine: Engine) -> Iterator[Callable[[DecisionModel], TestClient]]:
     clients: list[TestClient] = []
 
-    def make(model: DecisionModel, retriever: StubRetriever | None = None) -> TestClient:
+    def make(
+        model: DecisionModel, retriever: StubRetriever | None = None, policy_set: str = "v1"
+    ) -> TestClient:
+        """The golden end-to-end cases are pinned to policy set v1 (D-GOLD-8); their v2 versions
+        pass policy_set="v2"."""
+        settings = Settings(policy_set=policy_set)
         app.dependency_overrides[get_engine] = lambda: engine
         app.dependency_overrides[get_decision_model] = lambda: model
         app.dependency_overrides[get_retriever] = lambda: retriever or StubRetriever()
+        app.dependency_overrides[get_settings] = lambda: settings
         client = TestClient(app)
         clients.append(client)
         return client

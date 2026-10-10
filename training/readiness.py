@@ -180,7 +180,7 @@ def check_parity(
                 if lookups.is_in_network(session, claim.billing_npi, member.plan_id)
                 else Network.OUT_OF_NETWORK
             )
-            claim_lookups = prompt_lookups(session, claim)
+            claim_lookups = prompt_lookups(session, claim, "v1")  # model v1 (D-POL-2)
             search = retriever if split == "test" else Excluding(retriever, data["test_only"])
             context = assemble_context(
                 session, claim, rules, member.plan_id, network, claim_lookups, search

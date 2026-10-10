@@ -46,8 +46,8 @@ from app.db.curated import CRITERION_HEADING, load_curated, parse_policy
 from scripts.verify import policy_sources as ps
 
 ROOT = Path(__file__).resolve().parents[2]
-V1_DIR = ROOT / "data" / "curated" / "coverage_policies"
-V2_DIR = V1_DIR / "v2"
+V1_DIR = ROOT / "data" / "curated" / "coverage_policies" / "v1"
+V2_DIR = V1_DIR.parent / "v2"
 BPM_PDF = ROOT / "data" / "raw" / "cms-manual" / "bp102c15" / "bp102c15.pdf"
 BPM_NAME = "Medicare Benefit Policy Manual Ch. 15"
 DECISIONS_MD = ROOT / "DECISIONS.md"

@@ -7,7 +7,7 @@ team item must be recorded before the Kaggle run.
 ```bash
 docker compose up -d --wait                          # Postgres and Qdrant
 uv run python -m app.db.seed                         # reference data in Postgres
-uv run python -m app.rag.knowledge                   # coverage_policies collection in Qdrant
+uv run python -m app.rag.knowledge                   # coverage_policies_v1 and _v2 collections in Qdrant
 uv run python -m training.generate.decision_dataset  # regenerate with real retrieval
 uv run python -m training.generate.blind_review      # same retrieval for the blind-review set
 uv run python -m training.evaluate.model --label baseline-gemma4-e2b   # P4.2 baseline
@@ -21,7 +21,7 @@ uv run python -m training.readiness                  # the gate
 | Model output and the context shown to the model | `app/domain/contracts.py` (approved 2026-09-22) |
 | System prompt and user message layout | `app/ml/prompts/decision_v2.txt`, `app/ml/prompt.py` |
 | Label set: line decisions, the 3 model reason codes, benefit categories, complexity rule | prompt, `data/curated/` |
-| Retrieval: criteria text, chunk format, embedding model, query text, top-k, minimum score | `data/curated/coverage_policies/`, `app/rag/`, `.env` |
+| Retrieval: criteria text, chunk format, embedding model, query text, top-k, minimum score | `data/curated/coverage_policies/v1/`, `app/rag/`, `.env` |
 | Rule flags shown to the model (`NCCI_BYPASS`, rule denials) | golden rules assumptions |
 
 ## Automated checks (`training/readiness.py`)

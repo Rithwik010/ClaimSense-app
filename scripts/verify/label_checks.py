@@ -502,7 +502,7 @@ def check_not_applicable(
                         f"threshold {threshold:.3f}): {closest}"
                     ),
                     look_up=f"{_in_split(record)}, line {line_no}; criterion in "
-                    f"data/curated/coverage_policies/{policy}.md",
+                    f"data/curated/coverage_policies/v1/{policy}.md",
                     score=score,
                     kind="no cue found",
                 )

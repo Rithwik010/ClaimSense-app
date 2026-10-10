@@ -1,6 +1,6 @@
 """Task V1b: do the coverage criteria come from their LCDs, and is anything in the LCDs missing?
 
-Report only: nothing in `data/curated/coverage_policies/` is changed (frozen for model v1).
+Report only: nothing in `data/curated/coverage_policies/v1/` is changed (frozen for model v1).
 
 Part 1 checks `data/curated/policy_sources.csv` (criterion_id, source_file, source_text): every
 excerpt must appear in its LCD field (exact match, else the best `difflib` similarity, 0-1), and
@@ -48,7 +48,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 LCD_ZIP = ROOT / "data" / "raw" / "mcd" / "2026-09-21" / "current_lcd.zip"
 SOURCES_CSV = ROOT / "data" / "curated" / "policy_sources.csv"
-POLICIES_DIR = ROOT / "data" / "curated" / "coverage_policies"
+POLICIES_DIR = ROOT / "data" / "curated" / "coverage_policies" / "v1"
 DATASET_DIR = ROOT / "data" / "generated" / "decision"
 SPLITS = ("train", "validation", "test")
 OUT_DIR = ROOT / "data" / "generated" / "verification"

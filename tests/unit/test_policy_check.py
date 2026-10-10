@@ -33,7 +33,7 @@ def check(text: str, name: str = "POL-IMG-009.md") -> list[str]:
 
 
 def test_every_committed_policy_passes() -> None:
-    paths = sorted((CURATED_DIR / "coverage_policies").glob("*.md"))
+    paths = sorted((CURATED_DIR / "coverage_policies" / "v1").glob("*.md"))
 
     assert len(paths) == 17
     for path in paths:
