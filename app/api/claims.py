@@ -4,15 +4,17 @@ R03 report every error (A-R8); processing then rejects it (P2.5). The review end
 reviewer role (X-Role header); the others do not check roles yet (P5.5). The explanation is
 rendered from the latest decision record only (P5.4, H15).
 
-Not yet: file upload (P5.1).
+`POST /v1/claims/intake/file` takes a claim file as the request body (P5.1): JSON, a digital PDF
+or a scanned form, read with each field's confidence.
 """
 
-from datetime import datetime
+from dataclasses import asdict
+from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, PlainTextResponse
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy.orm import Session
 
 from app.api.deps import ReviewerRole, get_decision_model, get_retriever, get_session
@@ -20,17 +22,21 @@ from app.audit.events import list_events
 from app.core.settings import Settings, get_settings
 from app.db.models import Claim
 from app.domain.contracts import (
+    ClaimDecision,
     ClaimStatus,
     DecisionRecord,
     IntakeResult,
     ReviewAction,
+    ReviewTier,
     SourceFormat,
 )
 from app.explain.render import render
+from app.intake.files import UnreadableFile, read_claim_file
 from app.ml.client import DecisionModel, ModelUnavailable
 from app.rag.retrieve import RetrievalUnavailable, Retriever
 from app.review.actions import ReviewRefused
 from app.workflow.finalize import ReviewBusy, finalize_review
+from app.workflow.listing import claim_summaries
 from app.workflow.pipeline import (
     ClaimNotFound,
     DuplicateClaim,
@@ -54,8 +60,10 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 class ClaimView(BaseModel):
     claim_id: str
     status: ClaimStatus
+    source_format: SourceFormat
     intake: IntakeResult | None  # None when the claim failed the contract at intake
     received: dict[str, Any]  # the claim as stored at intake
+    field_confidences: dict[str, float]  # as stored at intake (none listed: 1.0)
     record: DecisionRecord | None
 
 
@@ -66,6 +74,9 @@ class FiledWithErrors(BaseModel):
     status: ClaimStatus
     source_format: SourceFormat
     contract_errors: list[str]
+    # A file upload also returns the claim as read and each field's confidence.
+    received: dict[str, Any] | None = Field(default=None, exclude_if=lambda v: v is None)
+    field_confidences: dict[str, float] | None = Field(default=None, exclude_if=lambda v: v is None)
 
 
 class AuditEventView(BaseModel):
@@ -99,15 +110,16 @@ def _claim_row(session: Session, claim_id: str) -> Claim:
     return row
 
 
-@router.post("/intake", status_code=status.HTTP_201_CREATED)
-def intake(
-    claim: Annotated[dict[str, Any], Body()], session: SessionDep, settings: SettingsDep
+def _file(
+    claim: dict[str, Any],
+    confidences: dict[str, float],
+    source: SourceFormat,
+    session: Session,
+    settings: Settings,
 ) -> IntakeResult | FiledWithErrors:
-    """A JSON claim: every field has confidence 1.0, so no field is listed (§8.2). A claim that
-    fails the contract is filed with its errors when rules R01 to R03 report them all."""
     try:
         result, errors = intake_claim_data(
-            session, claim, {}, SourceFormat.JSON, settings.extraction_confidence_min
+            session, claim, confidences, source, settings.extraction_confidence_min
         )
     except IntakeRefused as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
@@ -118,9 +130,39 @@ def intake(
     return FiledWithErrors(
         claim_id=claim["claim_id"],
         status=ClaimStatus.RECEIVED,
-        source_format=SourceFormat.JSON,
+        source_format=source,
         contract_errors=errors,
+        received=claim if source is not SourceFormat.JSON else None,
+        field_confidences=confidences if source is not SourceFormat.JSON else None,
     )
+
+
+@router.post("/intake", status_code=status.HTTP_201_CREATED)
+def intake(
+    claim: Annotated[dict[str, Any], Body()], session: SessionDep, settings: SettingsDep
+) -> IntakeResult | FiledWithErrors:
+    """A JSON claim: every field has confidence 1.0, so no field is listed (§8.2). A claim that
+    fails the contract is filed with its errors when rules R01 to R03 report them all."""
+    return _file(claim, {}, SourceFormat.JSON, session, settings)
+
+
+async def _body(request: Request) -> bytes:
+    return await request.body()
+
+
+@router.post("/intake/file", status_code=status.HTTP_201_CREATED)
+def intake_file(
+    data: Annotated[bytes, Depends(_body)], session: SessionDep, settings: SettingsDep
+) -> IntakeResult | FiledWithErrors:
+    """A claim file as the request body (P5.1): a JSON claim, a digital PDF of our form, or a
+    scanned form (image-only PDF, PNG, JPEG or TIFF), read with each field's confidence (§8.2)."""
+    try:
+        claim, confidences, source = read_claim_file(data)
+    except UnreadableFile as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    if not isinstance(claim, dict):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "the claim must be an object")
+    return _file(claim, confidences, source, session, settings)
 
 
 @router.post("/{claim_id}/process")
@@ -175,14 +217,51 @@ def review(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
 
+class FailedRuleView(BaseModel):
+    rule_id: str
+    outcome: str
+    reason_code: str | None
+    detail: str
+    line_no: int | None
+
+
+class ClaimSummaryView(BaseModel):
+    claim_id: str
+    status: ClaimStatus
+    source_format: SourceFormat
+    received_date: date
+    updated: datetime
+    claim_decision: ClaimDecision | None
+    review_tier: ReviewTier | None
+    total_billed_cents: int | None
+    total_allowed_cents: int | None
+    plan_pays_cents: int | None
+    failed_rules: list[FailedRuleView]
+
+
+@router.get("")
+def list_claims(
+    session: SessionDep,
+    status_in: Annotated[list[ClaimStatus] | None, Query(alias="status")] = None,
+) -> list[ClaimSummaryView]:
+    """Every claim, newest first, or those of the statuses given (?status=REJECTED&status=...),
+    with the totals and failed rules of each one's latest decision record."""
+    return [
+        ClaimSummaryView.model_validate(asdict(item))
+        for item in claim_summaries(session, status_in)
+    ]
+
+
 @router.get("/{claim_id}")
 def get_claim(claim_id: str, session: SessionDep) -> ClaimView:
     row = _claim_row(session, claim_id)
     return ClaimView(
         claim_id=row.claim_id,
         status=ClaimStatus(row.status),
+        source_format=SourceFormat(row.source_format),
         intake=load_intake(row),
         received=row.intake,
+        field_confidences=row.field_confidences or {},
         record=latest_record(session, claim_id),
     )
 

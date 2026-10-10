@@ -33,6 +33,7 @@ TYPED_FONT, TYPED_SIZE = "Helvetica", 9
 NOTES_FONT, NOTES_SIZE, NOTES_LEADING = "Helvetica", 8.5, 11
 HAND_FONTS = ("Courier-Oblique", "Helvetica-Oblique", "Times-Italic")
 SCAN_DPI = 150
+HAND_MARGIN = 2.0  # points kept clear of a box's right border by hand-filled text
 
 # Value noise for scanned copies: fields a clerk might leave blank or mistype.
 MISSING_FIELDS = (
@@ -68,18 +69,29 @@ def _typed(pdf: canvas.Canvas, box: Box, text: str) -> None:
 
 
 def _hand(pdf: canvas.Canvas, box: Box, text: str, rng: random.Random) -> None:
+    """Hand-filled-looking text: per-character size, baseline and slant jitter. Text that would
+    run past the box is written smaller, so it stays inside its box as a person writes in a small
+    box (D-OCR-1); the random draws are the same either way."""
     x = box.x0 + 3 + rng.uniform(0, 3)
     base = _y(box.y1) + 5 + rng.uniform(-1, 1.5)
     font = rng.choice(HAND_FONTS)
+    chars = []
     for char in text:
         size = rng.uniform(9.5, 10.8)
+        rise = rng.uniform(-0.8, 0.8)
+        angle = rng.uniform(-4, 4)
+        gap = rng.uniform(0.2, 1.0)
+        chars.append((char, size, rise, angle, pdf.stringWidth(char, font, size) + gap))
+    room = box.x1 - HAND_MARGIN - x
+    fit = min(1.0, room / sum(advance for *_, advance in chars)) if chars else 1.0
+    for char, size, rise, angle, advance in chars:
         pdf.saveState()
-        pdf.translate(x, base + rng.uniform(-0.8, 0.8))
-        pdf.rotate(rng.uniform(-4, 4))
-        pdf.setFont(font, size)
+        pdf.translate(x, base + rise)
+        pdf.rotate(angle)
+        pdf.setFont(font, size * fit)
         pdf.drawString(0, 0, char)
         pdf.restoreState()
-        x += pdf.stringWidth(char, font, size) + rng.uniform(0.2, 1.0)
+        x += advance * fit
 
 
 def render_pdf(

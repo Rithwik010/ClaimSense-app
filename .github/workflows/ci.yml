@@ -34,6 +34,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
+      # P5.1 (D-OCR-1): the scanned-form OCR calls the Tesseract program through pytesseract.
+      - name: Tesseract
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr
+
       # D-RAG-2: the embedding model is cached, its SHA-256 checked, and the retrieval tests fail
       # instead of skipping when it is missing.
       - name: Cache the embedding model
