@@ -34,7 +34,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
 | Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). `p5.3-review-finalization` (P5.3) merged into `main` (`--no-ff`, normal push; merge `7575d36`). `p2.3b-rules-v2` (P2.3b) merged into `main` (`--no-ff`, normal push; merge `00a0201`). `p2.3c-ncci-modifiers` (P2.3c) merged into `main` (`--no-ff`, normal push; merge `28af00f`). `v2-policies-retrieval` (policies v2) merged into `main` (`--no-ff`, normal push; merge `1a56055`; D-PROC-2). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 2,225 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running (data/raw, Postgres, Qdrant). CI (run 38057325562 on `v2-model-train` `90c10a3`, merged as `d65f18d`): 1,861 passed, 66 skipped. |
+| Tests | 2,315 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running (data/raw, Postgres, Qdrant). CI (run 38060936704 on `p5.4-explain-ocr` `4cfd2e4`, merged as `df6f7d6`): Python 1,951 passed, 66 skipped; web app 17 passed. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -382,6 +382,13 @@ Kaggle copy for anything model-related.
   - **Model v1 on the v2 test set:** valid output 0.9167, line accuracy 0.7188, macro-F1 0.694, criterion status 0.7608 (`docs/results-v2.md`).
   - **Fixed:** `claimsense-decision:v1` was briefly re-created from the vision projector GGUF; restored from the Q4_K_M file (same weights blob as evaluated); the Modelfile writer now refuses projector files.
   - **Tests:** 2,225 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
+
+- 20:20 | Manideep3183 | P5.4, P5.1, P5.5 | **Explanation, OCR intake and the React web app merged (branch `p5.4-explain-ocr`, `488bdb7`..`4cfd2e4`; merged into `main` as `df6f7d6`, `--no-ff`; CI run 38060936704 on the branch passed: Python 1,951 passed, 66 skipped; web app 17 passed).** D-EXPL-1, D-OCR-1, D-UI-1, D-DEC-2.
+  - **Explanation (P5.4):** Jinja2 from the decision record only, `GET /v1/claims/{id}/explanation` (HTML or text); a FINAL_PENDED claim lists processed and awaiting lines. Acceptance: every amount and reason matches the record on all 41 golden e2e cases, after processing and after review.
+  - **OCR intake (P5.1):** `POST /v1/claims/intake/file` (JSON, digital PDF, scanned PDF or image); field confidence = lowest word confidence / 100, 0 on a failed format check. Held-out field accuracy **0.9378** on 205 freshly rendered scans (target 0.90; `docs/results-ocr.md`); known weakness: a handwritten 1 read as 7. The renderer now keeps hand-filled text inside its box.
+  - **React web app (P5.5):** `frontend-web/` (Vite, React, TypeScript, Tailwind, TanStack Query); all seven pages; Playwright smoke test (submit JSON, process, review queue, accept, explanation and audit trail) passes locally; `make demo` starts everything. Streamlit app kept as a fallback.
+  - **Fixed on the way:** model v1's free-text `reasons` no longer become reason codes (D-DEC-2, H15); a scanned value that fails its format check is filed for the rules instead of refusing the claim; the demo database was migrated to head (0003 to 0006) and re-seeded.
+  - **Tests:** 2,315 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
