@@ -3,7 +3,7 @@
 // the audit trail. The claim is a synthetic corpus claim whose rules pass (data/generated/claims/),
 // one not yet on file, so each run files a new claim.
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { expect, test } from "@playwright/test";
@@ -17,6 +17,7 @@ interface CorpusRecord {
 }
 
 test("submit, process, review and explain a claim", async ({ page, request }) => {
+  test.skip(!existsSync(CORPUS), "no claim corpus: run training.generate.claims, or use e2e/demo-claims.spec.ts");
   const onFile = new Set(
     ((await (await request.get("/v1/claims")).json()) as { claim_id: string }[]).map((c) => c.claim_id),
   );
