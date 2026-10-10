@@ -16,6 +16,9 @@ GOLDEN = Path(__file__).resolve().parents[1] / "golden"
 E2E_CASES = {
     c["case_id"]: c for c in json.loads((GOLDEN / "e2e" / "cases.json").read_text())["cases"]
 }
+E2E_V2_CASES = {  # policy set v2 versions, engine-derived (D-GOLD-9)
+    c["case_id"]: c for c in json.loads((GOLDEN / "e2e_v2" / "cases.json").read_text())["cases"]
+}
 
 
 def golden_fee_rows() -> list[dict[str, Any]]:
@@ -118,11 +121,11 @@ def claim_on_file(row: dict[str, Any]) -> Claim:
 class CaseRetriever(StubRetriever):
     """For a line's procedure code, the curated criteria the case's answer cites for that line."""
 
-    def __init__(self, case: dict[str, Any]) -> None:
+    def __init__(self, case: dict[str, Any], policy_set: str = "v1") -> None:
         super().__init__()
         from app.db.curated import load_curated
 
-        curated = load_curated()
+        curated = load_curated(policy_set)
         criteria = curated.criteria()
         codes = {
             line["line_no"]: line.get("procedure_code")

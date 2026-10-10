@@ -1,0 +1,957 @@
+{
+  "description": "Policy set v2: the criteria the exact lookup returns for each in-scope code (plan ALL, effective 2026-01-01), in policy-file order (D-RAG-2). Written by scripts/verify/rag_v2_snapshot.py from data/curated/coverage_policies/v2/.",
+  "codes": {
+    "11042": [
+      {
+        "criterion_id": "POL-WOUND-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-WOUND-001.c2",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-WOUND-001.c4",
+        "criterion_type": "conditional",
+        "group": null
+      }
+    ],
+    "11720": [
+      {
+        "criterion_id": "POL-FOOT-001.c1",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-FOOT-001.c2",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-FOOT-001.c4",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-FOOT-001.c5",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-FOOT-001.c6",
+        "criterion_type": "exclusion",
+        "group": null
+      }
+    ],
+    "11721": [
+      {
+        "criterion_id": "POL-FOOT-001.c1",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-FOOT-001.c2",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-FOOT-001.c4",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-FOOT-001.c5",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-FOOT-001.c6",
+        "criterion_type": "exclusion",
+        "group": null
+      }
+    ],
+    "15822": [
+      {
+        "criterion_id": "POL-SURG-004.c5",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-004.c6",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-004.c7",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-004.c8",
+        "criterion_type": "exclusion",
+        "group": null
+      }
+    ],
+    "15823": [
+      {
+        "criterion_id": "POL-SURG-004.c5",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-004.c6",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-004.c7",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-004.c8",
+        "criterion_type": "exclusion",
+        "group": null
+      }
+    ],
+    "29581": [
+      {
+        "criterion_id": "POL-WOUND-001.c2",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-WOUND-001.c4",
+        "criterion_type": "conditional",
+        "group": null
+      }
+    ],
+    "36475": [
+      {
+        "criterion_id": "POL-SURG-003.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-003.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-003.c3",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-003.c4",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "36478": [
+      {
+        "criterion_id": "POL-SURG-003.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-003.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-003.c3",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-003.c4",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "37765": [
+      {
+        "criterion_id": "POL-SURG-003.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-003.c3",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-003.c4",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "45378": [
+      {
+        "criterion_id": "POL-SURG-002.c3",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-002.c4",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-002.c5",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-002.c6",
+        "criterion_type": "exclusion",
+        "group": null
+      }
+    ],
+    "45380": [
+      {
+        "criterion_id": "POL-SURG-002.c3",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-002.c4",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-002.c5",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-002.c6",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-002.c7",
+        "criterion_type": "conditional",
+        "group": "indication"
+      }
+    ],
+    "45385": [
+      {
+        "criterion_id": "POL-SURG-002.c3",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-002.c4",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-002.c5",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-002.c6",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-002.c7",
+        "criterion_type": "conditional",
+        "group": "indication"
+      }
+    ],
+    "62321": [
+      {
+        "criterion_id": "POL-PAIN-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c6",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c7",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c8",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c9",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c10",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "62323": [
+      {
+        "criterion_id": "POL-PAIN-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c6",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c7",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c8",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c9",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c10",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "64483": [
+      {
+        "criterion_id": "POL-PAIN-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c6",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c7",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c8",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c9",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-001.c10",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "64490": [
+      {
+        "criterion_id": "POL-PAIN-002.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-002.c3",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-002.c5",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-002.c6",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "64493": [
+      {
+        "criterion_id": "POL-PAIN-002.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-002.c3",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-002.c5",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-002.c6",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "64635": [
+      {
+        "criterion_id": "POL-PAIN-002.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-002.c3",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-PAIN-002.c6",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "66982": [
+      {
+        "criterion_id": "POL-SURG-001.c1",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-001.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-001.c3",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-001.c4",
+        "criterion_type": "conditional",
+        "group": "indication"
+      }
+    ],
+    "66984": [
+      {
+        "criterion_id": "POL-SURG-001.c1",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-001.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-001.c3",
+        "criterion_type": "conditional",
+        "group": "indication"
+      },
+      {
+        "criterion_id": "POL-SURG-001.c4",
+        "criterion_type": "conditional",
+        "group": "indication"
+      }
+    ],
+    "67904": [
+      {
+        "criterion_id": "POL-SURG-004.c5",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-004.c6",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-004.c7",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-SURG-004.c8",
+        "criterion_type": "exclusion",
+        "group": null
+      }
+    ],
+    "70450": [
+      {
+        "criterion_id": "POL-IMG-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-001.c2",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-001.c4",
+        "criterion_type": "exclusion",
+        "group": null
+      }
+    ],
+    "70551": [
+      {
+        "criterion_id": "POL-IMG-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-001.c2",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-001.c4",
+        "criterion_type": "exclusion",
+        "group": null
+      }
+    ],
+    "70553": [
+      {
+        "criterion_id": "POL-IMG-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-001.c2",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-001.c4",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-001.c5",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "72141": [
+      {
+        "criterion_id": "POL-IMG-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "76881": [
+      {
+        "criterion_id": "POL-IMG-002.c3",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-002.c4",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-002.c5",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-002.c6",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "76882": [
+      {
+        "criterion_id": "POL-IMG-002.c3",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-002.c4",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-002.c5",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-IMG-002.c6",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "93224": [
+      {
+        "criterion_id": "POL-CAR-002.c4",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "93241": [
+      {
+        "criterion_id": "POL-CAR-002.c5",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "93268": [
+      {
+        "criterion_id": "POL-CAR-002.c6",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "93306": [
+      {
+        "criterion_id": "POL-CAR-001.c4",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-CAR-001.c5",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-CAR-001.c6",
+        "criterion_type": "conditional",
+        "group": null
+      }
+    ],
+    "93308": [
+      {
+        "criterion_id": "POL-CAR-001.c4",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-CAR-001.c5",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-CAR-001.c6",
+        "criterion_type": "conditional",
+        "group": null
+      }
+    ],
+    "93350": [
+      {
+        "criterion_id": "POL-CAR-001.c7",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "95004": [
+      {
+        "criterion_id": "POL-DX-003.c4",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-003.c7",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "95024": [
+      {
+        "criterion_id": "POL-DX-003.c4",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-003.c5",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-003.c7",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "95044": [
+      {
+        "criterion_id": "POL-DX-003.c6",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-003.c7",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "95806": [
+      {
+        "criterion_id": "POL-DX-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-001.c4",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-001.c5",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-001.c6",
+        "criterion_type": "conditional",
+        "group": null
+      }
+    ],
+    "95810": [
+      {
+        "criterion_id": "POL-DX-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-001.c6",
+        "criterion_type": "conditional",
+        "group": null
+      }
+    ],
+    "95811": [
+      {
+        "criterion_id": "POL-DX-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-001.c6",
+        "criterion_type": "conditional",
+        "group": null
+      }
+    ],
+    "95886": [
+      {
+        "criterion_id": "POL-DX-002.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-002.c3",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-002.c5",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "95907": [
+      {
+        "criterion_id": "POL-DX-002.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-002.c3",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-002.c4",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-002.c5",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "95910": [
+      {
+        "criterion_id": "POL-DX-002.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-002.c3",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-002.c4",
+        "criterion_type": "conditional",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-DX-002.c5",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "96130": [
+      {
+        "criterion_id": "POL-BH-001.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-BH-001.c3",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-BH-001.c4",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "96131": [
+      {
+        "criterion_id": "POL-BH-001.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-BH-001.c3",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-BH-001.c4",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "96136": [
+      {
+        "criterion_id": "POL-BH-001.c2",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-BH-001.c3",
+        "criterion_type": "exclusion",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-BH-001.c4",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "97110": [
+      {
+        "criterion_id": "POL-REHAB-001.c4",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-REHAB-001.c5",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-REHAB-001.c6",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-REHAB-001.c7",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "97140": [
+      {
+        "criterion_id": "POL-REHAB-001.c4",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-REHAB-001.c5",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-REHAB-001.c6",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-REHAB-001.c7",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "97161": [
+      {
+        "criterion_id": "POL-REHAB-001.c6",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "97162": [
+      {
+        "criterion_id": "POL-REHAB-001.c6",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "97530": [
+      {
+        "criterion_id": "POL-REHAB-001.c4",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-REHAB-001.c5",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-REHAB-001.c6",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-REHAB-001.c7",
+        "criterion_type": "requirement",
+        "group": null
+      }
+    ],
+    "97597": [
+      {
+        "criterion_id": "POL-WOUND-001.c1",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-WOUND-001.c2",
+        "criterion_type": "requirement",
+        "group": null
+      },
+      {
+        "criterion_id": "POL-WOUND-001.c4",
+        "criterion_type": "conditional",
+        "group": null
+      }
+    ]
+  }
+}

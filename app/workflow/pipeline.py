@@ -66,6 +66,7 @@ from app.domain.contracts import (
 from app.ml.client import DecisionModel
 from app.ml.prompt import PROMPT_VERSION, PromptLookups, render_user_message, system_prompt
 from app.ml.validate import ValidationResult, validate_output
+from app.rag.knowledge import curated_knowledge_version
 from app.rag.retrieve import Retriever
 from app.review.tiers import review_tier
 from app.rules import RULES_VERSION
@@ -252,10 +253,15 @@ def _rules_payload(rules: RulesOutcome) -> dict:
     }
 
 
-def _context_payload(context: ContextPackage) -> dict:
+def _context_payload(context: ContextPackage, settings: Settings) -> dict:
+    """The context event names the policy set and its knowledge version (D-POL-2)."""
     return {
         "plan_id": context.plan_id,
         "network": context.network.value,
+        "policy_set": settings.policy_set,
+        "knowledge_version": curated_knowledge_version(
+            settings.policy_set, settings.embedding_model
+        ),
         "lines": [
             {
                 "line_no": line.line_no,
@@ -347,7 +353,7 @@ def _calculate(
     return calculate(lines, network, terms, benefits, fees, accumulators, claim.other_coverage)
 
 
-def prompt_lookups(session: Session, claim: IntakeClaim) -> PromptLookups:
+def prompt_lookups(session: Session, claim: IntakeClaim, policy_set: str) -> PromptLookups:
     first_day = min(line.date_of_service for line in claim.service_lines)
     codes = sorted({line.procedure_code for line in claim.service_lines})
     return PromptLookups(
@@ -357,7 +363,7 @@ def prompt_lookups(session: Session, claim: IntakeClaim) -> PromptLookups:
         procedure_descriptions=lookups.procedure_descriptions(session, codes),
         policy_codes={
             policy_id: list(policy.procedure_codes)
-            for policy_id, policy in load_curated().policies.items()
+            for policy_id, policy in load_curated(policy_set).policies.items()
         },
     )
 
@@ -422,7 +428,7 @@ def process_claim(
         if lookups.is_in_network(session, claim.billing_npi, member.plan_id)
         else Network.OUT_OF_NETWORK
     )
-    claim_lookups = prompt_lookups(session, claim)
+    claim_lookups = prompt_lookups(session, claim, settings.policy_set)
     try:
         context = assemble_context(
             session, claim, rules, member.plan_id, network, claim_lookups, retriever
@@ -430,7 +436,11 @@ def process_claim(
     except ContextError as exc:
         raise PipelineError(str(exc)) from exc
     record_event(
-        session, claim_id, EventType.CONTEXT_ASSEMBLED, _context_payload(context), versions
+        session,
+        claim_id,
+        EventType.CONTEXT_ASSEMBLED,
+        _context_payload(context, settings),
+        versions,
     )
 
     user_message = render_user_message(claim, rules, context, claim_lookups)
@@ -442,8 +452,8 @@ def process_claim(
         rules_version=RULES_VERSION,
         model_name=model.name,
         prompt_version=PROMPT_VERSION,
-        policy_versions={
-            c.policy_id: c.effective_date.isoformat()
+        policy_versions={  # <policy set>@<effective date> (D-POL-2)
+            c.policy_id: f"{settings.policy_set}@{c.effective_date.isoformat()}"
             for line in context.lines
             for c in line.criteria
         },

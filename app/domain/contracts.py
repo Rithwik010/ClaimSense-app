@@ -290,6 +290,13 @@ class RetrievedCriterion(Contract):
     text: str
     source: str
     effective_date: date
+    # Policy set v2 only (D-POL-5, approved H11 change): the criterion's type and indication group
+    # (D-POL-3). None for v1 criteria, and then left out when dumped, so v1 records and datasets
+    # serialize exactly as before.
+    criterion_type: Literal["requirement", "exclusion", "conditional"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    group: Literal["indication"] | None = Field(default=None, exclude_if=lambda v: v is None)
 
 
 class LineContext(Contract):

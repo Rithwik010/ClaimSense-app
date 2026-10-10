@@ -34,6 +34,17 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
+      # D-RAG-2: the embedding model is cached, its SHA-256 checked, and the retrieval tests fail
+      # instead of skipping when it is missing.
+      - name: Cache the embedding model
+        uses: actions/cache@v6.1.0
+        with:
+          path: data/generated/models/fastembed
+          key: fastembed-bge-small-en-v1.5-onnx-q-52398278842e
+
+      - name: Embedding model (fetch on a cache miss, check the SHA-256)
+        run: uv run python -m scripts.verify.embedding_model fetch
+
       - name: Ruff check
         run: uv run ruff check .
 
@@ -47,3 +58,4 @@ jobs:
         run: uv run pytest
         env:
           CLAIMSENSE_REQUIRE_DB: "1"
+          CLAIMSENSE_REQUIRE_EMBEDDING: "1"

@@ -24,7 +24,7 @@ from app.ml.client import ModelUnavailable
 from app.ml.prompt import PROMPT_VERSION, system_prompt
 from app.rules import RULES_VERSION
 from app.workflow.pipeline import _calculate
-from tests.e2e.support import E2E_CASES, StubModel, e2e_fee_rows
+from tests.e2e.support import E2E_CASES, StubModel, audit, e2e_fee_rows
 
 
 def line_decisions(record: DecisionRecord) -> list[dict[str, Any]]:
@@ -416,7 +416,12 @@ def test_retrieved_criteria_reach_the_prompt_and_the_record(api, load_case_refer
     assert "[POL-BH-001.c1]" in model.prompts[0][1]
     assert record.output_errors == [] and record.claim_decision.value == "APPROVE"
     assert record.context_refs.lines[0].criteria == [criterion]
-    assert record.versions.policy_versions == {"POL-BH-001": "2026-01-01"}
+    assert record.versions.policy_versions == {"POL-BH-001": "v1@2026-01-01"}
+    context_event = next(
+        e for e in audit(client, "CLM-SKEL-RAG") if e["event_type"] == "CONTEXT_ASSEMBLED"
+    )
+    assert context_event["payload"]["policy_set"] == "v1"
+    assert context_event["payload"]["knowledge_version"] == "36cfc77305a5"  # model v1 (D-POL-2)
 
 
 def test_retrieval_unavailable_returns_503(api, load_case_reference) -> None:
