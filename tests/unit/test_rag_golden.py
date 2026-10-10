@@ -2,6 +2,8 @@
 queries and returns nothing for the "no relevant policy" queries; at the live top-k (5) it finds
 every expected criterion. Skipped until the model files are cached; in-memory Qdrant."""
 
+import os
+
 import pytest
 from qdrant_client import QdrantClient
 
@@ -13,8 +15,11 @@ from training.evaluate.rag import load_queries
 
 SETTINGS = get_settings()
 
+# CI caches the model and sets CLAIMSENSE_REQUIRE_EMBEDDING=1: a missing model fails (D-RAG-2).
 pytestmark = pytest.mark.skipif(
-    not model_files_present(SETTINGS.embedding_cache_dir), reason="embedding model not cached"
+    not model_files_present(SETTINGS.embedding_cache_dir)
+    and os.environ.get("CLAIMSENSE_REQUIRE_EMBEDDING") != "1",
+    reason="embedding model not cached",
 )
 
 

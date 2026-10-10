@@ -2,6 +2,7 @@
 their own tasks; this checks structure, contracts, codes and arithmetic consistency only."""
 
 import json
+import os
 import re
 from datetime import date
 from decimal import Decimal
@@ -228,7 +229,26 @@ def test_e2e_covers_every_outcome() -> None:
     assert {"ACCEPT", "OVERRIDE"} <= actions
 
 
-@pytest.mark.parametrize("case", E2E_CASES, ids=ids(E2E_CASES))
+E2E_V2_CASES = load_cases("e2e_v2")
+
+
+def test_e2e_v2_cases_are_engine_derived_versions_of_the_retired_criterion_cases() -> None:
+    """D-GOLD-8, D-GOLD-9: one v2 version per v1 case citing a retired criterion, labelled
+    engine-derived, with the inputs a fresh mapping gives."""
+    from scripts.verify.e2e_v2_cases import SUFFIX, cases_to_version, version_case
+
+    versioned = cases_to_version()
+    assert [c["case_id"] for c in E2E_V2_CASES] == [c["case_id"] + SUFFIX for c in versioned]
+    for case, v1 in zip(E2E_V2_CASES, versioned, strict=True):
+        assert case["policy_set"] == "v2" and case["v1_case"] == v1["case_id"]
+        assert case["expected_source"].startswith("engine-derived (D-GOLD-9)")
+        assert case["given"] == version_case(v1)["given"]
+        assert {k: v for k, v in case["given"].items() if k != "model_answer"} == {
+            k: v for k, v in v1["given"].items() if k != "model_answer"
+        }
+
+
+@pytest.mark.parametrize("case", E2E_CASES + E2E_V2_CASES, ids=ids(E2E_CASES + E2E_V2_CASES))
 def test_e2e_case_is_consistent(case: dict[str, Any]) -> None:
     from app.domain.contracts import ReviewAction, SLMOutput
 
@@ -279,7 +299,10 @@ def live_retriever_or_skip():  # noqa: ANN201
     from app.rag.embedding import model_files_present
     from training.generate.decision_dataset import live_retriever
 
-    if not model_files_present(get_settings().embedding_cache_dir):
+    if (
+        not model_files_present(get_settings().embedding_cache_dir)
+        and os.environ.get("CLAIMSENSE_REQUIRE_EMBEDDING") != "1"
+    ):
         pytest.skip("embedding model not cached")
     retriever, label = live_retriever()
     try:

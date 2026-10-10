@@ -1,0 +1,2926 @@
+{
+  "description": "Golden end-to-end cases on policy set v2 (D-GOLD-8, D-GOLD-9): the v2 versions of the cases in ../e2e/cases.json that cite a retired v1 criterion. Expected values are engine-derived, not hand-checked (D-GOLD-10).",
+  "cases": [
+    {
+      "case_id": "E2E-18-V2",
+      "title": "Cosmetic eyelid surgery (conditional exclusion) (policy set v2)",
+      "v1_case": "E2E-18",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-18",
+          "member_id": "MBR-000190",
+          "patient": {
+            "first_name": "Justin",
+            "last_name": "Campbell",
+            "date_of_birth": "1984-02-19",
+            "sex": "M",
+            "address": {
+              "line1": "06742 Brandon Plaza Apt. 377",
+              "city": "Lisaburgh",
+              "state": "WA",
+              "zip_code": "41569"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "2842144372",
+          "billing_tin": "158124922",
+          "referring_npi": null,
+          "prior_auth_number": "AUTH-S04101-00009",
+          "diagnoses": [
+            "H02834"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-11-06",
+              "place_of_service": "11",
+              "procedure_code": "15823",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 162200,
+              "rendering_npi": "2842144372"
+            }
+          ],
+          "clinical_notes": "The patient is seen about drooping upper eyelids. The patient has no vision complaints. Visual fields are full, with only 5 degrees of upper loss. Allergies: none known. The patient wants surgery to look less tired. The patient understands the plan and wants to go ahead. Plan: upper eyelid surgery removing excess skin that droops over the eye.",
+          "received_date": "2026-11-26",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000190",
+              "plan_id": "PLN-PPO-SILVER",
+              "first_name": "Justin",
+              "last_name": "Campbell",
+              "date_of_birth": "1984-02-19",
+              "sex": "M",
+              "address_line": "06742 Brandon Plaza Apt. 377",
+              "city": "Lisaburgh",
+              "state": "WA",
+              "zip_code": "41569",
+              "coverage_start": "2025-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "2842144372",
+              "tin": "158124922",
+              "name": "Denise Williams, DO",
+              "provider_type": "OPHTHALMOLOGY",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "2842144372",
+              "plan_id": "PLN-PPO-SILVER",
+              "in_network": true
+            }
+          ],
+          "authorizations": [
+            {
+              "auth_number": "AUTH-S04101-00009",
+              "member_id": "MBR-000190",
+              "provider_npi": "2842144372",
+              "procedure_code": "15823",
+              "start_date": "2026-10-28",
+              "end_date": "2027-01-26",
+              "units_approved": null
+            }
+          ],
+          "accumulators": [
+            {
+              "member_id": "MBR-000190",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 0,
+              "oop_met_cents": 0
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "benefit_category": "OUTPATIENT_SURGERY",
+              "criteria": [
+                {
+                  "criterion_id": "POL-SURG-004.c5",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-004.c6",
+                  "status": "NOT_MET",
+                  "evidence": "The patient has no vision complaints."
+                },
+                {
+                  "criterion_id": "POL-SURG-004.c7",
+                  "status": "NOT_MET",
+                  "evidence": "Visual fields are full, with only 5 degrees of upper loss."
+                },
+                {
+                  "criterion_id": "POL-SURG-004.c8",
+                  "status": "NOT_MET",
+                  "evidence": "The patient wants surgery to look less tired."
+                }
+              ],
+              "reasons": [
+                "DN_CONDITIONAL_EXCLUSION"
+              ],
+              "missing_information": []
+            }
+          ],
+          "complexity": "HIGH"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-18",
+          "reviewer_id": "reviewer-golden",
+          "action": "ACCEPT",
+          "line_overrides": [],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            }
+          ],
+          "flags": [],
+          "failures": []
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": true,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "MODEL",
+              "reason_codes": [
+                "DN_CONDITIONAL_EXCLUSION"
+              ]
+            }
+          ],
+          "claim_decision": "DENY",
+          "review_tier": "FULL",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 162200,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 162200,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_DENIED",
+          "claim_decision": "DENY",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "MODEL",
+              "reason_codes": [
+                "DN_CONDITIONAL_EXCLUSION"
+              ]
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 162200,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 162200,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 0,
+            "oop_met_cents": 0
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-18's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 1: POL-SURG-004.c5 new: NOT_APPLICABLE",
+        "line 1: POL-SURG-004.c6 from POL-SURG-004.c2 (NOT_MET)",
+        "line 1: POL-SURG-004.c7 from POL-SURG-004.c3 (NOT_MET)",
+        "line 1: POL-SURG-004.c8 from POL-SURG-004.c4 (NOT_MET)",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    },
+    {
+      "case_id": "E2E-19-V2",
+      "title": "Criterion explicitly not met (policy set v2)",
+      "v1_case": "E2E-19",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-19",
+          "member_id": "MBR-000328",
+          "patient": {
+            "first_name": "Edward",
+            "last_name": "Ramos",
+            "date_of_birth": "1952-10-04",
+            "sex": "M",
+            "address": {
+              "line1": "563 April Trafficway Apt. 576",
+              "city": "Kleinview",
+              "state": "ND",
+              "zip_code": "38256"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1400608695",
+          "billing_tin": "697143376",
+          "referring_npi": "1915374965",
+          "prior_auth_number": "AUTH-S04101-00010",
+          "diagnoses": [
+            "R002"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-16",
+              "place_of_service": "11",
+              "procedure_code": "93224",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 14800,
+              "rendering_npi": "1400608695"
+            }
+          ],
+          "clinical_notes": "The patient is seen for heart rhythm symptoms. Past medical history was reviewed without changes. There are no palpitations, fainting, dizziness or other rhythm symptoms; monitoring is requested before a routine sports physical. Plan: wearable heart rhythm recording for up to 48 hours, with analysis and report.",
+          "received_date": "2026-10-25",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000328",
+              "plan_id": "PLN-HMO",
+              "first_name": "Edward",
+              "last_name": "Ramos",
+              "date_of_birth": "1952-10-04",
+              "sex": "M",
+              "address_line": "563 April Trafficway Apt. 576",
+              "city": "Kleinview",
+              "state": "ND",
+              "zip_code": "38256",
+              "coverage_start": "2025-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "1400608695",
+              "tin": "697143376",
+              "name": "Sara Davies, MD",
+              "provider_type": "CARDIOLOGY",
+              "enrollment_status": "ENROLLED"
+            },
+            {
+              "npi": "1915374965",
+              "tin": "497593070",
+              "name": "Richard Hill, MD",
+              "provider_type": "PRIMARY_CARE",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "1400608695",
+              "plan_id": "PLN-HMO",
+              "in_network": true
+            },
+            {
+              "npi": "1915374965",
+              "plan_id": "PLN-HMO",
+              "in_network": true
+            }
+          ],
+          "authorizations": [
+            {
+              "auth_number": "AUTH-S04101-00010",
+              "member_id": "MBR-000328",
+              "provider_npi": "1400608695",
+              "procedure_code": "93224",
+              "start_date": "2026-10-03",
+              "end_date": "2027-01-01",
+              "units_approved": null
+            }
+          ],
+          "accumulators": [
+            {
+              "member_id": "MBR-000328",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 0,
+              "oop_met_cents": 0
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "benefit_category": "DIAGNOSTIC_TESTS",
+              "criteria": [
+                {
+                  "criterion_id": "POL-CAR-002.c4",
+                  "status": "NOT_MET",
+                  "evidence": "There are no palpitations, fainting, dizziness or other rhythm symptoms; monitoring is requested before a routine sports physical."
+                }
+              ],
+              "reasons": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ],
+              "missing_information": []
+            }
+          ],
+          "complexity": "MEDIUM"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-19",
+          "reviewer_id": "reviewer-golden",
+          "action": "ACCEPT",
+          "line_overrides": [],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            }
+          ],
+          "flags": [],
+          "failures": []
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": true,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "MODEL",
+              "reason_codes": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ]
+            }
+          ],
+          "claim_decision": "DENY",
+          "review_tier": "FULL",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 14800,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 14800,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_DENIED",
+          "claim_decision": "DENY",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "MODEL",
+              "reason_codes": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ]
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 14800,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 14800,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 0,
+            "oop_met_cents": 0
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-19's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 1: POL-CAR-002.c4 from POL-CAR-002.c1 (NOT_MET)",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    },
+    {
+      "case_id": "E2E-21-V2",
+      "title": "Bypass modifier without distinct-service documentation (policy set v2)",
+      "v1_case": "E2E-21",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-21",
+          "member_id": "MBR-000117",
+          "patient": {
+            "first_name": "Tammy",
+            "last_name": "Fisher",
+            "date_of_birth": "1965-06-12",
+            "sex": "F",
+            "address": {
+              "line1": "6592 Riggs Prairie Suite 259",
+              "city": "East Douglas",
+              "state": "MO",
+              "zip_code": "99488"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "2522103581",
+          "billing_tin": "436479290",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "K625"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-11-03",
+              "place_of_service": "24",
+              "procedure_code": "45385",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 110100,
+              "rendering_npi": "2522103581"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-11-03",
+              "place_of_service": "24",
+              "procedure_code": "45380",
+              "modifiers": [
+                "XS"
+              ],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 108600,
+              "rendering_npi": "2522103581"
+            }
+          ],
+          "clinical_notes": "The patient is seen for a colonoscopy. The patient has black, tarry stools. Allergies: none known. Plan: colonoscopy with polyp removal using a wire snare; colonoscopy with tissue sample (biopsy). The patient understands the plan and wants to go ahead.",
+          "received_date": "2026-11-10",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000117",
+              "plan_id": "PLN-PPO-SILVER",
+              "first_name": "Tammy",
+              "last_name": "Fisher",
+              "date_of_birth": "1965-06-12",
+              "sex": "F",
+              "address_line": "6592 Riggs Prairie Suite 259",
+              "city": "East Douglas",
+              "state": "MO",
+              "zip_code": "99488",
+              "coverage_start": "2026-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "2522103581",
+              "tin": "436479290",
+              "name": "Stephanie Brown, MD",
+              "provider_type": "GASTROENTEROLOGY",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "2522103581",
+              "plan_id": "PLN-PPO-SILVER",
+              "in_network": true
+            }
+          ],
+          "authorizations": [],
+          "accumulators": [
+            {
+              "member_id": "MBR-000117",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 0,
+              "oop_met_cents": 0
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "benefit_category": "ENDOSCOPY",
+              "criteria": [
+                {
+                  "criterion_id": "POL-SURG-002.c3",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c4",
+                  "status": "MET",
+                  "evidence": "The patient has black, tarry stools."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c5",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c6",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c7",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                }
+              ],
+              "reasons": [],
+              "missing_information": []
+            },
+            {
+              "line_no": 2,
+              "decision": "PEND",
+              "benefit_category": "ENDOSCOPY",
+              "criteria": [
+                {
+                  "criterion_id": "POL-SURG-002.c3",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c4",
+                  "status": "MET",
+                  "evidence": "The patient has black, tarry stools."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c5",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c6",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c7",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                }
+              ],
+              "reasons": [
+                "PD_MISSING_DOCUMENTATION"
+              ],
+              "missing_information": [
+                "Documentation that the biopsy was taken from a lesion separate from the polyp removed with the snare"
+              ]
+            }
+          ],
+          "complexity": "HIGH"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-21",
+          "reviewer_id": "reviewer-golden",
+          "action": "ACCEPT",
+          "line_overrides": [],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            },
+            {
+              "line_no": 2,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": [
+                "NCCI_BYPASS"
+              ]
+            }
+          ],
+          "flags": [],
+          "failures": []
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": true,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "source": "MODEL",
+              "reason_codes": []
+            },
+            {
+              "line_no": 2,
+              "decision": "PEND",
+              "source": "MODEL",
+              "reason_codes": [
+                "PD_MISSING_DOCUMENTATION"
+              ]
+            }
+          ],
+          "claim_decision": "PEND",
+          "review_tier": "FULL",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 110100,
+                "allowed_cents": 62501,
+                "contractual_adjustment_cents": 47599,
+                "deductible_cents": 62501,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 62501,
+                "balance_bill_exposure_cents": 0
+              },
+              {
+                "line_no": 2,
+                "billed_cents": 108600,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 218700,
+              "allowed_cents": 62501,
+              "contractual_adjustment_cents": 47599,
+              "deductible_cents": 62501,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 62501,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_PENDED",
+          "claim_decision": "PEND",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "source": "MODEL",
+              "reason_codes": []
+            },
+            {
+              "line_no": 2,
+              "decision": "PEND",
+              "source": "MODEL",
+              "reason_codes": [
+                "PD_MISSING_DOCUMENTATION"
+              ]
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 110100,
+                "allowed_cents": 62501,
+                "contractual_adjustment_cents": 47599,
+                "deductible_cents": 62501,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 62501,
+                "balance_bill_exposure_cents": 0
+              },
+              {
+                "line_no": 2,
+                "billed_cents": 108600,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 218700,
+              "allowed_cents": 62501,
+              "contractual_adjustment_cents": 47599,
+              "deductible_cents": 62501,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 62501,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 62501,
+            "oop_met_cents": 62501
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-21's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 1: POL-SURG-002.c3 new: NOT_APPLICABLE",
+        "line 1: POL-SURG-002.c4 from POL-SURG-002.c1 (MET)",
+        "line 1: POL-SURG-002.c5 new: NOT_APPLICABLE",
+        "line 1: POL-SURG-002.c6 new: NOT_APPLICABLE",
+        "line 1: POL-SURG-002.c7 new: NOT_APPLICABLE",
+        "line 2: POL-SURG-002.c3 new: NOT_APPLICABLE",
+        "line 2: POL-SURG-002.c4 from POL-SURG-002.c1 (MET)",
+        "line 2: POL-SURG-002.c5 new: NOT_APPLICABLE",
+        "line 2: POL-SURG-002.c6 new: NOT_APPLICABLE",
+        "line 2: POL-SURG-002.c7 new: NOT_APPLICABLE",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    },
+    {
+      "case_id": "E2E-22-V2",
+      "title": "One line denied by rules, the other approved (policy set v2)",
+      "v1_case": "E2E-22",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-22",
+          "member_id": "MBR-000318",
+          "patient": {
+            "first_name": "Christina",
+            "last_name": "Castillo",
+            "date_of_birth": "1985-08-01",
+            "sex": "F",
+            "address": {
+              "line1": "7528 Pierce Mountain",
+              "city": "Charlesview",
+              "state": "AK",
+              "zip_code": "41098"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "2829620345",
+          "billing_tin": "319970926",
+          "referring_npi": "2619211149",
+          "prior_auth_number": "AUTH-S04101-00012",
+          "diagnoses": [
+            "S83511D"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-16",
+              "place_of_service": "11",
+              "procedure_code": "97530",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 2,
+              "charge_cents": 15500,
+              "rendering_npi": "2829620345"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-16",
+              "place_of_service": "11",
+              "procedure_code": "97110",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 7,
+              "charge_cents": 35100,
+              "rendering_npi": "2829620345"
+            }
+          ],
+          "clinical_notes": "The patient continues outpatient physical therapy. Exercises are progressed each session by the therapist based on the patient's response. A written plan of care from the evaluation sets goals: climb stairs without pain. Function improved from 32 to 66 on the lower extremity function scale over 3 weeks, and more gains are expected. Plan: functional movement activities to improve daily tasks, each 15 minutes. Vital signs are stable.",
+          "received_date": "2026-10-24",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000318",
+              "plan_id": "PLN-HMO",
+              "first_name": "Christina",
+              "last_name": "Castillo",
+              "date_of_birth": "1985-08-01",
+              "sex": "F",
+              "address_line": "7528 Pierce Mountain",
+              "city": "Charlesview",
+              "state": "AK",
+              "zip_code": "41098",
+              "coverage_start": "2024-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "2829620345",
+              "tin": "319970926",
+              "name": "Gregory Hernandez, DPT",
+              "provider_type": "PHYSICAL_THERAPY",
+              "enrollment_status": "ENROLLED"
+            },
+            {
+              "npi": "2619211149",
+              "tin": "725100382",
+              "name": "Peter Kelley, DO",
+              "provider_type": "PRIMARY_CARE",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "2829620345",
+              "plan_id": "PLN-HMO",
+              "in_network": true
+            },
+            {
+              "npi": "2619211149",
+              "plan_id": "PLN-HMO",
+              "in_network": true
+            }
+          ],
+          "authorizations": [
+            {
+              "auth_number": "AUTH-S04101-00012",
+              "member_id": "MBR-000318",
+              "provider_npi": "2829620345",
+              "procedure_code": "97530",
+              "start_date": "2026-10-05",
+              "end_date": "2027-01-03",
+              "units_approved": null
+            },
+            {
+              "auth_number": "AUTH-S04101-00013",
+              "member_id": "MBR-000318",
+              "provider_npi": "2829620345",
+              "procedure_code": "97110",
+              "start_date": "2026-09-30",
+              "end_date": "2026-12-29",
+              "units_approved": null
+            }
+          ],
+          "accumulators": [
+            {
+              "member_id": "MBR-000318",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 20000,
+              "oop_met_cents": 30000
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "benefit_category": "REHAB_THERAPY",
+              "criteria": [
+                {
+                  "criterion_id": "POL-REHAB-001.c4",
+                  "status": "MET",
+                  "evidence": "A written plan of care from the evaluation sets goals: climb stairs without pain."
+                },
+                {
+                  "criterion_id": "POL-REHAB-001.c5",
+                  "status": "MET",
+                  "evidence": "A written plan of care from the evaluation sets goals: climb stairs without pain."
+                },
+                {
+                  "criterion_id": "POL-REHAB-001.c6",
+                  "status": "MET",
+                  "evidence": "Exercises are progressed each session by the therapist based on the patient's response."
+                },
+                {
+                  "criterion_id": "POL-REHAB-001.c7",
+                  "status": "MET",
+                  "evidence": "Function improved from 32 to 66 on the lower extremity function scale over 3 weeks, and more gains are expected."
+                }
+              ],
+              "reasons": [],
+              "missing_information": []
+            }
+          ],
+          "complexity": "HIGH"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-22",
+          "reviewer_id": "reviewer-golden",
+          "action": "ACCEPT",
+          "line_overrides": [],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            },
+            {
+              "line_no": 2,
+              "outcome": "DENY",
+              "reason_codes": [
+                "DN_MUE_EXCEEDED"
+              ],
+              "flags": []
+            }
+          ],
+          "flags": [],
+          "failures": [
+            {
+              "rule_id": "R12",
+              "outcome": "DENY",
+              "reason_code": "DN_MUE_EXCEEDED",
+              "line_no": 2
+            }
+          ]
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": true,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "source": "MODEL",
+              "reason_codes": []
+            },
+            {
+              "line_no": 2,
+              "decision": "DENY",
+              "source": "RULE",
+              "reason_codes": [
+                "DN_MUE_EXCEEDED"
+              ]
+            }
+          ],
+          "claim_decision": "PARTIAL",
+          "review_tier": "FULL",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 15500,
+                "allowed_cents": 8768,
+                "contractual_adjustment_cents": 6732,
+                "deductible_cents": 0,
+                "copay_cents": 3000,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 5768,
+                "member_pays_cents": 3000,
+                "balance_bill_exposure_cents": 0
+              },
+              {
+                "line_no": 2,
+                "billed_cents": 35100,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 50600,
+              "allowed_cents": 8768,
+              "contractual_adjustment_cents": 6732,
+              "deductible_cents": 0,
+              "copay_cents": 3000,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 5768,
+              "member_pays_cents": 3000,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_PARTIAL",
+          "claim_decision": "PARTIAL",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "source": "MODEL",
+              "reason_codes": []
+            },
+            {
+              "line_no": 2,
+              "decision": "DENY",
+              "source": "RULE",
+              "reason_codes": [
+                "DN_MUE_EXCEEDED"
+              ]
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 15500,
+                "allowed_cents": 8768,
+                "contractual_adjustment_cents": 6732,
+                "deductible_cents": 0,
+                "copay_cents": 3000,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 5768,
+                "member_pays_cents": 3000,
+                "balance_bill_exposure_cents": 0
+              },
+              {
+                "line_no": 2,
+                "billed_cents": 35100,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 50600,
+              "allowed_cents": 8768,
+              "contractual_adjustment_cents": 6732,
+              "deductible_cents": 0,
+              "copay_cents": 3000,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 5768,
+              "member_pays_cents": 3000,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 20000,
+            "oop_met_cents": 33000
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-22's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 1: POL-REHAB-001.c4 from POL-REHAB-001.c2 (MET)",
+        "line 1: POL-REHAB-001.c5 from POL-REHAB-001.c2 (MET)",
+        "line 1: POL-REHAB-001.c6 from POL-REHAB-001.c1 (MET)",
+        "line 1: POL-REHAB-001.c7 from POL-REHAB-001.c3 (MET)",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    },
+    {
+      "case_id": "E2E-23-V2",
+      "title": "Two policies: one approved, one denied (policy set v2)",
+      "v1_case": "E2E-23",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-23",
+          "member_id": "MBR-000112",
+          "patient": {
+            "first_name": "Sarah",
+            "last_name": "Reese",
+            "date_of_birth": "1946-02-25",
+            "sex": "F",
+            "address": {
+              "line1": "822 Lucero Station Apt. 156",
+              "city": "Lake Annette",
+              "state": "LA",
+              "zip_code": "30971"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1400608695",
+          "billing_tin": "697143376",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "I10",
+            "I4891"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-17",
+              "place_of_service": "11",
+              "procedure_code": "93350",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 36900,
+              "rendering_npi": "1400608695"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-17",
+              "place_of_service": "11",
+              "procedure_code": "93241",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "B"
+              ],
+              "units": 1,
+              "charge_cents": 47200,
+              "rendering_npi": "1400608695"
+            }
+          ],
+          "clinical_notes": "The patient reports chest discomfort. Blood pressure is high, but there are no heart symptoms and the heart exam is normal. A treadmill stress test last month did not give a clear answer, and chest pressure with exertion continues. Current medications were reviewed and updated. The patient returns after atrial fibrillation treatment. Monitoring is to look for a return of the irregular rhythm 11 weeks after a catheter ablation. The episodes happen only about once every 10 days, too rarely to catch on a 48-hour recording. Plan: heart ultrasound during an exercise or drug stress test; wearable heart rhythm recording for 2 to 7 days, with analysis and report.",
+          "received_date": "2026-10-28",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000112",
+              "plan_id": "PLN-HDHP",
+              "first_name": "Sarah",
+              "last_name": "Reese",
+              "date_of_birth": "1946-02-25",
+              "sex": "F",
+              "address_line": "822 Lucero Station Apt. 156",
+              "city": "Lake Annette",
+              "state": "LA",
+              "zip_code": "30971",
+              "coverage_start": "2024-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "1400608695",
+              "tin": "697143376",
+              "name": "Sara Davies, MD",
+              "provider_type": "CARDIOLOGY",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "1400608695",
+              "plan_id": "PLN-HDHP",
+              "in_network": true
+            }
+          ],
+          "authorizations": [],
+          "accumulators": [
+            {
+              "member_id": "MBR-000112",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 0,
+              "oop_met_cents": 0
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 2,
+              "decision": "APPROVE",
+              "benefit_category": "DIAGNOSTIC_TESTS",
+              "criteria": [
+                {
+                  "criterion_id": "POL-CAR-002.c5",
+                  "status": "MET",
+                  "evidence": "The episodes happen only about once every 10 days, too rarely to catch on a 48-hour recording."
+                }
+              ],
+              "reasons": [],
+              "missing_information": []
+            }
+          ],
+          "complexity": "HIGH"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-23",
+          "reviewer_id": "reviewer-golden",
+          "action": "ACCEPT",
+          "line_overrides": [],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "DENY",
+              "reason_codes": [
+                "DN_DX_NOT_SUPPORTED"
+              ],
+              "flags": []
+            },
+            {
+              "line_no": 2,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            }
+          ],
+          "flags": [],
+          "failures": [
+            {
+              "rule_id": "R15",
+              "outcome": "DENY",
+              "reason_code": "DN_DX_NOT_SUPPORTED",
+              "line_no": 1
+            }
+          ]
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": true,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "RULE",
+              "reason_codes": [
+                "DN_DX_NOT_SUPPORTED"
+              ]
+            },
+            {
+              "line_no": 2,
+              "decision": "APPROVE",
+              "source": "MODEL",
+              "reason_codes": []
+            }
+          ],
+          "claim_decision": "PARTIAL",
+          "review_tier": "FULL",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 36900,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              },
+              {
+                "line_no": 2,
+                "billed_cents": 47200,
+                "allowed_cents": 34904,
+                "contractual_adjustment_cents": 12296,
+                "deductible_cents": 34904,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 34904,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 84100,
+              "allowed_cents": 34904,
+              "contractual_adjustment_cents": 12296,
+              "deductible_cents": 34904,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 34904,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_PARTIAL",
+          "claim_decision": "PARTIAL",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "RULE",
+              "reason_codes": [
+                "DN_DX_NOT_SUPPORTED"
+              ]
+            },
+            {
+              "line_no": 2,
+              "decision": "APPROVE",
+              "source": "MODEL",
+              "reason_codes": []
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 36900,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              },
+              {
+                "line_no": 2,
+                "billed_cents": 47200,
+                "allowed_cents": 34904,
+                "contractual_adjustment_cents": 12296,
+                "deductible_cents": 34904,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 34904,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 84100,
+              "allowed_cents": 34904,
+              "contractual_adjustment_cents": 12296,
+              "deductible_cents": 34904,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 34904,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 34904,
+            "oop_met_cents": 34904
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-23's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 2: POL-CAR-002.c5 from POL-CAR-002.c3 (MET)",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    },
+    {
+      "case_id": "E2E-24-V2",
+      "title": "Reviewer overrides an approval to a denial (policy set v2)",
+      "v1_case": "E2E-24",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-24",
+          "member_id": "MBR-000142",
+          "patient": {
+            "first_name": "Ricky",
+            "last_name": "Mclean",
+            "date_of_birth": "1992-12-05",
+            "sex": "M",
+            "address": {
+              "line1": "48186 Melanie Mission",
+              "city": "Lake Kimberly",
+              "state": "NV",
+              "zip_code": "68133"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1220696789",
+          "billing_tin": "216699696",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "J301"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-21",
+              "place_of_service": "11",
+              "procedure_code": "95004",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 37,
+              "charge_cents": 26200,
+              "rendering_npi": "1220696789"
+            }
+          ],
+          "clinical_notes": "The patient is seen in the allergy clinic. Sneezing, itchy eyes and congestion return every summer, worse outdoors, pointing to an allergy to airborne allergens. The 37 allergens tested were chosen from the patient's exposures at home and work. Plan: skin prick allergy tests, per allergen. Past medical history was reviewed without changes. The patient understands the plan and wants to go ahead.",
+          "received_date": "2026-11-15",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000142",
+              "plan_id": "PLN-PPO-SILVER",
+              "first_name": "Ricky",
+              "last_name": "Mclean",
+              "date_of_birth": "1992-12-05",
+              "sex": "M",
+              "address_line": "48186 Melanie Mission",
+              "city": "Lake Kimberly",
+              "state": "NV",
+              "zip_code": "68133",
+              "coverage_start": "2025-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "1220696789",
+              "tin": "216699696",
+              "name": "Tammy Rodriguez, MD",
+              "provider_type": "ALLERGY_IMMUNOLOGY",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "1220696789",
+              "plan_id": "PLN-PPO-SILVER",
+              "in_network": true
+            }
+          ],
+          "authorizations": [],
+          "accumulators": [
+            {
+              "member_id": "MBR-000142",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 0,
+              "oop_met_cents": 0
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "benefit_category": "DIAGNOSTIC_TESTS",
+              "criteria": [
+                {
+                  "criterion_id": "POL-DX-003.c4",
+                  "status": "MET",
+                  "evidence": "Sneezing, itchy eyes and congestion return every summer, worse outdoors, pointing to an allergy to airborne allergens."
+                },
+                {
+                  "criterion_id": "POL-DX-003.c7",
+                  "status": "MET",
+                  "evidence": "The 37 allergens tested were chosen from the patient's exposures at home and work."
+                }
+              ],
+              "reasons": [],
+              "missing_information": []
+            }
+          ],
+          "complexity": "LOW"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-24",
+          "reviewer_id": "reviewer-golden",
+          "action": "OVERRIDE",
+          "line_overrides": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "reason": "Ordering physician's note shows the test was already done this month"
+            }
+          ],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            }
+          ],
+          "flags": [],
+          "failures": []
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": true,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "source": "MODEL",
+              "reason_codes": []
+            }
+          ],
+          "claim_decision": "APPROVE",
+          "review_tier": "QUICK",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 26200,
+                "allowed_cents": 16983,
+                "contractual_adjustment_cents": 9217,
+                "deductible_cents": 16983,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 16983,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 26200,
+              "allowed_cents": 16983,
+              "contractual_adjustment_cents": 9217,
+              "deductible_cents": 16983,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 16983,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_DENIED",
+          "claim_decision": "DENY",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "REVIEWER",
+              "reason_codes": []
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 26200,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 26200,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 0,
+            "oop_met_cents": 0
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-24's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 1: POL-DX-003.c4 from POL-DX-003.c1 (MET)",
+        "line 1: POL-DX-003.c7 from POL-DX-003.c3 (MET)",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    },
+    {
+      "case_id": "E2E-25-V2",
+      "title": "Reviewer overrides a denial to an approval (policy set v2)",
+      "v1_case": "E2E-25",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-25",
+          "member_id": "MBR-000425",
+          "patient": {
+            "first_name": "William",
+            "last_name": "Lopez",
+            "date_of_birth": "1963-09-18",
+            "sex": "M",
+            "address": {
+              "line1": "64330 Joseph Key",
+              "city": "Nguyenborough",
+              "state": "SC",
+              "zip_code": "25691"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "2149113906",
+          "billing_tin": "329215212",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "I480"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-29",
+              "place_of_service": "11",
+              "procedure_code": "93241",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 67800,
+              "rendering_npi": "2149113906"
+            }
+          ],
+          "clinical_notes": "The patient returns after atrial fibrillation treatment. Monitoring is to look for a return of the irregular rhythm 10 weeks after a catheter ablation. The episodes happen several times every day. Vital signs are stable. Plan: wearable heart rhythm recording for 2 to 7 days, with analysis and report.",
+          "received_date": "2026-11-10",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000425",
+              "plan_id": "PLN-PPO-SILVER",
+              "first_name": "William",
+              "last_name": "Lopez",
+              "date_of_birth": "1963-09-18",
+              "sex": "M",
+              "address_line": "64330 Joseph Key",
+              "city": "Nguyenborough",
+              "state": "SC",
+              "zip_code": "25691",
+              "coverage_start": "2024-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "2149113906",
+              "tin": "329215212",
+              "name": "Timothy Cervantes, MD",
+              "provider_type": "CARDIOLOGY",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "2149113906",
+              "plan_id": "PLN-PPO-SILVER",
+              "in_network": true
+            }
+          ],
+          "authorizations": [],
+          "accumulators": [
+            {
+              "member_id": "MBR-000425",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 0,
+              "oop_met_cents": 0
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "benefit_category": "DIAGNOSTIC_TESTS",
+              "criteria": [
+                {
+                  "criterion_id": "POL-CAR-002.c5",
+                  "status": "NOT_MET",
+                  "evidence": "The episodes happen several times every day."
+                }
+              ],
+              "reasons": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ],
+              "missing_information": []
+            }
+          ],
+          "complexity": "MEDIUM"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-25",
+          "reviewer_id": "reviewer-golden",
+          "action": "OVERRIDE",
+          "line_overrides": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "reason": "Peer-to-peer call documented the missing clinical findings"
+            }
+          ],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            }
+          ],
+          "flags": [],
+          "failures": []
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": true,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "MODEL",
+              "reason_codes": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ]
+            }
+          ],
+          "claim_decision": "DENY",
+          "review_tier": "FULL",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 67800,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 67800,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_APPROVED",
+          "claim_decision": "APPROVE",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "source": "REVIEWER",
+              "reason_codes": []
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 67800,
+                "allowed_cents": 34904,
+                "contractual_adjustment_cents": 32896,
+                "deductible_cents": 34904,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 34904,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 67800,
+              "allowed_cents": 34904,
+              "contractual_adjustment_cents": 32896,
+              "deductible_cents": 34904,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 34904,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 34904,
+            "oop_met_cents": 34904
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-25's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 1: POL-CAR-002.c5 from POL-CAR-002.c3 (NOT_MET)",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    },
+    {
+      "case_id": "E2E-26-V2",
+      "title": "Reviewer approves a pended line after documentation arrives (policy set v2)",
+      "v1_case": "E2E-26",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-26",
+          "member_id": "MBR-000416",
+          "patient": {
+            "first_name": "Eric",
+            "last_name": "Guzman",
+            "date_of_birth": "1946-02-22",
+            "sex": "M",
+            "address": {
+              "line1": "754 Kristin Stravenue Apt. 641",
+              "city": "Robertside",
+              "state": "ND",
+              "zip_code": "34094"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "2522103581",
+          "billing_tin": "436479290",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "Z85038"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-11-03",
+              "place_of_service": "24",
+              "procedure_code": "45385",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 95700,
+              "rendering_npi": "2522103581"
+            }
+          ],
+          "clinical_notes": "The patient is seen for a follow-up colonoscopy. The patient understands the plan and wants to go ahead. Plan: colonoscopy with polyp removal using a wire snare.",
+          "received_date": "2026-11-16",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000416",
+              "plan_id": "PLN-PPO-GOLD",
+              "first_name": "Eric",
+              "last_name": "Guzman",
+              "date_of_birth": "1946-02-22",
+              "sex": "M",
+              "address_line": "754 Kristin Stravenue Apt. 641",
+              "city": "Robertside",
+              "state": "ND",
+              "zip_code": "34094",
+              "coverage_start": "2026-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "2522103581",
+              "tin": "436479290",
+              "name": "Stephanie Brown, MD",
+              "provider_type": "GASTROENTEROLOGY",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "2522103581",
+              "plan_id": "PLN-PPO-GOLD",
+              "in_network": true
+            }
+          ],
+          "authorizations": [],
+          "accumulators": [
+            {
+              "member_id": "MBR-000416",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 0,
+              "oop_met_cents": 0
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 1,
+              "decision": "PEND",
+              "benefit_category": "ENDOSCOPY",
+              "criteria": [
+                {
+                  "criterion_id": "POL-SURG-002.c3",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c4",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c5",
+                  "status": "NOT_DOCUMENTED",
+                  "evidence": "Not documented in the clinical notes."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c6",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-002.c7",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                }
+              ],
+              "reasons": [
+                "PD_MISSING_DOCUMENTATION"
+              ],
+              "missing_information": [
+                "The history that makes surveillance colonoscopy due now"
+              ]
+            }
+          ],
+          "complexity": "MEDIUM"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-26",
+          "reviewer_id": "reviewer-golden",
+          "action": "OVERRIDE",
+          "line_overrides": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "reason": "Provider sent the missing documentation"
+            }
+          ],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            }
+          ],
+          "flags": [],
+          "failures": []
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": true,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "PEND",
+              "source": "MODEL",
+              "reason_codes": [
+                "PD_MISSING_DOCUMENTATION"
+              ]
+            }
+          ],
+          "claim_decision": "PEND",
+          "review_tier": "STANDARD",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 95700,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 95700,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_APPROVED",
+          "claim_decision": "APPROVE",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "source": "REVIEWER",
+              "reason_codes": []
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 95700,
+                "allowed_cents": 62501,
+                "contractual_adjustment_cents": 33199,
+                "deductible_cents": 50000,
+                "copay_cents": 0,
+                "coinsurance_cents": 2500,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 10001,
+                "member_pays_cents": 52500,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 95700,
+              "allowed_cents": 62501,
+              "contractual_adjustment_cents": 33199,
+              "deductible_cents": 50000,
+              "copay_cents": 0,
+              "coinsurance_cents": 2500,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 10001,
+              "member_pays_cents": 52500,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 50000,
+            "oop_met_cents": 52500
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-26's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 1: POL-SURG-002.c3 new: NOT_APPLICABLE",
+        "line 1: POL-SURG-002.c4 new: NOT_APPLICABLE",
+        "line 1: POL-SURG-002.c5 from POL-SURG-002.c2 (NOT_DOCUMENTED)",
+        "line 1: POL-SURG-002.c6 new: NOT_APPLICABLE",
+        "line 1: POL-SURG-002.c7 new: NOT_APPLICABLE",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    },
+    {
+      "case_id": "E2E-27-V2",
+      "title": "Model output cites a criterion that was not retrieved (policy set v2)",
+      "v1_case": "E2E-27",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-27",
+          "member_id": "MBR-000275",
+          "patient": {
+            "first_name": "John",
+            "last_name": "Miller",
+            "date_of_birth": "1979-10-29",
+            "sex": "M",
+            "address": {
+              "line1": "36652 Crosby Springs Suite 239",
+              "city": "Rileyfurt",
+              "state": "RI",
+              "zip_code": "62638"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "2352560827",
+          "billing_tin": "483048576",
+          "referring_npi": null,
+          "prior_auth_number": "AUTH-S04101-00017",
+          "diagnoses": [
+            "H02831"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-11-14",
+              "place_of_service": "24",
+              "procedure_code": "15822",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 77900,
+              "rendering_npi": "2352560827"
+            }
+          ],
+          "clinical_notes": "The patient is seen about drooping upper eyelids. The patient says the eyelids block the upper vision, making reading and driving hard. Vital signs are stable. Visual field testing with the lids taped up improves the upper field by 19 degrees. The patient understands the plan and wants to go ahead. Surgery is to restore the upper field of vision, not to change appearance. Plan: upper eyelid surgery (blepharoplasty).",
+          "received_date": "2026-12-06",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000275",
+              "plan_id": "PLN-PPO-GOLD",
+              "first_name": "John",
+              "last_name": "Miller",
+              "date_of_birth": "1979-10-29",
+              "sex": "M",
+              "address_line": "36652 Crosby Springs Suite 239",
+              "city": "Rileyfurt",
+              "state": "RI",
+              "zip_code": "62638",
+              "coverage_start": "2026-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "2352560827",
+              "tin": "483048576",
+              "name": "Denise Campbell, MD",
+              "provider_type": "PLASTIC_SURGERY",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "2352560827",
+              "plan_id": "PLN-PPO-GOLD",
+              "in_network": true
+            }
+          ],
+          "authorizations": [
+            {
+              "auth_number": "AUTH-S04101-00017",
+              "member_id": "MBR-000275",
+              "provider_npi": "2352560827",
+              "procedure_code": "15822",
+              "start_date": "2026-10-26",
+              "end_date": "2027-01-24",
+              "units_approved": null
+            }
+          ],
+          "accumulators": [
+            {
+              "member_id": "MBR-000275",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 0,
+              "oop_met_cents": 0
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 1,
+              "decision": "APPROVE",
+              "benefit_category": "OUTPATIENT_SURGERY",
+              "criteria": [
+                {
+                  "criterion_id": "POL-SURG-004.c5",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-SURG-004.c6",
+                  "status": "MET",
+                  "evidence": "The patient says the eyelids block the upper vision, making reading and driving hard."
+                },
+                {
+                  "criterion_id": "POL-SURG-004.c7",
+                  "status": "MET",
+                  "evidence": "Visual field testing with the lids taped up improves the upper field by 19 degrees."
+                },
+                {
+                  "criterion_id": "POL-SURG-004.c8",
+                  "status": "NOT_APPLICABLE",
+                  "evidence": "Does not apply to this service."
+                },
+                {
+                  "criterion_id": "POL-ZZZ-001.c9",
+                  "status": "MET",
+                  "evidence": "invented"
+                }
+              ],
+              "reasons": [],
+              "missing_information": []
+            }
+          ],
+          "complexity": "LOW"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-27",
+          "reviewer_id": "reviewer-golden",
+          "action": "ACCEPT",
+          "line_overrides": [],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            }
+          ],
+          "flags": [],
+          "failures": []
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": false,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "PEND",
+              "source": "VALIDATION",
+              "reason_codes": [
+                "MODEL_OUTPUT_INVALID"
+              ]
+            }
+          ],
+          "claim_decision": "PEND",
+          "review_tier": "FULL",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 77900,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 77900,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_PENDED",
+          "claim_decision": "PEND",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "PEND",
+              "source": "VALIDATION",
+              "reason_codes": [
+                "MODEL_OUTPUT_INVALID"
+              ]
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 77900,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 77900,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 0,
+            "oop_met_cents": 0
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-27's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 1: POL-SURG-004.c5 new: NOT_APPLICABLE",
+        "line 1: POL-SURG-004.c6 from POL-SURG-004.c2 (MET)",
+        "line 1: POL-SURG-004.c7 from POL-SURG-004.c3 (MET)",
+        "line 1: POL-SURG-004.c8 from POL-SURG-004.c4 (MET)",
+        "line 1: POL-SURG-004.c8 exclusion MET -> NOT_APPLICABLE (D-GEN-3)",
+        "line 1: POL-ZZZ-001.c9 cited, not shown in v2: kept",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    },
+    {
+      "case_id": "E2E-32-V2",
+      "title": "Two policies: one approved, one denied by the model (policy set v2)",
+      "v1_case": "E2E-32",
+      "policy_set": "v2",
+      "given": {
+        "source_format": "JSON",
+        "claim": {
+          "claim_id": "CLM-E2E-32",
+          "member_id": "MBR-000112",
+          "patient": {
+            "first_name": "Sarah",
+            "last_name": "Reese",
+            "date_of_birth": "1946-02-25",
+            "sex": "F",
+            "address": {
+              "line1": "822 Lucero Station Apt. 156",
+              "city": "Lake Annette",
+              "state": "LA",
+              "zip_code": "30971"
+            }
+          },
+          "subscriber_is_patient": true,
+          "billing_npi": "1400608695",
+          "billing_tin": "697143376",
+          "referring_npi": null,
+          "prior_auth_number": null,
+          "diagnoses": [
+            "I2510",
+            "I4891"
+          ],
+          "service_lines": [
+            {
+              "line_no": 1,
+              "date_of_service": "2026-10-17",
+              "place_of_service": "11",
+              "procedure_code": "93350",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "A"
+              ],
+              "units": 1,
+              "charge_cents": 36900,
+              "rendering_npi": "1400608695"
+            },
+            {
+              "line_no": 2,
+              "date_of_service": "2026-10-17",
+              "place_of_service": "11",
+              "procedure_code": "93241",
+              "modifiers": [],
+              "diagnosis_pointers": [
+                "B"
+              ],
+              "units": 1,
+              "charge_cents": 47200,
+              "rendering_npi": "1400608695"
+            }
+          ],
+          "clinical_notes": "Known coronary artery disease, followed yearly. Blood pressure is high, but there are no heart symptoms and the heart exam is normal. A treadmill stress test last month did not give a clear answer. Current medications were reviewed and updated. The patient returns after atrial fibrillation treatment. Monitoring is to look for a return of the irregular rhythm 11 weeks after a catheter ablation. The episodes happen only about once every 10 days, too rarely to catch on a 48-hour recording. Plan: heart ultrasound during an exercise or drug stress test; wearable heart rhythm recording for 2 to 7 days, with analysis and report.",
+          "received_date": "2026-10-28",
+          "frequency_code": "1",
+          "other_coverage": null
+        },
+        "field_confidences": {},
+        "reference_additions": {
+          "members": [
+            {
+              "member_id": "MBR-000112",
+              "plan_id": "PLN-HDHP",
+              "first_name": "Sarah",
+              "last_name": "Reese",
+              "date_of_birth": "1946-02-25",
+              "sex": "F",
+              "address_line": "822 Lucero Station Apt. 156",
+              "city": "Lake Annette",
+              "state": "LA",
+              "zip_code": "30971",
+              "coverage_start": "2024-01-01",
+              "coverage_end": null
+            }
+          ],
+          "providers": [
+            {
+              "npi": "1400608695",
+              "tin": "697143376",
+              "name": "Sara Davies, MD",
+              "provider_type": "CARDIOLOGY",
+              "enrollment_status": "ENROLLED"
+            }
+          ],
+          "provider_networks": [
+            {
+              "npi": "1400608695",
+              "plan_id": "PLN-HDHP",
+              "in_network": true
+            }
+          ],
+          "authorizations": [],
+          "accumulators": [
+            {
+              "member_id": "MBR-000112",
+              "period_start": "2026-01-01",
+              "network": "IN_NETWORK",
+              "period_end": "2026-12-31",
+              "deductible_met_cents": 0,
+              "oop_met_cents": 0
+            }
+          ],
+          "existing_claims": []
+        },
+        "model_answer": {
+          "lines": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "benefit_category": "DIAGNOSTIC_TESTS",
+              "criteria": [
+                {
+                  "criterion_id": "POL-CAR-001.c7",
+                  "status": "NOT_MET",
+                  "evidence": "Blood pressure is high, but there are no heart symptoms and the heart exam is normal."
+                }
+              ],
+              "reasons": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ],
+              "missing_information": []
+            },
+            {
+              "line_no": 2,
+              "decision": "APPROVE",
+              "benefit_category": "DIAGNOSTIC_TESTS",
+              "criteria": [
+                {
+                  "criterion_id": "POL-CAR-002.c5",
+                  "status": "MET",
+                  "evidence": "The episodes happen only about once every 10 days, too rarely to catch on a 48-hour recording."
+                }
+              ],
+              "reasons": [],
+              "missing_information": []
+            }
+          ],
+          "complexity": "HIGH"
+        },
+        "review_action": {
+          "claim_id": "CLM-E2E-32",
+          "reviewer_id": "reviewer-golden",
+          "action": "ACCEPT",
+          "line_overrides": [],
+          "reason": null,
+          "timestamp": "2026-12-20T10:00:00Z"
+        }
+      },
+      "expected": {
+        "rules": {
+          "claim_outcome": "PASS",
+          "line_outcomes": [
+            {
+              "line_no": 1,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            },
+            {
+              "line_no": 2,
+              "outcome": "PASS",
+              "reason_codes": [],
+              "flags": []
+            }
+          ],
+          "flags": [],
+          "failures": []
+        },
+        "status_after_processing": "AWAITING_REVIEW",
+        "recommendation": {
+          "output_valid": true,
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "MODEL",
+              "reason_codes": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ]
+            },
+            {
+              "line_no": 2,
+              "decision": "APPROVE",
+              "source": "MODEL",
+              "reason_codes": []
+            }
+          ],
+          "claim_decision": "PARTIAL",
+          "review_tier": "FULL",
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 36900,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              },
+              {
+                "line_no": 2,
+                "billed_cents": 47200,
+                "allowed_cents": 34904,
+                "contractual_adjustment_cents": 12296,
+                "deductible_cents": 34904,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 34904,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 84100,
+              "allowed_cents": 34904,
+              "contractual_adjustment_cents": 12296,
+              "deductible_cents": 34904,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 34904,
+              "balance_bill_exposure_cents": 0
+            }
+          }
+        },
+        "final": {
+          "status": "FINAL_PARTIAL",
+          "claim_decision": "PARTIAL",
+          "line_decisions": [
+            {
+              "line_no": 1,
+              "decision": "DENY",
+              "source": "MODEL",
+              "reason_codes": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ]
+            },
+            {
+              "line_no": 2,
+              "decision": "APPROVE",
+              "source": "MODEL",
+              "reason_codes": []
+            }
+          ],
+          "amounts": {
+            "lines": [
+              {
+                "line_no": 1,
+                "billed_cents": 36900,
+                "allowed_cents": 0,
+                "contractual_adjustment_cents": 0,
+                "deductible_cents": 0,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 0,
+                "balance_bill_exposure_cents": 0
+              },
+              {
+                "line_no": 2,
+                "billed_cents": 47200,
+                "allowed_cents": 34904,
+                "contractual_adjustment_cents": 12296,
+                "deductible_cents": 34904,
+                "copay_cents": 0,
+                "coinsurance_cents": 0,
+                "cob_primary_paid_cents": 0,
+                "plan_pays_cents": 0,
+                "member_pays_cents": 34904,
+                "balance_bill_exposure_cents": 0
+              }
+            ],
+            "totals": {
+              "billed_cents": 84100,
+              "allowed_cents": 34904,
+              "contractual_adjustment_cents": 12296,
+              "deductible_cents": 34904,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 34904,
+              "balance_bill_exposure_cents": 0
+            }
+          },
+          "accumulators_after": {
+            "network": "IN_NETWORK",
+            "deductible_met_cents": 34904,
+            "oop_met_cents": 34904
+          }
+        }
+      },
+      "expected_source": "engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10.",
+      "worked_steps": [
+        "Inputs: E2E-32's claim, reference additions and review action; the stub answer mapped to the v2 criteria as this script's docstring says.",
+        "line 1: POL-CAR-001.c7 from POL-CAR-001.c3 (MET)",
+        "line 1: POL-CAR-001.c7 MET -> NOT_MET (reviewed exception)",
+        "line 2: POL-CAR-002.c5 from POL-CAR-002.c3 (MET)",
+        "Expected values: engine-derived (D-GOLD-9): the pipeline on policy set v2 (exact lookup, rules 2.1.0, calculator 1.0.0) with the mapped stub answer and the case's review action; not checked on a sheet (D-GOLD-10). Built by scripts/verify/e2e_v2_cases.py on 2026-10-10."
+      ]
+    }
+  ]
+}

@@ -9,7 +9,9 @@ If one looks wrong, stop and ask.
 | `rules/` | 90 | P2.3 rules engine (`tests/unit/test_rules_golden.py`) |
 | `calculator/` | 56 | P2.4 calculator (`tests/unit/test_calculator_golden.py`) |
 | `e2e/` | 30 | P5.6 end-to-end pipeline |
-| `rag/` | 50 queries | P3.3 retrieval (recall@3) |
+| `e2e_v2/` | 10 | Policy set v2 versions of the e2e cases that cite a retired v1 criterion; **engine-derived** expected values, not hand-checked (D-GOLD-9, D-GOLD-10; `tests/e2e/test_e2e_golden_v2.py`) |
+| `rag/` | 50 queries | P3.3 retrieval (recall@3), policy set v1 |
+| `rag/v2_criteria.json` | 51 codes | Policy set v2 exact lookup snapshot (D-RAG-2; `tests/unit/test_retrieval_v2.py`) |
 | `blind_review/` | 30 claims | P6.1 reviewer agreement |
 
 `tests/unit/test_golden_files.py` checks that every file is well formed: contracts validate, codes
@@ -80,6 +82,8 @@ to consider in v2 (one copay per visit; crediting only what the member actually 
 | A9 | Contractual adjustment (billed − allowed) is in-network only; balance-bill exposure (billed − allowed) is out-of-network only and is not part of `member_pays`. |
 
 ## End-to-end cases (`e2e/cases.json`)
+
+These cases are pinned to policy set v1 (D-GOLD-8). The 21 that cite no retired v1 criterion also run on policy set v2 with the same expected values; the other 10 have v2 versions in `e2e_v2/cases.json`, whose inputs are mapped from these by `scripts/verify/e2e_v2_cases.py` and whose expected values are the engine's output (`expected_source`; D-GOLD-9).
 
 Each case gives the claim (`given.claim`), its source format, field confidences, the reference
 records it needs (member, providers, network rows, authorizations, accumulators, existing claims),
