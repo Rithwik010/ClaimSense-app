@@ -1,6 +1,6 @@
 # R11 modifier golden cases: independent check (Task G5)
 
-The answers were worked out by a normal Claude chat with no repository access, which saw only the pasted sheet. This is a Claude recomputation, not a blind human check, and not independent of the cases' author (also Claude); unlike G4 it is independent of the repository by construction. The sheet (G5_r11_modifiers_sheet.md) showed the R11 rule text with the team's decisions (D-RULE-8), the status table, and for each case the lines, the NCCI edit and its indicator, which codes are E&M and each code's PFS global period; no titles, worked steps or expected values.
+The answers were worked out by a separate Claude Code session with repository access (the one that filled G4), told to use only the sheet, which reports it did not open new_golden/ or DECISIONS.md. Like G4, this is a Claude recomputation, not a blind human check, and not independent of the cases' author (also Claude). The sheet (G5_r11_modifiers_sheet.md) showed the R11 rule text with the team's decisions (D-RULE-8), the status table, and for each case the lines, the NCCI edit and its indicator, which codes are E&M and each code's PFS global period; no titles, worked steps or expected values.
 
 - Cases: 13 (R11-10, R11-11, R11-12, R11-13, R11-14, R11-15, R11-16, R11-17, R11-18, R11-19, R11-20, R11-21, R11-22); cells compared: 104; agree: 104; disagree: 0; status cells mapped through section 5: 0.
 

@@ -2,10 +2,12 @@
 and, only if every compared cell agrees, add them to the golden set (D-GOLD-2, D-GOLD-7, H12).
 
 The answers (G5_r11_modifiers_answers.md, the sheet with its cells filled) were worked out by a
-normal Claude chat with no repository access, which saw only the pasted sheet (2026-10-09). This is
-a Claude recomputation, not a blind human check, and not independent of the cases' author (also
-Claude); unlike G4 it is independent of the repository by construction. An UNDECIDABLE status cell
-is mapped through the status table of INSTRUCTIONS.md section 5, as in G4.
+separate Claude Code session with repository access (the one that filled G4), told to use only the
+sheet; it reports it did not open new_golden/ or DECISIONS.md (2026-10-09). Like G4 this is a
+Claude recomputation, not a blind human check, and not independent of the cases' author (also
+Claude). An UNDECIDABLE status cell is mapped through the status table of INSTRUCTIONS.md
+section 5, as in G4. (Corrected 2026-10-10: this record first said a normal Claude chat without
+repository access; the answers file is the one that Claude Code session wrote.)
 
     uv run python -m scripts.verify.g5_compare compare   # report; writes G5_summary.md
     uv run python -m scripts.verify.g5_compare promote   # only if all agree: the golden set
@@ -35,9 +37,10 @@ ANSWERS_FILE = OUT_DIR / "G5_r11_modifiers_answers.md"
 SUMMARY_FILE = OUT_DIR / "G5_summary.md"
 GOLDEN_R11 = ROOT / "tests" / "golden" / "rules" / TARGET
 CHECKER = (
-    "a normal Claude chat with no repository access, which saw only the pasted sheet. This is a "
+    "a separate Claude Code session with repository access (the one that filled G4), told to use "
+    "only the sheet, which reports it did not open new_golden/ or DECISIONS.md. Like G4, this is a "
     "Claude recomputation, not a blind human check, and not independent of the cases' author "
-    "(also Claude); unlike G4 it is independent of the repository by construction."
+    "(also Claude)."
 )
 
 

@@ -356,7 +356,7 @@ Kaggle copy for anything model-related.
   - **Raw data:** the NCCI Policy Manual 2026 and the add-on code edits (2026 Q4) added with source URLs; 66 files in the manifest.
   - **Data:** `ncci_ptp_modifiers.csv` (44 modifiers, checked against page I-14); migration 0006 `procedure_codes.global_days`; add-on/primary pairs now read from the AOC file, orphan add-ons still 0 (D-RULE-5).
   - **Tables:** the file-backed reference reads every billed code, with a row-by-row test against the database for all golden rules cases and e2e claims (D-CI-5).
-  - **Golden:** 13 R11 cases checked on sheet G5 by a normal Claude chat without repository access, 104/104 cells agree; rules cases 121 -> 134; R11-06 reworded (D-GOLD-7).
+  - **Golden:** 13 R11 cases checked on sheet G5 by a separate Claude Code session with repository access (the one that filled G4), told to use only the sheet; not independent of the cases' author (corrected 2026-10-10: first recorded as a normal Claude chat without repository access), 104/104 cells agree; rules cases 121 -> 134; R11-06 reworded (D-GOLD-7).
   - **Impact:** 0 changed lines in the existing golden cases, the e2e claims and the dataset.
   - **History:** the branch was rebuilt once to remove CPT modifier text (force-push with a lease, branch only). CLAUDE.md now treats CPT text in CMS manuals as AMA text.
   - **Tests:** 2,111 pass, 1 skipped. CI: 1,758 passed, 55 skipped; the 299-test gap is the `data/raw` variants. New decisions: D-RULE-8, D-RULE-9, D-GOLD-7, D-CI-5.
