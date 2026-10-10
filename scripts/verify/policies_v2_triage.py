@@ -17,6 +17,8 @@ source lines are read from the v2 policy files, never typed.
     uv run python -m scripts.verify.policies_v2_triage kept     # the kept-text check
     uv run python -m scripts.verify.policies_v2_triage decide-kept  # its decisions, and every
     # kept row's acceptance, appended to the sheet's pass 2 cells
+    uv run python -m scripts.verify.policies_v2_triage short-not-reviewed  # rows A31-A45: no
+    # independent pass (deadline, D-POL-7), recorded in their pass 1 cells
     uv run python -m scripts.verify.policies_v2_triage decide   # the reviewer's pass 2 decisions:
     # recorded in the sheet's pass 2 columns, approved fixes applied to the v2 policy files, and
     # any criterion the fixes add appended to the sheet as a new Part A row
@@ -2251,6 +2253,40 @@ def decide_kept() -> None:
     print(f"pass 2 cells written or extended: {written}")
 
 
+# The short sheet's rows (A31-A45) get no independent pass: deadline decision of 2026-10-10
+# (D-POL-7). Their empty pass 1 cells record that, and the sheet says so once.
+SHORT_ROWS = [f"A{n}" for n in range(31, 46)]
+NOT_REVIEWED = "not independently reviewed (deadline)"
+SHORT_NOTE = (
+    "Short sheet (2026-10-10): rows A31-A45 (P2_policies_v2_short_sheet.md) were not given their "
+    f"independent pass; their pass 1 cells read '{NOT_REVIEWED}' (deadline decision D-POL-7). "
+    "Their texts rest on the source checker and the author's triage only."
+)
+
+
+def short_not_reviewed() -> None:
+    lines = SHEET.read_text(encoding="utf-8").splitlines()
+    start = lines.index("## Verdicts")
+    if SHORT_NOTE not in lines:
+        anchor = next(i for i in range(start, len(lines)) if lines[i] == PASS2_KEPT_NOTE)
+        lines[anchor + 1 : anchor + 1] = ["", SHORT_NOTE]
+    done: list[str] = []
+    for i in range(start, len(lines)):
+        match = re.match(r"^\| (A[0-9]+) \| (POL-[^|]+?) \|", lines[i])
+        if not match or match.group(1) not in SHORT_ROWS:
+            continue
+        cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+        if cells[2] and cells[2:4] != ["-", NOT_REVIEWED]:
+            raise SystemExit(f"{cells[0]} already has a pass 1 cell: {cells[2]!r}")
+        cells[2:4] = ["-", NOT_REVIEWED]
+        lines[i] = "| " + " | ".join(cells) + " |"
+        done.append(cells[0])
+    if done != SHORT_ROWS:
+        raise SystemExit(f"short rows found {done}, expected {SHORT_ROWS}")
+    SHEET.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"pass 1 cells recorded as '{NOT_REVIEWED}': {len(done)} ({done[0]}-{done[-1]})")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     steps = {
@@ -2260,6 +2296,7 @@ def main() -> None:
         "decide-extended": decide_extended,
         "kept": kept,
         "decide-kept": decide_kept,
+        "short-not-reviewed": short_not_reviewed,
     }
     parser.add_argument("step", choices=tuple(steps))
     steps[parser.parse_args().step]()

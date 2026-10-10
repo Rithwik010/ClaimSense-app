@@ -1335,6 +1335,8 @@ Kept-text check (2026-10-10): Claude Code, the author of the criteria, compared 
 
 Pass 2 on the kept-text check (2026-10-10): its 13 fixes were approved (author triage by Claude Code, decided by Manideep with recommendations from the planning chat). The 23 texts it keeps and the 41 rows the extended triage keeps are recorded as 'kept on author triage; accepted by Manideep without individual review'. A row's pass 2 cell lists its decisions in order (triage, extended triage, kept-text check); earlier decisions are never rewritten.
 
+Short sheet (2026-10-10): rows A31-A45 (P2_policies_v2_short_sheet.md) were not given their independent pass; their pass 1 cells read 'not independently reviewed (deadline)' (deadline decision D-POL-7). Their texts rest on the source checker and the author's triage only.
+
 ### Part A (MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE)
 
 | Row | Criterion | Pass 1 verdict (Claude chat) | Pass 1 notes | Pass 2 verdict (reviewer) | Pass 2 notes |
@@ -1369,21 +1371,21 @@ Pass 2 on the kept-text check (2026-10-10): its 13 fixes were approved (author t
 | A28 | POL-SURG-004.c7 | MATCHES | Matches cov-028 (minimum 12 degree or 30 percent loss of upper field, potential correction). The lid-taping method is not stated but not contradicted. | MATCHES | OK; kept on author triage; accepted by Manideep without individual review. |
 | A29 | POL-SURG-004.c8 | MATCHES | Supported by cov-001, cov-004 and cov-006. Paraphrases "in the absence of any signs or symptoms of functional abnormalities" as "without documented functional impairment"; the "to improve a patient's appearance" purpose is implicit. | MATCHES | OK; kept on author triage; accepted by Manideep without individual review. |
 | A30 | POL-WOUND-001.c4 | DIFFERENT MEANING | Drops the palliative exception in cov-082 ("However, if it is determined that the goal of care is not wound healing ... palliative care standards"), which also conflicts with kept c2 (B38: "preventing the wound from getting worse"). "must be revised" hardens cov-118's "should necessitate a revision", and "expected healing" becomes "healing". The 30 days and the frequency sentence match. | DIFFERENT MEANING | LIMITING CHANGE; fix approved (old and new text in P2_policies_v2_triage.md). Author triage by Claude Code, decided by Manideep with recommendations from the planning chat. |
-| A31 | POL-SURG-003.c4 |  |  | MATCHES | OK; kept on author triage; accepted by Manideep without individual review. |
-| A32 | POL-DX-001.c6 |  |  |  |  |
-| A33 | POL-IMG-002.c5 |  |  |  |  |
-| A34 | POL-BH-001.c4 |  |  |  |  |
-| A35 | POL-CAR-001.c6 |  |  |  |  |
-| A36 | POL-CAR-001.c7 |  |  |  |  |
-| A37 | POL-DX-002.c5 |  |  |  |  |
-| A38 | POL-DX-003.c6 |  |  |  |  |
-| A39 | POL-DX-003.c7 |  |  |  |  |
-| A40 | POL-IMG-001.c5 |  |  |  |  |
-| A41 | POL-IMG-002.c6 |  |  |  |  |
-| A42 | POL-PAIN-001.c10 |  |  |  |  |
-| A43 | POL-PAIN-002.c6 |  |  |  |  |
-| A44 | POL-REHAB-001.c6 |  |  |  |  |
-| A45 | POL-REHAB-001.c7 |  |  |  |  |
+| A31 | POL-SURG-003.c4 | - | not independently reviewed (deadline) | MATCHES | OK; kept on author triage; accepted by Manideep without individual review. |
+| A32 | POL-DX-001.c6 | - | not independently reviewed (deadline) |  |  |
+| A33 | POL-IMG-002.c5 | - | not independently reviewed (deadline) |  |  |
+| A34 | POL-BH-001.c4 | - | not independently reviewed (deadline) |  |  |
+| A35 | POL-CAR-001.c6 | - | not independently reviewed (deadline) |  |  |
+| A36 | POL-CAR-001.c7 | - | not independently reviewed (deadline) |  |  |
+| A37 | POL-DX-002.c5 | - | not independently reviewed (deadline) |  |  |
+| A38 | POL-DX-003.c6 | - | not independently reviewed (deadline) |  |  |
+| A39 | POL-DX-003.c7 | - | not independently reviewed (deadline) |  |  |
+| A40 | POL-IMG-001.c5 | - | not independently reviewed (deadline) |  |  |
+| A41 | POL-IMG-002.c6 | - | not independently reviewed (deadline) |  |  |
+| A42 | POL-PAIN-001.c10 | - | not independently reviewed (deadline) |  |  |
+| A43 | POL-PAIN-002.c6 | - | not independently reviewed (deadline) |  |  |
+| A44 | POL-REHAB-001.c6 | - | not independently reviewed (deadline) |  |  |
+| A45 | POL-REHAB-001.c7 | - | not independently reviewed (deadline) |  |  |
 
 ### Part B (AGREE, DISAGREE or UNSURE)
 
