@@ -10,7 +10,8 @@ writes files under `data/generated/kaggle/`; uploading is done by a team member.
 
 Kernel folders (`kaggle kernels push -p <folder>`): `kernel-v2-smoke` and `kernel-v2-full` (one
 private notebook, claimsense-finetune-v2, pushed as two versions) and the prepared E4B variant
-(`kernel-v2-e4b-smoke`, `kernel-v2-e4b-full`: unsloth/gemma-4-E4B-it, 4-bit QLoRA, same settings).
+(`kernel-v2-e4b-timing`, `kernel-v2-e4b-full`: unsloth/gemma-4-E4B-it, 4-bit QLoRA, same settings;
+the timing run trains 20 steps to project the full run, D-MODEL-3).
 
 Model v2 (Part 2 step 5): the v2 dataset (data/generated/decision_v2/, prompt decision_v3, policy
 set v2), the same QLoRA settings as model v1 (its longest record is 2,761 tokens, under the max
@@ -52,9 +53,13 @@ print(sorted(os.listdir(DATA)))
 
 # Smoke test first (a few minutes): SMOKE = True. Full training run: SMOKE = False.
 SMOKE = True
-EXTRA = "--limit 50 --epochs 1 --eval-limit 20 --eval-steps 3 --no-gguf" if SMOKE else ""
+EXTRA = "{smoke_extra}" if SMOKE else ""
 OUT = "/kaggle/working/claimsense-smoke" if SMOKE else "{out}"
 """
+
+
+SMOKE_EXTRA = "--limit 50 --epochs 1 --eval-limit 20 --eval-steps 3 --no-gguf"
+FIND_DATASET = FIND_DATASET.replace("{smoke_extra}", SMOKE_EXTRA)
 
 
 def notebook(
@@ -63,7 +68,9 @@ def notebook(
     out: str = "/kaggle/working/claimsense",
     smoke: bool = True,
     base_model: str | None = None,
+    smoke_extra: str | None = None,
 ) -> dict:
+    """`smoke_extra` replaces the smoke run's training arguments (the E4B timing run)."""
     title = (
         "# ClaimSense decision model v2: QLoRA fine-tuning (dataset v2, prompt decision_v3)"
         if version == 2
@@ -83,7 +90,8 @@ def notebook(
             "code",
             FIND_DATASET.replace("{out}", out)
             .replace("SMOKE = True", f"SMOKE = {smoke}")
-            .replace("/kaggle/working/claimsense-smoke", f"{out}-smoke"),
+            .replace("/kaggle/working/claimsense-smoke", f"{out}-smoke")
+            .replace(SMOKE_EXTRA, smoke_extra or SMOKE_EXTRA),
         ),
         (
             "code",
@@ -129,25 +137,35 @@ def notebook(
 
 
 E4B = "unsloth/gemma-4-E4B-it"
-KERNELS = {  # folder -> (kernel slug, smoke, base model, output folder)
-    "kernel-v2-smoke": ("claimsense-finetune-v2", True, None, V2["out"]),
-    "kernel-v2-full": ("claimsense-finetune-v2", False, None, V2["out"]),
-    "kernel-v2-e4b-smoke": ("claimsense-finetune-v2-e4b", True, E4B, V2["out"] + "-e4b"),
-    "kernel-v2-e4b-full": ("claimsense-finetune-v2-e4b", False, E4B, V2["out"] + "-e4b"),
+# E4B timing run (D-MODEL-3): 20 training steps (160 records, batch 1 x 8 accumulation), one
+# evaluation on 40 validation records, then the notebook's GGUF export cell: step, evaluation and
+# export times to project the full run.
+E4B_TIMING = "--limit 160 --epochs 1 --eval-limit 40 --eval-steps 20 --no-gguf"
+KERNELS = {  # folder -> (kernel slug, smoke, base model, output folder, smoke arguments)
+    "kernel-v2-smoke": ("claimsense-finetune-v2", True, None, V2["out"], None),
+    "kernel-v2-full": ("claimsense-finetune-v2", False, None, V2["out"], None),
+    "kernel-v2-e4b-timing": (
+        "claimsense-finetune-v2-e4b",
+        True,
+        E4B,
+        V2["out"] + "-e4b",
+        E4B_TIMING,
+    ),
+    "kernel-v2-e4b-full": ("claimsense-finetune-v2-e4b", False, E4B, V2["out"] + "-e4b", None),
 }
 
 
 def kernels(out_dir: Path, kaggle_user: str, dataset_slug: str) -> list[Path]:
     """The private kernel folders for model v2 (notebook and kernel-metadata.json each)."""
     folders = []
-    for folder, (slug, smoke, base_model, out) in KERNELS.items():
+    for folder, (slug, smoke, base_model, out, extra) in KERNELS.items():
         path = out_dir / folder
         if path.exists():
             shutil.rmtree(path)
         path.mkdir(parents=True)
         code = f"{slug}.ipynb"
         (path / code).write_text(
-            json.dumps(notebook(dataset_slug, 2, out, smoke, base_model), indent=1)
+            json.dumps(notebook(dataset_slug, 2, out, smoke, base_model, extra), indent=1)
         )
         (path / "kernel-metadata.json").write_text(
             json.dumps(
