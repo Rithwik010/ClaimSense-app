@@ -12,5 +12,6 @@ line.
 | Model | Prompt | Records | Valid output | Retried | Line accuracy | Macro-F1 | F1 APPROVE | F1 PEND | F1 DENY | Criterion status | Evidence quoted | Unseen policies | Style D (held out) | Styles A-C | Claim decision | Latency p50 (ms) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | claimsense-decision:v1 | decision_v2 | 300 | 0.9167 | 38 | 0.7188 | 0.694 | 0.7786 | 0.6641 | 0.6395 | 0.7608 | 0.9577 | 0.6825 | 0.73 | 0.7065 | 0.6867 | 6444 |
+| claimsense-decision:v2 | decision_v3 | 300 | 0.98 | 8 | 0.8726 | 0.8532 | 0.9158 | 0.8018 | 0.8421 | 0.9261 | 0.9853 | 0.8095 | 0.875 | 0.8654 | 0.8733 | 5738 |
 
 Dataset: `{"generator_version": "decision-dataset-v3", "prompt_version": "decision_v3", "retrieval": "exact lookup v2: plan or ALL, effective date, criterion codes; no cap; file order; knowledge e47509cd64c4", "seed": 20260921, "test_records": 300}`
