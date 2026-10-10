@@ -410,6 +410,12 @@ Kaggle copy for anything model-related.
   - **E4B:** timing run 55 s/step (E2B 30.4), its evaluation ran out of T4 memory, so E4B trains without evaluations; the export test is running. Projection for the full run in the next entry.
   - **Tests:** 2,310 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
 
+- 2026-10-11 01:08 | Manideep3183 | UI restyle | **React app restyled with shadcn/ui and merged (branch `p5.5-ui-shadcn`; merged into `main` as `2c8ea73`, `--no-ff`; CI run 38080305974 passed: Python 1,946 passed, 66 skipped; web app passed).** D-UI-2, D-TRAIN-2.
+  - **Design:** `DESIGN.md` and the Frontend section of `CLAUDE.md`; the `frontend-design` skill installed by hand as a project skill (`.claude/skills/frontend-design/`, Apache 2.0).
+  - **Screens:** app shell from the sidebar-07 block; stage strip (Intake, Rules, Policy, Model, Amounts, Explanation, Review) that fills in after processing; service lines expanding to criteria with quotes; sticky clinical note with every quote highlighted and a pulse on click; override in a side sheet; claim detail with explanation and audit trail tabs; Metrics with a grouped bar chart and the "Where v2 goes wrong" table. All pages checked at 390, 768 and 1440 px with no horizontal page scroll; Playwright smoke test passes.
+  - **E4B:** export test passed (Q4_K_M 5.34 GB); full run (no evaluations, about 8.3 h) started at 00:58 on Kaggle.
+  - **Tests:** 2,310 pass, 1 skipped (local); web app 24 unit tests.
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
