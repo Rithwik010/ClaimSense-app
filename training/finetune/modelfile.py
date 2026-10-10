@@ -34,6 +34,8 @@ def build(gguf: Path, base_modelfile: str) -> str:
     (D-MODEL-1), so `ollama run` gives the same context as the pipeline."""
     from app.ml.client import MODEL_NUM_CTX
 
+    if "mmproj" in gguf.name.lower():
+        raise SystemExit(f"{gguf.name} is the vision projector; pass the model's Q4_K_M GGUF")
     directives = [
         d for d in base_directives(base_modelfile) if not d.startswith("PARAMETER num_ctx")
     ]

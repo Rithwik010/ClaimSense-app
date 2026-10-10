@@ -228,3 +228,10 @@ def test_kaggle_v2_kernel_folders_are_private_and_set_their_run(tmp_path) -> Non
         )
         assert f"\nSMOKE = {'smoke' in name}\n" in code
         assert (f"--base-model {E4B}" in code) == ("e4b" in name)
+
+
+def test_modelfile_refuses_the_vision_projector(tmp_path) -> None:  # noqa: ANN001
+    import pytest
+
+    with pytest.raises(SystemExit, match="vision projector"):
+        build(tmp_path / "gemma-4-e2b-it.F16-mmproj.gguf", "")
