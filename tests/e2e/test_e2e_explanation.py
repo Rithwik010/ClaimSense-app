@@ -74,3 +74,27 @@ def test_an_unknown_claim_has_no_explanation(api) -> None:  # noqa: ANN001
     client = api(StubModel("unused"), CaseRetriever(E2E_CASES[sorted(E2E_CASES)[0]]))
 
     assert client.get("/v1/claims/CLM-NOPE-00000/explanation").status_code == 404
+
+
+def test_a_met_quote_not_in_the_notes_pends_the_line_and_is_explained(  # D-EVID-1
+    api, load_case_reference
+) -> None:  # noqa: ANN001
+    import copy
+
+    case = copy.deepcopy(E2E_CASES["E2E-15"])
+    answer = case["given"]["model_answer"]
+    met = next(c for c in answer["lines"][0]["criteria"] if c["status"] == "MET")
+    met["evidence"] = "A sentence the clinical notes do not contain."
+    load_case_reference(case)
+    client = api(StubModel(json.dumps(answer)), CaseRetriever(case))
+    claim_id = case["given"]["claim"]["claim_id"]
+    assert client.post("/v1/claims/intake", json=case["given"]["claim"]).status_code == 201
+
+    record = DecisionRecord.model_validate(client.post(f"/v1/claims/{claim_id}/process").json())
+    text = explained(client, claim_id, record)
+
+    assert record.output_errors == [f"EVIDENCE_NOT_IN_NOTES: line 1 {met['criterion_id']}"]
+    assert record.line_decisions[0].decision.value == "PEND"  # MET counted as not documented
+    assert record.slm_output.lines[0].criteria[0].status.value == "MET"  # the model's answer kept
+    assert "Evidence checks" in text and "could not be used" not in text
+    assert "met per the model, counted as not documented" in text

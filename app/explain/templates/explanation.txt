@@ -40,6 +40,13 @@ Rule checks
     Reason: {{ rule.reason }}
 {% endif %}
 {% endfor %}
+{% if evidence_checks %}
+
+Evidence checks
+{% for check in evidence_checks %}
+  - {{ check }}
+{% endfor %}
+{% endif %}
 {% if output_errors %}
 
 The model's recommendation could not be used

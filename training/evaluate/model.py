@@ -44,6 +44,7 @@ from app.domain.contracts import (
     RulesOutcome,
 )
 from app.ml.client import DecisionModel, ModelUnavailable
+from app.ml.evidence import evidence_guard
 from app.ml.validate import validate_output
 from app.workflow.decisions import derive_claim_decision, final_line_decisions
 from training.generate.common import GENERATED_DIR
@@ -140,9 +141,10 @@ def score_record(record: dict[str, Any], inputs: dict[str, Any], text: str) -> d
     context = ContextPackage.model_validate(inputs["context"])
     target = json.loads(record["messages"][-1]["content"])
     result = validate_output(text, rules, context)
+    checked, _ = evidence_guard(result, inputs["claim"]["clinical_notes"])  # D-EVID-1
     effective = {
         d.line_no: d.decision.value
-        for d in final_line_decisions(rules, result, context)
+        for d in final_line_decisions(rules, checked, context)
         if d.source != "RULE"
     }
     gold_lines = {line["line_no"]: line for line in target["lines"]}

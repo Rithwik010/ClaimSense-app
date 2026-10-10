@@ -14,6 +14,7 @@ router = APIRouter(prefix="/v1/metrics", tags=["metrics"])
 EVAL = Path(__file__).resolve().parents[2] / "data" / "generated" / "eval"
 MODEL_REPORTS = (EVAL / "v2" / "v2data-model-v1.json", EVAL / "v2" / "v2data-model-v2.json")
 OCR_REPORT = EVAL / "ocr" / "heldout_summary.json"
+ERRORS_REPORT = EVAL / "v2" / "v2-errors.json"  # scripts/verify/v2_errors.py
 MACRO_F1_TARGET = 0.90  # P4.4
 OCR_TARGET = 0.90  # P5.1
 
@@ -37,11 +38,35 @@ class OcrRow(BaseModel):
     blank_read_as_blank: float
 
 
+class ErrorDirection(BaseModel):
+    gold: str
+    predicted: str
+    lines: int
+
+
+class ErrorPolicy(BaseModel):
+    policy_id: str
+    lines: int
+    wrong: int
+
+
+class V2Errors(BaseModel):
+    """Where model v2 goes wrong on the v2 test set (scripts/verify/v2_errors.py)."""
+
+    lines: int
+    wrong_lines: int
+    directions: list[ErrorDirection]
+    policies: list[ErrorPolicy]  # the five with the most wrong lines
+    quick_claims: int
+    quick_claims_with_wrong_line: int
+
+
 class Evaluation(BaseModel):
     models: list[ModelRow]
     macro_f1_target: float
     ocr: OcrRow | None
     ocr_target: float
+    v2_errors: V2Errors | None = None
 
 
 def _model_row(report: dict[str, Any]) -> ModelRow:
@@ -71,6 +96,28 @@ def evaluation() -> Evaluation:
             field_accuracy=summary["field_accuracy"],
             blank_read_as_blank=summary["blank_read_as_blank"],
         )
+    errors = None
+    if ERRORS_REPORT.exists():
+        found = json.loads(ERRORS_REPORT.read_text())
+        quick = found["tiers"].get("QUICK", {"claims": 0, "with_wrong_line": 0})
+        errors = V2Errors(
+            lines=found["lines"],
+            wrong_lines=found["wrong_lines"],
+            directions=[
+                ErrorDirection(gold=k.split("->")[0], predicted=k.split("->")[1], lines=v)
+                for k, v in found["direction"].items()
+            ],
+            policies=[
+                ErrorPolicy(policy_id=p, lines=v["lines"], wrong=v["wrong"])
+                for p, v in list(found["by_policy"].items())[:5]
+            ],
+            quick_claims=quick["claims"],
+            quick_claims_with_wrong_line=quick["with_wrong_line"],
+        )
     return Evaluation(
-        models=models, macro_f1_target=MACRO_F1_TARGET, ocr=ocr, ocr_target=OCR_TARGET
+        models=models,
+        macro_f1_target=MACRO_F1_TARGET,
+        ocr=ocr,
+        ocr_target=OCR_TARGET,
+        v2_errors=errors,
     )

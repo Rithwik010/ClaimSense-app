@@ -3,6 +3,7 @@ import { PageTitle, Section } from "../components/Layout";
 import { EmptyState, ErrorNotice, Skeleton } from "../components/States";
 import { table, td, th } from "../components/ui";
 import { percent } from "../lib/format";
+import { DECISION } from "../lib/labels";
 
 function Target({ met }: { met: boolean }) {
   return (
@@ -16,7 +17,7 @@ export function Metrics() {
   const evaluation = useEvaluation();
   if (evaluation.isPending) return <Skeleton lines={6} />;
   if (evaluation.error) return <ErrorNotice error={evaluation.error} onRetry={() => void evaluation.refetch()} />;
-  const { models, macro_f1_target, ocr, ocr_target } = evaluation.data;
+  const { models, macro_f1_target, ocr, ocr_target, v2_errors } = evaluation.data;
   return (
     <>
       <PageTitle
@@ -69,6 +70,57 @@ export function Metrics() {
           recommendation still goes to a reviewer.
         </p>
       </Section>
+      {v2_errors && (
+        <Section title="Where v2 goes wrong">
+          <p className="mb-3 text-gray-700">
+            {v2_errors.wrong_lines} of {v2_errors.lines} model lines are wrong. Every
+            recommendation goes to a reviewer; {v2_errors.quick_claims_with_wrong_line} of the{" "}
+            {v2_errors.quick_claims} claims routed to quick review hold a wrong line.
+          </p>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="overflow-auto rounded-md border border-gray-200">
+              <table className={table}>
+                <thead>
+                  <tr>
+                    <th scope="col" className={th}>Should be</th>
+                    <th scope="col" className={th}>Model v2 gave</th>
+                    <th scope="col" className={`${th} text-right`}>Lines</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {v2_errors.directions.map((row) => (
+                    <tr key={`${row.gold}-${row.predicted}`}>
+                      <td className={td}>{DECISION[row.gold].label}</td>
+                      <td className={td}>{DECISION[row.predicted].label}</td>
+                      <td className={`${td} text-right tabular-nums`}>{row.lines}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="overflow-auto rounded-md border border-gray-200">
+              <table className={table}>
+                <thead>
+                  <tr>
+                    <th scope="col" className={th}>Policy</th>
+                    <th scope="col" className={`${th} text-right`}>Wrong lines</th>
+                    <th scope="col" className={`${th} text-right`}>Lines</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {v2_errors.policies.map((row) => (
+                    <tr key={row.policy_id}>
+                      <td className={td}>{row.policy_id}</td>
+                      <td className={`${td} text-right tabular-nums`}>{row.wrong}</td>
+                      <td className={`${td} text-right tabular-nums`}>{row.lines}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Section>
+      )}
       <Section title="Scanned-form reading (OCR)">
         {ocr ? (
           <p>

@@ -64,6 +64,7 @@ from app.domain.contracts import (
     Versions,
 )
 from app.ml.client import DecisionModel
+from app.ml.evidence import evidence_guard
 from app.ml.prompt import (
     PromptLookups,
     bypass_phrase_keys,
@@ -483,7 +484,9 @@ def process_claim(
         attempts.append(validate_output(retry, rules, context))
     model_ms = round((time.perf_counter() - model_started) * 1000, 1)
     result = attempts[-1]
-    decisions = final_line_decisions(rules, result, context)
+    # D-EVID-1: a MET criterion must quote the notes; the record keeps the model's own answer.
+    checked, evidence_notes = evidence_guard(result, claim.clinical_notes)
+    decisions = final_line_decisions(rules, checked, context)
     versions = Versions(
         rules_version=RULES_VERSION,
         model_name=model.name,
@@ -501,7 +504,7 @@ def process_claim(
         _model_payload(result, model_ms, attempts, decisions),
         versions,
     )
-    output_errors = list(result.errors)
+    output_errors = list(result.errors) + evidence_notes
     try:
         calculation: CalculationResult | None = _calculate(
             session, claim, member, network, decisions
