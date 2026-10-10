@@ -15,7 +15,7 @@ import { PageTitle, Section } from "../components/Layout";
 import { AmountsTable, LineDetails, RuleChecks } from "../components/Record";
 import { EmptyState, ErrorNotice, Skeleton } from "../components/States";
 import { button, card, input } from "../components/ui";
-import { DECISION, reason, TIER } from "../lib/labels";
+import { answerErrors, DECISION, reason, TIER } from "../lib/labels";
 import { useSession } from "../lib/session";
 import { check, initialLines, isChanged, needsCategory, type LineState } from "../review/form";
 import { ChangedAmounts } from "./ClaimDetail";
@@ -272,10 +272,10 @@ export function ReviewClaim() {
         </EmptyState>
       ) : (
         <>
-          {record.output_errors.length > 0 && (
+          {answerErrors(record.output_errors).length > 0 && (
             <p role="note" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
-              The model's answer could not be used ({record.output_errors.join("; ")}), so every
-              model line needs your decision.
+              The model's answer could not be used ({answerErrors(record.output_errors).join("; ")}),
+              so every model line needs your decision.
             </p>
           )}
           <Section title="Fields">

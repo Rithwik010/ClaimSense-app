@@ -82,3 +82,13 @@ describe("review form", () => {
     expect(check(lines).overrides).toEqual([{ line_no: 1, decision: "PEND", reason: "Need notes." }]);
   });
 });
+
+describe("evidence checks", () => {
+  it("separates the evidence guard's entries from answer errors", async () => {
+    const { answerErrors, evidenceChecks } = await import("../lib/labels");
+    const entries = ["EVIDENCE_NOT_IN_NOTES: line 2 POL-IMG-001.c1", "line 1 is missing from the output"];
+
+    expect(evidenceChecks(entries)).toEqual([{ lineNo: 2, criterionId: "POL-IMG-001.c1" }]);
+    expect(answerErrors(entries)).toEqual(["line 1 is missing from the output"]);
+  });
+});

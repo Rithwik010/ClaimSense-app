@@ -1,7 +1,6 @@
 [importlinter]
 root_packages =
     app
-    frontend
 include_external_packages = True
 
 [importlinter:contract:rules-calculator-no-ml]
@@ -50,11 +49,3 @@ forbidden_modules =
     app.api
     ollama
     qdrant_client
-
-[importlinter:contract:frontend-http-only]
-name = frontend must not import app (it calls the API over HTTP only)
-type = forbidden
-source_modules =
-    frontend
-forbidden_modules =
-    app

@@ -87,3 +87,17 @@ export function reason(code: string | null | undefined): string {
 }
 
 export const LOW_CONFIDENCE = 0.85; // EXTRACTION_CONFIDENCE_MIN
+
+// The evidence guard's entries in a record's output_errors (D-EVID-1): check results, not errors.
+const GUARD_NOTE = /^EVIDENCE_NOT_IN_NOTES: line (\d+) (\S+)$/;
+
+export function evidenceChecks(outputErrors: string[]): { lineNo: number; criterionId: string }[] {
+  return outputErrors.flatMap((entry) => {
+    const found = GUARD_NOTE.exec(entry);
+    return found ? [{ lineNo: Number(found[1]), criterionId: found[2] ?? "" }] : [];
+  });
+}
+
+export function answerErrors(outputErrors: string[]): string[] {
+  return outputErrors.filter((entry) => !GUARD_NOTE.test(entry));
+}

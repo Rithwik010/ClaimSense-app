@@ -207,13 +207,13 @@ def test_only_the_final_quantized_gguf_is_kept(tmp_path) -> None:  # noqa: ANN00
 def test_kaggle_v2_kernel_folders_are_private_and_set_their_run(tmp_path) -> None:  # noqa: ANN001
     import json
 
-    from training.finetune.prepare_kaggle import E4B, kernels
+    from training.finetune.prepare_kaggle import E4B, E4B_FULL, E4B_TIMING, SMOKE_EXTRA, kernels
 
     folders = {p.name: p for p in kernels(tmp_path, "someone", "claimsense-decision-v2")}
 
     assert sorted(folders) == [
         "kernel-v2-e4b-full",
-        "kernel-v2-e4b-smoke",
+        "kernel-v2-e4b-timing",
         "kernel-v2-full",
         "kernel-v2-smoke",
     ]
@@ -226,8 +226,12 @@ def test_kaggle_v2_kernel_folders_are_private_and_set_their_run(tmp_path) -> Non
             for c in json.loads((path / meta["code_file"]).read_text())["cells"]
             if c["cell_type"] == "code"
         )
-        assert f"\nSMOKE = {'smoke' in name}\n" in code
+        short = "smoke" in name or "timing" in name
+        assert f"\nSMOKE = {short}\n" in code
         assert (f"--base-model {E4B}" in code) == ("e4b" in name)
+        assert (f'"{E4B_TIMING}" if SMOKE' in code) == ("e4b" in name)
+        assert (f'else "{E4B_FULL}"' in code) == ("e4b" in name)
+        assert (SMOKE_EXTRA in code) == ("e4b" not in name)
 
 
 def test_modelfile_refuses_the_vision_projector(tmp_path) -> None:  # noqa: ANN001

@@ -100,3 +100,7 @@ def test_a_scanned_value_that_fails_its_format_check_files_the_claim_for_the_rul
     assert "billing_tin" not in filed.json()["received"]
     assert any("billing_tin" in error for error in filed.json()["contract_errors"])
     assert processed.json()["status"] == "REJECTED"
+    failed = [r for r in processed.json()["rules_outcome"]["rule_results"] if not r["passed"]]
+    assert [(r["rule_id"], r["outcome"], r["reason_code"]) for r in failed] == [
+        ("R01", "REJECT", "RJ_LOW_CONFIDENCE_FIELD")  # H5: the rule failed on a field read at 0.0
+    ]

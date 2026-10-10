@@ -85,6 +85,11 @@ def main() -> None:
     parser.add_argument("--eval-limit", type=int, help="first N validation records (smoke test)")
     parser.add_argument("--eval-steps", type=int, default=CONFIG["eval_every_steps"])
     parser.add_argument("--no-gguf", action="store_true")
+    parser.add_argument(
+        "--no-eval",
+        action="store_true",
+        help="no evaluations during training (E4B: they run out of T4 memory); keeps the last step",
+    )
     parser.add_argument("--export-from", type=Path, help="only export GGUF from a saved adapter")
     parser.add_argument("--gguf-work-dir", type=Path, default=GGUF_WORK_DIR)
     parser.add_argument(
@@ -188,7 +193,7 @@ def main() -> None:
         model=model,
         tokenizer=tokenizer,
         train_dataset=Dataset.from_dict({"text": train_texts}),
-        eval_dataset=Dataset.from_dict({"text": validation_texts}),
+        eval_dataset=None if args.no_eval else Dataset.from_dict({"text": validation_texts}),
         args=SFTConfig(
             output_dir=str(out / "checkpoints"),
             dataset_text_field="text",
@@ -205,20 +210,20 @@ def main() -> None:
             bf16=bf16,
             fp16=False,  # Gemma 4 does not train in fp16; without bf16 (T4) Unsloth uses float32
             logging_steps=10,
-            eval_strategy="steps",
-            eval_steps=args.eval_steps,
+            eval_strategy="no" if args.no_eval else "steps",
+            eval_steps=None if args.no_eval else args.eval_steps,
             save_strategy="steps",
             save_steps=args.eval_steps,
             save_total_limit=2,
-            load_best_model_at_end=True,
-            metric_for_best_model="eval_loss",
+            load_best_model_at_end=not args.no_eval,
+            metric_for_best_model=None if args.no_eval else "eval_loss",
             greater_is_better=False,
             seed=config["seed"],
             report_to="none",
         ),
-        callbacks=[
-            EarlyStoppingCallback(early_stopping_patience=config["early_stopping_patience"])
-        ],
+        callbacks=[]
+        if args.no_eval
+        else [EarlyStoppingCallback(early_stopping_patience=config["early_stopping_patience"])],
     )
     trainer = train_on_responses_only(
         trainer, instruction_part=instruction_part, response_part=response_part

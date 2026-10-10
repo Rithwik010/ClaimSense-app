@@ -3,7 +3,7 @@
 
 import type { Amounts, DecisionRecord, FinalLineDecision } from "../api/types";
 import { money } from "../lib/format";
-import { CRITERION_STATUS, SOURCE, reason } from "../lib/labels";
+import { CRITERION_STATUS, evidenceChecks, SOURCE, reason } from "../lib/labels";
 import { DecisionChip } from "./Chip";
 import { table, td, th } from "./ui";
 
@@ -97,6 +97,11 @@ export function LineDetails({ record, line }: { record: DecisionRecord; line: Fi
   const answer = record.slm_output?.lines.find((l) => l.line_no === line.line_no);
   const cited = new Map((context?.criteria ?? []).map((c) => [c.criterion_id, c]));
   const amounts = record.amounts?.lines.find((a) => a.line_no === line.line_no);
+  const unquoted = new Set(
+    evidenceChecks(record.output_errors)
+      .filter((check) => check.lineNo === line.line_no)
+      .map((check) => check.criterionId),
+  );
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -137,7 +142,18 @@ export function LineDetails({ record, line }: { record: DecisionRecord; line: Fi
                       <span className="font-mono text-xs">{c.criterion_id}</span>
                       {source && <div className="text-gray-600">{source.text}</div>}
                     </td>
-                    <td className={`${td} whitespace-nowrap`}>{CRITERION_STATUS[c.status] ?? c.status}</td>
+                    <td className={`${td} whitespace-nowrap`}>
+                      {unquoted.has(c.criterion_id) ? (
+                        <>
+                          Not documented
+                          <div className="text-xs text-amber-900">
+                            Model said met; the quote is not in the notes
+                          </div>
+                        </>
+                      ) : (
+                        (CRITERION_STATUS[c.status] ?? c.status)
+                      )}
+                    </td>
                     <td className={td}>{c.evidence}</td>
                     <td className={td}>
                       {source ? `${source.policy_id}: ${source.policy_title}` : c.criterion_id.split(".")[0]}

@@ -55,6 +55,16 @@
 </tbody>
 </table>
 </section>
+{% if evidence_checks %}
+<section class="explanation-evidence-checks">
+<h2>Evidence checks</h2>
+<ul>
+{% for check in evidence_checks %}
+<li>{{ check }}</li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
 {% if output_errors %}
 <section class="explanation-output-errors">
 <h2>The model's recommendation could not be used</h2>

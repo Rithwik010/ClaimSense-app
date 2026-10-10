@@ -174,9 +174,19 @@ export interface ModelRow {
   median_ms_per_claim: number;
 }
 
+export interface V2Errors {
+  lines: number;
+  wrong_lines: number;
+  directions: { gold: LineDecision; predicted: LineDecision; lines: number }[];
+  policies: { policy_id: string; lines: number; wrong: number }[];
+  quick_claims: number;
+  quick_claims_with_wrong_line: number;
+}
+
 export interface Evaluation {
   models: ModelRow[];
   macro_f1_target: number;
   ocr: { claims: number; fields: number; field_accuracy: number; blank_read_as_blank: number } | null;
   ocr_target: number;
+  v2_errors: V2Errors | null;
 }

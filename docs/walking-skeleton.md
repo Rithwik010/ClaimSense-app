@@ -11,7 +11,7 @@ POST /v1/claims/{id}/process
     calculator (COPAY lines)    -> audit CALCULATED
     decision record (version 1) -> AWAITING_REVIEW with claim decision and review tier
 GET /v1/claims/{id}, GET /v1/claims/{id}/audit
-Streamlit page: submit, process, show the record and the audit trail
+Web page: submit, process, show the record and the audit trail (Streamlit at the time; now the React app, D-UI-2)
 ```
 
 ## Run it
@@ -22,11 +22,11 @@ uv run alembic upgrade head
 uv run python -m training.generate.reference      # members, providers, ... (if not generated yet)
 uv run python -m app.db.seed                      # curated data, codes and fees, reference data
 uv run uvicorn app.api.main:app                   # terminal 1: API on :8000
-uv run streamlit run frontend/app.py              # terminal 2: page on :8501
+cd frontend-web && npm ci && npm run dev         # terminal 2: web app on :5173 (or: make demo)
 ```
 
-Ollama must be running with `gemma4:e2b` pulled. The page's sidebar shows what `/health` reports.
-The sample claim (`frontend/sample_claim.json`) is the E2E-14 office visit. It needs member
+Ollama must be running with `gemma4:e2b` pulled. `/health` reports the database, Qdrant and Ollama.
+The sample claim (`tests/e2e/sample_claim.json`) is the E2E-14 office visit. It needs member
 `MBR-000020` and provider `2186976371` from the generated reference data. Each submission gets a
 new claim ID.
 

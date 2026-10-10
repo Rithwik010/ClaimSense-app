@@ -10,6 +10,7 @@ fixed wording for NOT_DOCUMENTED and NOT_APPLICABLE); what a pended line awaits 
 not documented, in the criterion text of the context package.
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -93,6 +94,20 @@ AMOUNT_FIELDS = (
 )
 
 
+# The evidence guard's entry in the record's output_errors (app/ml/evidence.py, D-EVID-1); read
+# here from its text so the explanation needs nothing but the record.
+GUARD_NOTE = re.compile(r"^EVIDENCE_NOT_IN_NOTES: line (?P<line>[0-9]+) (?P<criterion>\S+)$")
+
+
+def guarded(output_errors: list[str]) -> set[tuple[int, str]]:
+    """(line number, criterion ID) of every criterion the evidence guard changed."""
+    return {
+        (int(m.group("line")), m.group("criterion"))
+        for entry in output_errors
+        if (m := GUARD_NOTE.match(entry))
+    }
+
+
 def money(cents: int) -> str:
     """Integer cents as dollars, with no float on the way (H2)."""
     sign = "-" if cents < 0 else ""
@@ -150,6 +165,7 @@ def _needs(results: list[CriterionResult], cited: dict[str, RetrievedCriterion])
 def view(record: DecisionRecord) -> dict[str, Any]:
     """Everything the templates show, taken from the record alone."""
     context = {c.line_no: c for c in (record.context_refs.lines if record.context_refs else [])}
+    checked = guarded(record.output_errors)
     model = {line.line_no: line for line in (record.slm_output.lines if record.slm_output else [])}
     amounts = {a.line_no: a for a in (record.amounts.lines if record.amounts else [])}
     lines = []
@@ -164,7 +180,12 @@ def view(record: DecisionRecord) -> dict[str, Any]:
                 criteria.append(
                     CriterionView(
                         result.criterion_id,
-                        CRITERION_LABELS[result.status],
+                        (
+                            "met per the model, counted as not documented: the quote is not in the"
+                            " notes"
+                            if (final.line_no, result.criterion_id) in checked
+                            else CRITERION_LABELS[result.status]
+                        ),
                         result.evidence,
                         cited.policy_id if cited else result.criterion_id.split(".")[0],
                         cited.policy_title if cited else "",
@@ -217,7 +238,12 @@ def view(record: DecisionRecord) -> dict[str, Any]:
             if record.amounts
             else []
         ),
-        "output_errors": list(record.output_errors),
+        "output_errors": [e for e in record.output_errors if not GUARD_NOTE.match(e)],
+        "evidence_checks": [
+            f"Line {line_no}, criterion {criterion_id}: the quoted evidence is not in the"
+            " clinical notes, so it counts as not documented"
+            for line_no, criterion_id in sorted(checked)
+        ],
         "review": (
             {
                 "reviewer_id": review.reviewer_id,

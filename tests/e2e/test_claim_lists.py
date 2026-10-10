@@ -47,11 +47,34 @@ def test_the_evaluation_lists_each_model_report_with_its_targets(
     (tmp_path / "v1.json").write_text(json.dumps(report))
     monkeypatch.setattr(metrics, "MODEL_REPORTS", (tmp_path / "v1.json", tmp_path / "v2.json"))
     monkeypatch.setattr(metrics, "OCR_REPORT", tmp_path / "missing.json")
+    monkeypatch.setattr(metrics, "ERRORS_REPORT", tmp_path / "errors.json")
+    (tmp_path / "errors.json").write_text(
+        json.dumps(
+            {
+                "lines": 416,
+                "wrong_lines": 53,
+                "direction": {"PEND->APPROVE": 19, "DENY->PEND": 14},
+                "by_policy": {"POL-IMG-001": {"lines": 43, "wrong": 10, "directions": {}}},
+                "tiers": {"QUICK": {"claims": 84, "with_wrong_line": 14, "wrong_lines": 15}},
+            }
+        )
+    )
     client = api(None, None)
 
     shown = client.get("/v1/metrics/evaluation").json()
 
     assert shown["macro_f1_target"] == 0.9 and shown["ocr"] is None
+    assert shown["v2_errors"] == {
+        "lines": 416,
+        "wrong_lines": 53,
+        "directions": [
+            {"gold": "PEND", "predicted": "APPROVE", "lines": 19},
+            {"gold": "DENY", "predicted": "PEND", "lines": 14},
+        ],
+        "policies": [{"policy_id": "POL-IMG-001", "lines": 43, "wrong": 10}],
+        "quick_claims": 84,
+        "quick_claims_with_wrong_line": 14,
+    }
     assert shown["models"] == [
         {
             "model": "claimsense-decision:v1",
