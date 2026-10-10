@@ -34,7 +34,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
 | Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). `p5.3-review-finalization` (P5.3) merged into `main` (`--no-ff`, normal push; merge `7575d36`). `p2.3b-rules-v2` (P2.3b) merged into `main` (`--no-ff`, normal push; merge `00a0201`). `p2.3c-ncci-modifiers` (P2.3c) merged into `main` (`--no-ff`, normal push; merge `28af00f`). `v2-policies-retrieval` (policies v2) merged into `main` (`--no-ff`, normal push; merge `1a56055`; D-PROC-2). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 2,187 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running (data/raw, Postgres, Qdrant). CI (run 38023953228 on `a0a5d94`): 1,835 passed, 54 skipped; the retrieval recall test now runs in CI on the cached embedding model (D-CI-6). Without Docker, the database and Qdrant tests are skipped. |
+| Tests | 2,221 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running (data/raw, Postgres, Qdrant). CI (run 38046540875 on `main` `2bc1a6a`): 1,857 passed, 66 skipped. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -371,6 +371,10 @@ Kaggle copy for anything model-related.
   - **Exact lookup (checkpoint 3):** `coverage_policies_v1` and `coverage_policies_v2`; `ExactCriteriaRetriever` (no cap, no score, file order, count checked); tested exact against the files for every code, plan and date, against a 51-code snapshot, and for set isolation. CI caches the embedding model with a SHA-256 check and the recall test fails instead of skipping (D-CI-6, about 15 minutes).
   - **Golden e2e (checkpoint 4):** the 21 cases citing no retired criterion give the same results on v2; the other 10 get engine-derived v2 versions (`tests/golden/e2e_v2/`), all reaching their v1 final status, with one author's exception on E2E-32 line 1 (D-GOLD-11). No existing expected value changed.
   - **Tests:** 2,187 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
+
+- 16:25 | Manideep3183 | Part 2 | **Part 2 merged (branch `v2-model-data`, `67dca2c`..`9d8f032`; merged into `main` as `2bc1a6a`, `--no-ff`; CI run 38046388955 on the branch and 38046540875 on `main` pass, 1,857 passed, 66 skipped).** Derived line decisions (D-DEC-1), prompt `decision_v3`, generator v2 and its checks, the model v2 Kaggle package and the v2 evaluation.
+  - **Dataset v2:** 2,000 / 300 / 300 records; model lines train APPROVE 1,584, PEND 689, DENY 570 (validation 246 / 98 / 77, test 222 / 106 / 88); 0 check problems; test holds 100 records on unseen policies and note style D only (150 records); longest record 2,761 tokens < 3,072. Fingerprints train `2f190ad6a0c1`, validation `400eae4e118c`, test `221bb0da4243`.
+  - **Tests:** 2,221 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
