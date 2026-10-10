@@ -87,9 +87,17 @@ def main() -> None:
     parser.add_argument("--no-gguf", action="store_true")
     parser.add_argument("--export-from", type=Path, help="only export GGUF from a saved adapter")
     parser.add_argument("--gguf-work-dir", type=Path, default=GGUF_WORK_DIR)
+    parser.add_argument(
+        "--base-model", default=CONFIG["base_model"], help="e.g. unsloth/gemma-4-E4B-it"
+    )
     args = parser.parse_args()
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")  # before torch initialises CUDA
-    config = {**CONFIG, "max_seq_length": args.max_seq_length, "num_train_epochs": args.epochs}
+    config = {
+        **CONFIG,
+        "base_model": args.base_model,
+        "max_seq_length": args.max_seq_length,
+        "num_train_epochs": args.epochs,
+    }
     out = args.out
     out.mkdir(parents=True, exist_ok=True)
     (out / "config.json").write_text(json.dumps(config, indent=2))
