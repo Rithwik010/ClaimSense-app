@@ -416,6 +416,11 @@ Kaggle copy for anything model-related.
   - **E4B:** export test passed (Q4_K_M 5.34 GB); full run (no evaluations, about 8.3 h) started at 00:58 on Kaggle.
   - **Tests:** 2,310 pass, 1 skipped (local); web app 24 unit tests.
 
+- 2026-10-11 01:23 | Manideep3183 | Demo claims | **Demo claims and `make demo-reset` merged (branch `p6.2-carc-demo-claims`; merged into `main` as `a0a7bf6`, `--no-ff`; CI run 38081302921 passed: Python 1,946 passed, 66 skipped; web app passed).**
+  - **Demo claims** (`demo/claims/`, built by `scripts/demo/build_claims.py`): approve quick (visit usage 12 -> 13, accumulators change), pend standard, deny full with an override (allowed $0 -> $96.39), partial with an NCCI rule line, every line denied by R15, invalid NPI, duplicate, clean scan, scan with a mistyped NPI (RJ_LOW_CONFIDENCE_FIELD). After `make demo-reset` all nine pass through the React UI (Playwright `e2e/demo-claims.spec.ts`).
+  - **CARC/RARC draft** (`scripts/verify/carc_draft.py` against the official X12 lists saved on 2026-10-11, manifest entries with URL and SHA-256): all 24 numbers in the team's map exist and none is stopped; the CSV is unchanged and nothing shows in the UI until the draft is approved (D-CARC-1).
+  - **Tests:** 2,310 pass, 1 skipped (local).
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
