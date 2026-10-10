@@ -97,7 +97,7 @@ All data is **synthetic**. There is no real patient data (PHI) anywhere in the p
 - Electronic intake: claim JSON in our 837P-shaped format, and digital PDFs rendered by our generator
 - Paper intake: scanned or image CMS-1500 forms produced by our generator, read with OCR
 - Rules engine, calculator, fine-tuned SLM decision, RAG over coverage criteria, explainability,
-  human decision review, audit trail, evaluation scripts, Streamlit UI
+  human decision review, audit trail, evaluation scripts, React web UI (D-UI-1)
 
 **Out of scope** (do not build unless `DECISIONS.md` adds it)
 
@@ -171,8 +171,8 @@ transition raises an error. No state-machine library is used.
 | Model serving | Ollama (native install), `ollama` Python client |
 | Intake | `pymupdf`, `pytesseract` (+ Tesseract binary), `pillow` |
 | Templates | `jinja2` |
-| HTTP client (frontend → API) | `httpx` |
-| Frontend | `streamlit` |
+| HTTP client (frontend → API) | the browser's `fetch` through the Vite dev proxy (`httpx` in the Streamlit fallback) |
+| Frontend | React web app in `frontend-web/` (D-UI-1): Node.js + npm, Vite, React, TypeScript, React Router, Tailwind CSS, TanStack Query; no component kit, no animation library. Tests: Vitest, React Testing Library, Playwright; lint: ESLint. `streamlit` (`frontend/`) stays as a fallback until the React smoke test passes |
 | Logging | `structlog` |
 | Synthetic data | `faker`, `reportlab`, `pyyaml` |
 | Evaluation | `pandas`, `scikit-learn` |
@@ -212,7 +212,8 @@ claimsense/
 │   ├── api/                  # FastAPI routes
 │   └── core/                 # settings, logging
 ├── migrations/               # Alembic
-├── frontend/                 # Streamlit pages
+├── frontend/                 # Streamlit pages (fallback until the React smoke test passes)
+├── frontend-web/             # React web app (Vite, TypeScript; D-UI-1)
 ├── training/
 │   ├── generate/             # synthetic data generators
 │   ├── finetune/             # QLoRA scripts
@@ -482,18 +483,37 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 Authentication: a simple role header (`provider`, `reviewer`, `admin`) checked by a dependency.
 Prototype only; documented as such.
 
-### 8.11 Frontend (`frontend/`, Streamlit)
+### 8.11 Frontend (`frontend-web/`, React; D-UI-1)
+
+Vite + React + TypeScript, React Router, Tailwind CSS, TanStack Query; no component kit and no
+animation library. The web app talks only to the FastAPI API, through the Vite dev proxy; it never
+imports app code or touches the database. `make demo` starts the database containers, the API and
+the web app. The Streamlit app in `frontend/` stays untouched as a fallback until the React smoke
+test passes.
+
+**Layout.** Top bar: app name, role switcher (Provider / Reviewer / Admin, sent as `X-Role`) and the
+reviewer ID (remembered in the browser). Left navigation: Submit claim, Review queue, Claims, Rule
+outcomes, Metrics.
 
 | Page | Contents |
 |---|---|
-| Submit claim | Upload JSON/PDF/image; show extracted fields with confidence; process button |
-| Review queue | Claims awaiting review by tier |
-| Review claim | Fields (low-confidence highlighted), rule checks, SLM line decisions with criteria and citations, amounts, ACCEPT / OVERRIDE with reason |
-| Claim detail | Explanation and audit trail |
+| Submit claim | Upload JSON, PDF or image; fields with confidence, low confidence highlighted; Process button; then go to the claim |
+| Review queue | Tier, decision, total allowed, age; filter by tier |
+| Review claim | Fields (low confidence highlighted), rule checks, each line's model decision with criteria, evidence, citations and amounts. Per line: a decision select, a required reason, a category select only when needed (D-REV-4); rule-denied lines read-only with their reason (D-REV-2). One "Accept all" and one "Submit changes" button, with a confirmation before finalizing. After submitting: final status and amounts, and the changed-amounts notice when it applies |
+| Claim detail | Status, line decisions, amounts, the explanation (§8.7) and the audit trail as a timeline |
 | Rule outcomes | Read-only list of REJECTED / DENIED_BY_RULE / PENDED_BY_RULE claims with reasons |
-| Metrics | Evaluation results (§11 P6.1) |
+| Metrics | Model v1 vs v2 evaluation table and the targets; OCR field accuracy |
 
-The frontend calls the API with `httpx` only. It never imports `app` or touches the database.
+**Design.** White background, neutral greys, one accent colour, system font, 15–16 px base text,
+generous spacing. CSS-only transitions of 150–200 ms that respect `prefers-reduced-motion`. Status
+chips show text plus a muted colour: Approved (green), Needs information / Pended (amber), Denied
+(red), Rejected (grey). Plain-language labels with short hints (e.g. "PEND: needs more
+information"). One primary action per screen; loading skeletons, empty states, API errors in plain
+words. Keyboard navigation, visible focus rings, labelled inputs, AA contrast.
+
+**Tests.** Vitest + React Testing Library for the review form's validation and the status chips;
+one local Playwright smoke test (submit JSON → process → open from the queue → accept → claim detail
+shows the explanation and the audit trail); a CI job: `npm ci`, lint, typecheck, unit tests, build.
 
 ### 8.12 Settings (`app/core/settings.py`, from environment)
 
@@ -697,7 +717,7 @@ Accounts, tools, repository, model pull, verification. Not a Claude Code phase.
 | P5.2 | Context assembly (§8.4) wired into the pipeline | Context IDs stored in decision records |
 | P5.3 | Review tiers, review actions, calculator re-run on override, finalization, accumulator update | Tests for every tier rule and override path |
 | P5.4 | Explainability rendering (§8.7) | Every amount and reason in the explanation matches the record (test) |
-| P5.5 | Streamlit pages (§8.11) | All pages work against the running API |
+| P5.5 | React web pages (§8.11, D-UI-1) | All pages work against the running API; Playwright smoke test passes |
 | P5.6 | End-to-end golden claims | All e2e cases pass |
 
 ### Phase 6 — Evaluation and demo (Week 5)

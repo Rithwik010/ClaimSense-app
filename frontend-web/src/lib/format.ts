@@ -1,0 +1,78 @@
+// Formatting only: amounts arrive as integer cents from the calculator and are shown as dollars
+// with integer arithmetic; the web app never computes an amount.
+
+export function money(cents: number | null | undefined): string {
+  if (cents === null || cents === undefined) return "—";
+  const sign = cents < 0 ? "-" : "";
+  const whole = Math.abs(cents);
+  const rest = whole % 100;
+  const dollars = (whole - rest) / 100;
+  return `${sign}$${dollars.toLocaleString("en-US")}.${String(rest).padStart(2, "0")}`;
+}
+
+export function percent(share: number): string {
+  return `${(share * 100).toFixed(1)}%`;
+}
+
+export function dateTime(value: string | null | undefined): string {
+  if (!value) return "—";
+  const when = new Date(value);
+  return Number.isNaN(when.getTime())
+    ? value
+    : when.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+}
+
+/** How long ago, in the largest whole unit: "5 min", "3 h", "2 d". */
+export function age(value: string | null | undefined, now: Date = new Date()): string {
+  if (!value) return "—";
+  const minutes = Math.max(0, Math.floor((now.getTime() - new Date(value).getTime()) / 60000));
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)} h`;
+  return `${Math.floor(minutes / (60 * 24))} d`;
+}
+
+/** A claim field path as a label: "service_lines.0.procedure_code" -> "Line 1 · Procedure code". */
+export function fieldLabel(path: string): string {
+  const parts = path.split(".");
+  const words: string[] = [];
+  for (let i = 0; i < parts.length; i += 1) {
+    const part = parts[i] ?? "";
+    const next = parts[i + 1];
+    if (part === "service_lines" && next !== undefined) {
+      words.push(`Line ${Number(next) + 1}`);
+      i += 1;
+    } else if (part === "diagnoses" && next !== undefined) {
+      words.push(`Diagnosis ${"ABCDEFGHIJKL"[Number(next)] ?? next}`);
+      i += 1;
+    } else if (part === "primary_paid" && next !== undefined) {
+      words.push(`Primary payment ${Number(next) + 1}`);
+      i += 1;
+    } else {
+      words.push(FIELD_WORDS[part] ?? sentence(part));
+    }
+  }
+  return words.join(" · ");
+}
+
+const FIELD_WORDS: Record<string, string> = {
+  claim_id: "Claim ID",
+  member_id: "Member ID",
+  billing_npi: "Billing NPI",
+  billing_tin: "Billing tax ID",
+  referring_npi: "Referring NPI",
+  rendering_npi: "Rendering NPI",
+  prior_auth_number: "Prior authorization",
+  subscriber_is_patient: "Patient is the subscriber",
+  charge_cents: "Charge",
+  zip_code: "ZIP code",
+  line1: "Street",
+  other_coverage: "Other coverage",
+  place_of_service: "Place of service",
+  diagnosis_pointers: "Diagnosis pointers",
+  date_of_birth: "Date of birth",
+};
+
+function sentence(name: string): string {
+  const text = name.replaceAll("_", " ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
