@@ -1,0 +1,112 @@
+// The layout shared by Review claim and Claim detail (DESIGN.md): the stage strip across the top;
+// left, the service lines with their criteria (and rule checks, fields, amounts, plus any extra
+// tabs); right, the clinical note, sticky on wide screens, with every evidence quote highlighted.
+
+import { useState, type ReactNode } from "react";
+
+import type { AuditEvent, ClaimView, FinalLineDecision } from "@/api/types";
+import { ClinicalNote, type Quote } from "@/components/ClinicalNote";
+import { FieldsTable } from "@/components/Fields";
+import { AmountsTable, RuleChecks } from "@/components/Record";
+import { quoteKey, ServiceLines } from "@/components/ServiceLines";
+import { StageStrip } from "@/components/StageStrip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { evidenceChecks } from "@/lib/labels";
+
+export function ClaimWorkspace({
+  view,
+  events,
+  fill,
+  extraTabs = [],
+  lineActions,
+  lineStatus,
+}: {
+  view: ClaimView;
+  events: AuditEvent[];
+  fill: boolean;
+  extraTabs?: { value: string; label: string; content: ReactNode }[];
+  lineActions?: (line: FinalLineDecision) => ReactNode;
+  lineStatus?: (line: FinalLineDecision) => ReactNode;
+}) {
+  const [active, setActive] = useState<{ key: string; n: number } | null>(null);
+  const record = view.record;
+  const claim = view.intake?.claim ?? view.received;
+  const notes = typeof claim.clinical_notes === "string" ? claim.clinical_notes : "";
+  const unquoted = new Set(
+    evidenceChecks(record?.output_errors ?? []).map((c) => quoteKey(c.lineNo, c.criterionId)),
+  );
+  const quotes: Quote[] = (record?.slm_output?.lines ?? []).flatMap((line) =>
+    line.criteria
+      .filter((c) => (c.status === "MET" || c.status === "NOT_MET") && c.evidence)
+      .map((c) => ({ key: quoteKey(line.line_no, c.criterion_id), text: c.evidence }))
+      .filter((q) => !unquoted.has(q.key)),
+  );
+  const tabs = [
+    {
+      value: "lines",
+      label: "Lines",
+      content: record ? (
+        <ServiceLines
+          record={record}
+          activeKey={active?.key ?? null}
+          onQuote={(key) => setActive((now) => ({ key, n: (now?.n ?? 0) + 1 }))}
+          actions={lineActions}
+          status={lineStatus}
+        />
+      ) : (
+        <p className="rounded-lg border border-rules bg-paper p-4 text-ink-muted">
+          Not processed yet. Process the claim to run the rules, the model and the calculator.
+        </p>
+      ),
+    },
+    ...(record
+      ? [
+          { value: "rules", label: "Rule checks", content: <RuleChecks record={record} /> },
+          { value: "amounts", label: "Amounts", content: <AmountsTable record={record} /> },
+        ]
+      : []),
+    {
+      value: "fields",
+      label: "Fields",
+      content: (
+        <FieldsTable claim={claim} confidences={view.field_confidences} jsonClaim={view.source_format === "JSON"} />
+      ),
+    },
+    ...extraTabs,
+  ];
+  return (
+    <>
+      <StageStrip view={view} events={events} fill={fill} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <Tabs defaultValue="lines" className="min-w-0">
+          <div className="overflow-x-auto">
+            <TabsList variant="line" className="mb-4 h-10 gap-4 border-b border-rules px-0">
+              {tabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="flex-none px-0 text-[15px] text-ink-muted data-active:text-ink data-active:font-semibold"
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+          {tabs.map((tab) => (
+            <TabsContent key={tab.value} value={tab.value} className="min-w-0">
+              {tab.content}
+            </TabsContent>
+          ))}
+        </Tabs>
+        <aside aria-label="Clinical note" className="min-w-0 lg:sticky lg:top-6 lg:self-start">
+          <div className="rounded-lg border border-rules bg-paper">
+            <h2 className="border-b border-rules px-4 py-3 font-semibold">Clinical note</h2>
+            <div className="max-h-none overflow-auto px-4 py-4 lg:max-h-[calc(100vh-8rem)]">
+              <ClinicalNote notes={notes} quotes={quotes} active={active} />
+            </div>
+          </div>
+        </aside>
+      </div>
+    </>
+  );
+}

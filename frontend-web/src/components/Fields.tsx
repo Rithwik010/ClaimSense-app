@@ -1,10 +1,10 @@
 // The claim's fields as read at intake, each with its confidence; a field read below the
 // extraction threshold is highlighted (§8.2, H5). A JSON claim lists no confidences (all 1.0).
 
-import { fieldLabel, money } from "../lib/format";
-import { LOW_CONFIDENCE } from "../lib/labels";
-import type { Claim } from "../api/types";
-import { table, td, th } from "./ui";
+import type { Claim } from "@/api/types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { fieldLabel, money } from "@/lib/format";
+import { LOW_CONFIDENCE } from "@/lib/labels";
 
 const JOINED = new Set(["modifiers", "diagnosis_pointers"]);
 
@@ -62,43 +62,39 @@ export function FieldsTable({
   }).length;
   return (
     <div>
-      <p className="mb-3 text-sm text-gray-600">
+      <p className="mb-3 max-w-[72ch] text-[13px] text-ink-muted">
         {jsonClaim
-          ? "A JSON claim is read exactly: every field has full confidence."
+          ? "A JSON claim is read exactly, so every field has full confidence."
           : low
-            ? `${low} field${low === 1 ? "" : "s"} read with low confidence (below ${LOW_CONFIDENCE}). A rule that fails on one rejects the claim instead of denying it.`
+            ? `${low} field${low === 1 ? "" : "s"} read with low confidence (below ${LOW_CONFIDENCE}). A rule that fails on one of them rejects the claim instead of denying it.`
             : "Every field was read with high confidence."}
       </p>
-      <div className="max-h-[28rem] overflow-auto rounded-md border border-gray-200">
-        <table className={table}>
-          <thead className="sticky top-0 bg-white">
-            <tr>
-              <th scope="col" className={th}>Field</th>
-              <th scope="col" className={th}>Value</th>
-              <th scope="col" className={th}>Confidence</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="max-h-[28rem] overflow-auto rounded-lg border border-rules bg-paper">
+        <Table>
+          <TableHeader className="sticky top-0 bg-paper">
+            <TableRow>
+              <TableHead>Field</TableHead>
+              <TableHead>Value</TableHead>
+              <TableHead className="text-right">Confidence</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.map((row) => {
               const found = jsonClaim ? 1 : confidenceOf(row.path, confidences);
               const isLow = found !== null && found < LOW_CONFIDENCE;
               return (
-                <tr key={row.path} className={isLow ? "bg-amber-50" : undefined}>
-                  <td className={`${td} whitespace-nowrap text-gray-700`}>{fieldLabel(row.path)}</td>
-                  <td className={`${td} max-w-xl whitespace-pre-wrap break-words`}>{row.value}</td>
-                  <td className={`${td} whitespace-nowrap`}>
+                <TableRow key={row.path} className={isLow ? "bg-pend-tint hover:bg-pend-tint" : undefined}>
+                  <TableCell className="whitespace-nowrap text-ink-muted">{fieldLabel(row.path)}</TableCell>
+                  <TableCell className="max-w-xl break-words whitespace-pre-wrap">{row.value}</TableCell>
+                  <TableCell className="text-right whitespace-nowrap tabular-nums">
+                    {isLow && <span className="mr-2 text-[13px] font-semibold text-pend">Low</span>}
                     {found === null ? "—" : `${Math.round(found * 100)}%`}
-                    {isLow && (
-                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-900">
-                        Low
-                      </span>
-                    )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

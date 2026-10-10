@@ -3,7 +3,7 @@
 
 import type { ClaimStatus, LineDecision, ReviewTier } from "../api/types";
 
-export type Tone = "green" | "amber" | "red" | "grey" | "blue";
+export type Tone = "approve" | "pend" | "deny" | "reject" | "neutral";
 
 export interface Label {
   label: string;
@@ -12,38 +12,41 @@ export interface Label {
 }
 
 export const STATUS: Record<ClaimStatus, Label> = {
-  RECEIVED: { label: "Received", hint: "not processed yet", tone: "blue" },
-  AWAITING_REVIEW: { label: "Awaiting review", hint: "a reviewer decides", tone: "blue" },
-  FINAL_APPROVED: { label: "Approved", hint: "every line approved", tone: "green" },
-  FINAL_PARTIAL: { label: "Partly approved", hint: "some lines approved", tone: "green" },
-  FINAL_DENIED: { label: "Denied", hint: "no line approved", tone: "red" },
-  FINAL_PENDED: { label: "Needs information", hint: "PEND: needs more information", tone: "amber" },
-  REJECTED: { label: "Rejected", hint: "REJECT: the claim data cannot be used", tone: "grey" },
-  DENIED_BY_RULE: { label: "Denied by a rule", hint: "a coverage rule failed", tone: "red" },
-  PENDED_BY_RULE: {
-    label: "Pended by a rule",
-    hint: "PEND: needs more information",
-    tone: "amber",
-  },
+  RECEIVED: { label: "Received", hint: "Not processed yet", tone: "neutral" },
+  AWAITING_REVIEW: { label: "Awaiting review", hint: "A reviewer decides", tone: "neutral" },
+  FINAL_APPROVED: { label: "Approved", hint: "Every line approved", tone: "approve" },
+  FINAL_PARTIAL: { label: "Partly approved", hint: "Some lines approved", tone: "approve" },
+  FINAL_DENIED: { label: "Denied", hint: "No line approved", tone: "deny" },
+  FINAL_PENDED: { label: "Needs information", hint: "Pended: needs more information", tone: "pend" },
+  REJECTED: { label: "Rejected", hint: "The claim data cannot be used", tone: "reject" },
+  DENIED_BY_RULE: { label: "Denied by a rule", hint: "A coverage rule failed", tone: "deny" },
+  PENDED_BY_RULE: { label: "Pended by a rule", hint: "Needs more information", tone: "pend" },
 };
 
 export const DECISION: Record<LineDecision, Label> = {
-  APPROVE: { label: "Approved", hint: "APPROVE: the plan pays its share", tone: "green" },
-  DENY: { label: "Denied", hint: "DENY: the plan does not pay", tone: "red" },
-  PEND: { label: "Needs information", hint: "PEND: needs more information", tone: "amber" },
+  APPROVE: { label: "Approve", hint: "The plan pays its share", tone: "approve" },
+  DENY: { label: "Deny", hint: "The plan does not pay", tone: "deny" },
+  PEND: { label: "Pend", hint: "Needs more information", tone: "pend" },
 };
 
 export const TIER: Record<ReviewTier, Label> = {
-  QUICK: { label: "Quick", hint: "a quick check", tone: "grey" },
-  STANDARD: { label: "Standard", hint: "a standard review", tone: "blue" },
-  FULL: { label: "Full", hint: "a full review", tone: "amber" },
+  QUICK: { label: "Quick", hint: "A quick check", tone: "neutral" },
+  STANDARD: { label: "Standard", hint: "A standard review", tone: "neutral" },
+  FULL: { label: "Full", hint: "A full review", tone: "neutral" },
 };
 
 export const SOURCE: Record<string, string> = {
-  RULE: "a rule",
-  MODEL: "the model's recommendation",
-  REVIEWER: "the reviewer",
-  VALIDATION: "output validation",
+  RULE: "A rule",
+  MODEL: "Model recommendation",
+  REVIEWER: "Reviewer",
+  VALIDATION: "Output check",
+};
+
+export const CLAIM_DECISION: Record<string, Label> = {
+  APPROVE: { label: "Approve", hint: "Every line approved", tone: "approve" },
+  PARTIAL: { label: "Partly approve", hint: "Some lines approved", tone: "approve" },
+  PEND: { label: "Pend", hint: "Needs more information", tone: "pend" },
+  DENY: { label: "Deny", hint: "No line approved", tone: "deny" },
 };
 
 export const CRITERION_STATUS: Record<string, string> = {

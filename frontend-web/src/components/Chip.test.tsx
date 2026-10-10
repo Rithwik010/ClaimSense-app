@@ -6,23 +6,24 @@ import { DecisionChip, StatusChip } from "./Chip";
 
 describe("status chips", () => {
   it.each<[ClaimStatus, string, string]>([
-    ["FINAL_APPROVED", "Approved", "bg-green-50"],
-    ["FINAL_PENDED", "Needs information", "bg-amber-50"],
-    ["PENDED_BY_RULE", "Pended by a rule", "bg-amber-50"],
-    ["FINAL_DENIED", "Denied", "bg-red-50"],
-    ["DENIED_BY_RULE", "Denied by a rule", "bg-red-50"],
-    ["REJECTED", "Rejected", "bg-gray-100"],
-  ])("shows %s as text with a muted colour", (status, label, colour) => {
+    ["FINAL_APPROVED", "Approved", "bg-approve-tint"],
+    ["FINAL_PENDED", "Needs information", "bg-pend-tint"],
+    ["PENDED_BY_RULE", "Pended by a rule", "bg-pend-tint"],
+    ["FINAL_DENIED", "Denied", "bg-deny-tint"],
+    ["DENIED_BY_RULE", "Denied by a rule", "bg-deny-tint"],
+    ["REJECTED", "Rejected", "bg-reject-tint"],
+  ])("shows %s as text and an icon on a tint", (status, label, tint) => {
     render(<StatusChip status={status} />);
 
     const chip = screen.getByText(label);
-    expect(chip).toHaveClass(colour);
+    expect(chip).toHaveClass(tint);
+    expect(chip.querySelector("svg")).not.toBeNull(); // never colour alone
   });
 
   it("shows the plain-language hint when asked", () => {
     render(<DecisionChip decision="PEND" showHint />);
 
-    expect(screen.getByText("Needs information")).toHaveAttribute("title", "PEND: needs more information");
-    expect(screen.getByText("PEND: needs more information")).toBeInTheDocument();
+    expect(screen.getByText("Pend")).toHaveAttribute("title", "Needs more information");
+    expect(screen.getByText("Needs more information")).toBeInTheDocument();
   });
 });

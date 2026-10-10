@@ -1,44 +1,45 @@
-// Parts of a decision record: rule checks, each line's recommendation with its criteria, evidence
-// and citations, and the calculator's amounts. Everything shown comes from the record.
+// Parts of a decision record: the rule checks and the calculator's amounts. The UI formats what
+// the record holds; it computes no amount.
 
-import type { Amounts, DecisionRecord, FinalLineDecision } from "../api/types";
-import { money } from "../lib/format";
-import { CRITERION_STATUS, evidenceChecks, SOURCE, reason } from "../lib/labels";
-import { DecisionChip } from "./Chip";
-import { table, td, th } from "./ui";
+import type { Amounts, DecisionRecord } from "@/api/types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { money } from "@/lib/format";
+import { reason } from "@/lib/labels";
 
 export function RuleChecks({ record }: { record: DecisionRecord }) {
   const rules = record.rules_outcome.rule_results;
-  const failed = rules.filter((r) => !r.passed).length;
+  const failed = rules.filter((r) => !r.passed);
   return (
     <div>
-      <p className="mb-3 text-sm text-gray-600">
-        {rules.length} rule checks, {failed ? `${failed} failed` : "all passed"}.
+      <p className="mb-3 text-[13px] text-ink-muted">
+        {rules.length} rule checks, {failed.length ? `${failed.length} failed` : "all passed"}.
       </p>
-      <div className="overflow-auto rounded-md border border-gray-200">
-        <table className={table}>
-          <thead>
-            <tr>
-              <th scope="col" className={th}>Rule</th>
-              <th scope="col" className={th}>Result</th>
-              <th scope="col" className={th}>Line</th>
-              <th scope="col" className={th}>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="overflow-hidden rounded-lg border border-rules bg-paper">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Rule</TableHead>
+              <TableHead>Result</TableHead>
+              <TableHead>Line</TableHead>
+              <TableHead>Detail</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rules.map((rule, i) => (
-              <tr key={`${rule.rule_id}-${rule.line_no ?? 0}-${i}`} className={rule.passed ? undefined : "bg-red-50"}>
-                <td className={`${td} font-mono text-xs`}>{rule.rule_id}</td>
-                <td className={td}>{rule.passed ? "Passed" : `Failed (${rule.outcome})`}</td>
-                <td className={td}>{rule.line_no ?? ""}</td>
-                <td className={td}>
+              <TableRow key={`${rule.rule_id}-${rule.line_no ?? 0}-${i}`}>
+                <TableCell className="font-semibold">{rule.rule_id}</TableCell>
+                <TableCell className={`whitespace-nowrap ${rule.passed ? "" : "font-semibold text-deny"}`}>
+                  {rule.passed ? "Passed" : `Failed, ${rule.outcome.toLowerCase()}`}
+                </TableCell>
+                <TableCell className="tabular-nums">{rule.line_no ?? ""}</TableCell>
+                <TableCell className="min-w-64">
                   {rule.detail}
-                  {rule.reason_code && <div className="text-gray-600">{reason(rule.reason_code)}</div>}
-                </td>
-              </tr>
+                  {rule.reason_code && <div className="text-[13px] text-ink-muted">{reason(rule.reason_code)}</div>}
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
@@ -56,130 +57,42 @@ const SHOWN: [keyof Amounts, string][] = [
 
 export function AmountsTable({ record }: { record: DecisionRecord }) {
   if (!record.amounts) {
-    return <p className="text-gray-600">No amounts: the calculator has not run for this claim.</p>;
+    return <p className="text-ink-muted">No amounts: the calculator did not run for this claim.</p>;
   }
   return (
-    <div className="overflow-auto rounded-md border border-gray-200">
-      <table className={table}>
-        <thead>
-          <tr>
-            <th scope="col" className={th}>Line</th>
+    <div className="overflow-hidden rounded-lg border border-rules bg-paper">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Line</TableHead>
             {SHOWN.map(([key, label]) => (
-              <th key={key} scope="col" className={`${th} text-right`}>{label}</th>
+              <TableHead key={key} className="text-right">
+                {label}
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {record.amounts.lines.map((line) => (
-            <tr key={line.line_no}>
-              <td className={td}>{line.line_no}</td>
+            <TableRow key={line.line_no}>
+              <TableCell className="tabular-nums">{line.line_no}</TableCell>
               {SHOWN.map(([key]) => (
-                <td key={key} className={`${td} text-right tabular-nums`}>{money(line[key])}</td>
+                <TableCell key={key} className="text-right whitespace-nowrap tabular-nums">
+                  {money(line[key])}
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-          <tr className="font-medium">
-            <td className={td}>Total</td>
+          <TableRow className="font-semibold">
+            <TableCell>Total</TableCell>
             {SHOWN.map(([key]) => (
-              <td key={key} className={`${td} text-right tabular-nums`}>
+              <TableCell key={key} className="text-right whitespace-nowrap tabular-nums">
                 {money(record.amounts?.totals[key])}
-              </td>
+              </TableCell>
             ))}
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-export function LineDetails({ record, line }: { record: DecisionRecord; line: FinalLineDecision }) {
-  const context = record.context_refs?.lines.find((c) => c.line_no === line.line_no);
-  const answer = record.slm_output?.lines.find((l) => l.line_no === line.line_no);
-  const cited = new Map((context?.criteria ?? []).map((c) => [c.criterion_id, c]));
-  const amounts = record.amounts?.lines.find((a) => a.line_no === line.line_no);
-  const unquoted = new Set(
-    evidenceChecks(record.output_errors)
-      .filter((check) => check.lineNo === line.line_no)
-      .map((check) => check.criterionId),
-  );
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <h3 className="font-semibold">
-          Line {line.line_no}
-          {context && <span className="ml-2 font-mono text-sm text-gray-600">{context.procedure_code}</span>}
-        </h3>
-        <DecisionChip decision={line.decision} showHint />
-        <span className="text-sm text-gray-600">by {SOURCE[line.source] ?? line.source}</span>
-        {line.benefit_category && (
-          <span className="text-sm text-gray-600">· {line.benefit_category.replaceAll("_", " ").toLowerCase()}</span>
-        )}
-      </div>
-      {line.reason_codes.length > 0 && (
-        <ul className="list-disc pl-5 text-sm text-gray-700">
-          {line.reason_codes.map((code) => (
-            <li key={code}>{reason(code)}</li>
-          ))}
-        </ul>
-      )}
-      {line.source !== "RULE" && answer && answer.criteria.length > 0 && (
-        <div className="overflow-auto rounded-md border border-gray-200">
-          <table className={table}>
-            <thead>
-              <tr>
-                <th scope="col" className={th}>Criterion</th>
-                <th scope="col" className={th}>Status</th>
-                <th scope="col" className={th}>Evidence</th>
-                <th scope="col" className={th}>Policy</th>
-              </tr>
-            </thead>
-            <tbody>
-              {answer.criteria.map((c) => {
-                const source = cited.get(c.criterion_id);
-                return (
-                  <tr key={c.criterion_id}>
-                    <td className={td}>
-                      <span className="font-mono text-xs">{c.criterion_id}</span>
-                      {source && <div className="text-gray-600">{source.text}</div>}
-                    </td>
-                    <td className={`${td} whitespace-nowrap`}>
-                      {unquoted.has(c.criterion_id) ? (
-                        <>
-                          Not documented
-                          <div className="text-xs text-amber-900">
-                            Model said met; the quote is not in the notes
-                          </div>
-                        </>
-                      ) : (
-                        (CRITERION_STATUS[c.status] ?? c.status)
-                      )}
-                    </td>
-                    <td className={td}>{c.evidence}</td>
-                    <td className={td}>
-                      {source ? `${source.policy_id}: ${source.policy_title}` : c.criterion_id.split(".")[0]}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {line.decision === "PEND" && answer && (
-        <p className="text-sm text-gray-700">
-          Awaiting documentation for:{" "}
-          {answer.criteria
-            .filter((c) => c.status === "NOT_DOCUMENTED")
-            .map((c) => c.criterion_id)
-            .join(", ") || "documentation that supports the service"}
-        </p>
-      )}
-      {amounts && (
-        <p className="text-sm text-gray-700">
-          Billed {money(amounts.billed_cents)} · allowed {money(amounts.allowed_cents)} · plan
-          pays {money(amounts.plan_pays_cents)} · member pays {money(amounts.member_pays_cents)}
-        </p>
-      )}
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   );
 }

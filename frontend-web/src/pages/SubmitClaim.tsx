@@ -1,21 +1,23 @@
-// Submit claim: upload a JSON claim, a PDF of the form or a scanned image; check the fields read
-// and their confidence; process the claim; then go to the claim.
+// Submit claim: upload a JSON claim, a PDF of the form or a scanned form; check the fields read and
+// their confidence; process the claim; then open it, where the stage strip fills in.
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
-import { useProcess, useUpload } from "../api/hooks";
-import type { FiledWithErrors, IntakeResult } from "../api/types";
-import { FieldsTable } from "../components/Fields";
-import { PageTitle, Section } from "../components/Layout";
-import { ErrorNotice } from "../components/States";
-import { button, card, input } from "../components/ui";
-import { ApiError } from "../api/client";
+import { ApiError } from "@/api/client";
+import { useProcess, useUpload } from "@/api/hooks";
+import type { FiledWithErrors, IntakeResult } from "@/api/types";
+import { FieldsTable } from "@/components/Fields";
+import { PageTitle, Panel, Section } from "@/components/Layout";
+import { ErrorNotice, Note } from "@/components/States";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const FORMATS: Record<string, string> = {
-  JSON: "JSON claim",
-  DIGITAL_PDF: "digital PDF",
-  SCANNED: "scanned form (OCR)",
+  JSON: "a JSON claim",
+  DIGITAL_PDF: "a digital PDF",
+  SCANNED: "a scanned form, read by OCR",
 };
 
 export function SubmitClaim() {
@@ -33,51 +35,54 @@ export function SubmitClaim() {
     <>
       <PageTitle
         title="Submit claim"
-        hint="Upload a JSON claim, a PDF of the ClaimSense form, or a scanned form (PDF, PNG, JPEG or TIFF)."
+        hint="Upload a JSON claim, a PDF of the ClaimSense form, or a scanned form as a PDF, PNG, JPEG or TIFF."
       />
-      <form
-        className={`${card} mb-8 flex flex-wrap items-end gap-4`}
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (file) {
-            process.reset();
-            upload.mutate(file);
-          }
-        }}
-      >
-        <label className="min-w-72 flex-1 text-sm font-medium text-gray-700">
-          Claim file
-          <input
-            type="file"
-            name="claim-file"
-            accept=".json,.pdf,.png,.jpg,.jpeg,.tif,.tiff,application/json,application/pdf,image/*"
-            className={`${input} mt-1 font-normal`}
-            onChange={(event) => {
-              setFile(event.target.files?.[0] ?? null);
-              upload.reset();
-            }}
-          />
-        </label>
-        <button
-          type="submit"
-          className={filed ? button.secondary : button.primary}
-          disabled={!file || upload.isPending}
+      <Panel className="mb-6 p-5">
+        <form
+          className="flex flex-wrap items-end gap-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (file) {
+              process.reset();
+              upload.mutate(file, { onSuccess: () => toast.success("Claim read") });
+            }
+          }}
         >
-          {upload.isPending ? "Reading…" : "Read claim"}
-        </button>
-      </form>
+          <label className="grid min-w-0 flex-1 basis-72 gap-1.5 font-semibold" htmlFor="claim-file">
+            Claim file
+            <Input
+              id="claim-file"
+              type="file"
+              name="claim-file"
+              accept=".json,.pdf,.png,.jpg,.jpeg,.tif,.tiff,application/json,application/pdf,image/*"
+              className="h-10 bg-paper font-normal"
+              onChange={(event) => {
+                setFile(event.target.files?.[0] ?? null);
+                upload.reset();
+              }}
+            />
+          </label>
+          <Button type="submit" size="lg" variant={filed ? "outline" : "default"} disabled={!file || upload.isPending}>
+            {upload.isPending ? "Reading" : "Read claim"}
+          </Button>
+        </form>
+        {upload.isPending && (
+          <p role="status" className="mt-3 text-[13px] text-ink-muted">
+            Reading the file. A scanned form takes a few seconds.
+          </p>
+        )}
+      </Panel>
 
-      {upload.isPending && (
-        <p role="status" className="mb-6 text-gray-600">
-          Reading the file. A scanned form takes a few seconds.
-        </p>
-      )}
       {upload.error && (
-        <div className="mb-6">
+        <div className="mb-6 space-y-2">
           <ErrorNotice error={upload.error} />
           {duplicate && (
-            <p className="mt-2 text-gray-700">
-              A claim with this claim ID is already on file; see <Link className="text-accent underline" to="/claims">Claims</Link>.
+            <p className="text-ink-muted">
+              A claim with this claim ID is already on file. Find it under{" "}
+              <Link className="font-semibold text-ink underline underline-offset-4" to="/claims">
+                Claims
+              </Link>
+              .
             </p>
           )}
         </div>
@@ -85,30 +90,32 @@ export function SubmitClaim() {
 
       {filed && claimId && (
         <>
-          <div className={`${card} mb-8 flex flex-wrap items-center gap-4`}>
-            <div className="flex-1">
-              <p className="font-medium">
-                Claim {claimId} filed from a {FORMATS[filed.source_format] ?? filed.source_format}.
+          <Panel className="mb-6 flex flex-wrap items-center gap-4 p-5">
+            <div className="min-w-0 flex-1 basis-72">
+              <p className="font-semibold">
+                Claim {claimId} was filed from {FORMATS[filed.source_format] ?? filed.source_format}.
               </p>
-              <p className="text-sm text-gray-600">
-                Processing runs the rules, the model recommendation and the calculator.
+              <p className="text-[13px] text-ink-muted">
+                Processing runs the rules, the coverage policy lookup, the model recommendation and the calculator.
               </p>
             </div>
-            <button
-              type="button"
-              className={button.primary}
+            <Button
+              size="lg"
               disabled={process.isPending}
               onClick={() =>
                 process.mutate(claimId, {
-                  onSuccess: () => navigate(`/claims/${encodeURIComponent(claimId)}`),
+                  onSuccess: () => {
+                    toast.success("Claim processed");
+                    navigate(`/claims/${encodeURIComponent(claimId)}`, { state: { justProcessed: true } });
+                  },
                 })
               }
             >
-              {process.isPending ? "Processing…" : "Process claim"}
-            </button>
-          </div>
+              {process.isPending ? "Processing" : "Process claim"}
+            </Button>
+          </Panel>
           {process.isPending && (
-            <p role="status" className="mb-6 text-gray-600">
+            <p role="status" className="mb-6 text-ink-muted">
               Processing. The model's recommendation can take up to a minute.
             </p>
           )}
@@ -118,16 +125,16 @@ export function SubmitClaim() {
             </div>
           )}
           {errors && (
-            <Section title="Contract errors">
-              <p className="mb-2 text-gray-700">
-                The claim was filed, but these errors mean the rules will reject it:
-              </p>
-              <ul className="list-disc pl-5 text-gray-800">
-                {errors.contract_errors.map((error) => (
-                  <li key={error}>{error}</li>
-                ))}
-              </ul>
-            </Section>
+            <div className="mb-6">
+              <Note>
+                <p className="font-semibold">The claim was filed, but the rules will reject it:</p>
+                <ul className="mt-1 list-disc pl-5">
+                  {errors.contract_errors.map((error) => (
+                    <li key={error}>{error}</li>
+                  ))}
+                </ul>
+              </Note>
+            </div>
           )}
           <Section title="Fields read">
             <FieldsTable
