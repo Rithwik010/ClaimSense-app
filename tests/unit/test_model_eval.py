@@ -224,3 +224,17 @@ def test_the_v2_comparison_renders_model_v1_prompt_and_scores_both(dataset_v2, t
     assert v2["metrics"]["groups"]["unseen_policies"]["records"] == 6
     text = table([v1, v2])
     assert text.count("| stub |") == 2 and "Style D (held out)" in text
+
+
+def test_a_run_never_resumes_on_another_version_of_the_dataset(dataset, tmp_path) -> None:  # noqa: ANN001
+    from training.evaluate.model import run
+
+    directory, targets, _ = dataset
+    run(Answers(targets), "pinned", directory, tmp_path, limit=2)
+    original = (directory / "test.jsonl").read_text()
+    try:
+        (directory / "test.jsonl").write_text(original + "\n")
+        with pytest.raises(SystemExit, match="another version"):
+            run(Answers(targets), "pinned", directory, tmp_path, limit=2)
+    finally:
+        (directory / "test.jsonl").write_text(original)

@@ -24,6 +24,7 @@ twice before the run stops.
 """
 
 import argparse
+import hashlib
 import json
 import statistics
 import time
@@ -332,6 +333,13 @@ def run(
         if predictions_path.exists()
         else {}
     )
+    fingerprint = hashlib.sha256((dataset_dir / f"{split}.jsonl").read_bytes()).hexdigest()[:12]
+    stale = {p.get("dataset_sha") for p in done.values()} - {fingerprint}
+    if stale:
+        raise SystemExit(
+            f"{label}: earlier predictions were made on another version of {split}.jsonl "
+            f"({sorted(map(str, stale))}, now {fingerprint}); use a new --label or delete them"
+        )
     engines = {p.get("engine") for p in done.values()}
     if engines and engines != {engine}:
         raise SystemExit(
@@ -362,6 +370,7 @@ def run(
                 **scored,
                 "latency_ms": latency,
                 "engine": engine,
+                "dataset_sha": fingerprint,
                 "attempts": attempts,
                 "output": text,
             }

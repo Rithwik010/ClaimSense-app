@@ -66,7 +66,7 @@ Compare with the baseline in `docs/results.md` (target macro-F1 >= 0.90). If it 
 
 # Model v2: step by step (dataset v2, prompt decision_v3)
 
-Same QLoRA settings as model v1 (`training/finetune/data.py`): the longest v2 record is 2,762
+Same QLoRA settings as model v1 (`training/finetune/data.py`): the longest v2 record is 2,761
 tokens (exact count, `data/generated/decision_v2/token_lengths.json`), under the max length 3,072.
 Expect the full run to take about as long as v1's (3 h on a T4).
 
@@ -81,8 +81,8 @@ uv run python -m training.finetune.prepare_kaggle --kaggle-user manideep3183 --m
 This writes `data/generated/kaggle/claimsense-decision-v2/` (train, validation and test records,
 `summary.json`, `data-card.md`, `token_lengths.json`, the training scripts and a private
 `dataset-metadata.json`), the same folder as `claimsense-decision-v2.zip`, and the notebook
-`claimsense-finetune-v2.ipynb`. Expected fingerprints (`shasum`, first 12): train `eb096e5a1d87`,
-validation `25af4201b87d`, test `b4b4eacb1458`.
+`claimsense-finetune-v2.ipynb`. Expected fingerprints (`shasum`, first 12): train `2f190ad6a0c1`,
+validation `400eae4e118c`, test `221bb0da4243`.
 
 ## 2. Kaggle website: dataset and notebook
 

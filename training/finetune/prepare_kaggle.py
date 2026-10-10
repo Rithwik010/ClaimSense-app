@@ -7,7 +7,7 @@ writes files under `data/generated/kaggle/`; uploading is done by a team member.
     uv run python -m training.finetune.prepare_kaggle --kaggle-user <username> --model-version 2
 
 Model v2 (Part 2 step 5): the v2 dataset (data/generated/decision_v2/, prompt decision_v3, policy
-set v2), the same QLoRA settings as model v1 (its longest record is 2,762 tokens, under the max
+set v2), the same QLoRA settings as model v1 (its longest record is 2,761 tokens, under the max
 length 3,072), the dataset also as a zip to upload, and a notebook writing to
 `/kaggle/working/claimsense-v2`.
 """

@@ -708,7 +708,19 @@ class ScenarioBuilderV2(ScenarioBuilder):
 
     def _plan_rule_denied(self) -> tuple[list[LineV2], set[str] | None, set[str] | None]:
         rng = self.rng
-        kind = rng.choice(("ncci", "ncci", "excluded", "mue", "dx", "dx"))
+        kind = rng.choice(("ncci", "ncci", "excluded", "mue", "dx", "dx", "mycotic"))
+        if kind == "mycotic" and "POL-FOOT-001" in self.policies:
+            # Benefit Policy Manual 290.C.4 (POL-FOOT-001.c5): billing article A57188 lists no
+            # onychomycosis code, so R15 denies a mycotic-only nail line before the model (D-GEN-7).
+            profile = next(p for p in self.t2.profiles["POL-FOOT-001"] if p.profile_id == "mycotic")
+            mycotic = self._line(profile, "approve")
+            mycotic.expect_reasons = ("DN_DX_NOT_SUPPORTED",)
+            office = LineV2(
+                code=rng.choice(OFFICE_CODES), profile=None, day_offset=rng.randint(7, 14)
+            )
+            return [mycotic, office], None, None
+        if kind == "mycotic":
+            kind = "dx"
         if kind == "excluded":
             options = [e for e in EXCLUDED_EXTRAS if e[2].split("/")[0] in self.policies]
             if options:
@@ -989,8 +1001,11 @@ class ScenarioBuilderV2(ScenarioBuilder):
                         if overrides
                         else line.profile.diagnosis_sets()
                     )
+                    expect_r15 = "DN_DX_NOT_SUPPORTED" in line.expect_reasons
                     supported = [
-                        o for o in options if self._supported(line.code, list(o), line.modifiers)
+                        o
+                        for o in options
+                        if self._supported(line.code, list(o), line.modifiers) != expect_r15
                     ]
                     if not supported:
                         raise ScenarioError(f"{key}: no diagnosis R15 accepts for {line.code}")
