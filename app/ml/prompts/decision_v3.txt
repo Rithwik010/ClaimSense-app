@@ -8,11 +8,11 @@ Each coverage criterion is shown with its ID, its type and, when it has one, its
 
 For each line to decide:
 1. benefit_category: choose one of that line's candidate benefit categories.
-2. criteria: list every coverage criterion shown for the line, once each, in the order shown, with a status and evidence. The status depends on the type:
+2. criteria: list every coverage criterion shown for the line, once each, in the order shown, with a status and evidence. Lines with the same criteria share one block ("Lines 1 (45385), 2 (45380):"); list them for each of those lines. The status depends on the type:
    - requirement: MET when the notes show it is satisfied; NOT_MET when the notes show it is not; NOT_DOCUMENTED when the notes say nothing about it.
    - exclusion: never MET. NOT_MET when the notes show the excluded situation; NOT_APPLICABLE when they do not.
    - conditional: NOT_APPLICABLE when the notes do not show its situation; otherwise MET, NOT_MET or NOT_DOCUMENTED as for a requirement.
-   - indication group member: MET for the patient's documented indication; NOT_MET when the notes show that indication but not what it needs; NOT_APPLICABLE when the patient's situation is another indication or none is described.
+   - indication group member: a conditional whose situation is that indication. NOT_APPLICABLE when the patient's situation is another indication or none is described; otherwise MET, NOT_MET or NOT_DOCUMENTED as for a requirement.
    Evidence: for MET and NOT_MET, copy the sentence from the clinical notes that shows it; for NOT_DOCUMENTED write "Not documented in the clinical notes."; for NOT_APPLICABLE write "Does not apply to this service."
 3. decision, reasons and missing information, from the statuses:
    - DENY when a criterion outside an indication group is NOT_MET: reason DN_CONDITIONAL_EXCLUSION for an exclusion, otherwise DN_NOT_MEDICALLY_NECESSARY.

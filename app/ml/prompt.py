@@ -152,6 +152,24 @@ def _criterion_v3(criterion: RetrievedCriterion) -> str:
     return f"    [{criterion.criterion_id}] ({label}) {criterion.text}"
 
 
+def _criteria_blocks(context: ContextPackage, v3: bool) -> list[list]:
+    """decision_v3 shows one block for consecutive lines whose criteria are the same (one long
+    policy is not repeated per line); decision_v2 shows every line on its own."""
+    blocks: list[list] = []
+    for line_context in context.lines:
+        previous = blocks[-1][0] if blocks else None
+        if (
+            v3
+            and previous is not None
+            and line_context.criteria
+            and previous.criteria == line_context.criteria
+        ):
+            blocks[-1].append(line_context)
+        else:
+            blocks.append([line_context])
+    return blocks
+
+
 def render_user_message(
     claim: IntakeClaim,
     rules: RulesOutcome,
@@ -213,8 +231,13 @@ def render_user_message(
     parts.append("")
 
     parts.append("COVERAGE_CRITERIA")
-    for line_context in context.lines:
-        parts.append(f"Line {line_context.line_no} ({line_context.procedure_code}):")
+    for block in _criteria_blocks(context, v3):
+        if len(block) == 1:
+            parts.append(f"Line {block[0].line_no} ({block[0].procedure_code}):")
+        else:
+            listed = ", ".join(f"{b.line_no} ({b.procedure_code})" for b in block)
+            parts.append(f"Lines {listed}:")
+        line_context = block[0]
         if not line_context.criteria:
             parts.append("  No criteria retrieved.")
         policies: dict[str, list] = {}  # retrieval order, grouped under one header per policy

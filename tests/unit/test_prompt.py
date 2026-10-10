@@ -220,3 +220,18 @@ def test_v3_explains_the_new_flags_and_v2_never_shows_them() -> None:
     assert "flag NCS_WITHOUT_EMG (a nerve conduction study with no needle EMG" in v3
     assert "flag FACET_TWO_REGIONS (" in v3 and "flag EXTENDED_TESTING (" in v3
     assert "Line 1: PASS\n" in v2 + "\n"  # model v1 never saw these flags (D-RULE-6)
+
+
+def test_v3_shares_one_criteria_block_for_lines_with_the_same_criteria() -> None:
+    from app.ml.prompt import PROMPT_V3
+
+    claim, rules, context = sample()
+    first = context.lines[0]
+    second = first.model_copy(update={"line_no": 2, "procedure_code": "64483"})
+    context = context.model_copy(update={"lines": [first, second]})
+
+    v3 = render_user_message(claim, rules, context, v3_lookups(), PROMPT_V3)
+    v2 = render_user_message(claim, rules, context, v3_lookups())
+
+    assert "Lines 1 (62323), 2 (64483):" in v3 and v3.count("[POL-PAIN-001.c3]") == 1
+    assert v2.count("[POL-PAIN-001.c3]") == 2  # decision_v2 unchanged for model v1
