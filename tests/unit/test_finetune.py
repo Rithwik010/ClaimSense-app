@@ -98,6 +98,7 @@ def test_modelfile_copies_the_base_chat_handling(tmp_path) -> None:  # noqa: ANN
         "RENDERER gemma4",
         "PARSER gemma4",
         "PARAMETER top_k 64",
+        "PARAMETER num_ctx 8192",
     ]
     assert base_directives("FROM x\nLICENSE y") == []
 
