@@ -1,0 +1,45 @@
+{
+  "claim_id": "CLM-DEMO-06",
+  "member_id": "MBR-000128",
+  "patient": {
+    "first_name": "Paula",
+    "last_name": "Gross",
+    "date_of_birth": "1974-04-06",
+    "sex": "F",
+    "address": {
+      "line1": "1630 Lucas Points",
+      "city": "Lake Elizabethmouth",
+      "state": "MD",
+      "zip_code": "67488"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "1816701101",
+  "billing_tin": "991233153",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "G609",
+    "B351"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-11-24",
+      "place_of_service": "11",
+      "procedure_code": "11721",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A",
+        "B"
+      ],
+      "units": 1,
+      "charge_cents": 9200,
+      "rendering_npi": "1816701100"
+    }
+  ],
+  "clinical_notes": "Onychomycotic nails, painful. Monofilament: absent at 4/5 sites left foot. VS WNL. Non-professional care unsafe. Plan -> trimming and cleaning of thickened toenails, 6 or more nails.",
+  "received_date": "2026-11-27",
+  "frequency_code": "1",
+  "other_coverage": null
+}

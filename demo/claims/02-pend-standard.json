@@ -1,0 +1,43 @@
+{
+  "claim_id": "CLM-DEMO-02",
+  "member_id": "MBR-000042",
+  "patient": {
+    "first_name": "Edward",
+    "last_name": "Powers",
+    "date_of_birth": "1993-03-05",
+    "sex": "M",
+    "address": {
+      "line1": "277 Robert Divide",
+      "city": "West Vincent",
+      "state": "SD",
+      "zip_code": "93130"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "2149113906",
+  "billing_tin": "329215212",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "R002"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-11-20",
+      "place_of_service": "11",
+      "procedure_code": "93224",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A"
+      ],
+      "units": 1,
+      "charge_cents": 13200,
+      "rendering_npi": "2149113906"
+    }
+  ],
+  "clinical_notes": "The patient is seen for heart rhythm symptoms. Plan: wearable heart rhythm recording for up to 48 hours, with analysis and report. Vital signs are stable.",
+  "received_date": "2026-12-15",
+  "frequency_code": "1",
+  "other_coverage": null
+}

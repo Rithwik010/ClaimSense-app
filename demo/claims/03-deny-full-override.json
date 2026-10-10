@@ -1,0 +1,43 @@
+{
+  "claim_id": "CLM-DEMO-03",
+  "member_id": "MBR-000495",
+  "patient": {
+    "first_name": "James",
+    "last_name": "Freeman",
+    "date_of_birth": "1995-12-01",
+    "sex": "M",
+    "address": {
+      "line1": "67663 Beth Hills",
+      "city": "Lake Robert",
+      "state": "WI",
+      "zip_code": "63481"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "1038710061",
+  "billing_tin": "830009852",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "J4530"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-11-18",
+      "place_of_service": "11",
+      "procedure_code": "95004",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A"
+      ],
+      "units": 21,
+      "charge_cents": 17200,
+      "rendering_npi": "1038710061"
+    }
+  ],
+  "clinical_notes": "The patient is seen in the allergy clinic. Hives and lip swelling within minutes of eating shellfish suggest a food allergy. Vital signs are stable. A standard panel was run without linking the tests to the patient's history. Plan: skin prick allergy tests, per allergen.",
+  "received_date": "2026-12-07",
+  "frequency_code": "1",
+  "other_coverage": null
+}

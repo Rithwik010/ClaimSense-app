@@ -1,0 +1,43 @@
+{
+  "claim_id": "CLM-DEMO-05",
+  "member_id": "MBR-000325",
+  "patient": {
+    "first_name": "Nathaniel",
+    "last_name": "Williams",
+    "date_of_birth": "1979-11-13",
+    "sex": "M",
+    "address": {
+      "line1": "203 Brown Circle",
+      "city": "Nicholasfurt",
+      "state": "AR",
+      "zip_code": "38055"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "1039186980",
+  "billing_tin": "626413097",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "K5900"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-11-04",
+      "place_of_service": "11",
+      "procedure_code": "97110",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A"
+      ],
+      "units": 3,
+      "charge_cents": 19700,
+      "rendering_npi": "1039186980"
+    }
+  ],
+  "clinical_notes": "The patient reports hard stools and infrequent bowel movements. Plan: therapeutic exercise to build strength, flexibility or endurance, each 15 minutes. Past medical history was reviewed without changes.",
+  "received_date": "2026-11-09",
+  "frequency_code": "1",
+  "other_coverage": null
+}
