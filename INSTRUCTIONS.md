@@ -503,12 +503,10 @@ outcomes, Metrics.
 | Rule outcomes | Read-only list of REJECTED / DENIED_BY_RULE / PENDED_BY_RULE claims with reasons |
 | Metrics | Model v1 vs v2 evaluation table and the targets; OCR field accuracy |
 
-**Design.** White background, neutral greys, one accent colour, system font, 15–16 px base text,
-generous spacing. CSS-only transitions of 150–200 ms that respect `prefers-reduced-motion`. Status
-chips show text plus a muted colour: Approved (green), Needs information / Pended (amber), Denied
-(red), Rejected (grey). Plain-language labels with short hints (e.g. "PEND: needs more
-information"). One primary action per screen; loading skeletons, empty states, API errors in plain
-words. Keyboard navigation, visible focus rings, labelled inputs, AA contrast.
+**Design.** `DESIGN.md` (D-UI-2): ink on paper, colour only for decisions (text and icon on a tint),
+Atkinson Hyperlegible Next, borders not shadows, Motion for four moments only, reduced motion
+respected, checked at 390, 768 and 1440 px. Keyboard navigation, visible focus rings, labelled
+inputs, AA contrast.
 
 **Tests.** Vitest + React Testing Library for the review form's validation and the status chips;
 one local Playwright smoke test (submit JSON → process → open from the queue → accept → claim detail

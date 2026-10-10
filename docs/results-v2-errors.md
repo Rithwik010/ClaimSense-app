@@ -72,3 +72,9 @@ A MET criterion whose evidence is not in the notes (exact text) becomes NOT_DOCU
 |---|---|---|---|---|---|
 | v2 | 0.8726 | 0.8532 | 1.0 | 29 | 0 |
 | v2 + guard | 0.8678 | 0.8487 | 1.0 | 28 | 0 |
+
+Adopted as D-EVID-1: wrong approvals fall (29 -> 28) and macro-F1 changes by -0.0045, within the agreed 0.01. The pipeline and the evaluation apply the guard; `docs/results-v2.md` keeps the numbers as evaluated, before it.
+
+## Are the errors concentrated?
+
+No. The worst policy, POL-IMG-001, holds 10 of the 53 wrong lines (19%); 14 policies have at least one. The commonest direction (PEND predicted as APPROVE) is 36% of them, and requirement criteria carry 33 of 55 wrong statuses. No policy, direction or criterion type stands out enough for a targeted retrain, so none is planned before the demo.

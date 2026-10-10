@@ -1,105 +1,109 @@
-import { NavLink, Outlet, useLocation } from "react-router";
+// The app shell: sidebar, a header with the breadcrumb, and the page, which fades in on navigation
+// (motion moment 1, DESIGN.md).
 
-import type { Role } from "../api/types";
-import { useSession } from "../lib/session";
+import { motion, useReducedMotion } from "motion/react";
+import type { ReactNode } from "react";
+import { Link, Outlet, useLocation } from "react-router";
+
+import { AppSidebar, NAV } from "@/components/app-sidebar";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { input } from "./ui";
 
-const NAV = [
-  { to: "/submit", label: "Submit claim" },
-  { to: "/queue", label: "Review queue" },
-  { to: "/claims", label: "Claims" },
-  { to: "/rule-outcomes", label: "Rule outcomes" },
-  { to: "/metrics", label: "Metrics" },
-];
-
-const ROLES: { value: Role; label: string }[] = [
-  { value: "provider", label: "Provider" },
-  { value: "reviewer", label: "Reviewer" },
-  { value: "admin", label: "Admin" },
-];
+function crumbs(pathname: string): { label: string; to?: string }[] {
+  const [first, second] = pathname.split("/").filter(Boolean);
+  if (first === "review" && second) {
+    return [{ label: "Review queue", to: "/queue" }, { label: decodeURIComponent(second) }];
+  }
+  if (first === "claims" && second) {
+    return [{ label: "Claims", to: "/claims" }, { label: decodeURIComponent(second) }];
+  }
+  const item = NAV.find((n) => n.to === `/${first ?? ""}`);
+  return [{ label: item?.label ?? "ClaimSense" }];
+}
 
 export function Layout() {
-  const { role, setRole, reviewerId, setReviewerId } = useSession();
   const { pathname } = useLocation();
+  const reduce = useReducedMotion();
+  const trail = crumbs(pathname);
+  const wide = typeof window === "undefined" || window.innerWidth >= 1200;
   return (
-    <div className="min-h-screen">
-      <header className="flex flex-wrap items-center gap-x-8 gap-y-3 border-b border-gray-200 px-6 py-3">
-        <span className="text-lg font-semibold tracking-tight">ClaimSense</span>
-        <span className="text-sm text-gray-600">Synthetic data only</span>
-        <div className="ml-auto flex flex-wrap items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            Role
-            <select
-              className={`${input} w-auto py-1.5`}
-              value={role}
-              onChange={(event) => setRole(event.target.value as Role)}
-            >
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
+    <SidebarProvider defaultOpen={wide}>
+      <AppSidebar />
+      <SidebarInset className="min-w-0 bg-canvas">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-rules bg-paper px-4">
+          <SidebarTrigger className="-ml-1" aria-label="Show or hide the navigation" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              {trail.map((crumb, i) => (
+                <span key={crumb.label} className="contents">
+                  {i > 0 && <BreadcrumbSeparator />}
+                  <BreadcrumbItem>
+                    {crumb.to ? (
+                      <BreadcrumbLink asChild>
+                        <Link to={crumb.to}>{crumb.label}</Link>
+                      </BreadcrumbLink>
+                    ) : (
+                      <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                    )}
+                  </BreadcrumbItem>
+                </span>
               ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2 whitespace-nowrap text-sm text-gray-700">
-            Reviewer ID
-            <input
-              className={`${input} w-40 py-1.5`}
-              value={reviewerId}
-              placeholder="e.g. reviewer-1"
-              onChange={(event) => setReviewerId(event.target.value)}
-            />
-          </label>
-        </div>
-      </header>
-      <div className="flex">
-        <nav aria-label="Main" className="w-52 shrink-0 border-r border-gray-200 px-3 py-6">
-          <ul className="space-y-1">
-            {NAV.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `block rounded-md px-3 py-2 transition-colors duration-150 ${
-                      isActive
-                        ? "bg-accent-soft font-medium text-accent-strong"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <main className="min-w-0 flex-1 px-8 py-8">
-          <div className="mx-auto max-w-6xl">
+            </BreadcrumbList>
+          </Breadcrumb>
+        </header>
+        <motion.main
+          key={pathname}
+          initial={{ opacity: reduce ? 1 : 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: reduce ? 0 : 0.18, ease: "easeOut" }}
+          className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8"
+        >
+          <div className="mx-auto max-w-[1280px]">
             <ErrorBoundary resetKey={pathname}>
               <Outlet />
             </ErrorBoundary>
           </div>
-        </main>
-      </div>
-    </div>
+        </motion.main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
-export function PageTitle({ title, hint }: { title: string; hint?: string }) {
+export function PageTitle({ title, hint, actions }: { title: string; hint?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      {hint && <p className="mt-1 text-gray-600">{hint}</p>}
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <div className="min-w-0">
+        <h1 className="text-[24px] leading-8 font-semibold break-words">{title}</h1>
+        {hint && <p className="mt-1 max-w-[72ch] text-ink-muted">{hint}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
     </div>
   );
 }
 
-export function Section({ title, children }: { title: string; children: React.ReactNode }) {
+export function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
   return (
     <section className="mb-8">
-      <h2 className="mb-3 text-lg font-semibold">{title}</h2>
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-[18px] leading-[26px] font-semibold">{title}</h2>
+        {aside}
+      </div>
       {children}
     </section>
   );
+}
+
+/** A bordered paper panel (10 px radius); lists and tables sit directly on it. */
+export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`rounded-lg border border-rules bg-paper ${className}`}>{children}</div>;
 }

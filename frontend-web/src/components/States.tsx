@@ -1,18 +1,17 @@
-// Loading skeletons, empty states and API errors in plain words.
+// Loading skeletons, empty states that say what to do next, and API errors in plain words.
 
+import { CircleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { button } from "./ui";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Skeleton as Bar } from "@/components/ui/skeleton";
 
 export function Skeleton({ lines = 3 }: { lines?: number }) {
   return (
     <div role="status" aria-label="Loading" className="space-y-3">
       {Array.from({ length: lines }, (_, i) => (
-        <div
-          key={i}
-          className="h-4 rounded bg-gray-100 motion-safe:animate-pulse"
-          style={{ width: `${90 - i * 12}%` }}
-        />
+        <Bar key={i} className="h-4 bg-rules/60" style={{ width: `${90 - i * 12}%` }} />
       ))}
     </div>
   );
@@ -20,9 +19,9 @@ export function Skeleton({ lines = 3 }: { lines?: number }) {
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-lg border border-dashed border-gray-300 px-6 py-10 text-center">
-      <p className="font-medium text-gray-800">{title}</p>
-      {children && <div className="mt-2 text-gray-600">{children}</div>}
+    <div className="rounded-lg border border-dashed border-control/60 bg-paper px-6 py-10 text-center">
+      <p className="font-semibold">{title}</p>
+      {children && <div className="mx-auto mt-2 max-w-[60ch] text-ink-muted">{children}</div>}
     </div>
   );
 }
@@ -30,13 +29,30 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
 export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const message = error instanceof Error ? error.message : "Something went wrong.";
   return (
-    <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800">
-      <p>{message}</p>
-      {onRetry && (
-        <button type="button" className={`${button.secondary} mt-3`} onClick={onRetry}>
-          Try again
-        </button>
-      )}
+    <Alert className="border-deny/30 bg-deny-tint text-deny">
+      <CircleAlert aria-hidden />
+      <AlertTitle>The request did not go through</AlertTitle>
+      <AlertDescription className="text-ink">
+        <p>{message}</p>
+        {onRetry && (
+          <Button variant="outline" className="mt-3" onClick={onRetry}>
+            Try again
+          </Button>
+        )}
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+export function Note({ children, tone = "pend" }: { children: ReactNode; tone?: "pend" | "neutral" }) {
+  return (
+    <div
+      role="note"
+      className={`rounded-lg border px-4 py-3 ${
+        tone === "pend" ? "border-pend/30 bg-pend-tint text-ink" : "border-rules bg-paper text-ink"
+      }`}
+    >
+      {children}
     </div>
   );
 }

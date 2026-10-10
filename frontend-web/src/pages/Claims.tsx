@@ -1,11 +1,13 @@
 import { Link } from "react-router";
 
-import { useClaims } from "../api/hooks";
-import { StatusChip } from "../components/Chip";
-import { PageTitle } from "../components/Layout";
-import { EmptyState, ErrorNotice, Skeleton } from "../components/States";
-import { table, td, th } from "../components/ui";
-import { dateTime, money } from "../lib/format";
+import { useClaims } from "@/api/hooks";
+import { StatusChip } from "@/components/Chip";
+import { PageTitle } from "@/components/Layout";
+import { EmptyState, ErrorNotice, Skeleton } from "@/components/States";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { dateTime, money } from "@/lib/format";
+
+const SOURCE: Record<string, string> = { JSON: "JSON", DIGITAL_PDF: "Digital PDF", SCANNED: "Scanned form" };
 
 export function Claims() {
   const claims = useClaims();
@@ -18,43 +20,46 @@ export function Claims() {
         <ErrorNotice error={claims.error} onRetry={() => void claims.refetch()} />
       ) : claims.data.length === 0 ? (
         <EmptyState title="No claims yet">
-          <Link className="text-accent underline" to="/submit">Submit a claim</Link> to begin.
+          <Link className="font-semibold text-ink underline underline-offset-4" to="/submit">
+            Submit a claim
+          </Link>{" "}
+          to begin.
         </EmptyState>
       ) : (
-        <div className="overflow-auto rounded-md border border-gray-200">
-          <table className={table}>
-            <thead>
-              <tr>
-                <th scope="col" className={th}>Claim</th>
-                <th scope="col" className={th}>Status</th>
-                <th scope="col" className={th}>Source</th>
-                <th scope="col" className={`${th} text-right`}>Billed</th>
-                <th scope="col" className={`${th} text-right`}>Plan pays</th>
-                <th scope="col" className={th}>Updated</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-hidden rounded-lg border border-rules bg-paper">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Claim</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead className="text-right">Billed</TableHead>
+                <TableHead className="text-right">Plan pays</TableHead>
+                <TableHead>Updated</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {claims.data.map((claim) => (
-                <tr key={claim.claim_id} className="hover:bg-gray-50">
-                  <td className={td}>
+                <TableRow key={claim.claim_id}>
+                  <TableCell>
                     <Link
-                      className="font-medium text-accent hover:underline"
+                      className="font-semibold underline-offset-4 hover:underline"
                       to={`/claims/${encodeURIComponent(claim.claim_id)}`}
                     >
                       {claim.claim_id}
                     </Link>
-                  </td>
-                  <td className={td}>
+                  </TableCell>
+                  <TableCell>
                     <StatusChip status={claim.status} />
-                  </td>
-                  <td className={td}>{claim.source_format.replace("_", " ").toLowerCase()}</td>
-                  <td className={`${td} text-right tabular-nums`}>{money(claim.total_billed_cents)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{money(claim.plan_pays_cents)}</td>
-                  <td className={td}>{dateTime(claim.updated)}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{SOURCE[claim.source_format] ?? claim.source_format}</TableCell>
+                  <TableCell className="text-right whitespace-nowrap tabular-nums">{money(claim.total_billed_cents)}</TableCell>
+                  <TableCell className="text-right whitespace-nowrap tabular-nums">{money(claim.plan_pays_cents)}</TableCell>
+                  <TableCell className="whitespace-nowrap">{dateTime(claim.updated)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </>

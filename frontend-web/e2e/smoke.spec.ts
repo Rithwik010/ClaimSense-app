@@ -1,7 +1,7 @@
 // Smoke test (D-UI-1), local only, against a running `make demo`: submit a JSON claim -> process ->
-// open it from the review queue -> accept -> the claim detail shows the explanation and the audit
-// trail. The claim is a synthetic corpus claim whose rules pass (data/generated/claims/), one not
-// yet on file, so each run files a new claim.
+// open it from the review queue -> accept the recommendation -> the claim shows the explanation and
+// the audit trail. The claim is a synthetic corpus claim whose rules pass (data/generated/claims/),
+// one not yet on file, so each run files a new claim.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -34,32 +34,38 @@ test("submit, process, review and explain a claim", async ({ page, request }) =>
   const claim = record!.claim;
   const claimId = claim.claim_id;
 
+  await page.addInitScript(() => {
+    localStorage.setItem("claimsense.role", "reviewer");
+    localStorage.setItem("claimsense.reviewerId", "reviewer-smoke");
+  });
   await page.goto("/submit");
-  await page.getByLabel("Role").selectOption("reviewer");
-  await page.getByLabel("Reviewer ID").fill("reviewer-smoke");
   await page.getByLabel("Claim file").setInputFiles({
     name: `${claimId}.json`,
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(claim)),
   });
   await page.getByRole("button", { name: "Read claim" }).click();
-  await expect(page.getByText(`Claim ${claimId} filed from a JSON claim.`)).toBeVisible();
+  await expect(page.getByText(`Claim ${claimId} was filed from a JSON claim.`)).toBeVisible();
 
   await page.getByRole("button", { name: "Process claim" }).click();
   await expect(page).toHaveURL(new RegExp(`/claims/${claimId}$`), { timeout: 110_000 });
+  await expect(page.getByRole("list", { name: "Pipeline stages" })).toBeVisible();
   await expect(page.getByText("Awaiting review").first()).toBeVisible();
 
   await page.getByRole("link", { name: "Review queue" }).click();
   await page.getByRole("link", { name: claimId }).click();
   await expect(page.getByRole("heading", { name: `Review claim ${claimId}` })).toBeVisible();
-  await page.getByRole("button", { name: "Accept all" }).click();
-  await page.getByRole("button", { name: "Accept and finalize" }).click();
-  await expect(page.getByText(`Claim ${claimId} is final:`)).toBeVisible();
+  await page.getByRole("button", { name: "Accept recommendation" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Finalize claim" }).click();
+  await expect(page.getByText(`Claim ${claimId} is final`)).toBeVisible();
+  await expect(page.getByText("Claim finalized")).toBeVisible();
 
-  await page.getByRole("link", { name: "See the claim and its explanation" }).click();
+  await page.getByRole("link", { name: "Open claim" }).click();
+  await page.getByRole("tab", { name: "Explanation" }).click();
   const explanation = page.getByTestId("explanation");
   await expect(explanation.getByRole("heading", { name: "Summary" })).toBeVisible();
   await expect(explanation.getByRole("heading", { name: "Rule checks" })).toBeVisible();
   await expect(explanation.getByText("reviewer-smoke")).toBeVisible();
+  await page.getByRole("tab", { name: "Audit trail" }).click();
   await expect(page.getByTestId("audit-trail").getByText("Finalized")).toBeVisible();
 });

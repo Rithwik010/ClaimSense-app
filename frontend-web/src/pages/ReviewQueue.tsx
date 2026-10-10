@@ -1,17 +1,26 @@
+// Review queue: every claim with a model recommendation, most work first (full, standard, quick;
+// then the oldest), with a tier filter and decision badges.
+
 import { useState } from "react";
 import { Link } from "react-router";
 
-import { useQueue } from "../api/hooks";
-import type { ReviewTier } from "../api/types";
-import { Chip } from "../components/Chip";
-import { PageTitle } from "../components/Layout";
-import { EmptyState, ErrorNotice, Skeleton } from "../components/States";
-import { table, td, th } from "../components/ui";
-import { age, money } from "../lib/format";
-import { TIER } from "../lib/labels";
-import { useSession } from "../lib/session";
+import { useQueue } from "@/api/hooks";
+import type { ReviewTier } from "@/api/types";
+import { Chip, PlainBadge } from "@/components/Chip";
+import { PageTitle } from "@/components/Layout";
+import { EmptyState, ErrorNotice, Skeleton } from "@/components/States";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { age, money } from "@/lib/format";
+import { CLAIM_DECISION, TIER } from "@/lib/labels";
+import { useSession } from "@/lib/session";
 
-const TIERS: (ReviewTier | null)[] = [null, "FULL", "STANDARD", "QUICK"];
+const FILTERS: { value: string; label: string }[] = [
+  { value: "all", label: "All tiers" },
+  { value: "FULL", label: "Full" },
+  { value: "STANDARD", label: "Standard" },
+  { value: "QUICK", label: "Quick" },
+];
 
 export function ReviewQueue() {
   const { role } = useSession();
@@ -21,72 +30,79 @@ export function ReviewQueue() {
     <>
       <PageTitle
         title="Review queue"
-        hint="Every model recommendation waits here for a reviewer. Most work first: full, standard, then quick."
+        hint="Every model recommendation waits here for a reviewer, most work first: full, standard, then quick review."
       />
       {role === "provider" ? (
         <EmptyState title="The review queue is for reviewers">
-          Switch the role in the top bar to Reviewer or Admin.
+          Switch the role to Reviewer or Admin in the sidebar to see the queue.
         </EmptyState>
       ) : (
         <>
-          <div role="group" aria-label="Filter by tier" className="mb-5 flex flex-wrap gap-2">
-            {TIERS.map((value) => (
-              <button
-                key={value ?? "all"}
-                type="button"
-                aria-pressed={tier === value}
-                onClick={() => setTier(value)}
-                className={`rounded-full border px-3 py-1 text-sm transition-colors duration-150 ${
-                  tier === value
-                    ? "border-accent bg-accent-soft font-medium text-accent-strong"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {value ? TIER[value].label : "All tiers"}
-              </button>
-            ))}
-          </div>
+          <Tabs value={tier ?? "all"} onValueChange={(value) => setTier(value === "all" ? null : (value as ReviewTier))}>
+            <div className="overflow-x-auto">
+              <TabsList variant="line" aria-label="Filter by tier" className="mb-4 h-10 gap-4 border-b border-rules px-0">
+                {FILTERS.map((f) => (
+                  <TabsTrigger
+                    key={f.value}
+                    value={f.value}
+                    className="flex-none px-0 text-[15px] text-ink-muted data-active:font-semibold data-active:text-ink"
+                  >
+                    {f.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+          </Tabs>
           {queue.isPending ? (
             <Skeleton lines={5} />
           ) : queue.error ? (
             <ErrorNotice error={queue.error} onRetry={() => void queue.refetch()} />
           ) : queue.data.length === 0 ? (
             <EmptyState title="Nothing to review">
-              Processed claims with a model recommendation appear here.
+              Submit and process a claim; its recommendation appears here.{" "}
+              <Link className="font-semibold text-ink underline underline-offset-4" to="/submit">
+                Submit a claim
+              </Link>
             </EmptyState>
           ) : (
-            <div className="overflow-auto rounded-md border border-gray-200">
-              <table className={table}>
-                <thead>
-                  <tr>
-                    <th scope="col" className={th}>Claim</th>
-                    <th scope="col" className={th}>Tier</th>
-                    <th scope="col" className={th}>Recommended decision</th>
-                    <th scope="col" className={`${th} text-right`}>Total allowed</th>
-                    <th scope="col" className={th}>Waiting</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className="overflow-hidden rounded-lg border border-rules bg-paper">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Claim</TableHead>
+                    <TableHead>Tier</TableHead>
+                    <TableHead>Recommendation</TableHead>
+                    <TableHead className="text-right">Total allowed</TableHead>
+                    <TableHead className="text-right">Waiting</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {queue.data.map((item) => (
-                    <tr key={item.claim_id} className="hover:bg-gray-50">
-                      <td className={td}>
+                    <TableRow key={item.claim_id}>
+                      <TableCell>
                         <Link
-                          className="font-medium text-accent hover:underline"
+                          className="font-semibold underline-offset-4 hover:underline"
                           to={`/review/${encodeURIComponent(item.claim_id)}`}
                         >
                           {item.claim_id}
                         </Link>
-                      </td>
-                      <td className={td}>
-                        <Chip label={TIER[item.review_tier]} />
-                      </td>
-                      <td className={td}>{(item.claim_decision ?? "—").toLowerCase()}</td>
-                      <td className={`${td} text-right tabular-nums`}>{money(item.total_allowed_cents)}</td>
-                      <td className={td}>{age(item.processed)}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell>
+                        <PlainBadge>{TIER[item.review_tier].label}</PlainBadge>
+                      </TableCell>
+                      <TableCell>
+                        {item.claim_decision && CLAIM_DECISION[item.claim_decision] ? (
+                          <Chip label={CLAIM_DECISION[item.claim_decision]!} />
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap tabular-nums">{money(item.total_allowed_cents)}</TableCell>
+                      <TableCell className="text-right whitespace-nowrap tabular-nums">{age(item.processed)}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </>

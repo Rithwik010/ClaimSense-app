@@ -270,8 +270,44 @@ def report(r: dict[str, Any]) -> str:
             for row in r["guard"]["rows"]
         ],
         "",
+        guard_note(r["guard"]),
+        "",
+        "## Are the errors concentrated?",
+        "",
+        concentration(r),
+        "",
     ]
     return "\n".join(out)
+
+
+def concentration(r: dict[str, Any]) -> str:
+    """Whether a targeted retrain could pay off: the share of wrong lines in the worst policy,
+    direction and criterion type."""
+    wrong = r["wrong_lines"]
+    policy, worst = next(iter(r["by_policy"].items()))
+    direction, lines = next(iter(r["direction"].items()))
+    types = r["wrong_criteria_by_type"]
+    top_type, top_count = next(iter(types.items()))
+    with_errors = sum(1 for p in r["by_policy"] if p != "(no criteria)")
+    share = worst["wrong"] / wrong
+    return (
+        f"No. The worst policy, {policy}, holds {worst['wrong']} of the {wrong} wrong lines"
+        f" ({share:.0%}); {with_errors} policies have at least one. The commonest direction"
+        f" ({direction.replace('->', ' predicted as ')}) is {lines / wrong:.0%} of them, and"
+        f" {top_type} criteria carry {top_count} of {sum(types.values())} wrong statuses. No"
+        " policy, direction or criterion type stands out enough for a targeted retrain, so"
+        " none is planned before the demo."
+    )
+
+
+def guard_note(guard: dict[str, Any]) -> str:
+    before, after = guard["rows"][0]["wrong_approvals"], guard["rows"][1]["wrong_approvals"]
+    return (
+        f"Adopted as D-EVID-1: wrong approvals fall ({before} -> {after}) and macro-F1 changes"
+        f" by {guard['macro_f1_change']:+.4f}, within the agreed 0.01. The pipeline and the"
+        " evaluation apply the guard; `docs/results-v2.md` keeps the numbers as evaluated,"
+        " before it."
+    )
 
 
 def main() -> None:
