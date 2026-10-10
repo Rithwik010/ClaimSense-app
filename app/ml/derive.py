@@ -6,6 +6,8 @@ indication documented"); otherwise any NOT_DOCUMENTED outside the group gives PE
 APPROVE. Group members are the criteria the retrieval tags `group` (policy set v2 only), so for v1
 criteria the rule is prompt decision_v2's. One branch keeps the model's answer: a PEND on a line
 flagged NCCI_BYPASS whose statuses imply APPROVE (the bypass documentation is not a criterion).
+When the derived decision is the model's, the model's reasons are kept only if they are reason
+codes that fit the decision; otherwise the derived code is used (D-DEC-2).
 
 The pipeline uses this for both models, and generator v2 builds its labels with it.
 """
@@ -25,6 +27,11 @@ BYPASS_FLAG = "NCCI_BYPASS"
 DENY_CRITERION = "DN_NOT_MEDICALLY_NECESSARY"
 DENY_EXCLUSION = "DN_CONDITIONAL_EXCLUSION"
 PEND_MISSING = "PD_MISSING_DOCUMENTATION"
+LINE_REASONS = {  # the reason codes a model line may give for each decision
+    LineDecision.APPROVE: frozenset(),
+    LineDecision.DENY: frozenset({DENY_CRITERION, DENY_EXCLUSION}),
+    LineDecision.PEND: frozenset({PEND_MISSING}),
+}
 
 
 @dataclass(frozen=True)
@@ -66,17 +73,17 @@ def derive_line(
     ):
         decision = LineDecision.PEND
     if decision is line.decision:
-        return DerivedLine(decision, list(line.reasons), list(line.missing_information), False)
+        # The model's reasons stay only when they are reason codes that fit the decision; free
+        # text (or another code) never becomes a reason code (D-DEC-2, H15).
+        kept = [reason for reason in line.reasons if reason in LINE_REASONS[decision]]
+        reasons = (
+            kept if kept or decision is LineDecision.APPROVE else _codes(decision, line, shown)
+        )
+        return DerivedLine(decision, reasons, list(line.missing_information), False)
     if decision is LineDecision.APPROVE:
         return DerivedLine(decision, [], [], True)
     if decision is LineDecision.DENY:
-        exclusion = any(
-            result.status is CriterionStatus.NOT_MET
-            and shown.get(result.criterion_id) is not None
-            and shown[result.criterion_id].criterion_type == "exclusion"
-            for result in line.criteria
-        )
-        return DerivedLine(decision, [DENY_EXCLUSION if exclusion else DENY_CRITERION], [], True)
+        return DerivedLine(decision, _codes(decision, line, shown), [], True)
     missing = [NO_INDICATION] if unsatisfied else []
     missing += [
         f"{result.criterion_id}: {shown[result.criterion_id].text}"
@@ -86,4 +93,19 @@ def derive_line(
         if result.status is CriterionStatus.NOT_DOCUMENTED
         and not (shown.get(result.criterion_id) and shown[result.criterion_id].group)
     ]
-    return DerivedLine(decision, [PEND_MISSING], missing, True)
+    return DerivedLine(decision, _codes(decision, line, shown), missing, True)
+
+
+def _codes(
+    decision: LineDecision, line: SLMLine, shown: dict[str, RetrievedCriterion]
+) -> list[str]:
+    """The reason code of a derived DENY (an exclusion not met, or a criterion not met) or PEND."""
+    if decision is LineDecision.PEND:
+        return [PEND_MISSING]
+    exclusion = any(
+        result.status is CriterionStatus.NOT_MET
+        and shown.get(result.criterion_id) is not None
+        and shown[result.criterion_id].criterion_type == "exclusion"
+        for result in line.criteria
+    )
+    return [DENY_EXCLUSION if exclusion else DENY_CRITERION]

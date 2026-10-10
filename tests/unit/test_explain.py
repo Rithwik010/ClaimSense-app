@@ -234,7 +234,8 @@ def test_a_final_pended_claim_lists_processed_and_awaiting_lines() -> None:
     assert [line.line_no for line in shown["awaiting"]] == [2]
     assert "Lines processed\n  Line 1 (70551): Approved" in text
     assert "Lines awaiting documentation\n  Line 2 (70553): Needs information" in text
-    assert "    Needs: Neurologic exam findings" in text
+    assert "    Needs: POL-IMG-001.c1: Neurologic deficit documented." in text
+    assert "Neurologic exam findings" not in text  # the model's own missing_information text
     assert "Lines processed" not in render(APPROVED, "text")
 
 

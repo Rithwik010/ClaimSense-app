@@ -72,7 +72,7 @@ def _record_text(record: DecisionRecord) -> str:
     parts = [r.detail for r in record.rules_outcome.rule_results]
     parts += record.output_errors
     for line in record.slm_output.lines if record.slm_output else []:
-        parts += [c.evidence for c in line.criteria] + line.missing_information
+        parts += [c.evidence for c in line.criteria]
     for ctx in record.context_refs.lines if record.context_refs else []:
         parts += [c.text for c in ctx.criteria]
     if record.review:

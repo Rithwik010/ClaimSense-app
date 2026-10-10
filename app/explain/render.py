@@ -6,7 +6,8 @@ lines already processed are listed apart from those awaiting documentation (D-RE
 Every amount comes from the record's calculator breakdown (integer cents, formatted here); every
 reason is a reason code the record holds, with a fixed plain-language label. The only model text
 shown is the evidence the record keeps for each criterion (quoted from the clinical notes or the
-fixed wording for NOT_DOCUMENTED and NOT_APPLICABLE).
+fixed wording for NOT_DOCUMENTED and NOT_APPLICABLE); what a pended line awaits is its criteria
+not documented, in the criterion text of the context package.
 """
 
 from dataclasses import dataclass, field
@@ -16,10 +17,12 @@ from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescap
 
 from app.domain.contracts import (
     ClaimStatus,
+    CriterionResult,
     CriterionStatus,
     DecisionRecord,
     LineAmounts,
     LineDecision,
+    RetrievedCriterion,
 )
 
 REASON_LABELS = {
@@ -132,6 +135,18 @@ def _amounts(line: LineAmounts | None) -> list[tuple[str, str]]:
     return [(label, money(getattr(line, name))) for name, label in AMOUNT_FIELDS]
 
 
+def _needs(results: list[CriterionResult], cited: dict[str, RetrievedCriterion]) -> list[str]:
+    """What a pended line awaits: its criteria not documented, with their text from the context
+    package (never the model's own `missing_information` text, H15)."""
+    return [
+        f"{r.criterion_id}: {cited[r.criterion_id].text}"
+        if r.criterion_id in cited
+        else r.criterion_id
+        for r in results
+        if r.status is CriterionStatus.NOT_DOCUMENTED
+    ] or ["documentation that supports the service"]
+
+
 def view(record: DecisionRecord) -> dict[str, Any]:
     """Everything the templates show, taken from the record alone."""
     context = {c.line_no: c for c in (record.context_refs.lines if record.context_refs else [])}
@@ -167,7 +182,7 @@ def view(record: DecisionRecord) -> dict[str, Any]:
                 reasons=[reason(code) for code in final.reason_codes],
                 criteria=criteria,
                 missing_information=(
-                    list(answer.missing_information)
+                    _needs(answer.criteria, criteria_by_id)
                     if answer is not None and final.decision is LineDecision.PEND
                     else []
                 ),

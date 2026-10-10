@@ -5,7 +5,10 @@ the page is straightened, each box of `layout.py` is cropped by its coordinates 
 `pytesseract.image_to_data`, restricted to the characters the box may hold (`field_formats.py`).
 A field's confidence is its lowest word confidence / 100, and 0 when the text fails the field's
 format check. Blank boxes are left out, as in the digital-PDF reader, so the contract check reports
-a missing required field (rule R01).
+a missing required field (rule R01). A value that fails its format check is unreadable and is left
+out too, keeping its confidence 0: the claim is then filed and the rules reject it (R01, or H5 on
+a rule that uses the field) instead of the intake refusing it (§8.2: a low-confidence field does
+not stop a claim by itself; D-OCR-1).
 
 Limitation: the coordinates fit our own synthetic layout only, not the official CMS-1500 form.
 """
@@ -286,7 +289,8 @@ def read_scan(pages: list[Image.Image]) -> dict[str, FieldRead]:
 
 
 def parse_scan(data: bytes) -> tuple[dict[str, Any], dict[str, float]]:
-    """The claim dictionary read from a scanned PDF or image, and each field's confidence."""
+    """The claim dictionary read from a scanned PDF or image (a value that fails its format check
+    left out), and each field's confidence."""
     reads = read_scan(page_images(data))
-    claim = from_form_values({field: read.text for field, read in reads.items()})
-    return claim, {field: read.confidence for field, read in reads.items()}
+    readable = {field: read.text for field, read in reads.items() if format_ok(field, read.text)}
+    return from_form_values(readable), {field: read.confidence for field, read in reads.items()}

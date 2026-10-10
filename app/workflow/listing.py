@@ -1,9 +1,11 @@
 """Claim lists for the UI (P5.5): every claim, or the claims of some statuses, newest first, with
-the figures and reasons of each one's latest decision record."""
+the figures and reasons of each one's latest decision record (left out when it was stored under an
+older contract and no longer validates)."""
 
 from dataclasses import dataclass, field
 from datetime import date, datetime
 
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -44,7 +46,10 @@ def claim_summaries(
         query = query.where(Claim.status.in_([s.value for s in statuses]))
     found = []
     for row in session.scalars(query):
-        record = latest_record(session, row.claim_id)
+        try:
+            record = latest_record(session, row.claim_id)
+        except ValidationError:  # a record stored under an older contract: listed without it
+            record = None
         totals = record.amounts.totals if record and record.amounts else None
         found.append(
             ClaimSummary(

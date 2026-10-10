@@ -65,3 +65,36 @@ def test_the_evaluation_lists_each_model_report_with_its_targets(
             "median_ms_per_claim": 6444,
         }
     ]
+
+
+def test_a_record_stored_under_an_older_contract_is_left_out(api, engine) -> None:  # noqa: ANN001
+    from datetime import date
+
+    from sqlalchemy.orm import Session
+
+    from app.db.models import Claim, DecisionRecordRow
+
+    with Session(engine) as session:
+        session.add(
+            Claim(
+                claim_id="CLM-OLD-00001",
+                member_id="MBR-000001",
+                received_date=date(2026, 9, 22),
+                source_format="JSON",
+                status="AWAITING_REVIEW",
+                intake={},
+                field_confidences={},
+            )
+        )
+        session.flush()
+        session.add(
+            DecisionRecordRow(claim_id="CLM-OLD-00001", version=1, record={"claim_id": "x"})
+        )
+        session.commit()
+    client = api(None, None)
+
+    listed = client.get("/v1/claims").json()
+    queue = client.get("/v1/review/queue", headers={"X-Role": "reviewer"})
+
+    assert [(c["claim_id"], c["total_allowed_cents"]) for c in listed] == [("CLM-OLD-00001", None)]
+    assert queue.status_code == 200 and queue.json() == []

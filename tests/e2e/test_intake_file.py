@@ -80,3 +80,23 @@ def test_a_json_file_is_filed_like_a_json_claim(api, load_case_reference) -> Non
 
     assert filed.status_code == 201 and filed.json()["source_format"] == "JSON"
     assert again.status_code == 409
+
+
+@pytest.mark.skipif(shutil.which("tesseract") is None, reason="Tesseract is not installed")
+def test_a_scanned_value_that_fails_its_format_check_files_the_claim_for_the_rules(
+    api, load_case_reference
+) -> None:  # noqa: ANN001
+    client = client_for(api, load_case_reference)
+    claim = IntakeClaim.model_validate(CASE["given"]["claim"])
+    values = to_form_values(claim)
+    values["billing_tin"] = "12345678"  # eight digits: fails the tax ID check
+    scan = render_scan(values, random.Random(5), value_noise_rate=0.0)
+
+    filed = client.post("/v1/claims/intake/file", content=scanned_pdf(scan.pages))
+    processed = client.post(f"/v1/claims/{claim.claim_id}/process")
+
+    assert filed.status_code == 201, filed.text
+    assert filed.json()["field_confidences"]["billing_tin"] == 0.0
+    assert "billing_tin" not in filed.json()["received"]
+    assert any("billing_tin" in error for error in filed.json()["contract_errors"])
+    assert processed.json()["status"] == "REJECTED"
