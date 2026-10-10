@@ -11,6 +11,8 @@ from app.domain.contracts import SLMOutput
 from app.ml.client import (
     MAX_OUTPUT_TOKENS,
     MODEL_SEED,
+    RETRY_SEED,
+    RETRY_TEMPERATURE,
     ModelUnavailable,
     OllamaDecisionModel,
 )
@@ -62,3 +64,20 @@ def test_unreachable_or_failing_ollama_raises_model_unavailable() -> None:
     for handler in (refused, missing_model):
         with pytest.raises(ModelUnavailable, match="gemma4:e2b"):
             model(handler).complete("s", "u")
+
+
+def test_the_retry_uses_another_fixed_seed() -> None:
+    """D-DEC-1: attempt 2 has its own seed and a temperature above 0, so the seed matters."""
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={"model": "m", "message": {"role": "assistant", "content": "{}"}, "done": True},
+        )
+
+    model(handler).complete("s", "u", attempt=2)
+
+    assert seen["options"]["seed"] == RETRY_SEED != MODEL_SEED
+    assert seen["options"]["temperature"] == RETRY_TEMPERATURE > 0

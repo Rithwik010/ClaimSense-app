@@ -75,7 +75,7 @@ class StubModel:
         self.answer = answer
         self.prompts: list[tuple[str, str]] = []
 
-    def complete(self, system: str, user: str) -> str:
+    def complete(self, system: str, user: str, attempt: int = 1) -> str:
         self.prompts.append((system, user))
         return self.answer
 

@@ -273,16 +273,29 @@ def _context_payload(context: ContextPackage, settings: Settings) -> dict:
     }
 
 
-def _model_payload(result: ValidationResult, duration_ms: float) -> dict:
+def _model_payload(
+    result: ValidationResult,
+    duration_ms: float,
+    attempts: list[ValidationResult],
+    decisions: list[FinalLineDecision],
+) -> dict:
+    """The model's answer, each line's own and derived decision (D-DEC-1), and the attempts (a
+    retry follows an invalid first answer)."""
+    tries = {
+        "attempts": len(attempts),
+        "earlier_errors": [list(a.errors) for a in attempts[:-1]],
+    }
     if not result.valid:
-        return {"errors": list(result.errors), "duration_ms": duration_ms}
+        return {"errors": list(result.errors), "duration_ms": duration_ms, **tries}
     assert result.output is not None
+    derived = {d.line_no: d.decision.value for d in decisions if d.source == "MODEL"}
     return {
         "complexity": result.output.complexity.value,
         "lines": [
             {
                 "line_no": line.line_no,
                 "decision": line.decision.value,
+                "derived_decision": derived.get(line.line_no),
                 "benefit_category": line.benefit_category,
                 "reasons": list(line.reasons),
                 "criteria": [
@@ -293,6 +306,7 @@ def _model_payload(result: ValidationResult, duration_ms: float) -> dict:
             for line in result.output.lines
         ],
         "duration_ms": duration_ms,
+        **tries,
     }
 
 
@@ -445,9 +459,13 @@ def process_claim(
 
     user_message = render_user_message(claim, rules, context, claim_lookups)
     model_started = time.perf_counter()
-    text = model.complete(system_prompt(), user_message)
+    attempts = [validate_output(model.complete(system_prompt(), user_message), rules, context)]
+    if not attempts[0].valid:  # one retry with another fixed seed (D-DEC-1)
+        retry = model.complete(system_prompt(), user_message, attempt=2)
+        attempts.append(validate_output(retry, rules, context))
     model_ms = round((time.perf_counter() - model_started) * 1000, 1)
-    result = validate_output(text, rules, context)
+    result = attempts[-1]
+    decisions = final_line_decisions(rules, result, context)
     versions = Versions(
         rules_version=RULES_VERSION,
         model_name=model.name,
@@ -462,11 +480,9 @@ def process_claim(
         session,
         claim_id,
         EventType.SLM_RECOMMENDED if result.valid else EventType.OUTPUT_INVALID,
-        _model_payload(result, model_ms),
+        _model_payload(result, model_ms, attempts, decisions),
         versions,
     )
-
-    decisions = final_line_decisions(rules, result)
     output_errors = list(result.errors)
     try:
         calculation: CalculationResult | None = _calculate(

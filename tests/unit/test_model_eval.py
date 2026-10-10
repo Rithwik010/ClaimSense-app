@@ -19,7 +19,7 @@ class Answers:
         self.text = text
         self.calls = 0
 
-    def complete(self, system: str, user: str) -> str:
+    def complete(self, system: str, user: str, attempt: int = 1) -> str:
         self.calls += 1
         return self.targets.get(user, self.text)
 
@@ -68,7 +68,7 @@ def test_the_ablation_removes_only_the_retrieved_criteria(dataset, tmp_path) -> 
     seen: list[str] = []
 
     class Recorder(Answers):
-        def complete(self, system: str, user: str) -> str:
+        def complete(self, system: str, user: str, attempt: int = 1) -> str:
             seen.append(user)
             return super().complete(system, user)
 
@@ -144,7 +144,7 @@ def test_a_dropped_connection_is_retried_then_fails() -> None:
         def __init__(self, failures: int) -> None:
             self.failures = failures
 
-        def complete(self, system: str, user: str) -> str:
+        def complete(self, system: str, user: str, attempt: int = 1) -> str:
             if self.failures:
                 self.failures -= 1
                 raise ModelUnavailable("down")

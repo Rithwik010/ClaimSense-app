@@ -6,6 +6,8 @@ from app.domain.contracts import (
     ClaimDecision,
     ClaimStatus,
     Complexity,
+    CriterionResult,
+    CriterionStatus,
     LineDecision,
     LineRuleOutcome,
     ReviewTier,
@@ -29,12 +31,22 @@ RULES = RulesOutcome(
 )
 
 
-def slm_line(decision: str, line_no: int = 1) -> SLMLine:
+STATUS_FOR = {"APPROVE": "MET", "DENY": "NOT_MET", "PEND": "NOT_DOCUMENTED"}
+
+
+def slm_line(decision: str, line_no: int = 1, status: str | None = None) -> SLMLine:
+    """A model line whose criterion status implies its decision (D-DEC-1 derives it)."""
     return SLMLine(
         line_no=line_no,
         decision=LineDecision(decision),
         benefit_category="OFFICE_VISIT_PCP",
-        criteria=[],
+        criteria=[
+            CriterionResult(
+                criterion_id="POL-IMG-001.c1",
+                status=CriterionStatus(status or STATUS_FOR[decision]),
+                evidence="e",
+            )
+        ],
         reasons=[] if decision == "APPROVE" else ["DN_NOT_MEDICALLY_NECESSARY"],
         missing_information=["x"] if decision == "PEND" else [],
     )
@@ -90,6 +102,19 @@ def test_claim_decision_is_derived_from_line_decisions(decisions, expected) -> N
     )
 
     assert derive_claim_decision(final_line_decisions(rules, result)) is expected
+
+
+def test_the_line_decision_is_derived_from_the_statuses() -> None:
+    """D-DEC-1: a model PEND whose statuses are all MET becomes APPROVE (no NCCI_BYPASS flag)."""
+    contradicting = SLMOutput(lines=[slm_line("PEND", status="MET")], complexity=Complexity.LOW)
+
+    decisions = final_line_decisions(RULES, ValidationResult(output=contradicting, errors=()))
+
+    assert (decisions[0].decision, decisions[0].source, decisions[0].reason_codes) == (
+        LineDecision.APPROVE,
+        "MODEL",
+        [],
+    )
 
 
 def test_rule_denied_line_counts_toward_the_claim_decision() -> None:

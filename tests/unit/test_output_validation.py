@@ -235,3 +235,32 @@ def test_not_applicable_criteria_allow_approval() -> None:
     line["criteria"][1].update(status="NOT_APPLICABLE", evidence="Does not apply to this service.")
 
     assert run(payload).valid
+
+
+def test_approve_with_a_group_member_not_met_is_valid_when_the_group_is_met() -> None:
+    """D-POL-3: a satisfied indication group's other members never decide the line, so APPROVE
+    with one of them NOT_MET or NOT_DOCUMENTED is consistent; outside a group it is not."""
+
+    def grouped(number: int) -> RetrievedCriterion:
+        return criterion(number).model_copy(
+            update={"criterion_type": "conditional", "group": "indication"}
+        )
+
+    context = CONTEXT.model_copy(
+        update={
+            "lines": [
+                CONTEXT.lines[0],
+                CONTEXT.lines[1].model_copy(update={"criteria": [grouped(1), grouped(2)]}),
+            ]
+        }
+    )
+    payload = answer()
+    payload["lines"][1] |= {"decision": "APPROVE", "reasons": [], "missing_information": []}
+    met_and_open = validate_output(json.dumps(payload), RULES, context)
+    payload["lines"][1]["criteria"][0]["status"] = "NOT_APPLICABLE"
+    nothing_met = validate_output(json.dumps(payload), RULES, context)
+    ungrouped = validate_output(json.dumps(payload), RULES, CONTEXT)
+
+    assert met_and_open.valid
+    assert not nothing_met.valid  # the group is not met: its NOT_DOCUMENTED member counts
+    assert not ungrouped.valid
