@@ -11,7 +11,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 
 ---
 
-## 1. Current status (2026-10-09 IST)
+## 1. Current status (2026-10-10 IST)
 
 | Area | State |
 |---|---|
@@ -20,6 +20,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | **Evaluation (P4.4)** | **Done, target missed.** 300/300: valid output **94%** (was 73%), macro-F1 **0.672** (was 0.345), target is 0.90. See the timeline entry and `docs/results.md`. |
 | Baseline (P4.2) | **Done** (300/300, Ollama 0.34.1): valid output 73%, line accuracy 0.42, macro-F1 **0.345**, criterion status 0.63. See `docs/results.md`. |
 | **Why the target is missed** | Fully measured, not guessed: note register 0.144 of the 0.228 gap; the model contradicting its own statuses 0.027 (fixable deterministically, no retraining); the NOT_APPLICABLE / NOT_DOCUMENTED boundary; and the dropped second line (**a decoding problem, not a training one**). |
+| **Policies v2 (2026-10-10)** | **Done, merged.** Policy sets v1 (frozen, model v1) and v2 (69 criteria with type, group and codes; the pipeline's default); v2 retrieval is an exact lookup by code with no cap (D-RAG-2); 10 engine-derived v2 golden e2e cases (D-GOLD-9). Rows A31-A45 not independently reviewed (deadline, D-POL-7). |
 | **Retrieval (P3.3)** | **Ablation: worth 0.376 of macro-F1.** Without the retrieved criteria the model denies nothing at all (DENY F1 0.000) and invents policy ids. |
 | **Label verification (V1a)** | **Done, report only.** Checks 1-4 found no problems in 2,600 records; check 5 cannot verify most NOT_APPLICABLE labels automatically. ESI labels conflict with LCD L33906; fixing them would not close the gap to 0.90 (estimated test macro-F1 0.6732 -> 0.6677). Decisions for the v2 bundle are recorded (section 4). |
 | **Policy source check (V1b)** | **Done, report only; reviewed in V1d.** All 57 criteria cite a word-for-word LCD excerpt (`data/curated/policy_sources.csv`); 72 findings against the LCDs (WRONG CRITERION 4, MISSING CRITERION 52, RULE CANDIDATE 16). The 4 wrong criteria change at most 6 v1 labels (all POL-REHAB-001 PENDs). D-RULE-1 and D-SCOPE-1 set the v2 scope. |
@@ -31,9 +32,9 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | **Human review (P5.3)** | **Done (2026-10-09).** Review queue, open, accept or override, finalization; all 18 golden review cases match their golden finals end to end. Merged into `main` (`7575d36`); CI run 37828554505 passed. |
 | **Raw data** | 66 files listed with size and SHA-256 in `data/raw_manifest.csv` (with the download URL where recorded: the ICD-10-CM FY2027 tabular, the 2026 NCCI Policy Manual and the NCCI add-on code edits 2026 Q4, added 2026-10-09); a test fails on a missing or changed file (D-DATA-1). NCCI part f1 was restored from the original download (2026-10-03) and is read from its `.txt` again; the `.xlsx` fallback stays (SOURCES.md). Regenerating the decision dataset reproduces the v1 fingerprints exactly (checked in G2). |
 | Readiness gate | **9/9 automated checks pass.** Team review items still open (section 4). |
-| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). `p5.3-review-finalization` (P5.3) merged into `main` (`--no-ff`, normal push; merge `7575d36`). `p2.3b-rules-v2` (P2.3b) merged into `main` (`--no-ff`, normal push; merge `00a0201`). `p2.3c-ncci-modifiers` (P2.3c) merged into `main` (`--no-ff`, normal push; merge `28af00f`). |
+| Git | **`main` is pushed** (2026-09-24, force-push after removing the co-author lines from history: GitHub `main` `d0fd690` -> `efb088f`). `v1-data-verification` (V1a-V1d) merged into `main` by V1d (`--no-ff`, normal push); teammate commit `04d0759` (summary.md) kept. `g1-golden-spotcheck` (G1-G2) merged into `main` by G2 (`--no-ff`, normal push). `p2.3a-rules-engine` (P2.3a) merged into `main` (`--no-ff`, normal push). `p5.3-review-finalization` (P5.3) merged into `main` (`--no-ff`, normal push; merge `7575d36`). `p2.3b-rules-v2` (P2.3b) merged into `main` (`--no-ff`, normal push; merge `00a0201`). `p2.3c-ncci-modifiers` (P2.3c) merged into `main` (`--no-ff`, normal push; merge `28af00f`). `v2-policies-retrieval` (policies v2) merged into `main` (`--no-ff`, normal push; merge `1a56055`; D-PROC-2). |
 | Laptop services | Docker (Postgres, Qdrant) and Ollama running. |
-| Tests | 2,111 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running. Without Docker, the database and Qdrant tests are skipped. CI (run 37936773272 on `28af00f`): 1,758 passed, 55 skipped. The 55 need `data/raw/`, the model v1 dataset, the cached embedding model or the opt-in live model; 299 tests are not collected without `data/raw/` (the raw-backed variants of the 134 golden rules cases in the file and database tests, and of the 31 end-to-end row checks), while their fixture variants run. |
+| Tests | 2,187 pass, 1 skipped (the opt-in live-model test), **0 failing**, with Docker running (data/raw, Postgres, Qdrant). CI (run 38023953228 on `a0a5d94`): 1,835 passed, 54 skipped; the retrieval recall test now runs in CI on the cached embedding model (D-CI-6). Without Docker, the database and Qdrant tests are skipped. |
 
 ### Roadmap status (INSTRUCTIONS.md §11)
 
@@ -360,6 +361,16 @@ Kaggle copy for anything model-related.
   - **Impact:** 0 changed lines in the existing golden cases, the e2e claims and the dataset.
   - **History:** the branch was rebuilt once to remove CPT modifier text (force-push with a lease, branch only). CLAUDE.md now treats CPT text in CMS manuals as AMA text.
   - **Tests:** 2,111 pass, 1 skipped. CI: 1,758 passed, 55 skipped; the 299-test gap is the `data/raw` variants. New decisions: D-RULE-8, D-RULE-9, D-GOLD-7, D-CI-5.
+
+### 2026-10-10
+
+- 09:57 | Manideep3183 | Policies v2 | **Policies v2 finished and merged (branch `v2-policies-retrieval`, `68164aa`..`a0a5d94`; merged into `main` as `1a56055`, `--no-ff`, normal push; CI run 38023953228 on the branch passed, 1,835 passed and 54 skipped).** Deadline working rules adopted: D-PROC-1, D-PROC-2, D-GOLD-9, D-GOLD-10, D-POL-7.
+  - **G5 record corrected:** the answers came from a Claude Code session with repository access (the one that filled G4), not a normal Claude chat; `g5_compare.py`, `G5_summary.md` and the P2.3c entry fixed (104/104 cells still agree).
+  - **Checkpoint 1 closed:** short-sheet rows A31-A45 recorded as "not independently reviewed (deadline)" (D-POL-7).
+  - **Policy sets (checkpoint 2):** v1 files moved byte-identical to `coverage_policies/v1/`; `load_curated(policy_set)` (default v1 for model v1's tools); `POLICY_SET` default v2; `RetrievedCriterion` gains `criterion_type` and `group` (D-POL-5), left out of dumps when unset; `policy_versions` are `<set>@<date>`; the context event records the policy set and knowledge version (v1 36cfc77305a5 unchanged, v2 e47509cd64c4). D-POL-8.
+  - **Exact lookup (checkpoint 3):** `coverage_policies_v1` and `coverage_policies_v2`; `ExactCriteriaRetriever` (no cap, no score, file order, count checked); tested exact against the files for every code, plan and date, against a 51-code snapshot, and for set isolation. CI caches the embedding model with a SHA-256 check and the recall test fails instead of skipping (D-CI-6, about 15 minutes).
+  - **Golden e2e (checkpoint 4):** the 21 cases citing no retired criterion give the same results on v2; the other 10 get engine-derived v2 versions (`tests/golden/e2e_v2/`), all reaching their v1 final status, with one author's exception on E2E-32 line 1 (D-GOLD-11). No existing expected value changed.
+  - **Tests:** 2,187 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
