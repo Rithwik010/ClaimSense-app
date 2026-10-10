@@ -15,9 +15,9 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 
 | Area | State |
 |---|---|
-| **Fine-tuning (P4.3)** | **Done.** 500 steps / 2 epochs / 3 h 02 min on a Kaggle T4, best eval loss **0.001711** (checkpoint 500). GGUF in `data/generated/models/claimsense-decision-v1/` (not in git). |
-| **Model in Ollama (P4.5)** | **Done.** `claimsense-decision:v1` (3.4 GB Q4_K_M), Modelfile copies the base model's `RENDERER`/`PARSER gemma4`. |
-| **Evaluation (P4.4)** | **Done, target missed.** 300/300: valid output **94%** (was 73%), macro-F1 **0.672** (was 0.345), target is 0.90. See the timeline entry and `docs/results.md`. |
+| **Fine-tuning (P4.3)** | **Model v2 done (2026-10-10).** 500 steps / 2 epochs / 4 h 13 min on a Kaggle T4 (float32, 30.4 s/step), best eval loss **0.001491** (checkpoint 500); dataset v2, prompt `decision_v3`. Model v1: 3 h 02 min, best eval loss 0.001711. GGUFs in `data/generated/models/` (not in git). |
+| **Model in Ollama (P4.5)** | **`claimsense-decision:v2`** (Q4_K_M, weights `7cbaf1334f19`, num_ctx 8192) is the demo model (`make demo`); `claimsense-decision:v1` kept for comparison. |
+| **Evaluation (P4.4)** | **Model v2 on the v2 test set: macro-F1 0.8532** (v1: 0.694), valid output 98%, line accuracy 0.873, criterion status 0.926, **DENY precision 1.000** (no wrong denial), median 5.7 s per claim. Target 0.90 still missed. See `docs/results-v2.md`. |
 | Baseline (P4.2) | **Done** (300/300, Ollama 0.34.1): valid output 73%, line accuracy 0.42, macro-F1 **0.345**, criterion status 0.63. See `docs/results.md`. |
 | **Why the target is missed** | Fully measured, not guessed: note register 0.144 of the 0.228 gap; the model contradicting its own statuses 0.027 (fixable deterministically, no retraining); the NOT_APPLICABLE / NOT_DOCUMENTED boundary; and the dropped second line (**a decoding problem, not a training one**). |
 | **Policies v2 (2026-10-10)** | **Done, merged.** Policy sets v1 (frozen, model v1) and v2 (69 criteria with type, group and codes; the pipeline's default); v2 retrieval is an exact lookup by code with no cap (D-RAG-2); 10 engine-derived v2 golden e2e cases (D-GOLD-9). Rows A31-A45 not independently reviewed (deadline, D-POL-7). |
@@ -43,7 +43,7 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 | 1 Foundations | P1.1, P1.2, P1.3, P1.4 (contracts approved 2026-09-22), P1.5 | | |
 | 2 Rules and calculator | P2.1, P2.2, P2.3 (P2.3a v1 rules, P2.3b rules v2, P2.3c NCCI modifiers), P2.4, P2.5 | | |
 | 3 Knowledge and datasets | P3.1, P3.2, P3.3 (coverage policy collections v1 and v2), P3.4, P3.5 (v2, real retrieval) | | |
-| 4 Model | P4.1, P4.2, P4.3, P4.5 (model v1) | **P4.4: model v1 measured below the 0.90 target (0.694 on the v2 test set); model v2 training on Kaggle** | |
+| 4 Model | P4.1, P4.2, P4.3, P4.5 (models v1 and v2) | **P4.4: model v2 0.8532 macro-F1, below the 0.90 target (v1 0.694)** | |
 | 5 Integration | P5.1 (OCR 0.9378 held-out), P5.2, P5.3, P5.4 (explanation), P5.5 (React web app; redesign planned), P5.6 (31 golden e2e cases, 10 with v2 versions) | | |
 | 6 Evaluation and demo | | | P6.1, P6.2, P6.3 |
 
@@ -396,7 +396,12 @@ Kaggle copy for anything model-related.
 
 - 20:47 | Manideep3183 | Demo readiness | **Check of every task and cross-check before the demo.** All automated checks pass: local suite 2,315 passed, 1 skipped; live-model end-to-end test (model v1) passes; Playwright smoke test passes; web app 22 unit tests, lint, typecheck, build; golden checks 134 rules + 56 calculator cases, 0 violations; rules parity 0 differences; v2 policy source checker 0 problems; stored v2 dataset matches the pipeline's derivation on all 2,600 records (new `scripts/verify/derive_parity.py`, after D-DEC-2).
   - **Fixed:** `golden_checks.py` crashed on the rules v2 cases (R14-R20 added to Group C); the web app now shows an error instead of crashing when the API proxy is down (an error boundary on every page).
-  - **Still open for the demo:** model v2 (training), P6.1 metrics report, P6.2 demo scenarios and rehearsal, P6.3 README, architecture and limitations, the explanation collections and CARC/RARC codes (§9.3), the UI redesign.
+  - **Still open for the demo:** model v2 (training; done at 22:48, next entry), P6.1 metrics report, P6.2 demo scenarios and rehearsal, P6.3 README, architecture and limitations, the explanation collections and CARC/RARC codes (§9.3), the UI redesign.
+
+- 22:48 | Manideep3183 | Model v2 | **Model v2 trained, served and evaluated.** Kaggle full run complete at 21:29 IST (4 h 13 min, best eval loss 0.001491); outputs downloaded to `data/generated/models/claimsense-decision-v2/full/` (one dropped connection restarted the 3.4 GB GGUF); `claimsense-decision:v2` created from `gemma-4-E2B-it.Q4_K_M.gguf` (weights `7cbaf1334f19`, num_ctx 8192). D-MODEL-2.
+  - **v1 vs v2 on the 300 v2 test claims:** valid output 0.9167 -> **0.98**; line accuracy 0.7188 -> **0.8726**; macro-F1 0.694 -> **0.8532** (target 0.90); criterion status 0.7608 -> **0.9261**; DENY precision 0.7966 -> **1.000**; median time per claim 6.4 s -> **5.7 s** (p95 46.7 s -> 13.3 s). Unseen policies 0.68 -> 0.81 line accuracy; held-out note style D 0.73 -> 0.875.
+  - **Where v2 still errs:** 24 of 88 DENY lines not denied (10 approved, 14 pended) and 19 of 106 PEND lines approved; it never denies a line that should not be denied. Every recommendation still goes to a reviewer.
+  - **Checks with v2:** live-model test and Playwright smoke test pass through the full v2 pipeline (policy set v2, prompt `decision_v3`).
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
