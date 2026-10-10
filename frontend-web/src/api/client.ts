@@ -38,7 +38,14 @@ function detailText(detail: unknown): string {
 
 export async function request<T>(
   path: string,
-  options: { method?: string; role?: Role; json?: unknown; body?: BodyInit; type?: string } = {},
+  options: {
+    method?: string;
+    role?: Role;
+    json?: unknown;
+    body?: BodyInit;
+    type?: string;
+    expect?: "json" | "text"; // what the endpoint answers (default JSON)
+  } = {},
 ): Promise<T> {
   const headers: Record<string, string> = {};
   if (options.role) headers["X-Role"] = options.role;
@@ -66,5 +73,13 @@ export async function request<T>(
     throw new ApiError(response.status, detail ? `${words}: ${detail}` : `${words}.`);
   }
   const kind = response.headers.get("content-type") ?? "";
-  return (kind.includes("application/json") ? response.json() : response.text()) as Promise<T>;
+  if ((options.expect ?? "json") === "text") return (await response.text()) as T;
+  if (!kind.includes("application/json")) {
+    // The web app's own page came back instead of the API: the dev proxy is not forwarding.
+    throw new ApiError(
+      0,
+      "The API did not answer: the web app is not forwarding to it. Restart with make demo.",
+    );
+  }
+  return (await response.json()) as T;
 }

@@ -1,7 +1,8 @@
-import { NavLink, Outlet } from "react-router";
+import { NavLink, Outlet, useLocation } from "react-router";
 
 import type { Role } from "../api/types";
 import { useSession } from "../lib/session";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { input } from "./ui";
 
 const NAV = [
@@ -20,6 +21,7 @@ const ROLES: { value: Role; label: string }[] = [
 
 export function Layout() {
   const { role, setRole, reviewerId, setReviewerId } = useSession();
+  const { pathname } = useLocation();
   return (
     <div className="min-h-screen">
       <header className="flex flex-wrap items-center gap-x-8 gap-y-3 border-b border-gray-200 px-6 py-3">
@@ -74,7 +76,9 @@ export function Layout() {
         </nav>
         <main className="min-w-0 flex-1 px-8 py-8">
           <div className="mx-auto max-w-6xl">
-            <Outlet />
+            <ErrorBoundary resetKey={pathname}>
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </main>
       </div>

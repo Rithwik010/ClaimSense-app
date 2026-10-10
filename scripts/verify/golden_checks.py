@@ -57,6 +57,10 @@ GROUP = {
     ),  # D8: Group A has the duplicate check
     **dict.fromkeys(("R05", "R06", "R07", "R08", "R09", "R10"), "B"),
     **dict.fromkeys(("R11", "R12", "R13"), "C"),  # D8; section 8.3 item 3 now says R11-R13 too
+    # Rules v2 (P2.3b): line-level, after R11-R13 (section 8.3 item 3). Their H5 fields are not in
+    # FIELDS_USED, so the H5 check skips them; G4 and G5 checked those cases (g4_compare.py,
+    # g5_compare.py).
+    **dict.fromkeys(("R14", "R15", "R16", "R17", "R18", "R19", "R20"), "C"),
 }
 H5 = "H5"
 H5_REASON = "RJ_LOW_CONFIDENCE_FIELD"
