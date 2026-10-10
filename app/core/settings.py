@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     # Coverage policy set of the pipeline (D-POL-2): v2 uses the exact lookup (D-RAG-2); v1 is
     # kept to reproduce model v1.
     policy_set: Literal["v1", "v2"] = "v2"
+    # The prompt the model was trained on: decision_v2 for model v1, decision_v3 for model v2.
+    prompt_version: Literal["decision_v2", "decision_v3"] = "decision_v3"
     # Policy set v1 only: top 5 within the covering policy (P3.3); v2 has no cap (D-RAG-1).
     rag_top_k: int = Field(default=5, ge=1)
     rag_min_score: float = Field(

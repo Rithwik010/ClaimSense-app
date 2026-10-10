@@ -286,7 +286,7 @@ def run_engine(case: dict[str, Any]) -> dict[str, Any]:
             session.add_all(claim_on_file(r) for r in additions.get("existing_claims", []))
             session.commit()
         answer = given.get("model_answer")
-        settings = Settings(policy_set="v2")
+        settings = Settings(policy_set="v2", prompt_version="decision_v3")
         app.dependency_overrides[get_engine] = lambda: engine
         app.dependency_overrides[get_decision_model] = lambda: StubModel(
             json.dumps(answer) if answer is not None else "unused"
