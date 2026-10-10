@@ -1,0 +1,109 @@
+Claim {{ claim_id }}: explanation
+
+Summary
+  Status: {{ status_label }} ({{ status }})
+{% if claim_decision %}
+  Claim decision: {{ claim_decision }}
+{% endif %}
+{% if review_tier %}
+  Review tier: {{ review_tier }}
+{% endif %}
+  Received: {{ timestamps.received }}
+{% if timestamps.processed %}
+  Processed: {{ timestamps.processed }}
+{% endif %}
+{% if timestamps.finalized %}
+  Finalized: {{ timestamps.finalized }}
+{% endif %}
+{% if processed or awaiting %}
+
+Lines processed
+{% for line in processed %}
+  Line {{ line.line_no }} ({{ line.procedure_code }}): {{ line.decision_label }}
+{% else %}
+  None
+{% endfor %}
+
+Lines awaiting documentation
+{% for line in awaiting %}
+  Line {{ line.line_no }} ({{ line.procedure_code }}): {{ line.decision_label }}
+{% for need in line.missing_information %}
+    Needs: {{ need | oneline }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+
+Rule checks
+{% for rule in rules %}
+  {{ rule.rule_id }} {{ rule.result }}{% if rule.result == "failed" %} ({{ rule.outcome }}){% endif %}{% if rule.line_no %}, line {{ rule.line_no }}{% endif %}: {{ rule.detail | oneline }}
+{% if rule.reason %}
+    Reason: {{ rule.reason }}
+{% endif %}
+{% endfor %}
+{% if output_errors %}
+
+The model's recommendation could not be used
+{% for error in output_errors %}
+  - {{ error | oneline }}
+{% endfor %}
+{% endif %}
+
+Lines
+{% for line in lines %}
+  Line {{ line.line_no }} ({{ line.procedure_code }}): {{ line.decision_label }}, decided by {{ line.source }}
+{% if line.benefit_category %}
+    Benefit category: {{ line.benefit_category }}
+{% endif %}
+{% for r in line.reasons %}
+    Reason: {{ r }}
+{% endfor %}
+{% for c in line.criteria %}
+    Criterion {{ c.criterion_id }} ({{ c.policy_id }}{% if c.policy_title %}, {{ c.policy_title }}{% endif %}): {{ c.status }}
+{% if c.text %}
+      Criterion: {{ c.text | oneline }}
+{% endif %}
+      Evidence: {{ c.evidence | oneline }}
+{% endfor %}
+{% for need in line.missing_information %}
+    Needs: {{ need | oneline }}
+{% endfor %}
+{% if line.amounts %}
+    Amounts:
+{% for label, value in line.amounts %}
+      {{ label }}: {{ value }}
+{% endfor %}
+{% endif %}
+{% else %}
+  No line decisions.
+{% endfor %}
+{% if totals %}
+
+Totals
+{% for label, value in totals %}
+  {{ label }}: {{ value }}
+{% endfor %}
+{% endif %}
+{% if review %}
+
+Review
+  Reviewer: {{ review.reviewer_id }}
+  Action: {{ review.action }} at {{ review.timestamp }}
+{% if review.reason %}
+  Comment: {{ review.reason | oneline }}
+{% endif %}
+{% for o in review.overrides %}
+  Line {{ o.line_no }} changed to {{ o.decision }}{% if o.benefit_category %} ({{ o.benefit_category }}){% endif %}: {{ o.reason | oneline }}
+{% endfor %}
+{% endif %}
+
+Versions
+  Rules: {{ versions.rules_version }}
+{% if versions.model_name %}
+  Model: {{ versions.model_name }}
+{% endif %}
+{% if versions.prompt_version %}
+  Prompt: {{ versions.prompt_version }}
+{% endif %}
+{% for policy, version in versions.policy_versions | dictsort %}
+  Policy {{ policy }}: {{ version }}
+{% endfor %}

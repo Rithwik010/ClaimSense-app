@@ -1,15 +1,17 @@
 """Claim endpoints (INSTRUCTIONS.md §8.10): JSON intake, processing, review (P5.3), the decision
 record and the audit trail. A JSON claim that fails the contract is still filed when rules R01 to
 R03 report every error (A-R8); processing then rejects it (P2.5). The review endpoints need the
-reviewer role (X-Role header); the others do not check roles yet (P5.5).
+reviewer role (X-Role header); the others do not check roles yet (P5.5). The explanation is
+rendered from the latest decision record only (P5.4, H15).
 
-Not yet: file upload (P5.1) and the rendered explanation (P5.4).
+Not yet: file upload (P5.1).
 """
 
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel, StringConstraints
 from sqlalchemy.orm import Session
 
@@ -24,6 +26,7 @@ from app.domain.contracts import (
     ReviewAction,
     SourceFormat,
 )
+from app.explain.render import render
 from app.ml.client import DecisionModel, ModelUnavailable
 from app.rag.retrieve import RetrievalUnavailable, Retriever
 from app.review.actions import ReviewRefused
@@ -191,3 +194,18 @@ def get_audit(claim_id: str, session: SessionDep) -> list[AuditEventView]:
         AuditEventView.model_validate(event, from_attributes=True)
         for event in list_events(session, claim_id)
     ]
+
+
+@router.get("/{claim_id}/explanation", response_class=HTMLResponse, response_model=None)
+def get_explanation(
+    claim_id: str,
+    session: SessionDep,
+    fmt: Annotated[Literal["html", "text"], Query(alias="format")] = "html",
+) -> HTMLResponse | PlainTextResponse:
+    """The explanation of the claim's latest decision record: an HTML fragment or plain text."""
+    _claim_row(session, claim_id)
+    record = latest_record(session, claim_id)
+    if record is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"claim {claim_id} has no decision yet")
+    body = render(record, fmt)
+    return HTMLResponse(body) if fmt == "html" else PlainTextResponse(body)
