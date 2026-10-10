@@ -28,6 +28,8 @@ The excerpts on the sheet are copied from data/raw by this script, never typed.
     uv run python -m scripts.verify.policies_v2_sources check      # the checks, report only
     uv run python -m scripts.verify.policies_v2_sources selftest   # planted cases
     uv run python -m scripts.verify.policies_v2_sources sheet      # the checks, then the sheet
+    uv run python -m scripts.verify.policies_v2_sources short      # a sheet of the rows added after
+    # pass 1 (their pass 1 cells are empty), for one more independent pass
 """
 
 import argparse
@@ -203,6 +205,78 @@ NOTES: dict[str, tuple[str, str]] = {
         "New: L33558 cov-008, a covered indication no v1 criterion held (found while listing the "
         "indication group's sources). A separate criterion, so c3 keeps its ID.",
     ),
+    "POL-BH-001.c4": (
+        "D-POL-6 (kept-text check KB1)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: the LCD's 'or' "
+        "between suspected involvement and results that will change management. Added "
+        "after pass 1.",
+    ),
+    "POL-CAR-001.c6": (
+        "D-POL-6 (kept-text check KB4)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: 'generally' and "
+        "'imminent' valve surgery restored. Added "
+        "after pass 1.",
+    ),
+    "POL-CAR-001.c7": (
+        "D-POL-6 (kept-text check KB5)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: cov-049's first "
+        "alternative (the evaluation could contribute significant information) restored. Added "
+        "after pass 1.",
+    ),
+    "POL-DX-002.c5": (
+        "D-POL-6 (kept-text check KB8)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: 'typically' "
+        "restored for a rule-out diagnosis. Added "
+        "after pass 1.",
+    ),
+    "POL-DX-003.c6": (
+        "D-POL-6 (kept-text check KB11)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: 'clear-cut clinical"
+        " suspicion' and 'chemicals relevant to the problem' added. Added "
+        "after pass 1.",
+    ),
+    "POL-DX-003.c7": (
+        "D-POL-6 (kept-text check KB12)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: 'fewer than 70' "
+        "prick tests, as the LCD's '< 70'. Added "
+        "after pass 1.",
+    ),
+    "POL-IMG-001.c5": (
+        "D-POL-6 (kept-text check KB17)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: the head-trauma "
+        "contrast limit, the LCD's staging cancers, neovascularity and new-onset seizures. Added "
+        "after pass 1.",
+    ),
+    "POL-IMG-002.c6": (
+        "D-POL-6 (kept-text check KB19)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: 'intermetatarsal' "
+        "neuromas and telling solid tumors from cysts. Added "
+        "after pass 1.",
+    ),
+    "POL-PAIN-001.c10": (
+        "D-POL-6 (kept-text check KB24)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: 4 weeks tied only "
+        "to failure to respond, as in the LCD. Added "
+        "after pass 1.",
+    ),
+    "POL-PAIN-002.c6": (
+        "D-POL-6 (kept-text check KB26)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: 'as tolerated' "
+        "restored. Added "
+        "after pass 1.",
+    ),
+    "POL-REHAB-001.c6": (
+        "D-POL-6 (kept-text check KB28)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: skilled need from "
+        "complexity or the patient's condition; supervision no longer enough on its own. Added "
+        "after pass 1.",
+    ),
+    "POL-REHAB-001.c7": (
+        "D-POL-6 (kept-text check KB29)",
+        "Replaces the kept v1 criterion whose text dropped or changed a limit: cov-019's 'improve "
+        "significantly within a reasonable and generally predictable period'. Added "
+        "after pass 1.",
+    ),
     "POL-SURG-003.c4": (
         "D-POL-4 (checkpoint 1 review, B34)",
         "New: the LCD's section A indications (cov-007 to cov-015), which cov-017 also applies "
@@ -241,6 +315,7 @@ NOTES: dict[str, tuple[str, str]] = {
 # The situation in which each conditional criterion applies (D-ESI-6), for the reviewer.
 CONDITIONS: dict[str, str] = {
     "POL-CAR-001.c2": "the study repeats one done within the past year",
+    "POL-CAR-001.c6": "the study repeats one done within the past year",
     "POL-DX-001.c6": "a repeat sleep study, in a facility or at home",
     "POL-DX-002.c4": "a nerve conduction study with no needle EMG on the claim",
     "POL-FOOT-001.c1": "nerve damage in the feet without blood-vessel impairment",
@@ -1155,6 +1230,107 @@ def sheet(
     return "\n".join(out) + "\n"
 
 
+SHORT_SHEET = SHEET.parent / "P2_policies_v2_short_sheet.md"
+
+
+def unreviewed_rows(text: str) -> list[tuple[str, str]]:
+    """(row, criterion) of the Part A verdict rows whose pass 1 cells are empty."""
+    lines = text.splitlines()
+    out = []
+    for line in lines[lines.index("## Verdicts") :]:
+        match = re.match(r"^\| (A[0-9]+) \| (POL-\S+) \|", line)
+        if match:
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if not cells[2] and not cells[3]:
+                out.append((match.group(1), match.group(2)))
+    return out
+
+
+def short_sheet(rows: Sequence[Row], wanted: Sequence[tuple[str, str]]) -> str:
+    """A pass 1 sheet for the rows added after pass 1: each criterion's text, type, code list,
+    group and full excerpts, the verdict words, and a table with pass 1 columns only."""
+    curated = load_curated()
+    by_id = {r.criterion.criterion_id: r for r in rows}
+    policies = sorted({cid.rsplit(".", 1)[0] for _, cid in wanted})
+    out = [
+        "# Policies v2: short review sheet (rows added after pass 1)",
+        "",
+        "One pass, in a separate Claude chat: paste the whole sheet and ask for the verdict table "
+        "at the end, filled. These criteria were added or rewritten after the main sheet's pass 1; "
+        "this pass gives every v2 criterion one independent check.",
+        "",
+        "- **Who wrote what.** The texts, excerpt choices, types and code lists were written by "
+        "the "
+        "same model (Claude, in the repository session); this pass is the check.",
+        "- **Excerpts are copied word for word from data/raw** by "
+        "`scripts/verify/policies_v2_sources.py`, never typed (LCD text from the CMS Medicare "
+        "Coverage Database download, tags removed and whitespace collapsed; block IDs "
+        "L<LCD>-cov-NNN "
+        "for the coverage field, -doc-NNN for Associated Information; headings and background "
+        "blocks "
+        "marked). A backslash before `*` is Markdown escaping.",
+        "- **No AMA CPT text.** Codes are shown with the team's plain-language descriptions, not "
+        "CPT "
+        "descriptors; checked before writing (0 found).",
+        "- `decision D-...` in a source line is a team decision, not a source to check.",
+        "",
+        "## How to judge",
+        "",
+        "For each row: does the criterion text say what its excerpts say, no more and no less, for "
+        "its type and code list? A plain-language paraphrase is fine. Pay attention to numbers and "
+        "to words such as 'only', 'and'/'or', 'except', 'unless', 'usually' and 'not covered'.",
+        "",
+        "- MATCHES: the same meaning.",
+        "- DIFFERENT MEANING: the text adds, drops or changes a condition, number, list item or "
+        "scope. Say which.",
+        "- NOT IN SOURCE: something in the text has no support in the excerpts (apart from cited "
+        "decisions).",
+        "- UNSURE: say why.",
+        "",
+        "Types: requirement (must be satisfied; silent notes give NOT_DOCUMENTED); exclusion (a "
+        "situation that is not covered; present gives NOT_MET, absent or silent NOT_APPLICABLE; "
+        "never MET); conditional (applies only in the situation named with it, then works as a "
+        "requirement). Applies to: the codes the criterion is shown on; without it, every code of "
+        "the policy.",
+        "",
+        "## Codes of these policies",
+        "",
+        "| Code | Plain-language description (team's, not the CPT descriptor) |",
+        "|---|---|",
+    ]
+    codes = sorted(
+        {str(code) for r in rows if r.policy.meta["policy_id"] in policies
+         for code in r.policy.meta["procedure_codes"]}
+    )  # fmt: skip
+    out += [f"| {code} | {curated.descriptions.get(code, '-')} |" for code in codes]
+    out += ["", f"## Rows ({len(wanted)})", ""]
+    for row, cid in wanted:
+        r = by_id[cid]
+        c = r.criterion
+        kind = c.type + (f" (applies when: {CONDITIONS[cid]})" if cid in CONDITIONS else "")
+        out += [
+            f"### {row}. {cid}",
+            "",
+            f"- **Text:** {c.text}",
+            f"- Type: {kind}. Applies to: {', '.join(c.applies_to) or 'every code of the policy'}. "
+            f"Group: {c.group or '-'}.",
+            f"- Source line: {c.source}",
+            "",
+            "Excerpts, word for word:",
+            "",
+        ]
+        for e in r.excerpts:
+            out += [f"> {_excerpt_line(e)}: {_escaped(e.text)}", ""]
+    out += [
+        "## Verdicts (MATCHES, DIFFERENT MEANING, NOT IN SOURCE or UNSURE)",
+        "",
+        "| Row | Criterion | Pass 1 verdict (Claude chat) | Pass 1 notes |",
+        "|---|---|---|---|",
+    ]
+    out += [f"| {row} | {cid} |  |  |" for row, cid in wanted]
+    return "\n".join(out) + "\n"
+
+
 def has_verdicts(text: str) -> bool:
     """True when any verdict row of the sheet has a filled pass 1 or pass 2 cell (verdict rows
     are the rows under "## Verdicts"; Part B's own table above uses the same row IDs)."""
@@ -1169,7 +1345,7 @@ def has_verdicts(text: str) -> bool:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("step", choices=("check", "selftest", "sheet"))
+    parser.add_argument("step", choices=("check", "selftest", "sheet", "short"))
     step = parser.parse_args().step
     if step == "selftest":
         cases = selftest()
@@ -1189,6 +1365,9 @@ def main() -> None:
     texts = {p.name: (V2_DIR / p.name).read_text(encoding="utf-8") for p in policies}
     if step == "sheet":
         texts[SHEET.name] = sheet(rows, policies, v1, groups)
+    if step == "short":
+        wanted = unreviewed_rows(SHEET.read_text(encoding="utf-8"))
+        texts[SHORT_SHEET.name] = short_sheet(rows, wanted)
     hits = {name: n for name, n in ama_hits(texts).items() if n}
     if hits:
         problems.append(f"AMA CPT descriptor text found: {hits}")
@@ -1200,6 +1379,11 @@ def main() -> None:
             print(f"  flagged {r.criterion.criterion_id}: {', '.join(r.flagged)}")
     if problems:
         raise SystemExit(1)
+    if step == "short":
+        SHORT_SHEET.write_text(texts[SHORT_SHEET.name], encoding="utf-8")
+        print(
+            f"wrote {SHORT_SHEET.relative_to(ROOT)} ({texts[SHORT_SHEET.name].count('### A')} rows)"
+        )
     if step == "sheet":
         if SHEET.exists() and has_verdicts(SHEET.read_text(encoding="utf-8")):
             raise SystemExit(

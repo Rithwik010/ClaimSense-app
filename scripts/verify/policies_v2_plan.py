@@ -10,6 +10,9 @@ before any policy file changes.
   its reason);
 - the lines billing the foot care codes 11720 and 11721, whose policy gains the manual's
   section 290.C exceptions (Q4), with their v1 labels and diagnoses;
+- the v1 dataset lines whose labels used a v1 criterion that did not match its source: the four
+  WRONG CRITERION findings of V1b, and the kept v1 texts that dropped or changed a limit of their
+  LCD excerpt (extended triage B7 and B20, kept-text check; D-POL-6), for the final report;
 - the lines billing 93241 (continuous recording beyond 48 hours), whose v2 criterion POL-CAR-002.c5
   covers only checking the response to treatment (extended triage A4): what each v1 label rests
   on (the evidence of v1 c3) and the status and decision it would get under c5;
@@ -377,6 +380,87 @@ def foot_section() -> list[str]:
     return out
 
 
+# v1 criteria whose text did not match its source. V1b's four WRONG CRITERION findings
+# (SURG-004.F1 covers c2 and c3), and the kept v1 texts that dropped or changed a limit of their
+# LCD excerpt; "hedge" marks the 5 whose fix only restored a hedge or qualifier.
+V1B_WRONG = {
+    "POL-SURG-004.c2": "SURG-004.F1",
+    "POL-SURG-004.c3": "SURG-004.F1",
+    "POL-DX-003.c1": "DX-003.F1",
+    "POL-REHAB-001.c2": "REHAB-001.F1",
+    "POL-CAR-002.c2": "CAR-002.F1",
+}
+LIMIT_CHANGED = {
+    "POL-DX-001.c3": ("B7", "limit"),
+    "POL-IMG-002.c2": ("B20", "limit"),
+    "POL-BH-001.c1": ("KB1", "limit"),
+    "POL-CAR-001.c2": ("KB4", "hedge"),
+    "POL-CAR-001.c3": ("KB5", "limit"),
+    "POL-DX-002.c1": ("KB8", "hedge"),
+    "POL-DX-003.c2": ("KB11", "limit"),
+    "POL-DX-003.c3": ("KB12", "hedge"),
+    "POL-IMG-001.c3": ("KB17", "limit"),
+    "POL-IMG-002.c1": ("KB19", "limit"),
+    "POL-PAIN-001.c3": ("KB24", "hedge"),
+    "POL-PAIN-002.c2": ("KB26", "hedge"),
+    "POL-REHAB-001.c1": ("KB28", "limit"),
+    "POL-REHAB-001.c3": ("KB29", "limit"),
+}
+
+
+def mismatch_section() -> list[str]:
+    """For the final report: the v1 dataset lines whose gold labels used (status other than
+    NOT_APPLICABLE) a v1 criterion that did not match its source."""
+    used: dict[str, Counter[str]] = defaultdict(Counter)
+    records: dict[str, set[str]] = defaultdict(set)
+    lines_of_cid: dict[str, set[tuple[str, int]]] = defaultdict(set)
+    watched = {**V1B_WRONG, **LIMIT_CHANGED}
+    for split, record_id, line, target in dataset_rows():
+        found = statuses(target)
+        for cid in {c["criterion_id"] for c in line["criteria"]} & set(watched):
+            if found.get(cid) not in (None, "NOT_APPLICABLE"):
+                used[cid][split] += 1
+                records[cid].add(record_id)
+                lines_of_cid[cid].add((record_id, line["line_no"]))
+    out = [
+        "",
+        "## v1 criteria whose text did not match the source (for the final report)",
+        "",
+        "Lines whose v1 gold label used the criterion (status other than NOT_APPLICABLE).",
+        "",
+        "| v1 criterion | Why | Train | Validation | Test | Records |",
+        "|---|---|---|---|---|---|",
+    ]
+    groups = {"wrong": list(V1B_WRONG), "limit": [], "hedge": []}
+    for cid, (_, kind) in LIMIT_CHANGED.items():
+        groups[kind].append(cid)
+    kinds = {"hedge": "hedge or qualifier only", "limit": "limit dropped or changed"}
+    why = {
+        **{cid: f"V1b WRONG CRITERION ({finding})" for cid, finding in V1B_WRONG.items()},
+        **{cid: f"{row}: {kinds[kind]}" for cid, (row, kind) in LIMIT_CHANGED.items()},
+    }
+    for cid in [*V1B_WRONG, *LIMIT_CHANGED]:
+        out.append(
+            f"| {cid} | {why[cid]} | "
+            + " | ".join(str(used[cid][sp]) for sp in SPLITS)
+            + f" | {len(records[cid])} |"
+        )
+    out.append("")
+    for name, ids in (
+        ("V1b WRONG CRITERION (4 findings)", groups["wrong"]),
+        ("kept texts with a limit dropped or changed", groups["limit"]),
+        ("kept texts that only lost a hedge or qualifier", groups["hedge"]),
+        ("wrong or limit changed (hedge-only left out)", [*groups["wrong"], *groups["limit"]]),
+        ("all of them", [*V1B_WRONG, *LIMIT_CHANGED]),
+    ):
+        lines = len(set().union(*(lines_of_cid[cid] for cid in ids)))
+        recs = len(set().union(*(records[cid] for cid in ids)))
+        out.append(f"- {name}: {len(ids)} criteria; {lines} lines in {recs} records.")
+    total = sum(1 for _ in dataset_rows())
+    out.append(f"- Lines shown any criteria, all splits: {total}.")
+    return out
+
+
 CONTINUOUS = "93241"
 # The evidence of v1 POL-CAR-002.c3 on a 93241 line, read by its wording: the generator wrote one
 # template per status, so the reading of each label is fixed by its sentence.
@@ -506,6 +590,7 @@ def main() -> None:
     out += ncs_section()
     out += foot_section()
     out += continuous_section()
+    out += mismatch_section()
     out += limitations_section()
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(out) + "\n", encoding="utf-8")

@@ -15,6 +15,8 @@ source lines are read from the v2 policy files, never typed.
     uv run python -m scripts.verify.policies_v2_triage extended # the triage of the other rows
     uv run python -m scripts.verify.policies_v2_triage decide-extended  # its decisions, likewise
     uv run python -m scripts.verify.policies_v2_triage kept     # the kept-text check
+    uv run python -m scripts.verify.policies_v2_triage decide-kept  # its decisions, and every
+    # kept row's acceptance, appended to the sheet's pass 2 cells
     uv run python -m scripts.verify.policies_v2_triage decide   # the reviewer's pass 2 decisions:
     # recorded in the sheet's pass 2 columns, approved fixes applied to the v2 policy files, and
     # any criterion the fixes add appended to the sheet as a new Part A row
@@ -2160,6 +2162,95 @@ def kept() -> None:
     )
 
 
+# The reviewer's decisions on the kept-text check (2026-10-10): all 13 fixes approved. The 23
+# texts it keeps and the 41 rows the extended triage keeps are accepted without individual review.
+PASS2_KEPT: dict[str, tuple[str, str, str | None]] = {
+    e.row: ("approve", "", None) for e in TRIAGE_KEPT if e.action == "fix"
+}
+ACCEPTED = "kept on author triage; accepted by Manideep without individual review"
+PASS2_KEPT_NOTE = (
+    "Pass 2 on the kept-text check (2026-10-10): its 13 fixes were approved "
+    f"({PASS2_BY}). The 23 texts it keeps and the 41 rows the extended triage keeps are recorded "
+    f"as '{ACCEPTED}'. A row's pass 2 cell lists its decisions in order (triage, extended triage, "
+    "kept-text check); earlier decisions are never rewritten."
+)
+
+
+def compose_pass2(row: str) -> tuple[str, str] | None:
+    """The pass 2 cell of a sheet row from every decision on it, in order, or None when it has
+    none. The verdict is the first approved fix's, else the kept rows'."""
+    parts: list[str] = []
+    verdicts: list[str] = []
+    fix: str | None = None
+    by_row = {e.row: e for e in TRIAGE}
+    if row in by_row and row in PASS2:
+        verdict, notes = pass2_cells(by_row[row], PASS2, OUT.name)
+        parts.append(notes)
+        verdicts.append(verdict)
+        fix = fix or (verdict if PASS2[row][0] != "keep" else None)
+    by_row = {e.row: e for e in TRIAGE_EXTENDED}
+    if row in by_row:
+        entry = by_row[row]
+        if row in PASS2_EXTENDED:
+            verdict, notes = pass2_cells(entry, PASS2_EXTENDED, EXTENDED_OUT.name)
+            parts.append(notes)
+            fix = fix or verdict
+        else:
+            parts.append(f"{entry.category}; {ACCEPTED}.")
+            verdicts.append(VERDICT_WORD[(row[0], entry.category)])
+    by_row = {e.row: e for e in TRIAGE_KEPT}
+    if "K" + row in by_row:
+        entry = by_row["K" + row]
+        if entry.row in PASS2_KEPT:
+            said = (
+                f"Kept-text check: {entry.category}; fix approved (old and new text in "
+                f"{KEPT_OUT.name})"
+            )
+            if entry.new_criteria:
+                said += "; replaced by " + ", ".join(n["criterion_id"] for n in entry.new_criteria)
+            parts.append(f"{said}. {PASS2_BY[0].upper()}{PASS2_BY[1:]}.")
+            fix = fix or VERDICT_WORD[(row[0], "LIMITING CHANGE")]
+        else:
+            parts.append(f"Kept-text check: OK; {ACCEPTED}.")
+            verdicts.append(VERDICT_WORD[(row[0], "OK")])
+    if not parts:
+        return None
+    return fix or verdicts[0], " ".join(parts)
+
+
+def record_all_pass2(text: str) -> tuple[str, list[str], int]:
+    """The sheet with every decided row's pass 2 cell composed by compose_pass2. Append only: an
+    existing cell must be the start of the new one (its verdict may change only to a fix's)."""
+    problems: list[str] = []
+    lines = text.splitlines()
+    written = 0
+    for i in range(lines.index("## Verdicts"), len(lines)):
+        match = re.match(r"^\| ([AB][0-9]+) \| (POL-[^|]+?) \|", lines[i])
+        if not match:
+            continue
+        composed = compose_pass2(match.group(1))
+        if composed is None:
+            continue
+        cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+        verdict, notes = composed
+        if cells[5] and not notes.startswith(cells[5]):
+            problems.append(f"{cells[0]}: the new pass 2 notes do not extend the recorded ones")
+            continue
+        if (cells[4], cells[5]) != (verdict, notes):
+            written += 1
+        lines[i] = f"| {cells[0]} | {cells[1]} | {cells[2]} | {cells[3]} | {verdict} | {notes} |"
+    return "\n".join(lines) + "\n", problems, written
+
+
+def decide_kept() -> None:
+    run_decisions(TRIAGE_KEPT, PASS2_KEPT, KEPT_OUT.name, (KEPT_NOTE, PASS2_KEPT_NOTE))
+    text, problems, written = record_all_pass2(SHEET.read_text(encoding="utf-8"))
+    if problems:
+        raise SystemExit("pass 2 cells not written:\n  " + "\n  ".join(problems))
+    SHEET.write_text(text, encoding="utf-8")
+    print(f"pass 2 cells written or extended: {written}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     steps = {
@@ -2168,6 +2259,7 @@ def main() -> None:
         "extended": extended,
         "decide-extended": decide_extended,
         "kept": kept,
+        "decide-kept": decide_kept,
     }
     parser.add_argument("step", choices=tuple(steps))
     steps[parser.parse_args().step]()

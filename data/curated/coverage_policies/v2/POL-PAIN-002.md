@@ -8,17 +8,11 @@ sources: ["LCD L33930 version 49 (revision effective 2024-08-11); billing articl
 billing_article: A57787
 split: TRAIN
 policy_set: v2
-replaces: {"POL-PAIN-002.c4": ["POL-PAIN-002.c5"]}
+replaces: {"POL-PAIN-002.c4": ["POL-PAIN-002.c5"], "POL-PAIN-002.c2": ["POL-PAIN-002.c6"]}
 ---
 
 ## POL-PAIN-002.c1
 The patient must have moderate to severe chronic neck or low back pain, mainly in the spine itself (axial), causing a functional deficit measured on a pain or disability scale.
-
-Type: requirement
-Source: LCD L33930 v49, Covered indications.
-
-## POL-PAIN-002.c2
-The pain must have lasted at least 3 months, with documented failure of non-invasive conservative care.
 
 Type: requirement
 Source: LCD L33930 v49, Covered indications.
@@ -35,3 +29,9 @@ Diagnostic facet procedures are done with the intent of proceeding to radiofrequ
 Type: requirement
 Applies to: 64490, 64493
 Source: LCD L33930 v49 cov-023, cov-024.
+
+## POL-PAIN-002.c6
+The pain must have lasted at least 3 months, with documented failure to respond to non-invasive conservative care, as tolerated.
+
+Type: requirement
+Source: LCD L33930 v49 cov-017.

@@ -8,14 +8,8 @@ sources: ["LCD L33619 version 25 (revision effective 2026-04-01); billing articl
 billing_article: A56787
 split: TEST_ONLY
 policy_set: v2
-replaces: {"POL-IMG-002.c2": ["POL-IMG-002.c5"]}
+replaces: {"POL-IMG-002.c2": ["POL-IMG-002.c5"], "POL-IMG-002.c1": ["POL-IMG-002.c6"]}
 ---
-
-## POL-IMG-002.c1
-Extremity ultrasound is covered to evaluate cysts, abscesses, tumors or joint effusions; tendons, joints, plantar fascia, ligaments, soft-tissue masses, ganglion cysts, neuromas or metatarsal stress fractures; or foreign bodies.
-
-Type: requirement
-Source: LCD L33619 v25, Indications.
 
 ## POL-IMG-002.c3
 For plantar fasciitis, one ultrasound is covered only when the diagnosis is still uncertain after a failed course of conservative treatment. It is not covered for the initial diagnosis or for repeat studies.
@@ -34,3 +28,9 @@ Extremity ultrasound is not medically necessary for the routine diagnosis or man
 
 Type: exclusion
 Source: LCD L33619 v25 cov-011 to cov-017, cov-019.
+
+## POL-IMG-002.c6
+Extremity ultrasound is covered to detect cysts, abscesses, tumors (including their size) or effusions, or to tell solid tumors from fluid-filled cysts; to evaluate tendons, joints, plantar fascia, ligaments, soft-tissue masses, ganglion cysts, intermetatarsal neuromas or metatarsal stress fractures; or to help diagnose and remove foreign bodies.
+
+Type: requirement
+Source: LCD L33619 v25 cov-003 to cov-007.

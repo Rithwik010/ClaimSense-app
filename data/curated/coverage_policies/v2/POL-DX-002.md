@@ -8,14 +8,8 @@ sources: ["LCD L34594 version 42 (revision effective 2025-05-29); billing articl
 billing_article: A57478
 split: TEST_ONLY
 policy_set: v2
-replaces: {}
+replaces: {"POL-DX-002.c1": ["POL-DX-002.c5"]}
 ---
-
-## POL-DX-002.c1
-Testing is covered when the history and examination before the test clearly document the need for it, for example limb pain, numbness or tingling, or weakness that suggests a nerve or muscle disorder. A bare rule-out diagnosis is not sufficient.
-
-Type: requirement
-Source: LCD L34594 v42, Indications.
 
 ## POL-DX-002.c2
 These tests are not a first-line test for limb pain caused by a recent injury or an acute bone injury.
@@ -35,3 +29,9 @@ A nerve conduction study done without needle EMG is usually not medically necess
 Type: conditional
 Applies to: 95907, 95910
 Source: LCD L34594 v42 cov-037; decision D-POL-4.
+
+## POL-DX-002.c5
+Testing is covered when the history and examination before the test clearly document the need for it, for example limb pain, numbness or tingling, or weakness that suggests a nerve or muscle disorder. A rule-out diagnosis alone is typically not acceptable.
+
+Type: requirement
+Source: LCD L34594 v42 cov-025.

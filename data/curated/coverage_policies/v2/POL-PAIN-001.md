@@ -8,17 +8,11 @@ sources: ["LCD L33906 version 75 (revision effective 2026-04-09); billing articl
 billing_article: A56651
 split: TRAIN
 policy_set: v2
-replaces: {"POL-PAIN-001.c2": ["POL-PAIN-001.c6"], "POL-PAIN-001.c4": ["POL-PAIN-001.c7"], "POL-PAIN-001.c5": ["POL-PAIN-001.c8"]}
+replaces: {"POL-PAIN-001.c2": ["POL-PAIN-001.c6"], "POL-PAIN-001.c4": ["POL-PAIN-001.c7"], "POL-PAIN-001.c5": ["POL-PAIN-001.c8"], "POL-PAIN-001.c3": ["POL-PAIN-001.c10"]}
 ---
 
 ## POL-PAIN-001.c1
 History, examination and matching imaging must support nerve-root pain (radiculopathy) or neurogenic claudication from a disc herniation, bone spurs or severe disc degeneration narrowing the spinal canal or nerve openings; or pain after spinal surgery (post-laminectomy syndrome); or acute shingles pain.
-
-Type: requirement
-Source: LCD L33906 v75, Covered indications.
-
-## POL-PAIN-001.c3
-The pain must have lasted at least 4 weeks, with failure of, or inability to tolerate, 4 weeks of non-invasive conservative care. Acute shingles pain that does not respond to conservative care is exempt from the 4-week wait.
 
 Type: requirement
 Source: LCD L33906 v75, Covered indications.
@@ -46,3 +40,9 @@ Injections given to treat non-specific low back pain, axial spine pain, complex 
 
 Type: exclusion
 Source: LCD L33906 v75 cov-029; decision D-ESI-4.
+
+## POL-PAIN-001.c10
+The pain must have lasted at least 4 weeks, with an inability to tolerate non-invasive conservative care or documented failure to respond to 4 weeks of it. Acute shingles pain that does not respond to conservative care is exempt from the 4-week wait.
+
+Type: requirement
+Source: LCD L33906 v75 cov-014.
