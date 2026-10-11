@@ -116,7 +116,7 @@ def guard_rows() -> list[dict[str, Any]]:
         path = EVAL / "v2" / name
         if path.exists():
             for row in json.loads(path.read_text())["guard"]["rows"]:
-                rows.append({**row, "model": row["model"].replace("v2", name.split("-")[0])})
+                rows.append(row)
     return rows
 
 

@@ -52,6 +52,7 @@ OUT_JSON = ROOT / "data" / "generated" / "eval" / "v2" / "v2-errors.json"
 REPORT = ROOT / "docs" / "results-v2-errors.md"
 # Answers evaluated after D-EVID-1 were scored with the evidence guard; v2's were scored before it.
 GUARDED = False
+LABEL = "v2"  # the model whose answers are read
 WORDS = {"APPROVE": "approve", "PEND": "pend", "DENY": "deny"}
 
 
@@ -171,7 +172,7 @@ def summarize(gold, pred, guard, wrong_lines, tiers, lines_by_policy, guard_chan
             by_type[c["type"]] += 1
             statuses[f"{c['gold']}->{c['predicted']}"] += 1
     rows = []
-    for name, decided in (("v2", pred), ("v2 + guard", guard)):
+    for name, decided in ((LABEL, pred), (f"{LABEL} + guard", guard)):
         metrics = _decision_metrics(gold, decided)
         rows.append(
             {
@@ -316,7 +317,7 @@ def guard_note(guard: dict[str, Any]) -> str:
 def main() -> None:
     import argparse
 
-    global ANSWERS, GUARDED
+    global ANSWERS, GUARDED, LABEL
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--model",
@@ -327,6 +328,7 @@ def main() -> None:
     model = parser.parse_args().model
     ANSWERS = ANSWERS.with_name(f"v2data-model-{model}.jsonl")
     GUARDED = model != "v2"
+    LABEL = model
     with Session(get_engine()) as session:
         result = analyse(session)
     if model == "v2":
