@@ -112,7 +112,7 @@ def latency() -> dict[str, Any]:
 
 def guard_rows() -> list[dict[str, Any]]:
     rows = []
-    for name in ("v2-errors.json", "e4b-errors.json"):
+    for name in ("v1-errors.json", "v2-errors.json", "e4b-errors.json"):
         path = EVAL / "v2" / name
         if path.exists():
             for row in json.loads(path.read_text())["guard"]["rows"]:

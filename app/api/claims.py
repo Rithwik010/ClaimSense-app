@@ -133,6 +133,9 @@ class ProviderClaimView(BaseModel):
     filed_by: str | None
     record: DecisionRecord | None  # final claims only
     adjustments: list[AdjustmentView] = []  # final claims only
+    # The pipeline steps the claim went through (audit event types in order, nothing else), for
+    # the stage strip while it is in review.
+    stages: list[str] = []
 
 
 class FiledWithErrors(BaseModel):
@@ -208,6 +211,7 @@ def _provider_view(session: Session, row: Claim) -> ProviderClaimView:
         filed_by=row.filed_by,
         record=record,
         adjustments=_adjustments(row, record),
+        stages=[event.event_type for event in list_events(session, row.claim_id)],
     )
 
 
@@ -368,6 +372,7 @@ class ClaimSummaryView(BaseModel):
     total_allowed_cents: int | None
     plan_pays_cents: int | None
     failed_rules: list[FailedRuleView]
+    adjustments: list[AdjustmentView] = []  # CARC/RARC of its DENY and REJECT reasons
 
 
 class ProviderClaimSummary(BaseModel):

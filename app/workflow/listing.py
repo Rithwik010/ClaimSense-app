@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import Claim
 from app.domain.contracts import ClaimDecision, ClaimStatus, ReviewTier
+from app.explain.codes import Adjustment, adjustments, procedure_codes
 from app.workflow.pipeline import latest_record
 
 
@@ -36,6 +37,8 @@ class ClaimSummary:
     total_allowed_cents: int | None
     plan_pays_cents: int | None
     failed_rules: list[FailedRule] = field(default_factory=list)
+    # CARC/RARC codes of the record's DENY and REJECT reasons (D-CARC-2), for the lists' codes.
+    adjustments: list[Adjustment] = field(default_factory=list)
 
 
 def claim_summaries(
@@ -71,6 +74,7 @@ def claim_summaries(
                     for r in (record.rules_outcome.rule_results if record else [])
                     if not r.passed
                 ],
+                adjustments=adjustments(record, procedure_codes(row.intake)) if record else [],
             )
         )
     return found
