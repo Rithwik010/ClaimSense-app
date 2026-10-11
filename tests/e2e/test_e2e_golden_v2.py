@@ -60,7 +60,9 @@ def run(api, load_case_reference, engine, case: dict[str, Any], retriever) -> No
     reviewed = client.post(f"/v1/claims/{claim['claim_id']}/review", json=action, headers=REVIEWER)
     assert reviewed.status_code == 200, reviewed.text
     final = DecisionRecord.model_validate(reviewed.json())
-    finalized = audit(client, claim["claim_id"])[-1]
+    events = audit(client, claim["claim_id"])
+    finalized = next(e for e in reversed(events) if e["event_type"] == "FINALIZED")
+    assert events[-1]["event_type"] == "EXPLANATION_BUILT"  # of the final record
     stored = stored_accumulators(engine, claim["member_id"], finalized["payload"])
     assert final_differences(final, finalized["payload"], stored, case["expected"]["final"]) == []
 

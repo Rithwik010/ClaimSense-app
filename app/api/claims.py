@@ -30,7 +30,7 @@ from app.domain.contracts import (
     ReviewTier,
     SourceFormat,
 )
-from app.explain.codes import adjustments
+from app.explain.codes import adjustments, procedure_codes
 from app.explain.render import render
 from app.intake.files import UnreadableFile, read_claim_file
 from app.ml.client import DecisionModel, ModelUnavailable
@@ -73,14 +73,6 @@ class AdjustmentView(BaseModel):
     codes: list[CodeView]
     billing_article: str | None
     lcds: list[str]
-
-
-def _procedure_codes(received: dict[str, Any]) -> dict[int, str]:
-    return {
-        line["line_no"]: line["procedure_code"]
-        for line in received.get("service_lines") or []
-        if isinstance(line, dict) and "line_no" in line and "procedure_code" in line
-    }
 
 
 class ClaimView(BaseModel):
@@ -293,7 +285,7 @@ def get_claim(claim_id: str, session: SessionDep) -> ClaimView:
         record=record,
         adjustments=[
             AdjustmentView.model_validate(asdict(a))
-            for a in (adjustments(record, _procedure_codes(row.intake)) if record else [])
+            for a in (adjustments(record, procedure_codes(row.intake)) if record else [])
         ],
     )
 
@@ -318,5 +310,5 @@ def get_explanation(
     record = latest_record(session, claim_id)
     if record is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"claim {claim_id} has no decision yet")
-    body = render(record, fmt, _procedure_codes(_claim_row(session, claim_id).intake))
+    body = render(record, fmt, procedure_codes(_claim_row(session, claim_id).intake))
     return HTMLResponse(body) if fmt == "html" else PlainTextResponse(body)

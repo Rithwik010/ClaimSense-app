@@ -8,6 +8,7 @@ golden end-to-end case runs in test_e2e_golden.py.
 """
 
 import copy
+import hashlib
 import json
 from typing import Any
 
@@ -89,12 +90,18 @@ def test_office_visit_runs_end_to_end(api, load_case_reference) -> None:
         "CONTEXT_ASSEMBLED",
         "SLM_RECOMMENDED",
         "CALCULATED",
+        "EXPLANATION_BUILT",
     ]
     events = client.get(f"/v1/claims/{claim_id}/audit").json()
     payloads = json.dumps([e["payload"] for e in events])
     assert claim["patient"]["last_name"] not in payloads
     assert claim["clinical_notes"][:30] not in payloads
-    assert events[-1]["payload"]["calculator_version"] == CALCULATOR_VERSION
+    assert events[-2]["payload"]["calculator_version"] == CALCULATOR_VERSION
+    built = events[-1]["payload"]  # what the explanation endpoint shows is what was built
+    assert (built["record_version"], built["status"]) == (1, "AWAITING_REVIEW")
+    for fmt in ("text", "html"):
+        shown = client.get(f"/v1/claims/{claim_id}/explanation", params={"format": fmt}).text
+        assert hashlib.sha256(shown.encode()).hexdigest() == built[f"{fmt}_sha256"]
 
 
 def test_ineligible_member_is_denied_by_rule_without_the_model(api, load_case_reference) -> None:
@@ -118,7 +125,12 @@ def test_ineligible_member_is_denied_by_rule_without_the_model(api, load_case_re
     ] == case["expected"]["rules"]["failures"]
     assert record.slm_output is None and record.amounts is None and record.review_tier is None
     assert model.prompts == []
-    assert audit_types(client, claim_id) == ["INTAKE_COMPLETED", "RULES_EVALUATED", "AUTO_OUTCOME"]
+    assert audit_types(client, claim_id) == [
+        "INTAKE_COMPLETED",
+        "RULES_EVALUATED",
+        "AUTO_OUTCOME",
+        "EXPLANATION_BUILT",
+    ]
 
 
 def new_claim(case_id: str, claim_id: str) -> dict[str, Any]:
@@ -163,8 +175,9 @@ def test_a_calculation_error_sends_the_claim_to_full_review(
         "CONTEXT_ASSEMBLED",
         "SLM_RECOMMENDED",
         "CALCULATION_FAILED",
+        "EXPLANATION_BUILT",
     ]
-    assert events[-1]["payload"] == {"error": error, "calculator_version": CALCULATOR_VERSION}
+    assert events[-2]["payload"] == {"error": error, "calculator_version": CALCULATOR_VERSION}
 
 
 def test_out_of_network_care_on_a_plan_without_out_of_network_cover_is_denied_by_r08(
@@ -195,6 +208,7 @@ def test_out_of_network_care_on_a_plan_without_out_of_network_cover_is_denied_by
         "INTAKE_COMPLETED",
         "RULES_EVALUATED",
         "AUTO_OUTCOME",
+        "EXPLANATION_BUILT",
     ]
     assert model.prompts == []
 
@@ -283,6 +297,7 @@ def test_an_unknown_member_is_rejected_by_r04_without_the_model(api) -> None:
         "INTAKE_COMPLETED",
         "RULES_EVALUATED",
         "AUTO_OUTCOME",
+        "EXPLANATION_BUILT",
     ]
     assert model.prompts == []
 
@@ -321,9 +336,10 @@ def test_a_claim_failing_the_contract_is_filed_and_rejected_by_the_rules(
         "INTAKE_COMPLETED",
         "RULES_EVALUATED",
         "AUTO_OUTCOME",
+        "EXPLANATION_BUILT",
     ]
     assert events[0]["payload"]["contract_errors"] == errors
-    assert events[-1]["payload"] == {"status": "REJECTED", "reason_codes": ["RJ_MISSING_FIELD"]}
+    assert events[-2]["payload"] == {"status": "REJECTED", "reason_codes": ["RJ_MISSING_FIELD"]}
     assert model.prompts == []
     view = client.get("/v1/claims/CLM-SKEL-CONTRACT").json()
     assert view["intake"] is None and "procedure_code" not in view["received"]["service_lines"][0]

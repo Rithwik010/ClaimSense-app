@@ -193,7 +193,8 @@ def test_golden_end_to_end_case(api, load_case_reference, engine, case: dict[str
 
     assert reviewed.status_code == 200, reviewed.text
     final = DecisionRecord.model_validate(reviewed.json())
-    finalized = audit(client, claim["claim_id"])[-1]
-    assert finalized["event_type"] == "FINALIZED"
+    events = audit(client, claim["claim_id"])
+    finalized = next(e for e in reversed(events) if e["event_type"] == "FINALIZED")
+    assert events[-1]["event_type"] == "EXPLANATION_BUILT"  # of the final record
     stored = stored_accumulators(engine, claim["member_id"], finalized["payload"])
     assert final_differences(final, finalized["payload"], stored, case["expected"]["final"]) == []

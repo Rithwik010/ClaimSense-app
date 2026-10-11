@@ -296,3 +296,13 @@ def test_modelfile_refuses_the_vision_projector(tmp_path) -> None:  # noqa: ANN0
 
     with pytest.raises(SystemExit, match="vision projector"):
         build(tmp_path / "gemma-4-e2b-it.F16-mmproj.gguf", "")
+
+
+def test_the_request_options_are_the_pinned_ones() -> None:
+    """D-MODEL-7: every request's sampling options (they override the Modelfile's temperature 1)
+    are the ones the evaluated v2 ran with."""
+    from app.ml.client import request_options
+
+    pinned = evaluated("claimsense-decision:v2")["requests"]
+    assert {"first": request_options(1), "retry": request_options(2)} == pinned
+    assert pinned["first"]["temperature"] == 0 and pinned["retry"]["temperature"] == 0.7

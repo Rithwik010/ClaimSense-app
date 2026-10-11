@@ -18,6 +18,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from app.domain.contracts import DecisionRecord, LineDecision, RuleOutcomeValue
 
@@ -118,6 +119,16 @@ def related_lcds() -> dict[str, list[str]]:
         ):
             lcds.setdefault(f"A{r['article_id']}", set()).add(f"L{r['r_lcd_id']}")
     return {article: sorted(ids) for article, ids in lcds.items()}
+
+
+def procedure_codes(claim: Mapping[str, Any]) -> dict[int, str]:
+    """Line -> procedure code of a claim as stored at intake (a dictionary, which may fail the
+    contract), for R15's billing article when the record has no context package."""
+    return {
+        line["line_no"]: line["procedure_code"]
+        for line in claim.get("service_lines") or []
+        if isinstance(line, dict) and "line_no" in line and "procedure_code" in line
+    }
 
 
 def adjustment(

@@ -6,6 +6,8 @@ import hashlib
 import math
 import os
 import re
+import subprocess
+import sys
 from datetime import date
 
 import pytest
@@ -144,12 +146,16 @@ def test_the_code_filter_keeps_only_the_covering_policy() -> None:
     assert office == []  # no policy covers office visits
 
 
-def test_embedder_turns_onnxruntime_telemetry_off_before_loading(tmp_path, monkeypatch) -> None:  # noqa: ANN001
-    """D-PROC-4: no usage telemetry from onnxruntime to Microsoft, even with the model missing."""
-    from app.rag.embedding import EmbeddingUnavailable, FastEmbedder
-
-    monkeypatch.delenv("ORT_DISABLE_TELEMETRY", raising=False)
-    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
-    with pytest.raises(EmbeddingUnavailable):
-        FastEmbedder("BAAI/bge-small-en-v1.5", tmp_path).embed_query("knee pain")
-    assert os.environ["ORT_DISABLE_TELEMETRY"] == "1"
+def test_importing_app_turns_library_telemetry_off_before_qdrant_loads() -> None:
+    """D-PROC-5: `import qdrant_client` loads onnxruntime, whose telemetry thread starts unless
+    ORT_DISABLE_TELEMETRY is set by then; any process that imports `app` first has it set."""
+    env = {k: v for k, v in os.environ.items() if not k.endswith("_TELEMETRY")}
+    probe = (
+        "import os, sys; import app, qdrant_client;"
+        " print(os.environ['ORT_DISABLE_TELEMETRY'], os.environ['HF_HUB_DISABLE_TELEMETRY'],"
+        " 'onnxruntime' in sys.modules)"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", probe], env=env, capture_output=True, text=True, check=True
+    )
+    assert out.stdout.split()[:2] == ["1", "1"]

@@ -65,16 +65,20 @@ def test_accept_finalizes_the_claim_with_amounts_accumulators_and_audit(
     expected_after = {k: v for k, v in final["accumulators_after"].items() if k != "network"}
     assert stored_accumulators(engine, member) == expected_after
     events = audit(client, "CLM-E2E-14")
-    assert [e["event_type"] for e in events[-2:]] == ["REVIEW_ACCEPTED", "FINALIZED"]
-    assert {e["actor"] for e in events[-2:]} == {"reviewer-1"}
-    finalized = events[-1]["payload"]
+    assert [e["event_type"] for e in events[-3:]] == [
+        "REVIEW_ACCEPTED",
+        "FINALIZED",
+        "EXPLANATION_BUILT",
+    ]
+    assert {e["actor"] for e in events[-3:-1]} == {"reviewer-1"}  # the explanation: system
+    finalized = events[-2]["payload"]
     assert finalized["status"] == "FINAL_APPROVED" and finalized["accumulators_updated"]
     assert finalized["accumulators"]["after"] == expected_after
     assert finalized["amounts_changed_since_review"] is False
     assert finalized["visit_usage"] == {}  # office visits have no visit limit
-    accepted = events[-2]["payload"]
+    accepted = events[-3]["payload"]
     assert (accepted["opened_at"], accepted["review_seconds"]) == (None, None)  # never opened
-    assert finalized["calculator_version"] and events[-1]["rules_version"] == "2.1.0"
+    assert finalized["calculator_version"] and events[-2]["rules_version"] == "2.1.0"
     assert client.get("/v1/claims/CLM-E2E-14").json()["record"] == record
 
 
@@ -100,7 +104,7 @@ def test_finalization_counts_a_therapy_session_as_one_visit(
 
     assert response.status_code == 200, response.text
     assert visits_used(engine, member, "REHAB_THERAPY") == before + 1
-    finalized = audit(client, "CLM-E2E-22")[-1]["payload"]
+    finalized = audit(client, "CLM-E2E-22")[-2]["payload"]
     assert finalized["visit_usage"] == {"REHAB_THERAPY": {"before": before, "after": before + 1}}
 
 
@@ -146,7 +150,7 @@ def test_a_claim_whose_calculation_failed_is_refused_until_the_cause_is_fixed(
         session.commit()
     client = process_case(api, load_case_reference, "E2E-14")
     before = [e["event_type"] for e in audit(client, "CLM-E2E-14")]
-    assert before[-1] == "CALCULATION_FAILED"
+    assert before[-2:] == ["CALCULATION_FAILED", "EXPLANATION_BUILT"]
 
     response = client.post(
         "/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14"), headers=REVIEWER

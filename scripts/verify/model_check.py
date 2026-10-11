@@ -3,7 +3,9 @@ that was evaluated? Part of the clean-clone run (SETUP.md Part I, D-PROC-3, D-MO
 
 Compared exactly with `training/finetune/evaluated/<model>.json` (written once, with --record,
 from the model the evaluation ran on): the weights' sha256 and everything else the Modelfile sets
-(template, system prompt, renderer, parser, every parameter; FROM aside).
+(template, system prompt, renderer, parser, every parameter; FROM aside), and the options every
+request sends (`app.ml.client.request_options`: temperature, seed, output cap and context for the
+first attempt and the retry; they override the Modelfile's sampling, D-MODEL-7).
 
 1. the running model, from `ollama show <model> --modelfile`;
 2. `data/generated/models/claimsense-decision-<tag>/Modelfile`, built into a throwaway model
@@ -30,6 +32,7 @@ from typing import Any
 import httpx
 
 from app.core.settings import get_settings
+from app.ml.client import request_options
 from training.finetune.modelfile import EVALUATED, differences, evaluated, settings, weights
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -77,6 +80,16 @@ def loaded(url: str) -> set[str]:
     return {m["name"] for m in httpx.get(f"{url}/api/ps", timeout=10).json()["models"]}
 
 
+def requests_now() -> dict[str, dict[str, Any]]:
+    return {"first": request_options(1), "retry": request_options(2)}
+
+
+def describe(requests: dict[str, dict[str, Any]]) -> str:
+    return "; ".join(
+        f"{name} temperature {o['temperature']} seed {o['seed']}" for name, o in requests.items()
+    )
+
+
 def line(ok: bool, what: str, detail: str) -> bool:
     print(f"{'OK  ' if ok else 'FAIL'} {what:<14} {detail}")
     return ok
@@ -95,6 +108,7 @@ def record(url: str, model: str) -> None:
         "manifest_digest": digest,
         "weights_sha256": weights(modelfile),
         "settings": settings(modelfile),
+        "requests": requests_now(),
     }
     EVALUATED.mkdir(parents=True, exist_ok=True)
     path = EVALUATED / f"{model.replace(':', '-')}.json"
@@ -128,6 +142,13 @@ def main() -> None:
             "running model",
             f"{args.model}: " + ("; ".join(found) if found else summary(reference, shown[1])),
         )
+
+    pinned, now = reference.get("requests"), requests_now()
+    ok &= line(
+        now == pinned,
+        "requests",
+        describe(now) + ("" if now == pinned else f" (evaluated: {describe(pinned or {})})"),
+    )
 
     modelfile = MODELS / f"claimsense-decision-{args.model.split(':')[-1]}" / "Modelfile"
     if not modelfile.exists():
