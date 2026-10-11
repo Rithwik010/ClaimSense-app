@@ -8,13 +8,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router";
 import { toast } from "sonner";
 
-import { useAudit, useClaim, useOpenReview, useSubmitReview } from "@/api/hooks";
+import { useAudit, useClaim, useOpenReview, useQueue, useSubmitReview } from "@/api/hooks";
 import type { DecisionRecord, FinalLineDecision, LineDecision } from "@/api/types";
 import { Chip, StatusChip } from "@/components/Chip";
 import { ClaimWorkspace } from "@/components/ClaimWorkspace";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PageTitle } from "@/components/Layout";
-import { AmountsTable } from "@/components/Record";
+import { AmountSummary } from "@/components/Record";
 import { EmptyState, ErrorNotice, Note, Skeleton } from "@/components/States";
 import { Button } from "@/components/ui/button";
 import {
@@ -107,6 +107,9 @@ export function OverrideForm({
 
 function Finalized({ record }: { record: DecisionRecord }) {
   const audit = useAudit(record.claim_id);
+  const queue = useQueue(null);
+  // The next claim in the queue's order (most work first, then the oldest).
+  const next = queue.data?.find((item) => item.claim_id !== record.claim_id);
   return (
     <div role="status" className="rounded-lg border border-rules bg-paper p-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -115,11 +118,23 @@ function Finalized({ record }: { record: DecisionRecord }) {
       </div>
       <div className="mt-4 space-y-4">
         {audit.data && <ChangedAmounts events={audit.data} />}
-        <AmountsTable record={record} />
+        {record.amounts && <AmountSummary totals={record.amounts.totals} />}
       </div>
-      <Button asChild className="mt-5">
-        <Link to={`/claims/${encodeURIComponent(record.claim_id)}`}>Open claim</Link>
-      </Button>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        {next ? (
+          <Button asChild size="lg">
+            <Link to={`/review/${encodeURIComponent(next.claim_id)}`}>Next claim</Link>
+          </Button>
+        ) : (
+          queue.data && <p className="text-ink-muted">Nothing else is waiting for review.</p>
+        )}
+        <Button asChild size="lg" variant="outline">
+          <Link to={`/claims/${encodeURIComponent(record.claim_id)}`}>Open claim</Link>
+        </Button>
+        <Button asChild size="lg" variant="outline">
+          <Link to="/queue">Back to the queue</Link>
+        </Button>
+      </div>
     </div>
   );
 }
@@ -218,7 +233,7 @@ function Review({
           disabled={submit.isPending}
           onClick={() => setConfirming(true)}
         >
-          {overridden ? "Finalize claim" : "Accept recommendation"}
+          {overridden ? "Finalize claim" : "Accept all lines"}
         </Button>
         <span className="text-[13px] text-ink-muted">
           {overridden

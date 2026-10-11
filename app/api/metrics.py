@@ -1,17 +1,28 @@
-"""Evaluation results for the UI's metrics page (P5.5): model v1 and model v2 on the v2 test set
-(training/evaluate/compare_v2.py) and the OCR field accuracy on held-out scans
-(scripts/verify/ocr_accuracy.py), each with its target. Read from the reports those scripts write
-under data/generated/eval/; a report not yet written is left out."""
+"""Admin pages (D-AUTH-1, admin only). Evaluation results for the metrics page (P5.5): models v1, v2
+and E4B on the v2 test set (training/evaluate/compare_v2.py) and the OCR field accuracy on
+held-out scans (scripts/verify/ocr_accuracy.py), each with its target, read from the reports those
+scripts write under data/generated/eval/ (a report not yet written is left out); the P6.1 results
+file; the overview counts of the claims on file (demo data); and the versions the decision
+records name, with the ones the API is set to use."""
 
 import json
+from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
-from app.api.deps import require
+from app.api.deps import get_session, require
 from app.auth import Role
+from app.calculator import CALCULATOR_VERSION
+from app.core.settings import Settings, get_settings
+from app.db.models import AuditEvent, Claim, DecisionRecordRow
+from app.domain.contracts import ReviewTier
+from app.rules import RULES_VERSION
+from app.workflow.review import review_queue
 
 # Admin only (D-AUTH-1).
 router = APIRouter(
@@ -29,6 +40,13 @@ MACRO_F1_TARGET = 0.90  # P4.4
 OCR_TARGET = 0.90  # P5.1
 
 
+class ClassScores(BaseModel):
+    precision: float | None = None
+    recall: float | None = None
+    f1: float | None = None
+    support: int | None = None
+
+
 class ModelRow(BaseModel):
     model: str
     prompt: str
@@ -39,6 +57,8 @@ class ModelRow(BaseModel):
     criterion_accuracy: float
     deny_precision: float
     median_ms_per_claim: int
+    p95_ms_per_claim: int
+    per_class: dict[str, ClassScores]  # APPROVE, PEND, DENY
 
 
 class OcrRow(BaseModel):
@@ -91,6 +111,11 @@ def _model_row(report: dict[str, Any]) -> ModelRow:
         criterion_accuracy=metrics["criterion_status_accuracy"],
         deny_precision=metrics["decisions"]["per_class"]["DENY"]["precision"],
         median_ms_per_claim=metrics["latency_ms"]["p50"],
+        p95_ms_per_claim=metrics["latency_ms"]["p95"],
+        per_class={
+            name: ClassScores.model_validate(scores)
+            for name, scores in metrics["decisions"]["per_class"].items()
+        },
     )
 
 
@@ -143,3 +168,110 @@ def results() -> dict[str, Any]:
     if not RESULTS.exists():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "no results yet: run make results")
     return json.loads(RESULTS.read_text())
+
+
+class Overview(BaseModel):
+    """Counts over the claims on file: demo data, not results (D-AUTH-1 admin home)."""
+
+    claims: int
+    by_status: dict[str, int]  # every ClaimStatus on file
+    final_outcomes: dict[str, int]  # FINAL_* and the rule outcomes
+    queue_by_tier: dict[str, int]  # QUICK, STANDARD, FULL
+    decided_by_rules: int  # REJECTED, DENIED_BY_RULE, PENDED_BY_RULE
+    reviewed_accepted: int
+    reviewed_overridden: int
+
+
+RULE_STATUSES = ("REJECTED", "DENIED_BY_RULE", "PENDED_BY_RULE")
+
+
+@router.get("/overview")
+def overview(session: Annotated[Session, Depends(get_session)]) -> Overview:
+    by_status = dict(
+        session.execute(select(Claim.status, func.count()).group_by(Claim.status)).tuples().all()
+    )
+    queue = {tier.value: 0 for tier in ReviewTier}
+    for item in review_queue(session):
+        queue[item.review_tier.value] += 1
+    reviews = dict(
+        session.execute(
+            select(AuditEvent.event_type, func.count())
+            .where(AuditEvent.event_type.in_(("REVIEW_ACCEPTED", "REVIEW_OVERRIDDEN")))
+            .group_by(AuditEvent.event_type)
+        )
+        .tuples()
+        .all()
+    )
+    return Overview(
+        claims=sum(by_status.values()),
+        by_status=by_status,
+        final_outcomes={
+            s: n for s, n in by_status.items() if s.startswith("FINAL_") or s in RULE_STATUSES
+        },
+        queue_by_tier=queue,
+        decided_by_rules=sum(by_status.get(s, 0) for s in RULE_STATUSES),
+        reviewed_accepted=reviews.get("REVIEW_ACCEPTED", 0),
+        reviewed_overridden=reviews.get("REVIEW_OVERRIDDEN", 0),
+    )
+
+
+class VersionSet(BaseModel):
+    rules_version: str
+    model_name: str | None
+    prompt_version: str | None
+    policy_versions: list[str]  # <policy set>@<effective date> values (D-POL-2)
+    records: int
+    latest: datetime
+
+
+class SystemVersions(BaseModel):
+    """What the decision records say was used, and what the API is set to use now."""
+
+    configured: dict[str, str]
+    in_records: list[VersionSet]  # one per distinct set, the most recent first
+
+
+@router.get("/system")
+def system(
+    session: Annotated[Session, Depends(get_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> SystemVersions:
+    sets: dict[tuple, dict[str, Any]] = {}
+    for record, created in session.execute(
+        select(DecisionRecordRow.record, DecisionRecordRow.created_at)
+    ).tuples():
+        versions = record.get("versions") or {}
+        policies = sorted(set((versions.get("policy_versions") or {}).values()))
+        key = (
+            versions.get("rules_version"),
+            versions.get("model_name"),
+            versions.get("prompt_version"),
+            tuple(policies),
+        )
+        found = sets.setdefault(key, {"records": 0, "latest": created})
+        found["records"] += 1
+        found["latest"] = max(found["latest"], created)
+    return SystemVersions(
+        configured={
+            "model": settings.model_name,
+            "prompt": settings.prompt_version,
+            "policy_set": settings.policy_set,
+            "rules": RULES_VERSION,
+            "calculator": CALCULATOR_VERSION,
+        },
+        in_records=sorted(
+            (
+                VersionSet(
+                    rules_version=key[0] or "",
+                    model_name=key[1],
+                    prompt_version=key[2],
+                    policy_versions=list(key[3]),
+                    records=found["records"],
+                    latest=found["latest"],
+                )
+                for key, found in sets.items()
+            ),
+            key=lambda v: v.latest,
+            reverse=True,
+        ),
+    )

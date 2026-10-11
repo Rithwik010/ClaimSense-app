@@ -86,6 +86,10 @@ def test_the_evaluation_lists_each_model_report_with_its_targets(
             "criterion_accuracy": 0.7608,
             "deny_precision": 0.7966,
             "median_ms_per_claim": 6444,
+            "p95_ms_per_claim": 46738,
+            "per_class": {  # as the report gives it (this one only DENY's precision)
+                "DENY": {"precision": 0.7966, "recall": None, "f1": None, "support": None}
+            },
         }
     ]
 

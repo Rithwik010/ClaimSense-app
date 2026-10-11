@@ -7,7 +7,9 @@ import { Route, Routes } from "react-router";
 import { Allow, Home, RequireLogin } from "./components/Guards";
 import { Layout } from "./components/Layout";
 import { EmptyState } from "./components/States";
+import { AuditLookup } from "./pages/AuditLookup";
 import { ClaimDetail } from "./pages/ClaimDetail";
+import { ClaimResult } from "./pages/ClaimResult";
 import { Claims } from "./pages/Claims";
 import { Login } from "./pages/Login";
 import { Metrics } from "./pages/Metrics";
@@ -17,6 +19,7 @@ import { ReviewClaim } from "./pages/ReviewClaim";
 import { ReviewQueue } from "./pages/ReviewQueue";
 import { RuleOutcomes } from "./pages/RuleOutcomes";
 import { SubmitClaim } from "./pages/SubmitClaim";
+import { SystemStatus } from "./pages/SystemStatus";
 
 export function App() {
   return (
@@ -27,6 +30,7 @@ export function App() {
           <Route index element={<Home />} />
           <Route element={<Allow roles={["provider"]} />}>
             <Route path="my-claims" element={<MyClaims />} />
+            <Route path="my-claims/:claimId" element={<ClaimResult />} />
             <Route path="submit" element={<SubmitClaim />} />
           </Route>
           <Route element={<Allow roles={["reviewer"]} />}>
@@ -41,6 +45,8 @@ export function App() {
           <Route element={<Allow roles={["admin"]} />}>
             <Route path="overview" element={<Overview />} />
             <Route path="metrics" element={<Metrics />} />
+            <Route path="audit" element={<AuditLookup />} />
+            <Route path="system" element={<SystemStatus />} />
           </Route>
           <Route path="*" element={<EmptyState title="Page not found" />} />
         </Route>

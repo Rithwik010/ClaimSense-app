@@ -96,3 +96,27 @@ export function AmountsTable({ record }: { record: DecisionRecord }) {
     </div>
   );
 }
+
+const SUMMARY: [keyof Amounts, string][] = [
+  ["billed_cents", "Billed"],
+  ["allowed_cents", "Allowed"],
+  ["plan_pays_cents", "Plan pays"],
+  ["member_pays_cents", "Member pays"],
+];
+
+/** The four totals people ask about first, as the calculator worked them out. */
+export function AmountSummary({ totals }: { totals: Amounts }) {
+  return (
+    <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-rules bg-paper sm:grid-cols-4">
+      {SUMMARY.map(([key, label], i) => (
+        <div
+          key={key}
+          className={`px-4 py-3 ${i % 2 ? "border-l border-rules" : ""} ${i >= 2 ? "border-t border-rules sm:border-t-0" : ""} ${i === 2 ? "sm:border-l" : ""}`}
+        >
+          <dt className="text-[13px] text-ink-muted">{label}</dt>
+          <dd className="text-[18px] leading-[26px] font-semibold tabular-nums">{money(totals[key])}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}

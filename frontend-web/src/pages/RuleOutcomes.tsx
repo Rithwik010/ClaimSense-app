@@ -1,11 +1,12 @@
-// Read-only: claims the rules decided on their own (REJECTED, DENIED_BY_RULE, PENDED_BY_RULE).
-// They never reach the review queue (§8.8).
+// Read-only: claims the rules decided on their own (REJECTED, DENIED_BY_RULE, PENDED_BY_RULE), with
+// each failed rule's reason and the standard CARC/RARC codes (D-CARC-2). They never reach the
+// review queue (§8.8).
 
 import { Link } from "react-router";
 
 import { useClaims } from "@/api/hooks";
 import type { ClaimStatus } from "@/api/types";
-import { StatusChip } from "@/components/Chip";
+import { PlainBadge, StatusChip } from "@/components/Chip";
 import { PageTitle } from "@/components/Layout";
 import { EmptyState, ErrorNotice, Skeleton } from "@/components/States";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -31,13 +32,14 @@ export function RuleOutcomes() {
           processing.
         </EmptyState>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-rules bg-paper">
+        <div className="overflow-x-auto rounded-lg border border-rules bg-paper">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Claim</TableHead>
                 <TableHead>Outcome</TableHead>
                 <TableHead>Why</TableHead>
+                <TableHead>Codes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -67,6 +69,26 @@ export function RuleOutcomes() {
                         </li>
                       ))}
                     </ul>
+                  </TableCell>
+                  <TableCell className="min-w-64">
+                    {claim.adjustments.length ? (
+                      <ul className="space-y-2">
+                        {claim.adjustments.flatMap((a) =>
+                          a.codes.map((c) => (
+                            <li key={`${a.line_no ?? "claim"}-${c.kind}-${c.code}`} className="grid grid-cols-[auto_1fr] gap-x-2">
+                              <PlainBadge>
+                                {c.kind} {c.code}
+                              </PlainBadge>
+                              <span className="text-[13px] leading-5 text-ink-muted">
+                                {c.description ?? "Description not loaded"}
+                              </span>
+                            </li>
+                          )),
+                        )}
+                      </ul>
+                    ) : (
+                      <span className="text-ink-muted">None</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

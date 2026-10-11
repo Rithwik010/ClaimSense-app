@@ -149,6 +149,12 @@ export interface QueueItem {
   total_allowed_cents: number | null;
   received_date: string;
   processed: string | null;
+  provider_npi: string | null;
+  provider_name: string | null;
+  service_date: string | null;
+  total_billed_cents: number | null;
+  lines: number;
+  flags: string[];
 }
 
 export interface ClaimSummary {
@@ -163,6 +169,7 @@ export interface ClaimSummary {
   total_allowed_cents: number | null;
   plan_pays_cents: number | null;
   failed_rules: Omit<RuleResult, "passed">[];
+  adjustments: Adjustment[];
 }
 
 export interface AuditEvent {
@@ -170,6 +177,10 @@ export interface AuditEvent {
   event_type: string;
   actor: string;
   payload: Record<string, unknown>;
+  rules_version?: string | null;
+  model_name?: string | null;
+  prompt_version?: string | null;
+  policy_versions?: Record<string, string> | null;
   created_at: string;
 }
 
@@ -190,6 +201,8 @@ export interface ModelRow {
   criterion_accuracy: number;
   deny_precision: number;
   median_ms_per_claim: number;
+  p95_ms_per_claim: number;
+  per_class: Record<string, { precision: number | null; recall: number | null; f1: number | null; support: number | null }>;
 }
 
 export interface V2Errors {
@@ -219,6 +232,9 @@ export interface ProviderClaimView {
   field_confidences: Record<string, number>;
   filed_by: string | null;
   record: DecisionRecord | null;
+  adjustments: Adjustment[];
+  /** The audit event types the claim went through, in order (no payloads): the stage strip. */
+  stages: string[];
 }
 
 /** A provider's own claim in their list: the decision and amounts only once final. */
@@ -234,4 +250,73 @@ export interface ProviderClaimSummary {
   total_allowed_cents: number | null;
   plan_pays_cents: number | null;
   failed_rules: { rule_id: string; outcome: string; reason_code: string | null; detail: string; line_no: number | null }[];
+}
+
+/** GET /health (public). */
+export interface Health {
+  status: "ok" | "degraded";
+  database: { ok: boolean; detail: string };
+  qdrant: { ok: boolean; detail: string };
+  ollama: { ok: boolean; detail: string };
+}
+
+/** GET /v1/metrics/overview (admin): counts over the claims on file, demo data. */
+export interface Overview {
+  claims: number;
+  by_status: Record<string, number>;
+  final_outcomes: Record<string, number>;
+  queue_by_tier: Record<ReviewTier, number>;
+  decided_by_rules: number;
+  reviewed_accepted: number;
+  reviewed_overridden: number;
+}
+
+/** GET /v1/metrics/system (admin): the versions the decision records name and the API's own. */
+export interface SystemVersions {
+  configured: Record<string, string>;
+  in_records: {
+    rules_version: string;
+    model_name: string | null;
+    prompt_version: string | null;
+    policy_versions: string[];
+    records: number;
+    latest: string;
+  }[];
+}
+
+export interface ResultsModelRow {
+  model: string;
+  records: number;
+  valid_output: number;
+  line_accuracy: number | null;
+  macro_f1: number | null;
+  deny_precision: number | null;
+  criterion_accuracy: number | null;
+  latency_p50_ms: number | null;
+  latency_p95_ms: number | null;
+}
+
+export interface GuardRow {
+  model: string;
+  line_accuracy: number;
+  macro_f1: number;
+  deny_precision: number;
+  wrong_approvals: number;
+  wrong_denials: number;
+}
+
+/** GET /v1/metrics/results (admin): the P6.1 results file, as scripts/verify/results_report.py writes it. */
+export interface Results {
+  generated: string;
+  rules_and_calculator: Record<string, { passed: number; failed: number; skipped: number; error: number }>;
+  extraction:
+    | { held_out_claims: number; fields: number; field_accuracy: number; blank_read_as_blank: number; target: number }
+    | string;
+  retrieval_recall_at_3: string;
+  models: ResultsModelRow[];
+  evidence_guard: GuardRow[];
+  macro_f1_target: number;
+  latency_per_stage_ms: { source: string; claims: number } & Record<string, unknown>;
+  reviewer_agreement: string;
+  review_time: string;
 }

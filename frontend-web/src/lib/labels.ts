@@ -30,9 +30,17 @@ export const DECISION: Record<LineDecision, Label> = {
 };
 
 export const TIER: Record<ReviewTier, Label> = {
-  QUICK: { label: "Quick", hint: "A quick check", tone: "neutral" },
-  STANDARD: { label: "Standard", hint: "A standard review", tone: "neutral" },
-  FULL: { label: "Full", hint: "A full review", tone: "neutral" },
+  QUICK: { label: "Quick", hint: "Every line recommended for approval, nothing to check closely", tone: "neutral" },
+  STANDARD: {
+    label: "Standard",
+    hint: "A line to pend, a medium-complexity case, a high amount or a field read with low confidence",
+    tone: "neutral",
+  },
+  FULL: {
+    label: "Full",
+    hint: "A line recommended for denial, a high-complexity case, or a model answer that could not be used",
+    tone: "neutral",
+  },
 };
 
 export const SOURCE: Record<string, string> = {
@@ -101,6 +109,30 @@ export function reason(code: string | null | undefined): string {
 }
 
 export const LOW_CONFIDENCE = 0.85; // EXTRACTION_CONFIDENCE_MIN
+
+/** The review queue's flags (app/workflow/review.py queue_flags): facts the record holds. */
+export const FLAGS: Record<string, string> = {
+  MODEL_ANSWER_UNUSABLE: "Model answer unusable",
+  QUOTE_NOT_IN_NOTE: "Quote not in the note",
+  CALCULATION_FAILED: "No amounts",
+  LOW_CONFIDENCE_FIELDS: "Low-confidence fields",
+  HIGH_DOLLAR: "High amount",
+  LINE_DECIDED_BY_RULE: "Line decided by a rule",
+};
+
+const DECIDED: Record<LineDecision, string> = {
+  APPROVE: "Covered under the plan's benefits",
+  PEND: "More information is needed",
+  DENY: "Not covered",
+};
+
+/** A line's outcome in plain words: its reasons, or what its decision means when it has none. */
+export function lineReason(decision: LineDecision, reasonCodes: string[]): string {
+  const known = reasonCodes.map((code) => REASONS[code]).filter((text): text is string => Boolean(text));
+  if (known.length === 0) return DECIDED[decision];
+  const text = known.join("; ");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 // The evidence guard's entries in a record's output_errors (D-EVID-1): check results, not errors.
 const GUARD_NOTE = /^EVIDENCE_NOT_IN_NOTES: line (\d+) (\S+)$/;

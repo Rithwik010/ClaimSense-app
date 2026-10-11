@@ -10,7 +10,7 @@ import { ClinicalNote, type Quote } from "@/components/ClinicalNote";
 import { FieldsTable } from "@/components/Fields";
 import { AmountsTable, RuleChecks } from "@/components/Record";
 import { quoteKey, ServiceLines } from "@/components/ServiceLines";
-import { StageStrip } from "@/components/StageStrip";
+import { StageStrip, stages } from "@/components/StageStrip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { evidenceChecks } from "@/lib/labels";
 
@@ -86,7 +86,7 @@ export function ClaimWorkspace({
   ];
   return (
     <>
-      <StageStrip view={view} events={events} fill={fill} />
+      <StageStrip list={stages(view, events)} fill={fill} />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Tabs defaultValue="lines" className="min-w-0">
           <div className="overflow-x-auto">

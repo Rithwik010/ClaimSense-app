@@ -5,7 +5,7 @@
 import { Check, CircleDashed, Clock, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
-import type { AuditEvent, ClaimView } from "@/api/types";
+import type { AuditEvent, ClaimStatus, ClaimView, ProviderClaimView } from "@/api/types";
 import { money } from "@/lib/format";
 import { evidenceChecks, LOW_CONFIDENCE, STATUS, TIER, answerErrors } from "@/lib/labels";
 
@@ -29,17 +29,50 @@ const RULE_OUTCOME: Record<string, string> = {
   PEND: "Pended",
 };
 
-/** The seven stages of a claim, from what the API returned (the claim view and its audit events). */
-export function stages(view: ClaimView, events: AuditEvent[]): Stage[] {
-  const seen = new Set(events.map((e) => e.event_type));
-  const record = view.record;
-  const notReached = (name: string): Stage => ({ name, state: "not-reached", result: "Not reached" });
+type StageView = Pick<ClaimView, "record" | "field_confidences" | "source_format"> & { status: string };
+
+function intakeStage(view: Pick<ClaimView, "field_confidences" | "source_format">): Stage {
   const low = Object.values(view.field_confidences).filter((v) => v < LOW_CONFIDENCE).length;
-  const intake: Stage = {
+  return {
     name: "Intake",
     state: "done",
     result: `${SOURCE[view.source_format] ?? view.source_format}${low ? `, ${low} low-confidence field${low === 1 ? "" : "s"}` : ""}`,
   };
+}
+
+/**
+ * The stages a provider sees while their claim is in review (D-AUTH-1): how far it went, from the
+ * step names alone, with nothing of the recommendation or the amounts. A final claim shows the
+ * full strip from its record.
+ */
+export function providerStages(view: ProviderClaimView): Stage[] {
+  if (view.record) {
+    return stages({ ...view, status: view.status as ClaimStatus }, view.stages.map((event_type) => ({ event_type }) as AuditEvent));
+  }
+  const seen = new Set(view.stages);
+  const step = (name: string, events: string[], result: string): Stage =>
+    events.some((e) => seen.has(e))
+      ? { name, state: "done", result }
+      : { name, state: "not-reached", result: view.status === "RECEIVED" ? "Not processed yet" : "Not reached" };
+  return [
+    intakeStage(view),
+    step("Rules", ["RULES_EVALUATED"], "Checked"),
+    step("Policy", ["CONTEXT_ASSEMBLED"], "Criteria found"),
+    step("Model", ["SLM_RECOMMENDED", "OUTPUT_INVALID"], "Recommendation made"),
+    step("Amounts", ["CALCULATED", "CALCULATION_FAILED"], "Worked out"),
+    step("Explanation", ["EXPLANATION_BUILT"], "Ready"),
+    view.status === "IN_REVIEW"
+      ? { name: "Review", state: "waiting", result: "Waiting for a reviewer" }
+      : { name: "Review", state: "not-reached", result: "Not processed yet" },
+  ];
+}
+
+/** The seven stages of a claim, from what the API returned (the claim view and its audit events). */
+export function stages(view: StageView, events: Pick<AuditEvent, "event_type">[]): Stage[] {
+  const seen = new Set(events.map((e) => e.event_type));
+  const record = view.record;
+  const notReached = (name: string): Stage => ({ name, state: "not-reached", result: "Not reached" });
+  const intake = intakeStage(view);
   if (!record) {
     return [intake, ...["Rules", "Policy", "Model", "Amounts", "Explanation", "Review"].map(notReached)];
   }
@@ -74,7 +107,7 @@ export function stages(view: ClaimView, events: AuditEvent[]): Stage[] {
   const explanation: Stage = { name: "Explanation", state: "done", result: "Ready" };
   const final = view.status.startsWith("FINAL_");
   const review: Stage = final
-    ? { name: "Review", state: "done", result: STATUS[view.status].label }
+    ? { name: "Review", state: "done", result: STATUS[view.status as ClaimStatus].label }
     : view.status === "AWAITING_REVIEW"
       ? {
           name: "Review",
@@ -92,10 +125,9 @@ const LOOK: Record<StageState, { bar: string; Icon: typeof Check; icon: string }
   "not-reached": { bar: "bg-transparent border-t border-dashed border-control", Icon: CircleDashed, icon: "text-ink-muted" },
 };
 
-export function StageStrip({ view, events, fill = false }: { view: ClaimView; events: AuditEvent[]; fill?: boolean }) {
+export function StageStrip({ list, fill = false }: { list: Stage[]; fill?: boolean }) {
   const reduce = useReducedMotion();
   const animate = fill && !reduce;
-  const list = stages(view, events);
   let reached = 0;
   return (
     <div className="mb-6 overflow-x-auto rounded-lg border border-rules bg-paper">

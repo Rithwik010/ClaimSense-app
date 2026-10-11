@@ -12,12 +12,16 @@ import type {
   DecisionRecord,
   Evaluation,
   FiledWithErrors,
+  Health,
   IntakeResult,
   LineOverride,
+  Overview,
   ProviderClaimSummary,
   ProviderClaimView,
   QueueItem,
+  Results,
   ReviewTier,
+  SystemVersions,
 } from "./types";
 
 export function useQueue(tier: ReviewTier | null) {
@@ -25,6 +29,30 @@ export function useQueue(tier: ReviewTier | null) {
     queryKey: ["queue", tier],
     queryFn: () => request<QueueItem[]>(`/v1/review/queue${tier ? `?tier=${tier}` : ""}`),
   });
+}
+
+/** A provider's own claim: their view (IN_REVIEW until final). */
+export function useMyClaim(claimId: string) {
+  return useQuery({
+    queryKey: ["claim", claimId, "mine"],
+    queryFn: () => request<ProviderClaimView>(`/v1/claims/${encodeURIComponent(claimId)}`),
+  });
+}
+
+export function useHealth() {
+  return useQuery({ queryKey: ["health"], queryFn: () => request<Health>("/health") });
+}
+
+export function useOverview() {
+  return useQuery({ queryKey: ["overview"], queryFn: () => request<Overview>("/v1/metrics/overview") });
+}
+
+export function useSystemVersions() {
+  return useQuery({ queryKey: ["system"], queryFn: () => request<SystemVersions>("/v1/metrics/system") });
+}
+
+export function useResults() {
+  return useQuery({ queryKey: ["results"], queryFn: () => request<Results>("/v1/metrics/results") });
 }
 
 /** A provider's own claims (the same endpoint answers a provider with their view only). */
@@ -50,10 +78,11 @@ export function useClaim(claimId: string) {
   });
 }
 
-export function useAudit(claimId: string) {
+export function useAudit(claimId: string, enabled = true) {
   return useQuery({
     queryKey: ["audit", claimId],
     queryFn: () => request<AuditEvent[]>(`/v1/claims/${encodeURIComponent(claimId)}/audit`),
+    enabled: enabled && claimId !== "",
   });
 }
 
@@ -89,7 +118,7 @@ export function useUpload() {
 function useRefresh() {
   const client = useQueryClient();
   return (claimId: string) => {
-    for (const key of [["claim", claimId], ["audit", claimId], ["explanation", claimId]]) {
+    for (const key of [["claim", claimId], ["audit", claimId], ["explanation", claimId], ["overview"]]) {
       void client.invalidateQueries({ queryKey: key });
     }
     void client.invalidateQueries({ queryKey: ["claims"] });

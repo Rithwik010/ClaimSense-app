@@ -1,8 +1,9 @@
 // Loading skeletons, empty states that say what to do next, and API errors in plain words.
 
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, WifiOff } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { ApiError } from "@/api/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton as Bar } from "@/components/ui/skeleton";
@@ -28,10 +29,11 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
 
 export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
   const message = error instanceof Error ? error.message : "Something went wrong.";
+  const unreachable = error instanceof ApiError && error.status === 0;
   return (
     <Alert className="border-deny/30 bg-deny-tint text-deny">
-      <CircleAlert aria-hidden />
-      <AlertTitle>The request did not go through</AlertTitle>
+      {unreachable ? <WifiOff aria-hidden /> : <CircleAlert aria-hidden />}
+      <AlertTitle>{unreachable ? "The server can't be reached" : "The request did not go through"}</AlertTitle>
       <AlertDescription className="text-ink">
         <p>{message}</p>
         {onRetry && (

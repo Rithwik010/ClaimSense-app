@@ -70,7 +70,7 @@ export async function request<T>(
       credentials: "same-origin",
     });
   } catch {
-    throw new ApiError(0, "The ClaimSense API cannot be reached. Is it running (make demo-up)?");
+    throw new ApiError(0, "Check that make demo-up is still running, then try again.");
   }
   if (response.status === 401 && path !== "/v1/auth/login") sessionEnded?.();
   if (!response.ok) {

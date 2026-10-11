@@ -322,12 +322,13 @@ def main() -> None:
     parser.add_argument(
         "--model",
         default="v2",
-        choices=("v2", "e4b"),
-        help="e4b: the same breakdown of the E4B answers, printed and kept as e4b-errors.json",
+        choices=("v2", "e4b", "v1"),
+        help="e4b or v1 (model v1 on the v2 test set): the same breakdown of those answers,"
+        " printed and kept as <model>-errors.json",
     )
     model = parser.parse_args().model
     ANSWERS = ANSWERS.with_name(f"v2data-model-{model}.jsonl")
-    GUARDED = model != "v2"
+    GUARDED = model == "e4b"  # v1's and v2's answers were scored before the guard (D-EVID-1)
     LABEL = model
     with Session(get_engine()) as session:
         result = analyse(session)

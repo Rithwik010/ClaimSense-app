@@ -1,6 +1,6 @@
 // Smoke test (D-UI-1), local only, against a running `make demo-up`: provider1 submits a JSON claim
-// and processes it (it shows "In review" on My claims) -> reviewer1 opens it from the review queue
-// and accepts the recommendation -> the claim shows the explanation and the audit trail (D-AUTH-1).
+// and processes it ("In review") -> reviewer1 opens it from the review queue and accepts all lines
+// -> the claim shows the explanation and the audit trail (D-AUTH-1).
 // The claim is a synthetic corpus claim whose rules pass (data/generated/claims/), one not yet on
 // file, so each run files a new claim.
 
@@ -50,14 +50,19 @@ test("submit, process, review and explain a claim", async ({ page }) => {
   await expect(page.getByText(`Claim ${claimId} was filed from a JSON claim.`)).toBeVisible();
 
   await page.getByRole("button", { name: "Process claim" }).click();
-  await expect(page).toHaveURL(/\/my-claims$/, { timeout: 110_000 });
-  await expect(page.getByRole("row", { name: new RegExp(claimId) }).getByText("In review")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Result" }).getByText("In review").first()).toBeVisible({
+    timeout: 110_000,
+  });
 
   await loginAs(page, "reviewer1"); // a reviewer's home is the review queue
   await expect(page.getByRole("heading", { name: "Review queue" })).toBeVisible();
+  for (const tier of ["Full", "Standard", "Quick"]) {
+    await page.getByRole("tab", { name: new RegExp(`^${tier} \\(`) }).click();
+    if (await page.getByRole("link", { name: claimId }).isVisible()) break;
+  }
   await page.getByRole("link", { name: claimId }).click();
   await expect(page.getByRole("heading", { name: `Review claim ${claimId}` })).toBeVisible();
-  await page.getByRole("button", { name: "Accept recommendation" }).click();
+  await page.getByRole("button", { name: "Accept all lines" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Finalize claim" }).click();
   await expect(page.getByText(`Claim ${claimId} is final`)).toBeVisible();
   await expect(page.getByText("Claim finalized")).toBeVisible();
