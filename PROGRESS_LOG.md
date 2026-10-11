@@ -455,6 +455,13 @@ Kaggle copy for anything model-related.
 
 - 2026-10-11 18:21 | Manideep3183 | Quick fixes | **Merged (branch `p7.2-quick-fixes`; `main` as `31548dd`, `--no-ff`; CI run 38140572745 passed: Python 1,982 passed, 66 skipped; web app 38 passed).** `make offline-check` now also checks inside the Qdrant container that telemetry is off (QDRANT__TELEMETRY_DISABLED=true from docker-compose.yml; start-up log "Telemetry reporting disabled"): OK. `make demo-up`, `demo` and `demo-reset` stop at once without Docker ("Start Docker Desktop, then run make demo-up again"). `make demo-video` and `e2e/demo-runbook.spec.ts` removed (they used the old role switcher); the old video file is left alone. Tests: 2,346 pass, 1 skipped (local).
 
+- 2026-10-11 21:45 | Manideep3183 | UI pass | **Pages per role merged (branch `p8.1-ui-pass`; merged into `main` as `acd8cd4`, `--no-ff`; CI run 38154376644 passed: Python 1,988 passed, 66 skipped; web app 58 passed).** D-UI-4.
+  - **Provider:** Submit claim (drop zone, fields with confidence, process in place with the stage strip, "Try again" after a 503), My claims (search, status filter), claim result ("In review" with the steps; once final the lines with plain reasons and CARC/RARC codes, the amounts, the explanation).
+  - **Reviewer:** queue tabs with counts and the provider, service date, billed, lines, flags and age; review with "Accept all lines", override sheet, confirm, toast and "Next claim"; rule outcomes with codes; audit timeline with versions.
+  - **Admin (read only):** Overview tiles (demo data), Model metrics (v1, v2, E4B side by side, per class, guard rows; v1's wrong approvals now from the committed error script), Audit lookup, System status.
+  - **Checks:** Playwright 34 passed (nine demo claims per role, layout at 390/768/1440/1280x720, smoke); `make offline-check` OK (e2e 167, privacy 36).
+  - **Tests:** 2,352 pass, 1 skipped (local); web 58.
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
