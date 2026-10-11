@@ -1,6 +1,5 @@
 """Text embeddings for the knowledge base (fastembed, local ONNX model; no external API)."""
 
-import os
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol
@@ -37,9 +36,6 @@ class FastEmbedder:
 
     def _load(self):  # noqa: ANN202
         if self._model is None:
-            # onnxruntime (1.30) otherwise starts a telemetry thread that uploads usage events to
-            # Microsoft and can abort the process at exit; read when onnxruntime starts (D-PROC-4).
-            os.environ.setdefault("ORT_DISABLE_TELEMETRY", "1")
             from fastembed import TextEmbedding
 
             try:

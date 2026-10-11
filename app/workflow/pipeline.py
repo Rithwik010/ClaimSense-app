@@ -21,6 +21,7 @@ reference -> context -> model -> output validation -> calculator (§8.6, P2.4) -
 import time
 from collections.abc import Mapping
 from datetime import UTC, date, datetime
+from hashlib import sha256
 from typing import Any
 
 from sqlalchemy import func, select
@@ -63,6 +64,8 @@ from app.domain.contracts import (
     Timestamps,
     Versions,
 )
+from app.explain.codes import procedure_codes
+from app.explain.render import render
 from app.ml.client import DecisionModel
 from app.ml.evidence import evidence_guard
 from app.ml.prompt import (
@@ -244,7 +247,28 @@ def _save(session: Session, row: Claim, record: DecisionRecord) -> None:
             claim_id=row.claim_id, version=version + 1, record=record.model_dump(mode="json")
         )
     )
+    _explanation_built(session, row, record, version + 1)
     session.commit()
+
+
+def _explanation_built(session: Session, row: Claim, record: DecisionRecord, version: int) -> None:
+    """EXPLANATION_BUILT (§8.9) for every saved record version: after a rule outcome, after the
+    model's recommendation and at finalization. The explanation is still rendered on request and
+    never stored (D-EXPL-1); the event keeps the SHA-256 of both renderings, so what
+    GET /v1/claims/{id}/explanation shows can be checked against what was built."""
+    codes = procedure_codes(row.intake)
+    record_event(
+        session,
+        row.claim_id,
+        EventType.EXPLANATION_BUILT,
+        {
+            "record_version": version,
+            "status": record.status.value,
+            "text_sha256": sha256(render(record, "text", codes).encode()).hexdigest(),
+            "html_sha256": sha256(render(record, "html", codes).encode()).hexdigest(),
+        },
+        record.versions,
+    )
 
 
 def _rules_payload(rules: RulesOutcome) -> dict:

@@ -74,8 +74,12 @@ def test_an_override_is_audited_line_by_line_and_its_reason_is_never_logged(
     assert golden_lines(record) == final["line_decisions"]
     assert record["amounts"] == final["amounts"]
     events = audit(client, "CLM-E2E-24")
-    assert [e["event_type"] for e in events[-2:]] == ["REVIEW_OVERRIDDEN", "FINALIZED"]
-    overridden = events[-2]
+    assert [e["event_type"] for e in events[-3:]] == [
+        "REVIEW_OVERRIDDEN",
+        "FINALIZED",
+        "EXPLANATION_BUILT",
+    ]
+    overridden = events[-3]
     assert overridden["actor"] == action["reviewer_id"]
     assert overridden["payload"]["changes"] == [
         {
@@ -95,7 +99,7 @@ def test_an_override_is_audited_line_by_line_and_its_reason_is_never_logged(
             },
         }
     ]
-    finalized = events[-1]["payload"]
+    finalized = events[-2]["payload"]
     assert finalized["accumulators_updated"] is False  # no approved line
     assert finalized["accumulators"]["after"] == without_network(final["accumulators_after"])
     assert finalized["amounts_changed_since_review"] is True  # the approved amounts are gone
@@ -124,7 +128,7 @@ def test_an_approve_override_reruns_the_calculator(
     assert record["amounts"] == final["amounts"]
     member = case["given"]["claim"]["member_id"]
     assert stored_accumulators(engine, member) == without_network(final["accumulators_after"])
-    finalized = audit(client, "CLM-E2E-25")[-1]["payload"]
+    finalized = audit(client, "CLM-E2E-25")[-2]["payload"]
     assert finalized["amounts_changed_since_review"] is True
     assert "allowed_cents" in finalized["changed_totals"]
 
@@ -155,7 +159,7 @@ def test_a_reviewer_may_approve_under_another_candidate_category(
     assert totals["member_pays_cents"] == 0
     assert totals["plan_pays_cents"] == totals["allowed_cents"]
     assert stored_accumulators(engine, member) == before
-    change = audit(client, "CLM-E2E-26")[-2]["payload"]["changes"][0]
+    change = audit(client, "CLM-E2E-26")[-3]["payload"]["changes"][0]
     assert (change["before"]["decision"], change["after"]["decision"]) == ("PEND", "APPROVE")
     assert (change["before"]["benefit_category"], change["after"]["benefit_category"]) == (
         "ENDOSCOPY",

@@ -34,6 +34,20 @@ MODEL_NUM_CTX = 8192
 MODEL_KEEP_ALIVE = -1
 
 
+def request_options(attempt: int = 1) -> dict[str, Any]:
+    """The sampling options of every model request (D-MODEL-7); they override the Modelfile's
+    (temperature 1). The first attempt is greedy; the one retry after an invalid answer samples
+    with its own fixed seed, so it can differ from the first (D-DEC-1). Pinned with the evaluated
+    model (training/finetune/evaluated/, `make model-check`)."""
+    first = attempt == 1
+    return {
+        "temperature": 0 if first else RETRY_TEMPERATURE,
+        "seed": MODEL_SEED if first else RETRY_SEED,
+        "num_predict": MAX_OUTPUT_TOKENS,
+        "num_ctx": MODEL_NUM_CTX,
+    }
+
+
 class ModelUnavailable(RuntimeError):
     """Ollama could not be reached or refused the request; the claim can be processed later."""
 
@@ -53,7 +67,6 @@ class OllamaDecisionModel:
 
     def complete(self, system: str, user: str, attempt: int = 1) -> str:
         """Attempt 1: temperature 0 and MODEL_SEED; a retry: RETRY_TEMPERATURE and RETRY_SEED."""
-        first = attempt == 1
         try:
             response = self._client.chat(
                 model=self.name,
@@ -62,12 +75,7 @@ class OllamaDecisionModel:
                     {"role": "user", "content": user},
                 ],
                 format=SLMOutput.model_json_schema(),
-                options={
-                    "temperature": 0 if first else RETRY_TEMPERATURE,
-                    "seed": MODEL_SEED if first else RETRY_SEED,
-                    "num_predict": MAX_OUTPUT_TOKENS,
-                    "num_ctx": MODEL_NUM_CTX,
-                },
+                options=request_options(attempt),
                 think=False,
                 keep_alive=MODEL_KEEP_ALIVE,
             )

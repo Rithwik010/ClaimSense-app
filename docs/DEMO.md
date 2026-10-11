@@ -6,7 +6,9 @@ Say the lines in quotes in your own words.
 ## Before the audience arrives (5 minutes)
 
 1. `make demo-reset`, then `make demo` in a second terminal. Wait for "Ready" and for the web app
-   on http://localhost:5173. (`ollama serve` must be running.)
+   on http://localhost:5173. Both start `ollama serve` themselves when it is not running (models
+   kept loaded, cloud features off; log in `data/generated/logs/ollama.log`), so after a reboot
+   nothing else is needed.
 2. Open the web app at 1440 px or wider. In the sidebar set the role to **Reviewer** and the
    reviewer ID to `reviewer-demo`.
 3. Open http://localhost:5173/metrics once (it loads the evaluation reports), then go to

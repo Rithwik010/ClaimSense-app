@@ -236,3 +236,9 @@ Synthetic data only; `data/raw/` and model files never go into git.
    ```
    Or upload the files in `demo/claims/` by hand on Submit claim, in file order. `docs/DEMO.md`
    is the click-by-click runbook.
+9. Whole stack through the API, and no connection outside the laptop: with `make demo-up` running,
+   right after a `make demo-reset`:
+   ```bash
+   make offline-check   # runs make e2e-api; expect "0 failed" twice and "OK   no connection outside the laptop"
+   make demo-reset      # the check files the demo claims
+   ```

@@ -10,6 +10,12 @@ jobs:
   checks:
     name: Lint, import checks and tests
     runs-on: ubuntu-24.04  # pinned: GitHub moves ubuntu-latest to Ubuntu 26 on 2026-10-19
+    # No telemetry (D-PROC-4, D-PROC-5). CI runs no Qdrant server (the tests use Qdrant in memory);
+    # the variable is set so any Qdrant started here would not report either.
+    env:
+      ORT_DISABLE_TELEMETRY: "1"
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      QDRANT__TELEMETRY_DISABLED: "true"
     services:
       postgres:
         image: postgres:18-alpine
@@ -63,6 +69,7 @@ jobs:
         env:
           CLAIMSENSE_REQUIRE_DB: "1"
           CLAIMSENSE_REQUIRE_EMBEDDING: "1"
+          HF_HUB_OFFLINE: "1"  # the tests download nothing; the model was fetched above
 
   web:
     name: Web app (lint, typecheck, unit tests, build)

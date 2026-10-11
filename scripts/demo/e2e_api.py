@@ -9,8 +9,9 @@ each demo claim can be filed only once. It checks:
    PDF (claim 02, rendered from its JSON), scanned PDF; ACCEPT, OVERRIDE with a reason,
    finalization, accumulator and visit-usage updates, the audit trail in order;
 3. for each claim, that the text explanation matches the decision record
-   (tests/explain_support.py) and that the record names the rules, model, prompt and policy
-   versions where the claim reached them;
+   (tests/explain_support.py), that the explanation shown (text and HTML) is the one audited as
+   EXPLANATION_BUILT for the latest record (its SHA-256), and that the record names the rules,
+   model, prompt and policy versions where the claim reached them;
 4. bad inputs and failures: wrong file type, empty file, corrupted PDF, JSON with a missing
    field, a duplicate claim ID, a provider calling review, and Ollama stopped: each gives a clear
    4xx or a clear claim status, never a 5xx, and no claim is lost;
@@ -29,6 +30,7 @@ each demo claim can be filed only once. It checks:
 """
 
 import argparse
+import hashlib
 import json
 import os
 import socket
@@ -37,7 +39,6 @@ import subprocess
 import sys
 import threading
 import time
-from collections import Counter
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -63,7 +64,14 @@ MODEL_EVENTS = [
     "SLM_RECOMMENDED",
     "CALCULATED",
 ]
-REVIEWED_EVENTS = [*MODEL_EVENTS, "REVIEW_OPENED", "REVIEW_ACCEPTED", "FINALIZED"]
+REVIEWED_EVENTS = [
+    *MODEL_EVENTS,
+    "EXPLANATION_BUILT",
+    "REVIEW_OPENED",
+    "REVIEW_ACCEPTED",
+    "FINALIZED",
+    "EXPLANATION_BUILT",
+]
 
 
 class Check:
@@ -170,6 +178,20 @@ def explained(check: Check, api: httpx.Client, claim_id: str) -> None:
             f" ({versions.model_name}, {versions.prompt_version})",
         )
     events = api.get(f"/v1/claims/{claim_id}/audit").json()
+    built = [e["payload"] for e in events if e["event_type"] == "EXPLANATION_BUILT"]
+    shown = {
+        fmt: api.get(f"/v1/claims/{claim_id}/explanation", params={"format": fmt}).text
+        for fmt in ("text", "html")
+    }
+    check(
+        bool(built)
+        and all(
+            hashlib.sha256(shown[fmt].encode()).hexdigest() == built[-1][f"{fmt}_sha256"]
+            for fmt in shown
+        ),
+        f"{claim_id}: EXPLANATION_BUILT audited ({len(built)}x); the explanation shown (text and"
+        " HTML) is the one built for the latest record",
+    )
     ids = [e["id"] for e in events]
     check(
         ids == sorted(ids) and events[0]["event_type"] == "INTAKE_COMPLETED",
@@ -401,8 +423,9 @@ def main() -> None:
     )
     events = [e["event_type"] for e in api.get("/v1/claims/CLM-DEMO-02/audit").json()]
     check(
-        subsequence(events, REVIEWED_EVENTS) and all(n == 1 for n in Counter(events).values()),
-        f"CLM-DEMO-02: complete audit trail after the recovery, each stage once ({events})",
+        events == REVIEWED_EVENTS,
+        "CLM-DEMO-02: complete audit trail after the recovery, each stage once and the"
+        f" explanation built for the recommendation and the final decision ({events})",
     )
 
     r = file_and_process(check, api, "03-deny-full-override.json", "CLM-DEMO-03", "json-file")
