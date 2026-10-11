@@ -11,12 +11,12 @@ Team: Manideep3183, rohanpagadala, Rithwik010. Work sessions so far: Manideep318
 
 ---
 
-## 1. Current status (2026-10-10 IST)
+## 1. Current status (2026-10-11 IST)
 
 | Area | State |
 |---|---|
 | **Fine-tuning (P4.3)** | **Model v2 done (2026-10-10).** 500 steps / 2 epochs / 4 h 13 min on a Kaggle T4 (float32, 30.4 s/step), best eval loss **0.001491** (checkpoint 500); dataset v2, prompt `decision_v3`. Model v1: 3 h 02 min, best eval loss 0.001711. GGUFs in `data/generated/models/` (not in git). |
-| **Model in Ollama (P4.5)** | **`claimsense-decision:v2`** (Q4_K_M, weights `7cbaf1334f19`, num_ctx 8192) is the demo model (`make demo`); `claimsense-decision:v1` kept for comparison. |
+| **Model in Ollama (P4.5)** | **`claimsense-decision:v2`** (Q4_K_M, weights `7cbaf1334f19`, num_ctx 8192) is the demo model (`make demo`); `claimsense-decision:v1` kept for comparison. **E4B evaluated 2026-10-11 (D-MODEL-5): macro-F1 0.886 but valid output 0.963 and median 10.6 s, so v2 stays.** |
 | **Evaluation (P4.4)** | **Model v2 on the v2 test set: macro-F1 0.8532** (v1: 0.694), valid output 98%, line accuracy 0.873, criterion status 0.926, **DENY precision 1.000** (no wrong denial), median 5.7 s per claim. Target 0.90 still missed. See `docs/results-v2.md`. |
 | Baseline (P4.2) | **Done** (300/300, Ollama 0.34.1): valid output 73%, line accuracy 0.42, macro-F1 **0.345**, criterion status 0.63. See `docs/results.md`. |
 | **Why the target is missed** | Fully measured, not guessed: note register 0.144 of the 0.228 gap; the model contradicting its own statuses 0.027 (fixable deterministically, no retraining); the NOT_APPLICABLE / NOT_DOCUMENTED boundary; and the dropped second line (**a decoding problem, not a training one**). |
@@ -426,6 +426,13 @@ Kaggle copy for anything model-related.
   - **Runbook:** `docs/DEMO.md`, about 10 minutes, what to say and what to do if a step fails; `make demo-video` records it (`demo-video/demo.webm`, git-ignored; 2.1 min recorded).
   - **Tag:** `demo-2026-10-14` waits for the E4B decision and the CARC/RARC approval, at the latest the model freeze on Mon 12 Oct 21:00 IST (D-PROC-3).
   - **Tests:** 2,310 pass, 1 skipped (local).
+
+- 2026-10-11 13:22 | Manideep3183 | Backend pass | **E4B evaluated (v2 stays), CARC/RARC codes, demo operations and P6.1 results merged (branch `p4.6-e4b-eval`; merged into `main` as `b3e5a83`, `--no-ff`; CI run 38122581878 passed: Python 1,952 passed, 66 skipped; web app passed).** D-CARC-2, D-UI-3, D-MODEL-4, D-MODEL-5.
+  - **E4B (D-MODEL-5):** guard on, v2 test set: valid output 0.9633, line accuracy 0.899, macro-F1 0.8859, criterion 0.932, DENY precision 0.987, wrong approvals 21. Fails two switch conditions: valid output (< 0.98) and speed (same 30 claims, same idle machine: median 10.6 s against v2's 5.3 s). **v2 stays the demo model.**
+  - **CARC/RARC (D-CARC-2):** `reason_code_map.csv` as approved on 11 Oct; codes with official descriptions (without "Usage:") on DENY and REJECT lines in the API (`adjustments`) and the explanation; R15 names its billing article and related LCDs, N115 only when there is one.
+  - **Demo operations:** `make demo-up`, `demo-check`, `e2e-api` (125 checks through the API, including Ollama stopped and bad inputs; privacy check of the e2e output and the API/pipeline log: no names, addresses, dates of birth or note text); model kept loaded (`keep_alive -1`) and warmed at reset; no outside connections (Qdrant telemetry off, `HF_HUB_OFFLINE`).
+  - **Docs:** `README.md` (Mermaid diagram, limitations), `docs/TRAINING.md` (from the Kaggle logs), `docs/results.md` and `results.json` (P6.1; served at `/v1/metrics/results`).
+  - **Tests:** 2,316 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
