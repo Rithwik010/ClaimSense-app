@@ -446,6 +446,13 @@ Kaggle copy for anything model-related.
   - **Offline (D-PROC-5):** telemetry switches set in `app/__init__.py` (importing qdrant_client started onnxruntime's telemetry); `make offline-check` OK: nothing but the laptop and the Docker network during `make e2e-api` (139 checks). `make ollama-up` starts `ollama serve` (keep-alive, no cloud) when it is not running.
   - **Tests:** 2,321 pass, 1 skipped (local).
 
+- 2026-10-11 18:02 | Manideep3183 | Login and roles | **Logins and role-based access merged (branch `p7.1-login-roles`; merged into `main` as `77be639`, `--no-ff`; CI run 38139325448 passed: Python 1,982 passed, 66 skipped; web app 38 passed).** D-AUTH-1.
+  - **Backend:** users table (migration 0007, Argon2), `/v1/auth/login`, `/logout`, `/me` (PyJWT HS256, httpOnly SameSite=Strict cookie, 8 hours); every endpoint checks the role from the token: provider files, processes and reads own claims (another provider's is 404; "IN_REVIEW" until final), reviewer reviews as themselves, admin reads only; only login, logout and /health are public. The API serves the web build on :8000 (same origin).
+  - **Web app:** login page, each role's sidebar and home (My claims, Review queue, Overview placeholder), "You don't have access", user menu with Log out, back to login on a 401; no role header.
+  - **Demo:** `make demo-users` (also in `make demo-reset`): provider1, provider2, reviewer1, reviewer2, admin; passwords in .env. `docs/DEMO.md` is now a one-page run-sheet for the nine claims.
+  - **Checks:** `make e2e-api` 167 checks with logins; `make offline-check` OK; Playwright 27 passed (demo claims, layout at 390/768/1440/1280x720, smoke).
+  - **Tests:** 2,346 pass, 1 skipped (local).
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
