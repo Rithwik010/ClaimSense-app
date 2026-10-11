@@ -16,7 +16,15 @@ from training.finetune.data import (
     turn_markers,
     warmup_steps,
 )
-from training.finetune.modelfile import base_directives, build
+from training.finetune.modelfile import (
+    base_directives,
+    build,
+    differences,
+    evaluated,
+    parse,
+    settings,
+    weights,
+)
 
 # A Gemma-style template without a system role (it raises on one, like Gemma's own template).
 GEMMA_LIKE = jinja2.Template(
@@ -97,10 +105,59 @@ def test_modelfile_copies_the_base_chat_handling(tmp_path) -> None:  # noqa: ANN
         "TEMPLATE {{ .Prompt }}",
         "RENDERER gemma4",
         "PARSER gemma4",
+        "PARAMETER num_ctx 8192",  # parameters in the order `ollama show` prints them
         "PARAMETER top_k 64",
-        "PARAMETER num_ctx 8192",
     ]
     assert base_directives("FROM x\nLICENSE y") == []
+
+
+def test_modelfile_parse_keeps_triple_quoted_values_whole() -> None:
+    text = (
+        "# comment\nFROM /blobs/sha256-" + "a" * 64 + '\nTEMPLATE """{{ if .System }}\n'
+        '{{ .System }}{{ end }}"""\nSYSTEM """One line."""\n\nPARAMETER stop "<eos>"\n'
+    )
+
+    assert parse(text) == [
+        ("FROM", "/blobs/sha256-" + "a" * 64),
+        ("TEMPLATE", "{{ if .System }}\n{{ .System }}{{ end }}"),
+        ("SYSTEM", "One line."),
+        ("PARAMETER", 'stop "<eos>"'),
+    ]
+    assert weights(text) == "a" * 64 and weights("FROM ./model.gguf") is None
+    assert base_directives(text)[0] == 'TEMPLATE """{{ if .System }}\n{{ .System }}{{ end }}"""'
+
+
+def test_modelfile_settings_must_match_the_evaluated_model_exactly() -> None:
+    running = (
+        "FROM /blobs/sha256-x\nTEMPLATE {{ .Prompt }}\nPARAMETER top_k 64\nPARAMETER num_ctx 8192"
+    )
+    rebuilt = "FROM ./m.gguf\nTEMPLATE {{ .Prompt }}\nPARAMETER num_ctx  8192\nPARAMETER top_k 64"
+    pinned = settings(running)
+
+    assert pinned == {"TEMPLATE": ["{{ .Prompt }}"], "PARAMETER": ["num_ctx 8192", "top_k 64"]}
+    assert differences(pinned, settings(rebuilt)) == []  # FROM, order and spacing aside
+    assert differences(pinned, settings(rebuilt + "\nSYSTEM Be brief.")) == [
+        "SYSTEM: ['Be brief.'] (evaluated: [])"
+    ]
+    assert differences(pinned, settings(rebuilt.replace("64", "40"))) == [
+        "PARAMETER: ['num_ctx 8192', 'top_k 40'] (evaluated: ['num_ctx 8192', 'top_k 64'])"
+    ]
+    assert differences(pinned, settings(rebuilt.replace("Prompt", "Messages")))[0].startswith(
+        "TEMPLATE:"
+    )
+
+
+def test_the_pinned_v2_settings_are_what_the_writer_builds(tmp_path) -> None:  # noqa: ANN001
+    """The evaluated v2 (training/finetune/evaluated/) against the Modelfile the writer makes from
+    gemma4:e2b's directives as `ollama show gemma4:e2b --modelfile` printed them on 2026-10-11."""
+    base = (
+        "FROM /blobs/sha256-b\nTEMPLATE {{ .Prompt }}\nRENDERER gemma4\nPARSER gemma4\n"
+        'PARAMETER temperature 1\nPARAMETER top_k 64\nPARAMETER top_p 0.95\nLICENSE """A\nB"""\n'
+    )
+    reference = evaluated("claimsense-decision:v2")
+
+    assert reference is not None and reference["weights_sha256"].startswith("7cbaf1334f19")
+    assert differences(reference["settings"], settings(build(tmp_path / "m.gguf", base))) == []
 
 
 def test_kaggle_folder_needs_real_retrieval_and_is_private(tmp_path) -> None:  # noqa: ANN001

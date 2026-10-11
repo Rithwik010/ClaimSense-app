@@ -6,8 +6,10 @@ MODEL_NAME ?= claimsense-decision:v2
 API_PORT ?= 8000
 # No downloads during a demo: the embedding model is cached by setup (and the v2 lookup needs none).
 export HF_HUB_OFFLINE := 1
+# No onnxruntime telemetry to Microsoft (app/rag/embedding.py sets it too; D-PROC-4).
+export ORT_DISABLE_TELEMETRY := 1
 
-.PHONY: setup demo demo-up demo-check demo-reset demo-claims demo-video e2e-api results web-check smoke
+.PHONY: setup demo demo-up demo-check demo-reset demo-claims demo-video e2e-api model-check results web-check smoke
 
 setup: ## Python and web dependencies, database schema, reference data, policy collections
 	uv sync
@@ -48,6 +50,9 @@ e2e-api: ## end-to-end check through the API alone; run right after demo-reset w
 	set -o pipefail; uv run python -m scripts.demo.e2e_api 2>&1 | tee data/generated/logs/e2e-api.log
 	uv run python -m scripts.demo.e2e_api --privacy-only --log data/generated/logs/e2e-api.log \
 		$(if $(wildcard data/generated/logs/api.log),--log data/generated/logs/api.log,)
+
+model-check: ## the demo model in Ollama and the model its Modelfile builds, against the evaluated one
+	MODEL_NAME=$(MODEL_NAME) uv run python -m scripts.verify.model_check
 
 results: ## regenerate docs/results.md and data/generated/eval/results.json (P6.1)
 	uv run python -m scripts.verify.results_report

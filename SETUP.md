@@ -214,7 +214,13 @@ Synthetic data only; `data/raw/` and model files never go into git.
 5. Database, seeds, policy collections and the model check:
    ```bash
    make demo-reset
+   make model-check   # expect OK for the running model and for the model the Modelfile builds
    ```
+   `make model-check` compares `claimsense-decision:v2` with the model that was evaluated
+   (weights, template, renderer, parser, parameters, system prompt; D-MODEL-6). A FAIL means this
+   setup runs a different model from the one in `docs/results.md`: rebuild it from the shared
+   GGUF (step 4) before the demo. Without a Modelfile (the model was copied in) the build check
+   is skipped.
 6. All tests, golden cases included:
    ```bash
    uv run pytest

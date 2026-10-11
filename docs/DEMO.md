@@ -76,8 +76,10 @@ and press **Process claim** again on the claim page.
 ## Offline
 
 A demo run needs no internet. Checked on 11 Oct: the app and the web app call only localhost
-(fonts are bundled); Qdrant's telemetry is off (`docker-compose.yml`); the Makefile sets
-`HF_HUB_OFFLINE=1` (the v2 policy lookup embeds nothing; the embedding model is cached by setup);
+(fonts are bundled); Qdrant's telemetry is off (`docker-compose.yml`); onnxruntime's telemetry to
+Microsoft is off (`ORT_DISABLE_TELEMETRY=1`, set by `app/rag/embedding.py` and the Makefile,
+D-PROC-4); the Makefile sets `HF_HUB_OFFLINE=1` (the v2 policy lookup embeds nothing; the
+embedding model is cached by setup);
 `ollama serve` makes no calls for a local model, though the Ollama desktop app checks for updates,
 so run `ollama serve` or turn updates off. Downloads happen only in setup: Docker images, npm and
 uv packages, the embedding model, Playwright's browser.
