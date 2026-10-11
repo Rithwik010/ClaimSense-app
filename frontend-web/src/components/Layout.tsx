@@ -28,6 +28,9 @@ function crumbs(pathname: string): { label: string; to?: string }[] {
   if (first === "claims" && second) {
     return [{ label: "Claims", to: "/claims" }, { label: decodeURIComponent(second) }];
   }
+  if (first === "my-claims" && second) {
+    return [{ label: "My claims", to: "/my-claims" }, { label: decodeURIComponent(second) }];
+  }
   const item = PAGES.find((n) => n.to === `/${first ?? ""}`);
   return [{ label: item?.label ?? "ClaimSense" }];
 }

@@ -4,10 +4,12 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Activity,
   BarChart3,
   ClipboardCheck,
   FileUp,
   Files,
+  History,
   Inbox,
   LayoutDashboard,
   Scale,
@@ -39,7 +41,9 @@ export const PAGES: Page[] = [
   { to: "/queue", label: "Review queue", icon: ClipboardCheck, roles: ["reviewer", "admin"] },
   { to: "/claims", label: "Claims", icon: Files, roles: ["reviewer", "admin"] },
   { to: "/rule-outcomes", label: "Rule outcomes", icon: Scale, roles: ["reviewer", "admin"] },
-  { to: "/metrics", label: "Metrics", icon: BarChart3, roles: ["admin"] },
+  { to: "/metrics", label: "Model metrics", icon: BarChart3, roles: ["admin"] },
+  { to: "/audit", label: "Audit lookup", icon: History, roles: ["admin"] },
+  { to: "/system", label: "System status", icon: Activity, roles: ["admin"] },
 ];
 
 const HOMES: Record<Role, string> = { provider: "/my-claims", reviewer: "/queue", admin: "/overview" };

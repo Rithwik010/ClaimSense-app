@@ -38,7 +38,7 @@ describe("API client", () => {
   it("explains an unreachable API", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("Failed to fetch"))));
 
-    await expect(request("/v1/x")).rejects.toThrow(/cannot be reached/);
+    await expect(request("/v1/x")).rejects.toThrow(/make demo-up is still running/);
   });
 
   it("ends the session on a 401, except for a wrong password at login", async () => {
