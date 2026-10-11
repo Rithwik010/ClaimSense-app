@@ -33,7 +33,8 @@ ClaimSense: CMS-1500 claims → deterministic rules → fine-tuned Gemma 4 SLM r
 - React + Vite + TypeScript, shadcn/ui (Radix), Tailwind v4, TanStack Query, Motion; light theme only (D-UI-1, D-UI-2).
 - Follow `DESIGN.md` (tokens, type, spacing, components, motion, breakpoints); it wins over the
   `frontend-design` project skill where they differ.
-- Talks only to the API through the Vite dev proxy; never imports app code or touches the database.
+- Talks only to the API on its own origin (the Vite dev proxy, or the API serving the build in
+  `make demo-up`; D-AUTH-1); never imports app code or touches the database.
   The UI computes no amounts and no decisions: it formats what the API returns.
 - Add components with `npx shadcn@latest add <name>`; pin every npm package to an exact version at
   least two weeks old.

@@ -9,10 +9,16 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_session
+from app.api.deps import get_session, require
+from app.auth import Role
 from app.db.models import Benefit, Plan, PlanExclusion
 
-router = APIRouter(prefix="/v1/plans", tags=["plans"])
+# Reviewers and admins (D-AUTH-1).
+router = APIRouter(
+    prefix="/v1/plans",
+    tags=["plans"],
+    dependencies=[Depends(require(Role.REVIEWER, Role.ADMIN))],
+)
 SessionDep = Annotated[Session, Depends(get_session)]
 
 

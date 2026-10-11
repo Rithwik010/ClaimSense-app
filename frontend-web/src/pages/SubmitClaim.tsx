@@ -1,5 +1,6 @@
-// Submit claim: upload a JSON claim, a PDF of the form or a scanned form; check the fields read and
-// their confidence; process the claim; then open it, where the stage strip fills in.
+// Submit claim (providers, D-AUTH-1): upload a JSON claim, a PDF of the form or a scanned form;
+// check the fields read and their confidence; process the claim; then My claims shows it, "In
+// review" until a reviewer finalizes it (a rule outcome is final at once).
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
@@ -11,6 +12,7 @@ import type { FiledWithErrors, IntakeResult } from "@/api/types";
 import { FieldsTable } from "@/components/Fields";
 import { PageTitle, Panel, Section } from "@/components/Layout";
 import { ErrorNotice, Note } from "@/components/States";
+import { providerStatus } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -104,9 +106,9 @@ export function SubmitClaim() {
               disabled={process.isPending}
               onClick={() =>
                 process.mutate(claimId, {
-                  onSuccess: () => {
-                    toast.success("Claim processed");
-                    navigate(`/claims/${encodeURIComponent(claimId)}`, { state: { justProcessed: true } });
+                  onSuccess: (view) => {
+                    toast.success(`Claim processed: ${providerStatus(view.status).label.toLowerCase()}`);
+                    navigate("/my-claims");
                   },
                 })
               }

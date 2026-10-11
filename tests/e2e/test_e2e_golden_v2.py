@@ -16,7 +16,15 @@ from sqlalchemy.orm import Session
 from app.domain.contracts import DecisionRecord, SourceFormat
 from app.workflow.pipeline import intake_claim_data
 from scripts.verify.e2e_v2_cases import cases_to_version, v2_retriever
-from tests.e2e.support import E2E_CASES, E2E_V2_CASES, REVIEWER, CaseRetriever, StubModel, audit
+from tests.e2e.support import (
+    E2E_CASES,
+    E2E_V2_CASES,
+    FILED_BY_TEST_PROVIDER,
+    CaseRetriever,
+    StubModel,
+    audit,
+    record_of,
+)
 from tests.e2e.test_e2e_golden import differences, final_differences, stored_accumulators
 
 VERSIONED = {case["case_id"] for case in cases_to_version()}
@@ -41,12 +49,13 @@ def run(api, load_case_reference, engine, case: dict[str, Any], retriever) -> No
                 given["field_confidences"],
                 SourceFormat(given["source_format"]),
                 0.85,
+                **FILED_BY_TEST_PROVIDER,
             )
 
     response = client.post(f"/v1/claims/{claim['claim_id']}/process")
 
     assert response.status_code == 200, response.text
-    record = DecisionRecord.model_validate(response.json())
+    record = record_of(client, claim["claim_id"])
     assert differences(record, case["expected"]) == [], record.output_errors
     if record.context_refs is not None:
         context = next(
@@ -57,7 +66,7 @@ def run(api, load_case_reference, engine, case: dict[str, Any], retriever) -> No
     action = given.get("review_action")
     if action is None:
         return
-    reviewed = client.post(f"/v1/claims/{claim['claim_id']}/review", json=action, headers=REVIEWER)
+    reviewed = client.post(f"/v1/claims/{claim['claim_id']}/review", json=action)
     assert reviewed.status_code == 200, reviewed.text
     final = DecisionRecord.model_validate(reviewed.json())
     events = audit(client, claim["claim_id"])

@@ -15,6 +15,14 @@ export type LineDecision = "APPROVE" | "DENY" | "PEND";
 export type ReviewTier = "QUICK" | "STANDARD" | "FULL";
 export type SourceFormat = "JSON" | "DIGITAL_PDF" | "SCANNED";
 export type Role = "provider" | "reviewer" | "admin";
+
+/** The logged-in user (GET /v1/auth/me, D-AUTH-1). */
+export interface User {
+  username: string;
+  display_name: string;
+  role: Role;
+  provider_id: string | null;
+}
 export type Claim = Record<string, unknown>;
 
 export interface IntakeResult {
@@ -199,4 +207,31 @@ export interface Evaluation {
   ocr: { claims: number; fields: number; field_accuracy: number; blank_read_as_blank: number } | null;
   ocr_target: number;
   v2_errors: V2Errors | null;
+}
+
+/** A provider's own claim (D-AUTH-1): the decision only once final; until then IN_REVIEW. */
+export interface ProviderClaimView {
+  claim_id: string;
+  status: ClaimStatus | "IN_REVIEW";
+  final: boolean;
+  source_format: SourceFormat;
+  received: Claim;
+  field_confidences: Record<string, number>;
+  filed_by: string | null;
+  record: DecisionRecord | null;
+}
+
+/** A provider's own claim in their list: the decision and amounts only once final. */
+export interface ProviderClaimSummary {
+  claim_id: string;
+  status: ClaimStatus | "IN_REVIEW";
+  final: boolean;
+  source_format: SourceFormat;
+  received_date: string;
+  updated: string;
+  claim_decision: string | null;
+  total_billed_cents: number | null;
+  total_allowed_cents: number | null;
+  plan_pays_cents: number | null;
+  failed_rules: { rule_id: string; outcome: string; reason_code: string | null; detail: string; line_no: number | null }[];
 }

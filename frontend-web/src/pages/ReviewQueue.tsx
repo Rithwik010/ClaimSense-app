@@ -1,5 +1,6 @@
 // Review queue: every claim with a model recommendation, most work first (full, standard, quick;
-// then the oldest), with a tier filter and decision badges.
+// then the oldest), with a tier filter and decision badges. Reviewers open a claim to review it;
+// an admin reads it (D-AUTH-1).
 
 import { useState } from "react";
 import { Link } from "react-router";
@@ -13,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { age, money } from "@/lib/format";
 import { CLAIM_DECISION, TIER } from "@/lib/labels";
-import { useSession } from "@/lib/session";
+import { useUser } from "@/lib/auth";
 
 const FILTERS: { value: string; label: string }[] = [
   { value: "all", label: "All tiers" },
@@ -23,7 +24,7 @@ const FILTERS: { value: string; label: string }[] = [
 ];
 
 export function ReviewQueue() {
-  const { role } = useSession();
+  const { role } = useUser();
   const [tier, setTier] = useState<ReviewTier | null>(null);
   const queue = useQueue(tier);
   return (
@@ -32,12 +33,7 @@ export function ReviewQueue() {
         title="Review queue"
         hint="Every model recommendation waits here for a reviewer, most work first: full, standard, then quick review."
       />
-      {role === "provider" ? (
-        <EmptyState title="The review queue is for reviewers">
-          Switch the role to Reviewer or Admin in the sidebar to see the queue.
-        </EmptyState>
-      ) : (
-        <>
+      <>
           <Tabs value={tier ?? "all"} onValueChange={(value) => setTier(value === "all" ? null : (value as ReviewTier))}>
             <div className="overflow-x-auto">
               <TabsList variant="line" aria-label="Filter by tier" className="mb-4 h-10 gap-4 border-b border-rules px-0">
@@ -59,10 +55,7 @@ export function ReviewQueue() {
             <ErrorNotice error={queue.error} onRetry={() => void queue.refetch()} />
           ) : queue.data.length === 0 ? (
             <EmptyState title="Nothing to review">
-              Submit and process a claim; its recommendation appears here.{" "}
-              <Link className="font-semibold text-ink underline underline-offset-4" to="/submit">
-                Submit a claim
-              </Link>
+              A claim appears here once a provider files and processes it and the model recommends a decision.
             </EmptyState>
           ) : (
             <div className="overflow-hidden rounded-lg border border-rules bg-paper">
@@ -82,7 +75,7 @@ export function ReviewQueue() {
                       <TableCell>
                         <Link
                           className="font-semibold underline-offset-4 hover:underline"
-                          to={`/review/${encodeURIComponent(item.claim_id)}`}
+                          to={`/${role === "reviewer" ? "review" : "claims"}/${encodeURIComponent(item.claim_id)}`}
                         >
                           {item.claim_id}
                         </Link>
@@ -105,8 +98,7 @@ export function ReviewQueue() {
               </Table>
             </div>
           )}
-        </>
-      )}
+      </>
     </>
   );
 }

@@ -42,6 +42,17 @@ export const SOURCE: Record<string, string> = {
   VALIDATION: "Output check",
 };
 
+/** What a provider sees of a claim still being reviewed (D-AUTH-1): no recommendation. */
+export const IN_REVIEW: Label = {
+  label: "In review",
+  hint: "A reviewer checks it; the decision shows once it is final",
+  tone: "neutral",
+};
+
+export function providerStatus(status: ClaimStatus | "IN_REVIEW"): Label {
+  return status === "IN_REVIEW" ? IN_REVIEW : STATUS[status];
+}
+
 export const CLAIM_DECISION: Record<string, Label> = {
   APPROVE: { label: "Approve", hint: "Every line approved", tone: "approve" },
   PARTIAL: { label: "Partly approve", hint: "Some lines approved", tone: "approve" },

@@ -4,7 +4,7 @@ the UI shows."""
 import json
 
 from app.api import metrics
-from tests.e2e.support import E2E_CASES, process_case
+from tests.e2e.support import ADMIN, E2E_CASES, process_case
 
 
 def test_claims_are_listed_with_their_status_totals_and_failed_rules(
@@ -61,7 +61,7 @@ def test_the_evaluation_lists_each_model_report_with_its_targets(
     )
     client = api(None, None)
 
-    shown = client.get("/v1/metrics/evaluation").json()
+    shown = client.get("/v1/metrics/evaluation", headers=ADMIN).json()
 
     assert shown["macro_f1_target"] == 0.9 and shown["ocr"] is None
     assert shown["v2_errors"] == {
@@ -117,7 +117,7 @@ def test_a_record_stored_under_an_older_contract_is_left_out(api, engine) -> Non
     client = api(None, None)
 
     listed = client.get("/v1/claims").json()
-    queue = client.get("/v1/review/queue", headers={"X-Role": "reviewer"})
+    queue = client.get("/v1/review/queue")
 
     assert [(c["claim_id"], c["total_allowed_cents"]) for c in listed] == [("CLM-OLD-00001", None)]
     assert queue.status_code == 200 and queue.json() == []
@@ -139,6 +139,8 @@ def test_the_results_file_is_served_once_written(api, tmp_path, monkeypatch) -> 
     client = api(None, None)
     monkeypatch.setattr(metrics, "RESULTS", tmp_path / "results.json")
 
-    assert client.get("/v1/metrics/results").status_code == 404
+    assert client.get("/v1/metrics/results", headers=ADMIN).status_code == 404
     (tmp_path / "results.json").write_text('{"reviewer_agreement": "not measured"}')
-    assert client.get("/v1/metrics/results").json() == {"reviewer_agreement": "not measured"}
+    assert client.get("/v1/metrics/results", headers=ADMIN).json() == {
+        "reviewer_agreement": "not measured"
+    }

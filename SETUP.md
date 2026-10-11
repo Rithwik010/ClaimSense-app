@@ -211,7 +211,9 @@ Synthetic data only; `data/raw/` and model files never go into git.
        --gguf data/generated/models/claimsense-decision-v2/gemma-4-E2B-it.Q4_K_M.gguf --version 2
    ollama create claimsense-decision:v2 -f data/generated/models/claimsense-decision-v2/Modelfile
    ```
-5. Database, seeds, policy collections and the model check:
+5. Database, seeds, policy collections, the demo logins and the model check (`make demo-reset`
+   writes `SECRET_KEY` and a password for each demo user to `.env` when missing; `.env` is never
+   committed):
    ```bash
    make demo-reset
    make model-check   # expect OK for the running model and for the model the Modelfile builds
@@ -225,17 +227,18 @@ Synthetic data only; `data/raw/` and model files never go into git.
    ```bash
    uv run pytest
    ```
-7. Start the app (database containers, API on :8000, web app on http://localhost:5173):
+7. Start the app: the API serves the web app on http://localhost:8000 (log in with a user from
+   `docs/DEMO.md`; `make demo` instead runs the dev server on :5173):
    ```bash
-   make demo
+   make demo-up
+   make demo-check   # five OK lines, Logins included
    ```
-8. Demo claims, right after a `make demo-reset` (each claim can be filed once), with `make demo`
-   running in another terminal:
+8. Demo claims through the web app, right after a `make demo-reset` (each claim can be filed
+   once), then the layout at 390, 768, 1440 and 1280x720 px, with `make demo-up` running:
    ```bash
-   cd frontend-web && npx playwright test e2e/demo-claims.spec.ts
+   cd frontend-web && npx playwright test e2e/demo-claims.spec.ts e2e/layout.spec.ts
    ```
-   Or upload the files in `demo/claims/` by hand on Submit claim, in file order. `docs/DEMO.md`
-   is the click-by-click runbook.
+   Or follow the run-sheet in `docs/DEMO.md` by hand.
 9. Whole stack through the API, and no connection outside the laptop: with `make demo-up` running,
    right after a `make demo-reset`:
    ```bash

@@ -39,11 +39,14 @@ class ClaimSummary:
 
 
 def claim_summaries(
-    session: Session, statuses: list[ClaimStatus] | None = None
+    session: Session, statuses: list[ClaimStatus] | None = None, provider_id: str | None = None
 ) -> list[ClaimSummary]:
+    """`provider_id`: only the claims filed under it (a provider's own claims, D-AUTH-1)."""
     query = select(Claim).order_by(Claim.updated_at.desc(), Claim.claim_id)
     if statuses:
         query = query.where(Claim.status.in_([s.value for s in statuses]))
+    if provider_id is not None:
+        query = query.where(Claim.provider_id == provider_id)
     found = []
     for row in session.scalars(query):
         try:

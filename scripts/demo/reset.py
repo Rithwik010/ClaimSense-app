@@ -6,7 +6,9 @@
 3. Seeds curated data, the public code tables from data/raw/ and the reference data, then the
    prior authorizations the demo claims need (`demo/authorizations.jsonl`).
 4. Builds the coverage policy collections in Qdrant when one is missing.
-5. Checks that Ollama serves the demo model (`MODEL_NAME`, default claimsense-decision:v2), then
+5. The demo logins (`scripts/demo/users.py`; passwords and SECRET_KEY in .env, written when
+   missing).
+6. Checks that Ollama serves the demo model (`MODEL_NAME`, default claimsense-decision:v2), then
    loads it and keeps it loaded (a warm-up call with keep_alive -1).
 
     uv run python -m scripts.demo.reset
@@ -30,6 +32,7 @@ from app.db.models import Authorization
 from app.db.seed import seed, upsert
 from app.db.session import get_engine
 from app.rag.knowledge import COVERAGE_COLLECTIONS
+from scripts.demo.users import USERS, ensure_env, seed_users
 
 ROOT = Path(__file__).resolve().parents[2]
 REFERENCE = ROOT / "data" / "generated" / "reference"
@@ -67,6 +70,14 @@ def main() -> None:
         upsert(session, Authorization, rows)
         session.commit()
     step(f"seeded {sum(counts.values()):,} rows; {len(rows)} demo authorizations")
+    written = ensure_env()
+    with Session(get_engine()) as session:
+        seed_users(session)
+    step(
+        f"users: {', '.join(USERS)} (passwords in .env"
+        + (f"; wrote {', '.join(written)}" if written else "")
+        + ")"
+    )
 
     client = QdrantClient(url=settings.qdrant_url)
     have = {c.name for c in client.get_collections().collections}
@@ -93,7 +104,7 @@ def main() -> None:
         f"{settings.ollama_url}/api/generate", json={"model": model, "keep_alive": -1}, timeout=300
     ).raise_for_status()
     step(f"ollama: {model} loaded and kept loaded")
-    print("Ready. Start the app with: make demo")
+    print("Ready. Start the app with: make demo-up (or make demo for the dev server)")
 
 
 if __name__ == "__main__":

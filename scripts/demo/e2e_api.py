@@ -13,8 +13,12 @@ each demo claim can be filed only once. It checks:
    EXPLANATION_BUILT for the latest record (its SHA-256), and that the record names the rules,
    model, prompt and policy versions where the claim reached them;
 4. bad inputs and failures: wrong file type, empty file, corrupted PDF, JSON with a missing
-   field, a duplicate claim ID, a provider calling review, and Ollama stopped: each gives a clear
-   4xx or a clear claim status, never a 5xx, and no claim is lost;
+   field, a duplicate claim ID, and Ollama stopped: each gives a clear 4xx or a clear claim
+   status, never a 5xx, and no claim is lost;
+4b. logins (D-AUTH-1): it logs in as every demo user (passwords from .env, `make demo-users`);
+   each claim is filed and processed by its provider (scripts/demo/users.py FILED_BY) and reviewed
+   by reviewer1; not logged in is 401, another role's endpoint 403, another provider's claim 404;
+   a provider sees IN_REVIEW until the claim is final;
 5. recovery after Ollama comes back: a second API on :8001 reaches Ollama through a local port
    that refuses connections (Ollama stopped: 503, the claim stays RECEIVED with nothing
    half-written), then passes them through to the running Ollama (Ollama started; the demo
@@ -48,6 +52,7 @@ import httpx
 from app.core.settings import get_settings
 from app.domain.contracts import DecisionRecord, IntakeClaim
 from app.intake.form_codec import to_form_values
+from scripts.demo.users import FILED_BY, USERS, password
 from tests.explain_support import mismatches
 from training.generate.forms import render_pdf
 
@@ -55,8 +60,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CLAIMS = ROOT / "demo" / "claims"
 API = "http://localhost:8000"
 DEAD_API_PORT = 8001
-REVIEWER = {"X-Role": "reviewer"}
-PROVIDER = {"X-Role": "provider"}
+REVIEWER_ID = "reviewer1"  # the logged-in reviewer: review actions must name them
 MODEL_EVENTS = [
     "INTAKE_COMPLETED",
     "RULES_EVALUATED",
@@ -110,10 +114,24 @@ def claim_json(name: str) -> dict[str, Any]:
     return json.loads((CLAIMS / name).read_text(encoding="utf-8"))
 
 
+def login(base_url: str, username: str) -> httpx.Client:
+    """A client logged in as a demo user (the session cookie stays in its cookie jar)."""
+    client = httpx.Client(base_url=base_url, timeout=300)
+    response = client.post(
+        "/v1/auth/login", json={"username": username, "password": password(username)}
+    )
+    if response.status_code != 200:
+        raise SystemExit(f"cannot log in as {username} ({response.status_code}): make demo-users")
+    return client
+
+
 def file_and_process(
-    check: Check, api: httpx.Client, name: str, claim_id: str, via: str
+    check: Check, sessions: dict[str, httpx.Client], name: str, claim_id: str, via: str
 ) -> dict[str, Any]:
-    """File a demo claim the given way and process it; returns the decision record."""
+    """File a demo claim the given way and process it as its provider; returns the decision
+    record as the reviewer reads it (the provider's answer holds no recommendation)."""
+    filer = FILED_BY[name]
+    api = sessions[filer]
     if via == "json-body":
         filed = api.post("/v1/claims/intake", json=claim_json(name))
     elif via == "digital-pdf":
@@ -126,27 +144,32 @@ def file_and_process(
         )
     else:
         filed = api.post("/v1/claims/intake/file", content=(CLAIMS / name).read_bytes())
-    no_5xx(check, filed, f"{claim_id}: intake ({via})")
-    check(filed.status_code == 201, f"{claim_id}: filed (201)")
+    no_5xx(check, filed, f"{claim_id}: intake ({via}) by {filer}")
+    check(filed.status_code == 201, f"{claim_id}: filed (201) by {filer}")
     processed = no_5xx(check, api.post(f"/v1/claims/{claim_id}/process"), f"{claim_id}: process")
     check(processed.status_code == 200, f"{claim_id}: processed (200)")
-    return processed.json()
+    view = processed.json()
+    record = sessions[REVIEWER_ID].get(f"/v1/claims/{claim_id}").json()["record"]
+    shown = view.get("record") is not None
+    check(
+        shown == view.get("final") and (view["status"] == "IN_REVIEW") != shown,
+        f"{claim_id}: {filer} sees {view['status']}"
+        + (" with the decision (final)" if shown else ", no recommendation"),
+    )
+    return record
 
 
 def review(api: httpx.Client, claim_id: str, overrides: list[dict] | None = None) -> httpx.Response:
-    api.post(
-        f"/v1/claims/{claim_id}/review/open", json={"reviewer_id": "reviewer-e2e"}, headers=REVIEWER
-    )
+    api.post(f"/v1/claims/{claim_id}/review/open", json={"reviewer_id": REVIEWER_ID})
     return api.post(
         f"/v1/claims/{claim_id}/review",
         json={
             "claim_id": claim_id,
-            "reviewer_id": "reviewer-e2e",
+            "reviewer_id": REVIEWER_ID,
             "action": "OVERRIDE" if overrides else "ACCEPT",
             "line_overrides": overrides or [],
             "timestamp": "2026-10-11T10:00:00Z",
         },
-        headers=REVIEWER,
     )
 
 
@@ -308,36 +331,58 @@ def main() -> None:
     parser.add_argument("--privacy-only", action="store_true", help="only check the logs")
     args = parser.parse_args()
     check = Check()
-    api = httpx.Client(base_url=API, timeout=300)
+    anonymous = httpx.Client(base_url=API, timeout=300)
     if args.privacy_only:
+        reviewer = login(API, REVIEWER_ID)
         for log in args.log:
             print(f"Privacy of {log}")
-            privacy(check, api, log)
+            privacy(check, reviewer, log)
         report(check)
         return
 
+    print("Logins (D-AUTH-1)")
+    sessions = {username: login(API, username) for username in USERS}
+    for username, (role, provider_id, _) in USERS.items():
+        me = sessions[username].get("/v1/auth/me").json()
+        check(
+            (me["role"], me["provider_id"]) == (role.value, provider_id),
+            f"{username} logs in as {role.value}" + (f" ({provider_id})" if provider_id else ""),
+        )
+    rv, ad, p1, p2 = (sessions[u] for u in (REVIEWER_ID, "admin", "provider1", "provider2"))
+    check(anonymous.get("/v1/claims").status_code == 401, "not logged in: GET /v1/claims is 401")
+    check(anonymous.get("/health").status_code == 200, "not logged in: GET /health is public")
+    check(p1.get("/v1/review/queue").status_code == 403, "a provider cannot see the queue (403)")
+    check(
+        rv.get("/v1/metrics/evaluation").status_code == 403, "a reviewer cannot see metrics (403)"
+    )
+    check(
+        ad.post("/v1/claims/intake", json=claim_json("01-approve-quick.json")).status_code == 403,
+        "an admin cannot file a claim (403)",
+    )
+
     print("Endpoints")
-    health = api.get("/health").json()
+    health = anonymous.get("/health").json()
     check(
         all(health[s]["ok"] for s in ("database", "qdrant", "ollama")),
         "GET /health: database, Qdrant and Ollama reachable",
     )
-    check(api.get("/v1/plans/PLN-PPO-GOLD").status_code == 200, "GET /v1/plans/{plan_id}")
+    check(rv.get("/v1/plans/PLN-PPO-GOLD").status_code == 200, "GET /v1/plans/{plan_id}")
     check(
-        api.get("/v1/plans/PLN-NOPE").status_code == 404,
+        rv.get("/v1/plans/PLN-NOPE").status_code == 404,
         "GET /v1/plans/{plan_id}: unknown plan is 404",
     )
     check(
-        api.get("/v1/claims/CLM-NOPE-1").status_code == 404,
+        rv.get("/v1/claims/CLM-NOPE-1").status_code == 404,
         "GET /v1/claims/{id}: unknown claim is 404",
     )
-    check(api.get("/v1/metrics/evaluation").status_code == 200, "GET /v1/metrics/evaluation")
+    check(ad.get("/v1/metrics/evaluation").status_code == 200, "GET /v1/metrics/evaluation (admin)")
 
     print("Ollama stopped, then started again (a second API on :8001)")
     switch = OllamaSwitch()
     server = second_api(switch.url)
     try:
-        second = httpx.Client(base_url=f"http://localhost:{DEAD_API_PORT}", timeout=300)
+        second_api_url = f"http://localhost:{DEAD_API_PORT}"
+        second, second_rv = login(second_api_url, "provider1"), login(second_api_url, REVIEWER_ID)
         pdf = render_pdf(
             to_form_values(IntakeClaim.model_validate(claim_json("02-pend-standard.json")))
         )
@@ -356,7 +401,7 @@ def main() -> None:
             kept["status"] == "RECEIVED",
             "the claim is not lost: still RECEIVED, ready to process again",
         )
-        events = [e["event_type"] for e in second.get("/v1/claims/CLM-DEMO-02/audit").json()]
+        events = [e["event_type"] for e in second_rv.get("/v1/claims/CLM-DEMO-02/audit").json()]
         check(
             events == ["INTAKE_COMPLETED"],
             f"nothing half-written by the failed run: audit {events}",
@@ -368,11 +413,11 @@ def main() -> None:
             second.post("/v1/claims/CLM-DEMO-02/process"),
             "CLM-DEMO-02: process again after Ollama started (same API process)",
         )
-        record = again.json()
         check(
-            again.status_code == 200 and record.get("claim_id") == "CLM-DEMO-02",
+            again.status_code == 200 and again.json().get("claim_id") == "CLM-DEMO-02",
             f"CLM-DEMO-02: processed on the same claim ID ({again.status_code})",
         )
+        record = second_rv.get("/v1/claims/CLM-DEMO-02").json()["record"]
         check(
             record.get("status") == "AWAITING_REVIEW" and record.get("review_tier") == "STANDARD",
             "CLM-DEMO-02 (digital PDF): finished normally, awaiting standard review",
@@ -392,16 +437,30 @@ def main() -> None:
         switch.stop()
 
     print("Demo claims")
-    r = file_and_process(check, api, "01-approve-quick.json", "CLM-DEMO-01", "json-body")
+    r = file_and_process(check, sessions, "01-approve-quick.json", "CLM-DEMO-01", "json-body")
     check(
         r["status"] == "AWAITING_REVIEW" and r["review_tier"] == "QUICK",
         "CLM-DEMO-01: awaiting quick review",
     )
     check(
-        review(api, "CLM-DEMO-01").json().get("status") == "FINAL_APPROVED",
-        "CLM-DEMO-01: ACCEPT -> FINAL_APPROVED",
+        p2.get("/v1/claims/CLM-DEMO-01").status_code == 404,
+        "provider2 cannot open provider1's claim (404)",
     )
-    payload = finalized_payload(api, "CLM-DEMO-01")
+    check(
+        p1.get("/v1/claims/CLM-DEMO-01/explanation").status_code == 409,
+        "provider1 gets no explanation while CLM-DEMO-01 is in review (409)",
+    )
+    check(
+        review(rv, "CLM-DEMO-01").json().get("status") == "FINAL_APPROVED",
+        "CLM-DEMO-01: ACCEPT by reviewer1 -> FINAL_APPROVED",
+    )
+    final_view = p1.get("/v1/claims/CLM-DEMO-01").json()
+    check(
+        (final_view["status"], final_view["final"]) == ("FINAL_APPROVED", True)
+        and final_view["record"] is not None,
+        "provider1 sees CLM-DEMO-01's decision once final",
+    )
+    payload = finalized_payload(rv, "CLM-DEMO-01")
     visits = payload["visit_usage"]["REHAB_THERAPY"]
     check(
         visits["after"] == visits["before"] + 1,
@@ -411,35 +470,42 @@ def main() -> None:
         payload["accumulators"]["after"] != payload["accumulators"]["before"],
         "CLM-DEMO-01: accumulators updated",
     )
-    events = [e["event_type"] for e in api.get("/v1/claims/CLM-DEMO-01/audit").json()]
+    audit = rv.get("/v1/claims/CLM-DEMO-01/audit").json()
+    events = [e["event_type"] for e in audit]
     check(
         subsequence(events, [*MODEL_EVENTS, "REVIEW_OPENED", "FINALIZED"]),
         f"CLM-DEMO-01: full audit trail in order ({len(events)} events)",
     )
+    actors = {e["event_type"]: e["actor"] for e in audit}
+    check(
+        (actors["INTAKE_COMPLETED"], actors["REVIEW_ACCEPTED"], actors["FINALIZED"])
+        == ("provider1", REVIEWER_ID, REVIEWER_ID),
+        "CLM-DEMO-01: audit actors are the logged-in provider and reviewer",
+    )
 
     check(
-        review(api, "CLM-DEMO-02").json().get("status") == "FINAL_PENDED",
+        review(rv, "CLM-DEMO-02").json().get("status") == "FINAL_PENDED",
         "CLM-DEMO-02: ACCEPT -> FINAL_PENDED",
     )
-    events = [e["event_type"] for e in api.get("/v1/claims/CLM-DEMO-02/audit").json()]
+    events = [e["event_type"] for e in rv.get("/v1/claims/CLM-DEMO-02/audit").json()]
     check(
         events == REVIEWED_EVENTS,
         "CLM-DEMO-02: complete audit trail after the recovery, each stage once and the"
         f" explanation built for the recommendation and the final decision ({events})",
     )
 
-    r = file_and_process(check, api, "03-deny-full-override.json", "CLM-DEMO-03", "json-file")
+    r = file_and_process(check, sessions, "03-deny-full-override.json", "CLM-DEMO-03", "json-file")
     check(
         r["review_tier"] == "FULL" and r["line_decisions"][0]["decision"] == "DENY",
         "CLM-DEMO-03: model DENY, full review",
     )
-    no_reason = review(api, "CLM-DEMO-03", [{"line_no": 1, "decision": "APPROVE", "reason": ""}])
+    no_reason = review(rv, "CLM-DEMO-03", [{"line_no": 1, "decision": "APPROVE", "reason": ""}])
     check(
         no_reason.status_code == 422,
         f"CLM-DEMO-03: an override without a reason is refused ({no_reason.status_code})",
     )
     final = review(
-        api,
+        rv,
         "CLM-DEMO-03",
         [{"line_no": 1, "decision": "APPROVE", "reason": "The note documents the criterion."}],
     ).json()
@@ -448,39 +514,39 @@ def main() -> None:
         "CLM-DEMO-03: OVERRIDE -> FINAL_APPROVED, amounts recomputed",
     )
 
-    r = file_and_process(check, api, "04-partial-ncci.json", "CLM-DEMO-04", "json-file")
+    r = file_and_process(check, sessions, "04-partial-ncci.json", "CLM-DEMO-04", "json-file")
     check(
         any(d["source"] == "RULE" and d["decision"] == "DENY" for d in r["line_decisions"]),
         "CLM-DEMO-04: a line denied by NCCI",
     )
     check(
-        review(api, "CLM-DEMO-04").json().get("status") == "FINAL_PARTIAL",
+        review(rv, "CLM-DEMO-04").json().get("status") == "FINAL_PARTIAL",
         "CLM-DEMO-04: ACCEPT -> FINAL_PARTIAL",
     )
 
-    r = file_and_process(check, api, "05-rule-deny-r15.json", "CLM-DEMO-05", "json-file")
+    r = file_and_process(check, sessions, "05-rule-deny-r15.json", "CLM-DEMO-05", "json-file")
     check(r["status"] == "DENIED_BY_RULE", "CLM-DEMO-05: DENIED_BY_RULE (R15)")
     check(
-        review(api, "CLM-DEMO-05").status_code == 409,
+        review(rv, "CLM-DEMO-05").status_code == 409,
         "CLM-DEMO-05: a rule outcome cannot be reviewed (409)",
     )
-    codes = api.get("/v1/claims/CLM-DEMO-05").json()["adjustments"]
+    codes = rv.get("/v1/claims/CLM-DEMO-05").json()["adjustments"]
     check(
         bool(codes) and codes[0]["codes"][0]["code"] == "11" and codes[0]["billing_article"],
         "CLM-DEMO-05: CARC 11 with its billing article",
     )
 
-    r = file_and_process(check, api, "06-reject-invalid-npi.json", "CLM-DEMO-06", "json-file")
+    r = file_and_process(check, sessions, "06-reject-invalid-npi.json", "CLM-DEMO-06", "json-file")
     check(r["status"] == "REJECTED", "CLM-DEMO-06: invalid NPI -> REJECTED")
-    r = file_and_process(check, api, "07-duplicate-of-01.json", "CLM-DEMO-07", "json-file")
+    r = file_and_process(check, sessions, "07-duplicate-of-01.json", "CLM-DEMO-07", "json-file")
     reasons = [x["reason_code"] for x in r["rules_outcome"]["rule_results"] if not x["passed"]]
     check(
         r["status"] == "REJECTED" and "RJ_DUPLICATE" in reasons,
         "CLM-DEMO-07: duplicate -> REJECTED RJ_DUPLICATE",
     )
-    r = file_and_process(check, api, "08-scanned-clean.pdf", "CLM-DEMO-08", "scanned")
+    r = file_and_process(check, sessions, "08-scanned-clean.pdf", "CLM-DEMO-08", "scanned")
     check(r["status"] == "AWAITING_REVIEW", "CLM-DEMO-08 (scanned): awaiting review")
-    r = file_and_process(check, api, "09-scanned-low-confidence.pdf", "CLM-DEMO-09", "scanned")
+    r = file_and_process(check, sessions, "09-scanned-low-confidence.pdf", "CLM-DEMO-09", "scanned")
     reasons = [x["reason_code"] for x in r["rules_outcome"]["rule_results"] if not x["passed"]]
     check(
         r["status"] == "REJECTED" and "RJ_LOW_CONFIDENCE_FIELD" in reasons,
@@ -489,7 +555,7 @@ def main() -> None:
 
     print("Explanations, versions, audit trails")
     for n in range(1, 10):
-        explained(check, api, f"CLM-DEMO-{n:02d}")
+        explained(check, rv, f"CLM-DEMO-{n:02d}")
 
     print("CARC/RARC codes on DENY and REJECT lines (D-CARC-2)")
     expected = {
@@ -502,7 +568,7 @@ def main() -> None:
     for claim_id, (line_no, reason, codes) in expected.items():
         found = [
             a
-            for a in api.get(f"/v1/claims/{claim_id}").json()["adjustments"]
+            for a in rv.get(f"/v1/claims/{claim_id}").json()["adjustments"]
             if a["reason_code"] == reason and (line_no is None or a["line_no"] == line_no)
         ]
         got = [c["code"] for c in found[0]["codes"]] if found else []
@@ -513,28 +579,44 @@ def main() -> None:
             got == codes and described,
             f"{claim_id}: {reason} -> {' + '.join(got) or 'none'} with official descriptions",
         )
-    pended = api.get("/v1/claims/CLM-DEMO-02").json()["adjustments"]
+    pended = rv.get("/v1/claims/CLM-DEMO-02").json()["adjustments"]
     check(pended == [], "CLM-DEMO-02 (pended): no CARC/RARC codes")
-    article = api.get("/v1/claims/CLM-DEMO-05").json()["adjustments"][0]
+    article = rv.get("/v1/claims/CLM-DEMO-05").json()["adjustments"][0]
     check(
         bool(article["billing_article"] and article["lcds"]),
         f"CLM-DEMO-05: billing article {article['billing_article']},"
         f" LCD {', '.join(article['lcds'])}",
     )
+    own = p2.get("/v1/claims/CLM-DEMO-06").json()
+    check(
+        own["final"] and [a["codes"][0]["code"] for a in own["adjustments"]] == ["16"],
+        "provider2 sees CLM-DEMO-06's rejection codes at once (a rule outcome is final)",
+    )
 
-    print("Queue, list and roles")
-    queue = api.get("/v1/review/queue", headers=REVIEWER).json()
+    print("Queue, lists and roles")
+    queue = rv.get("/v1/review/queue").json()
     check(
         [q["claim_id"] for q in queue] == ["CLM-DEMO-08"],
         "GET /v1/review/queue: only CLM-DEMO-08 still waits",
     )
+    check(ad.get("/v1/review/queue").status_code == 200, "an admin can read the queue")
+    check(review_as(p2, "provider2").status_code == 403, "a provider cannot review a claim (403)")
+    check(review_as(ad, "admin").status_code == 403, "an admin cannot review a claim (403)")
     check(
-        api.get("/v1/review/queue", headers=PROVIDER).status_code == 403,
-        "a provider cannot see the review queue (403)",
+        review_as(rv, "reviewer2").status_code == 403,
+        "reviewer1 cannot review as reviewer2 (403)",
     )
-    check(review_as_provider(api).status_code == 403, "a provider cannot review a claim (403)")
-    listed = {c["claim_id"] for c in api.get("/v1/claims").json()}
+    listed = {c["claim_id"] for c in rv.get("/v1/claims").json()}
     check({f"CLM-DEMO-{n:02d}" for n in range(1, 10)} <= listed, "GET /v1/claims: no claim lost")
+    for username, client in (("provider1", p1), ("provider2", p2)):
+        mine = {c["claim_id"] for c in client.get("/v1/claims").json()}
+        theirs = {f"CLM-DEMO-{name[:2]}" for name, who in FILED_BY.items() if who == username}
+        check(mine == theirs, f"{username} lists only their own claims ({len(mine)})")
+    waiting = next(c for c in p2.get("/v1/claims").json() if c["claim_id"] == "CLM-DEMO-08")
+    check(
+        (waiting["status"], waiting["claim_decision"]) == ("IN_REVIEW", None),
+        "provider2 sees CLM-DEMO-08 as IN_REVIEW, without its recommendation",
+    )
 
     print("Bad inputs")
     for what, body, headers in (
@@ -543,35 +625,35 @@ def main() -> None:
         ("corrupted PDF", b"%PDF-1.7\nbroken", {"Content-Type": "application/pdf"}),
     ):
         response = no_5xx(
-            check, api.post("/v1/claims/intake/file", content=body, headers=headers), what
+            check, p1.post("/v1/claims/intake/file", content=body, headers=headers), what
         )
         check(response.status_code == 422, f"{what}: 422 {response.json().get('detail', '')[:70]}")
     missing = dict(claim_json("01-approve-quick.json"), claim_id="CLM-E2E-MISSING")
     missing["service_lines"] = [dict(missing["service_lines"][0])]
     missing["service_lines"][0].pop("procedure_code")
-    filed = no_5xx(check, api.post("/v1/claims/intake", json=missing), "JSON with a missing field")
+    filed = no_5xx(check, p1.post("/v1/claims/intake", json=missing), "JSON with a missing field")
     check(
         filed.status_code == 201 and filed.json()["contract_errors"],
         "JSON with a missing field: filed with its contract errors",
     )
-    status = api.post("/v1/claims/CLM-E2E-MISSING/process").json()["status"]
+    status = p1.post("/v1/claims/CLM-E2E-MISSING/process").json()["status"]
     check(status == "REJECTED", f"JSON with a missing field: {status} after processing")
     no_id = no_5xx(
         check,
-        api.post("/v1/claims/intake", json={"member_id": "MBR-000001"}),
+        p1.post("/v1/claims/intake", json={"member_id": "MBR-000001"}),
         "JSON without a claim ID",
     )
     check(no_id.status_code == 422, "JSON without a claim ID: 422")
     again = no_5xx(
         check,
-        api.post("/v1/claims/intake", json=claim_json("01-approve-quick.json")),
+        p1.post("/v1/claims/intake", json=claim_json("01-approve-quick.json")),
         "duplicate claim ID",
     )
     check(again.status_code == 409, "the same claim ID twice: 409")
 
     for log in args.log:
         print(f"Privacy of {log}")
-        privacy(check, api, log)
+        privacy(check, rv, log)
     report(check)
 
 
@@ -583,16 +665,16 @@ def report(check: Check) -> None:
         raise SystemExit(1)
 
 
-def review_as_provider(api: httpx.Client) -> httpx.Response:
+def review_as(api: httpx.Client, reviewer_id: str) -> httpx.Response:
+    """An ACCEPT of CLM-DEMO-08 naming `reviewer_id`, sent by `api`'s user."""
     return api.post(
         "/v1/claims/CLM-DEMO-08/review",
         json={
             "claim_id": "CLM-DEMO-08",
-            "reviewer_id": "x",
+            "reviewer_id": reviewer_id,
             "action": "ACCEPT",
             "timestamp": "2026-10-11T10:00:00Z",
         },
-        headers=PROVIDER,
     )
 
 

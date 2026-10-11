@@ -144,11 +144,14 @@ def intake_claim_data(
     field_confidences: Mapping[str, float],
     source_format: SourceFormat,
     threshold: float,
+    provider_id: str | None = None,
+    filed_by: str | None = None,
 ) -> tuple[IntakeResult | None, list[str]]:
     """Store a received claim (status RECEIVED) and write INTAKE_COMPLETED. Returns the validated
     claim, or None for a claim that fails the contract, and its contract errors. Such a claim is
     stored as received when every error is one R01, R02 or R03 reports (A-R8), so the rules
-    reject it; otherwise it is refused."""
+    reject it; otherwise it is refused. `provider_id` and `filed_by` name the provider account
+    that filed it (D-AUTH-1); the filing user is INTAKE_COMPLETED's actor."""
     claim_id, member_id, received_date = _filing_fields(data)
     if any(not 0.0 <= value <= 1.0 for value in field_confidences.values()):
         raise IntakeRefused("field confidences must be between 0 and 1")
@@ -168,6 +171,8 @@ def intake_claim_data(
             status=ClaimStatus.RECEIVED.value,
             intake=claim.model_dump(mode="json") if claim else dict(data),
             field_confidences=dict(field_confidences),
+            provider_id=provider_id,
+            filed_by=filed_by,
         )
     )
     try:
@@ -188,6 +193,7 @@ def intake_claim_data(
             ),
             "contract_errors": errors,
         },
+        **({"actor": filed_by} if filed_by else {}),
     )
     session.commit()
     result = (

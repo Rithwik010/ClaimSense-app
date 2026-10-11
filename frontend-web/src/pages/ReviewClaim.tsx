@@ -27,7 +27,7 @@ import {
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { answerErrors, DECISION, TIER } from "@/lib/labels";
-import { useSession } from "@/lib/session";
+import { useUser } from "@/lib/auth";
 import { check, initialLines, isChanged, needsCategory, type LineState } from "@/review/form";
 import { ChangedAmounts } from "./ClaimDetail";
 
@@ -135,7 +135,7 @@ function Review({
   submit: ReturnType<typeof useSubmitReview>;
   fill: boolean;
 }) {
-  const { reviewerId } = useSession();
+  const reviewerId = useUser().username;
   const audit = useAudit(record.claim_id);
   const [lines, setLines] = useState(() => initialLines(record));
   const [editing, setEditing] = useState<LineState | null>(null);
@@ -215,17 +215,15 @@ function Review({
       <div className="sticky bottom-0 z-10 mt-6 -mx-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-rules bg-paper px-4 py-3 md:-mx-8 md:px-8">
         <Button
           size="lg"
-          disabled={!reviewerId.trim() || submit.isPending}
+          disabled={submit.isPending}
           onClick={() => setConfirming(true)}
         >
           {overridden ? "Finalize claim" : "Accept recommendation"}
         </Button>
         <span className="text-[13px] text-ink-muted">
-          {!reviewerId.trim()
-            ? "Enter your reviewer ID in the sidebar first."
-            : overridden
-              ? `${overridden} line${overridden === 1 ? "" : "s"} overridden. The calculator recomputes the amounts.`
-              : "Accepts every line as recommended. Reviewers never enter amounts."}
+          {overridden
+            ? `${overridden} line${overridden === 1 ? "" : "s"} overridden. The calculator recomputes the amounts.`
+            : "Accepts every line as recommended. Reviewers never enter amounts."}
         </span>
       </div>
       <Sheet open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
@@ -288,7 +286,7 @@ function Review({
 export function ReviewClaim() {
   const { claimId = "" } = useParams();
   const { state } = useLocation();
-  const { role, reviewerId } = useSession();
+  const reviewerId = useUser().username;
   const claim = useClaim(claimId);
   const open = useOpenReview();
   const submit = useSubmitReview();
@@ -298,21 +296,13 @@ export function ReviewClaim() {
 
   // REVIEW_OPENED once per claim and reviewer: the start of the review time (D-REV-6).
   useEffect(() => {
-    const who = reviewerId.trim();
-    const key = `${claimId}/${who}`;
-    if (status === "AWAITING_REVIEW" && who && role !== "provider" && opened.current !== key) {
+    const key = `${claimId}/${reviewerId}`;
+    if (status === "AWAITING_REVIEW" && opened.current !== key) {
       opened.current = key;
-      open.mutate({ claimId, reviewerId: who });
+      open.mutate(claimId);
     }
-  }, [claimId, reviewerId, role, status, open]);
+  }, [claimId, reviewerId, status, open]);
 
-  if (role === "provider") {
-    return (
-      <EmptyState title="Reviewing is for reviewers">
-        Switch the role to Reviewer or Admin in the sidebar to review this claim.
-      </EmptyState>
-    );
-  }
   if (submit.data) {
     return (
       <>

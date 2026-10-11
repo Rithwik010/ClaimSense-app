@@ -24,7 +24,14 @@ from sqlalchemy.orm import Session
 from app.db.models import Accumulator
 from app.domain.contracts import DecisionRecord, SourceFormat
 from app.workflow.pipeline import intake_claim_data
-from tests.e2e.support import E2E_CASES, REVIEWER, CaseRetriever, StubModel, audit
+from tests.e2e.support import (
+    E2E_CASES,
+    FILED_BY_TEST_PROVIDER,
+    CaseRetriever,
+    StubModel,
+    audit,
+    record_of,
+)
 
 CASES = sorted(E2E_CASES.values(), key=lambda case: case["case_id"])
 REVIEWED = [case for case in CASES if case["given"].get("review_action")]
@@ -166,12 +173,13 @@ def test_golden_end_to_end_case(api, load_case_reference, engine, case: dict[str
                 given["field_confidences"],
                 SourceFormat(given["source_format"]),
                 0.85,
+                **FILED_BY_TEST_PROVIDER,
             )
 
     response = client.post(f"/v1/claims/{claim['claim_id']}/process")
 
     assert response.status_code == 200, response.text
-    record = DecisionRecord.model_validate(response.json())
+    record = record_of(client, claim["claim_id"])
     assert differences(record, case["expected"]) == [], record.output_errors
     if case["expected"]["recommendation"] is None:
         assert model.prompts == []  # a rule outcome never reaches the model
@@ -183,13 +191,11 @@ def test_golden_end_to_end_case(api, load_case_reference, engine, case: dict[str
             "action": "ACCEPT",
             "timestamp": "2026-12-20T10:00:00Z",
         }
-        refused = client.post(
-            f"/v1/claims/{claim['claim_id']}/review", json=accept, headers=REVIEWER
-        )
+        refused = client.post(f"/v1/claims/{claim['claim_id']}/review", json=accept)
         assert refused.status_code == 409
         return
 
-    reviewed = client.post(f"/v1/claims/{claim['claim_id']}/review", json=action, headers=REVIEWER)
+    reviewed = client.post(f"/v1/claims/{claim['claim_id']}/review", json=action)
 
     assert reviewed.status_code == 200, reviewed.text
     final = DecisionRecord.model_validate(reviewed.json())

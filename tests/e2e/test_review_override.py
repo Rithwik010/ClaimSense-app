@@ -15,7 +15,6 @@ from sqlalchemy import Engine
 from app.workflow import finalize
 from tests.e2e.support import (
     E2E_CASES,
-    REVIEWER,
     CaseRetriever,
     StubModel,
     audit,
@@ -63,7 +62,7 @@ def test_an_override_is_audited_line_by_line_and_its_reason_is_never_logged(
     logger = RecordingLogger()
     monkeypatch.setattr(finalize, "log", logger)
 
-    response = client.post("/v1/claims/CLM-E2E-24/review", json=action, headers=REVIEWER)
+    response = client.post("/v1/claims/CLM-E2E-24/review", json=action)
 
     assert response.status_code == 200, response.text
     record = response.json()
@@ -116,9 +115,7 @@ def test_an_approve_override_reruns_the_calculator(
     shown = client.get("/v1/claims/CLM-E2E-25").json()["record"]["amounts"]["totals"]
     assert shown["allowed_cents"] == 0  # a denied line carries no amounts
 
-    response = client.post(
-        "/v1/claims/CLM-E2E-25/review", json=case["given"]["review_action"], headers=REVIEWER
-    )
+    response = client.post("/v1/claims/CLM-E2E-25/review", json=case["given"]["review_action"])
 
     assert response.status_code == 200, response.text
     record = response.json()
@@ -146,9 +143,7 @@ def test_a_reviewer_may_approve_under_another_candidate_category(
     before = stored_accumulators(engine, member)
     line = {"line_no": 1, "decision": "APPROVE", "benefit_category": "PREVENTIVE_CARE"}
 
-    response = client.post(
-        "/v1/claims/CLM-E2E-26/review", json=override("CLM-E2E-26", line), headers=REVIEWER
-    )
+    response = client.post("/v1/claims/CLM-E2E-26/review", json=override("CLM-E2E-26", line))
 
     assert response.status_code == 200, response.text
     record = response.json()
@@ -181,13 +176,13 @@ def test_approving_a_line_the_model_left_undecided_needs_a_category_when_several
     assert (shown["source"], shown["benefit_category"]) == ("VALIDATION", None)
     url, approve = "/v1/claims/CLM-E2E-26/review", {"line_no": 1, "decision": "APPROVE"}
 
-    refused = client.post(url, json=override("CLM-E2E-26", approve), headers=REVIEWER)
+    refused = client.post(url, json=override("CLM-E2E-26", approve))
 
     assert refused.status_code == 422
     assert "choose the benefit category" in refused.json()["detail"]
     assert "ENDOSCOPY, PREVENTIVE_CARE" in refused.json()["detail"]
     chosen = {**approve, "benefit_category": "ENDOSCOPY"}
-    response = client.post(url, json=override("CLM-E2E-26", chosen), headers=REVIEWER)
+    response = client.post(url, json=override("CLM-E2E-26", chosen))
     assert response.status_code == 200, response.text
     assert response.json()["amounts"] == case["expected"]["final"]["amounts"]
 
@@ -223,9 +218,7 @@ def test_a_refused_override_leaves_the_claim_awaiting_review(
     claim_id = E2E_CASES[case_id]["given"]["claim"]["claim_id"]
     before = audit(client, claim_id)
 
-    response = client.post(
-        f"/v1/claims/{claim_id}/review", json=override(claim_id, *lines), headers=REVIEWER
-    )
+    response = client.post(f"/v1/claims/{claim_id}/review", json=override(claim_id, *lines))
 
     assert response.status_code == 422
     if message is not None:

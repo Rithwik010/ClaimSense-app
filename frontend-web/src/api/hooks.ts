@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { useSession } from "../lib/session";
+import { useUser } from "../lib/auth";
 import { request } from "./client";
 import type {
   AuditEvent,
@@ -14,17 +14,24 @@ import type {
   FiledWithErrors,
   IntakeResult,
   LineOverride,
+  ProviderClaimSummary,
+  ProviderClaimView,
   QueueItem,
   ReviewTier,
 } from "./types";
 
 export function useQueue(tier: ReviewTier | null) {
-  const { role } = useSession();
   return useQuery({
-    queryKey: ["queue", tier, role],
-    queryFn: () =>
-      request<QueueItem[]>(`/v1/review/queue${tier ? `?tier=${tier}` : ""}`, { role }),
-    enabled: role !== "provider",
+    queryKey: ["queue", tier],
+    queryFn: () => request<QueueItem[]>(`/v1/review/queue${tier ? `?tier=${tier}` : ""}`),
+  });
+}
+
+/** A provider's own claims (the same endpoint answers a provider with their view only). */
+export function useMyClaims() {
+  return useQuery({
+    queryKey: ["claims", "mine"],
+    queryFn: () => request<ProviderClaimSummary[]>("/v1/claims"),
   });
 }
 
@@ -90,40 +97,40 @@ function useRefresh() {
   };
 }
 
+/** A provider processes their own claim; the answer is their view (IN_REVIEW or final). */
 export function useProcess() {
   const refresh = useRefresh();
   return useMutation({
     mutationFn: (claimId: string) =>
-      request<DecisionRecord>(`/v1/claims/${encodeURIComponent(claimId)}/process`, {
+      request<ProviderClaimView>(`/v1/claims/${encodeURIComponent(claimId)}/process`, {
         method: "POST",
       }),
-    onSuccess: (record) => refresh(record.claim_id),
+    onSuccess: (view) => refresh(view.claim_id),
   });
 }
 
+/** Review actions name the logged-in reviewer, whom the API checks (D-AUTH-1). */
 export function useOpenReview() {
-  const { role } = useSession();
+  const user = useUser();
   return useMutation({
-    mutationFn: ({ claimId, reviewerId }: { claimId: string; reviewerId: string }) =>
+    mutationFn: (claimId: string) =>
       request(`/v1/claims/${encodeURIComponent(claimId)}/review/open`, {
         method: "POST",
-        role,
-        json: { reviewer_id: reviewerId },
+        json: { reviewer_id: user.username },
       }),
   });
 }
 
 export function useSubmitReview() {
-  const { role, reviewerId } = useSession();
+  const user = useUser();
   const refresh = useRefresh();
   return useMutation({
     mutationFn: ({ claimId, overrides }: { claimId: string; overrides: LineOverride[] }) =>
       request<DecisionRecord>(`/v1/claims/${encodeURIComponent(claimId)}/review`, {
         method: "POST",
-        role,
         json: {
           claim_id: claimId,
-          reviewer_id: reviewerId,
+          reviewer_id: user.username,
           action: overrides.length ? "OVERRIDE" : "ACCEPT",
           line_overrides: overrides,
           timestamp: new Date().toISOString(),

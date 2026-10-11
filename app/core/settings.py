@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -31,6 +31,18 @@ class Settings(BaseSettings):
     )  # cosine; not needed with the code filter
     extraction_confidence_min: float = Field(default=0.85, ge=0.0, le=1.0)
     review_high_dollar_cents: int = Field(default=100_000, ge=0)
+    # Logins (D-AUTH-1): signs the session tokens; `make demo-users` writes one to .env.
+    secret_key: SecretStr | None = None
+    # The production build of the web app, served by the API on the same origin (D-AUTH-1).
+    web_dist: Path = Path(__file__).resolve().parents[2] / "frontend-web/dist"
+    # /docs and /openapi.json are off: only login and /health are public (D-AUTH-1).
+    api_docs: bool = False
+
+    @field_validator("secret_key", mode="before")
+    @classmethod
+    def _unset_when_empty(cls, value: object) -> object:
+        """An empty SECRET_KEY= (as in .env.example) is no key, never an empty signing key."""
+        return None if isinstance(value, str) and not value.strip() else value
 
 
 @lru_cache

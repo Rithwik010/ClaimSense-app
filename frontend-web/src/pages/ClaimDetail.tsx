@@ -2,9 +2,8 @@
 // decision record (§8.7) and the audit trail as a timeline.
 
 import { Link, useLocation, useParams } from "react-router";
-import { toast } from "sonner";
 
-import { useAudit, useClaim, useExplanation, useProcess } from "@/api/hooks";
+import { useAudit, useClaim, useExplanation } from "@/api/hooks";
 import type { AuditEvent } from "@/api/types";
 import { AuditTimeline } from "@/components/AuditTimeline";
 import { StatusChip } from "@/components/Chip";
@@ -12,7 +11,7 @@ import { ClaimWorkspace } from "@/components/ClaimWorkspace";
 import { PageTitle } from "@/components/Layout";
 import { ErrorNotice, Note, Skeleton } from "@/components/States";
 import { Button } from "@/components/ui/button";
-import { useSession } from "@/lib/session";
+import { useUser } from "@/lib/auth";
 
 export function ChangedAmounts({ events }: { events: AuditEvent[] }) {
   const finalized = [...events].reverse().find((e) => e.event_type === "FINALIZED");
@@ -33,25 +32,15 @@ export function ClaimDetail() {
   const audit = useAudit(claimId);
   const record = claim.data?.record ?? null;
   const explanation = useExplanation(claimId, record !== null);
-  const process = useProcess();
-  const { role } = useSession();
+  const { role } = useUser();
   const fill = Boolean((state as { justProcessed?: boolean } | null)?.justProcessed);
 
   if (claim.isPending) return <Skeleton lines={8} />;
   if (claim.error) return <ErrorNotice error={claim.error} onRetry={() => void claim.refetch()} />;
   const view = claim.data;
+  // Only the provider who filed a claim processes it (D-AUTH-1); a reviewer reviews it.
   const action =
-    view.status === "RECEIVED" ? (
-      <Button
-        size="lg"
-        disabled={process.isPending}
-        onClick={() =>
-          process.mutate(view.claim_id, { onSuccess: () => toast.success("Claim processed") })
-        }
-      >
-        {process.isPending ? "Processing" : "Process claim"}
-      </Button>
-    ) : view.status === "AWAITING_REVIEW" && role !== "provider" ? (
+    view.status === "AWAITING_REVIEW" && role === "reviewer" ? (
       <Button asChild size="lg">
         <Link to={`/review/${encodeURIComponent(view.claim_id)}`}>Review claim</Link>
       </Button>
@@ -67,11 +56,6 @@ export function ClaimDetail() {
           </>
         }
       />
-      {process.error && (
-        <div className="mb-6">
-          <ErrorNotice error={process.error} />
-        </div>
-      )}
       {audit.data && (
         <div className="mb-6 empty:hidden">
           <ChangedAmounts events={audit.data} />

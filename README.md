@@ -53,7 +53,7 @@ flowchart LR
         QD[("Qdrant<br/>coverage criteria")]
         OL["Ollama<br/>claimsense-decision:v2"]
     end
-    UI -- "HTTP via the Vite proxy" --> API
+    UI -- "HTTP, same origin (session cookie)" --> API
     API --> IN --> RU --> CX --> ML --> CA --> RV
     API --> EX
     RU <--> PG
@@ -71,7 +71,8 @@ app talks only to the API.
 
 - First time on a machine: [SETUP.md](SETUP.md) (Part I runs the demo from a fresh clone).
 - The demo: `make demo-reset`, then `make demo-up` (or `make demo` for the dev server), then
-  `make demo-check`. The click-by-click runbook is [docs/DEMO.md](docs/DEMO.md).
+  `make demo-check`, and open http://localhost:8000 and log in. The logins and the run-sheet for
+  the nine demo claims are in [docs/DEMO.md](docs/DEMO.md); the passwords are in `.env`.
 - Checks: `uv run pytest`, `make e2e-api` (the whole stack through the API, right after a reset),
   `make model-check` (the demo model is the one evaluated), `make web-check`, `make results`
   (regenerates [docs/results.md](docs/results.md)).
@@ -94,8 +95,9 @@ app talks only to the API.
 - **Synthetic data only.** Members, providers, plans, claims and clinical notes are generated;
   plan and benefit values are fictional. Codes and coverage criteria come from public CMS sources
   and are paraphrased; AMA CPT descriptor text is never shown. Not for real claims.
-- **No real login.** The role (provider, reviewer, admin) is a request header chosen in the web
-  app, a prototype stand-in for authentication and authorization.
+- **Simple username and password login; no SSO, MFA, password reset or account lockout;
+  prototype.** Providers see only the claims they filed, reviewers review, an admin reads
+  everything (D-AUTH-1).
 - **Model accuracy is below its target.** On 300 synthetic test claims, `claimsense-decision:v2`
   reaches a line-decision macro-F1 of 0.853 (0.849 with the evidence guard the pipeline uses)
   against a target of 0.90; it never denied a line that should have been paid (DENY precision

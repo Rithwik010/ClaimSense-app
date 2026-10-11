@@ -25,7 +25,7 @@ from app.ml.client import ModelUnavailable
 from app.ml.prompt import PROMPT_VERSION, system_prompt
 from app.rules import RULES_VERSION
 from app.workflow.pipeline import _calculate
-from tests.e2e.support import E2E_CASES, StubModel, audit, e2e_fee_rows
+from tests.e2e.support import E2E_CASES, StubModel, audit, e2e_fee_rows, process_record, record_of
 
 
 def line_decisions(record: DecisionRecord) -> list[dict[str, Any]]:
@@ -55,7 +55,7 @@ def test_office_visit_runs_end_to_end(api, load_case_reference) -> None:
     assert received.status_code == 201
     assert received.json()["source_format"] == "JSON"
     assert processed.status_code == 200, processed.text
-    record = DecisionRecord.model_validate(processed.json())
+    record = record_of(client, claim_id)
     expected = case["expected"]
     recommendation = expected["recommendation"]
     assert record.status.value == expected["status_after_processing"]
@@ -115,7 +115,7 @@ def test_ineligible_member_is_denied_by_rule_without_the_model(api, load_case_re
     processed = client.post(f"/v1/claims/{claim_id}/process")
 
     assert processed.status_code == 200, processed.text
-    record = DecisionRecord.model_validate(processed.json())
+    record = record_of(client, claim_id)
     assert record.status.value == case["expected"]["status_after_processing"]
     assert record.rules_outcome.claim_outcome.value == case["expected"]["rules"]["claim_outcome"]
     assert [
@@ -161,7 +161,7 @@ def test_a_calculation_error_sends_the_claim_to_full_review(
             session.commit()
 
     assert processed.status_code == 200, processed.text
-    record = DecisionRecord.model_validate(processed.json())
+    record = record_of(client, "CLM-CALC-FAILED")
     error = f"line 1: no fee for {code}"
     assert record.status.value == "AWAITING_REVIEW"
     assert record.review_tier.value == "FULL"
@@ -199,7 +199,7 @@ def test_out_of_network_care_on_a_plan_without_out_of_network_cover_is_denied_by
     processed = client.post("/v1/claims/CLM-RULE-OON/process")
 
     assert processed.status_code == 200, processed.text
-    record = DecisionRecord.model_validate(processed.json())
+    record = record_of(client, "CLM-RULE-OON")
     assert record.status.value == "DENIED_BY_RULE"
     assert [
         (r.rule_id, r.reason_code) for r in record.rules_outcome.rule_results if not r.passed
@@ -233,9 +233,7 @@ def test_invalid_model_output_pends_the_claim_for_full_review(api, load_case_ref
     claim = new_claim("E2E-14", "CLM-SKEL-INVALID")
 
     client.post("/v1/claims/intake", json=claim)
-    record = DecisionRecord.model_validate(
-        client.post("/v1/claims/CLM-SKEL-INVALID/process").json()
-    )
+    record = process_record(client, "CLM-SKEL-INVALID")
 
     assert record.status.value == "AWAITING_REVIEW"
     assert record.slm_output is None
@@ -288,7 +286,7 @@ def test_an_unknown_member_is_rejected_by_r04_without_the_model(api) -> None:
     response = client.post("/v1/claims/CLM-SKEL-UNKNOWN/process")
 
     assert response.status_code == 200, response.text
-    record = DecisionRecord.model_validate(response.json())
+    record = record_of(client, "CLM-SKEL-UNKNOWN")
     assert record.status.value == "REJECTED"
     assert [
         (r.rule_id, r.reason_code) for r in record.rules_outcome.rule_results if not r.passed
@@ -326,7 +324,7 @@ def test_a_claim_failing_the_contract_is_filed_and_rejected_by_the_rules(
         "contract_errors": errors,
     }
     assert processed.status_code == 200, processed.text
-    record = DecisionRecord.model_validate(processed.json())
+    record = record_of(client, "CLM-SKEL-CONTRACT")
     assert record.status.value == "REJECTED"
     assert [
         (r.rule_id, r.reason_code) for r in record.rules_outcome.rule_results if not r.passed
@@ -425,7 +423,7 @@ def test_retrieved_criteria_reach_the_prompt_and_the_record(api, load_case_refer
     claim = new_claim("E2E-14", "CLM-SKEL-RAG")
 
     client.post("/v1/claims/intake", json=claim)
-    record = DecisionRecord.model_validate(client.post("/v1/claims/CLM-SKEL-RAG/process").json())
+    record = process_record(client, "CLM-SKEL-RAG")
 
     assert retriever.queries[0].startswith("Office visit")
     assert claim["clinical_notes"] in retriever.queries[0]
@@ -479,7 +477,7 @@ def test_an_invalid_first_answer_is_retried_once(api, load_case_reference) -> No
     claim = new_claim("E2E-14", "CLM-SKEL-RETRY")
     client.post("/v1/claims/intake", json=claim)
 
-    record = DecisionRecord.model_validate(client.post("/v1/claims/CLM-SKEL-RETRY/process").json())
+    record = process_record(client, "CLM-SKEL-RETRY")
 
     assert model.attempts == [1, 2]
     assert record.output_errors == [] and record.claim_decision.value == "APPROVE"
@@ -495,7 +493,7 @@ def test_two_invalid_answers_pend_for_full_review(api, load_case_reference) -> N
     client = api(model)
     client.post("/v1/claims/intake", json=new_claim("E2E-14", "CLM-SKEL-TWICE"))
 
-    record = DecisionRecord.model_validate(client.post("/v1/claims/CLM-SKEL-TWICE/process").json())
+    record = process_record(client, "CLM-SKEL-TWICE")
 
     assert model.attempts == [1, 2]
     assert record.review_tier.value == "FULL"
