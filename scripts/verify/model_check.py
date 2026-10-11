@@ -9,6 +9,8 @@ from the model the evaluation ran on): the weights' sha256 and everything else t
 2. `data/generated/models/claimsense-decision-<tag>/Modelfile`, built into a throwaway model
    (`ollama create claimsense-decision:modelfile-check`, removed afterwards), so the check covers
    what a fresh setup builds; skipped when there is no Modelfile (the model was copied in).
+   Removing the throwaway model unloads the demo model when they are the same model, so a demo
+   model that was loaded is loaded again afterwards (keep_alive -1, as `make demo-reset` does).
 
 The manifest digest is reported as well: the same digest means the very same model; another digest
 with matching settings and weights usually means another Ollama version.
@@ -71,6 +73,10 @@ def summary(reference: dict[str, Any], digest: str) -> str:
     return f"{', '.join(parts)}; {manifest}"
 
 
+def loaded(url: str) -> set[str]:
+    return {m["name"] for m in httpx.get(f"{url}/api/ps", timeout=10).json()["models"]}
+
+
 def line(ok: bool, what: str, detail: str) -> bool:
     print(f"{'OK  ' if ok else 'FAIL'} {what:<14} {detail}")
     return ok
@@ -128,6 +134,7 @@ def main() -> None:
         print(f"--   Modelfile      {modelfile.relative_to(ROOT)} not found: build check skipped")
     else:
         env = dict(os.environ, OLLAMA_HOST=url)
+        was_loaded = args.model in loaded(url)
         built = subprocess.run(
             ["ollama", "create", THROWAWAY, "-f", str(modelfile)],
             capture_output=True,
@@ -149,6 +156,11 @@ def main() -> None:
                 )
         finally:
             subprocess.run(["ollama", "rm", THROWAWAY], capture_output=True, env=env)
+            if was_loaded and args.model not in loaded(url):
+                httpx.post(
+                    f"{url}/api/generate", json={"model": args.model, "keep_alive": -1}, timeout=300
+                ).raise_for_status()
+                print(f"--   {args.model} loaded again (removing the throwaway model unloaded it)")
     sys.exit(0 if ok else 1)
 
 
