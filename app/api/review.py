@@ -1,4 +1,5 @@
-"""Review endpoints (INSTRUCTIONS.md §8.8, §8.10). Every one needs the reviewer or admin role."""
+"""Review endpoints (INSTRUCTIONS.md §8.8, §8.10). The queue is for reviewers and admins (read
+only, D-AUTH-1); the review actions themselves are in claims.py, for reviewers."""
 
 from dataclasses import asdict
 from datetime import date, datetime
@@ -8,7 +9,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import ReviewerRole, get_session
+from app.api.deps import StaffUser, get_session
 from app.domain.contracts import ClaimDecision, ReviewTier
 from app.workflow.review import QueueSort, review_queue
 
@@ -28,7 +29,7 @@ class QueueItemView(BaseModel):
 @router.get("/queue")
 def queue(
     session: SessionDep,
-    _role: ReviewerRole,
+    _user: StaffUser,
     tier: ReviewTier | None = None,
     sort: QueueSort = QueueSort.TIER,
 ) -> list[QueueItemView]:

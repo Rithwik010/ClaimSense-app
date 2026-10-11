@@ -12,7 +12,7 @@ import pytest
 from app.domain.contracts import IntakeClaim
 from app.intake.form_codec import to_form_values
 from scripts.verify.ocr_accuracy import scanned_pdf
-from tests.e2e.support import E2E_CASES, CaseRetriever, StubModel
+from tests.e2e.support import E2E_CASES, CaseRetriever, StubModel, record_of
 from training.generate.forms import render_pdf, render_scan
 
 CASE = E2E_CASES["E2E-14"]
@@ -38,7 +38,8 @@ def test_a_digital_pdf_files_the_same_claim_as_its_json(api, load_case_reference
     assert filed.status_code == 201, filed.text
     assert filed.json()["source_format"] == "DIGITAL_PDF"
     assert IntakeClaim.model_validate(filed.json()["claim"]) == claim
-    assert processed.json()["status"] == CASE["expected"]["status_after_processing"]
+    assert processed.status_code == 200, processed.text
+    assert record_of(client, claim.claim_id).status == CASE["expected"]["status_after_processing"]
 
 
 @pytest.mark.skipif(shutil.which("tesseract") is None, reason="Tesseract is not installed")
@@ -99,8 +100,10 @@ def test_a_scanned_value_that_fails_its_format_check_files_the_claim_for_the_rul
     assert filed.json()["field_confidences"]["billing_tin"] == 0.0
     assert "billing_tin" not in filed.json()["received"]
     assert any("billing_tin" in error for error in filed.json()["contract_errors"])
-    assert processed.json()["status"] == "REJECTED"
-    failed = [r for r in processed.json()["rules_outcome"]["rule_results"] if not r["passed"]]
+    assert processed.json()["status"] == "REJECTED"  # final at once: the provider sees it
+    failed = [
+        r for r in processed.json()["record"]["rules_outcome"]["rule_results"] if not r["passed"]
+    ]
     assert [(r["rule_id"], r["outcome"], r["reason_code"]) for r in failed] == [
         ("R01", "REJECT", "RJ_LOW_CONFIDENCE_FIELD")  # H5: the rule failed on a field read at 0.0
     ]

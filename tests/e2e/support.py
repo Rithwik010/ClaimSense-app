@@ -1,16 +1,21 @@
-"""Helpers for the end-to-end tests: golden cases, fee rows, a stub model and a stub retriever, and
-the review helpers (the reviewer role header, the audit trail, the stored accumulators)."""
+"""Helpers for the end-to-end tests: golden cases, fee rows, a stub model and a stub retriever, the
+test users and their session tokens (D-AUTH-1), and the review helpers (the audit trail, the
+stored accumulators)."""
 
 import json
 from datetime import date
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from fastapi.testclient import TestClient
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from app.db.models import Accumulator, Claim
-from app.domain.contracts import RetrievedCriterion
+from app.auth.passwords import hash_password
+from app.auth.tokens import create_token
+from app.db.models import Accumulator, Claim, User
+from app.domain.contracts import DecisionRecord, RetrievedCriterion
 
 GOLDEN = Path(__file__).resolve().parents[1] / "golden"
 E2E_CASES = {
@@ -168,9 +173,95 @@ def process_case(api, load_case_reference, case_id: str, claim: dict[str, Any] |
     return client
 
 
-# --- Review --------------------------------------------------------------------------------------
+# --- Logins (D-AUTH-1) ---------------------------------------------------------------------------
 
-REVIEWER = {"X-Role": "reviewer"}
+TEST_SECRET = "claimsense-test-secret-for-the-test-suite-only"
+TEST_PASSWORD = "test password"
+TEST_USERS = {  # username: (role, provider ID)
+    "provider-test": ("provider", "1234567893"),
+    "provider-other": ("provider", "1987654320"),
+    "reviewer-golden": ("reviewer", None),  # the golden cases' reviewer ID
+    "reviewer-1": ("reviewer", None),
+    "reviewer-a": ("reviewer", None),
+    "reviewer-b": ("reviewer", None),
+    "admin-test": ("admin", None),
+}
+
+
+def bearer(username: str) -> dict[str, str]:
+    """An Authorization header with a valid session token of a test user."""
+    role = TEST_USERS[username][0]
+    return {"Authorization": f"Bearer {create_token(username, role, TEST_SECRET)}"}
+
+
+# How a test that files a claim directly (not through the API) files it as the test provider.
+FILED_BY_TEST_PROVIDER = {
+    "provider_id": TEST_USERS["provider-test"][1],
+    "filed_by": "provider-test",
+}
+NO_SESSION = {"Authorization": ""}  # neither a token nor a cookie: not logged in
+PROVIDER = bearer("provider-test")
+REVIEWER = bearer("reviewer-golden")
+ADMIN = bearer("admin-test")
+
+
+@lru_cache(maxsize=1)
+def _test_hash() -> str:
+    return hash_password(TEST_PASSWORD)  # once: Argon2 is slow on purpose
+
+
+def add_test_users(session: Session) -> None:
+    session.add_all(
+        User(
+            username=name,
+            display_name=name.replace("-", " ").title(),
+            password_hash=_test_hash(),
+            role=role,
+            provider_id=provider_id,
+        )
+        for name, (role, provider_id) in TEST_USERS.items()
+    )
+
+
+class SessionClient(TestClient):
+    """The end-to-end tests' API client. A request without an Authorization header acts as the
+    role its endpoint needs: the test provider files and processes claims, a review action runs as
+    the reviewer it names, and the golden reviewer reads everything else. The access tests pass
+    their own header (PROVIDER, REVIEWER, ADMIN, bearer(...))."""
+
+    def request(self, method: str, url: Any, **kwargs: Any) -> Any:  # noqa: ANN401
+        headers = dict(kwargs.pop("headers", None) or {})
+        if not any(name.lower() == "authorization" for name in headers):
+            path = str(url)
+            body = kwargs.get("json")
+            reviewer = body.get("reviewer_id") if isinstance(body, dict) else None
+            if method.upper() == "POST" and (
+                path.startswith("/v1/claims/intake") or path.endswith("/process")
+            ):
+                headers |= PROVIDER
+            elif reviewer in TEST_USERS and TEST_USERS[reviewer][0] == "reviewer":
+                headers |= bearer(reviewer)
+            else:
+                headers |= REVIEWER
+        return super().request(method, url, headers=headers, **kwargs)
+
+
+def record_of(client: TestClient, claim_id: str) -> DecisionRecord:
+    """The claim's latest decision record, as a reviewer reads it (a provider's process answer
+    holds no recommendation, D-AUTH-1)."""
+    response = client.get(f"/v1/claims/{claim_id}")
+    assert response.status_code == 200, response.text
+    return DecisionRecord.model_validate(response.json()["record"])
+
+
+def process_record(client: TestClient, claim_id: str) -> DecisionRecord:
+    """Process a filed claim as its provider and return the decision record a reviewer reads."""
+    response = client.post(f"/v1/claims/{claim_id}/process")
+    assert response.status_code == 200, response.text
+    return record_of(client, claim_id)
+
+
+# --- Review --------------------------------------------------------------------------------------
 
 
 def audit(client, claim_id: str) -> list[dict[str, Any]]:  # noqa: ANN001

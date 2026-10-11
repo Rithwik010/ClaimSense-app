@@ -22,8 +22,9 @@ from app.workflow import finalize
 from app.workflow.finalize import finalize_review
 from app.workflow.states import InvalidTransition
 from tests.e2e.support import (
+    ADMIN,
     E2E_CASES,
-    REVIEWER,
+    PROVIDER,
     CaseRetriever,
     StubModel,
     audit,
@@ -50,9 +51,7 @@ def test_accept_finalizes_the_claim_with_amounts_accumulators_and_audit(
     client = process_case(api, load_case_reference, "E2E-14")
     final = case["expected"]["final"]
 
-    response = client.post(
-        "/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14"), headers=REVIEWER
-    )
+    response = client.post("/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14"))
 
     assert response.status_code == 200, response.text
     record = response.json()
@@ -98,9 +97,7 @@ def test_finalization_counts_a_therapy_session_as_one_visit(
     client = process_case(api, load_case_reference, "E2E-22")
     before = visits_used(engine, member, "REHAB_THERAPY")
 
-    response = client.post(
-        "/v1/claims/CLM-E2E-22/review", json=case["given"]["review_action"], headers=REVIEWER
-    )
+    response = client.post("/v1/claims/CLM-E2E-22/review", json=case["given"]["review_action"])
 
     assert response.status_code == 200, response.text
     assert visits_used(engine, member, "REHAB_THERAPY") == before + 1
@@ -122,21 +119,17 @@ def test_review_errors(api, load_case_reference) -> None:  # noqa: ANN001
         "line_overrides": [{"line_no": 1, "decision": "DENY", "reason": "x"}],
     }
 
-    assert client.post(url, json=accept("CLM-E2E-14")).status_code == 403
+    assert client.post(url, json=accept("CLM-E2E-14"), headers=PROVIDER).status_code == 403
+    assert client.post(url, json=accept("CLM-E2E-14"), headers=ADMIN).status_code == 403
     for body in (accept_with_lines, override_without_lines, blank_reason):
-        assert client.post(url, json=body, headers=REVIEWER).status_code == 422
-    assert client.post(url, json=accept("CLM-OTHER"), headers=REVIEWER).status_code == 422
-    assert (
-        client.post(
-            "/v1/claims/CLM-NOPE/review", json=accept("CLM-NOPE"), headers=REVIEWER
-        ).status_code
-        == 404
-    )
+        assert client.post(url, json=body).status_code == 422
+    assert client.post(url, json=accept("CLM-OTHER")).status_code == 422
+    assert client.post("/v1/claims/CLM-NOPE/review", json=accept("CLM-NOPE")).status_code == 404
     denied = E2E_CASES["E2E-05"]["given"]["claim"]["claim_id"]
-    rule_outcome = client.post(f"/v1/claims/{denied}/review", json=accept(denied), headers=REVIEWER)
+    rule_outcome = client.post(f"/v1/claims/{denied}/review", json=accept(denied))
     assert rule_outcome.status_code == 409  # rule outcomes are final and never reviewed
-    assert client.post(url, json=accept("CLM-E2E-14"), headers=REVIEWER).status_code == 200
-    again = client.post(url, json=accept("CLM-E2E-14"), headers=REVIEWER)
+    assert client.post(url, json=accept("CLM-E2E-14")).status_code == 200
+    again = client.post(url, json=accept("CLM-E2E-14"))
     assert again.status_code == 409 and "FINAL_APPROVED" in again.json()["detail"]
 
 
@@ -152,9 +145,7 @@ def test_a_claim_whose_calculation_failed_is_refused_until_the_cause_is_fixed(
     before = [e["event_type"] for e in audit(client, "CLM-E2E-14")]
     assert before[-2:] == ["CALCULATION_FAILED", "EXPLANATION_BUILT"]
 
-    response = client.post(
-        "/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14"), headers=REVIEWER
-    )
+    response = client.post("/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14"))
 
     assert response.status_code == 422
     assert (

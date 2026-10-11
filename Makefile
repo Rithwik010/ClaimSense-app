@@ -13,7 +13,7 @@ export HF_HUB_DISABLE_TELEMETRY := 1
 export ORT_DISABLE_TELEMETRY := 1
 export QDRANT__TELEMETRY_DISABLED := true
 
-.PHONY: setup ollama-up demo demo-up demo-check demo-reset demo-claims demo-video e2e-api offline-check model-check results web-check smoke
+.PHONY: setup ollama-up demo demo-up demo-check demo-reset demo-claims demo-users demo-video e2e-api offline-check model-check results web-check smoke
 
 setup: ## Python and web dependencies, database schema, reference data, policy collections
 	uv sync
@@ -30,25 +30,22 @@ demo: ollama-up ## database containers, then the API (port $(API_PORT)) and the 
 	docker compose up -d --wait
 	uv run alembic upgrade head
 	@test -d frontend-web/node_modules || (cd frontend-web && npm ci)
-	@echo "Web app http://localhost:5173 · API http://localhost:$(API_PORT)/docs · model $(MODEL_NAME)"
+	@echo "Dev server http://localhost:5173 (proxies the API on :$(API_PORT)) · model $(MODEL_NAME)"
 	@trap 'kill 0' INT TERM EXIT; \
 	MODEL_NAME=$(MODEL_NAME) uv run uvicorn app.api.main:app --port $(API_PORT) & \
 	(cd frontend-web && npm run dev) & \
 	wait
 
-demo-up: ollama-up ## like demo, but the web app is the production build (vite preview); API log in data/generated/logs/api.log
+demo-up: ollama-up ## the demo: the API serves the production build of the web app on http://localhost:$(API_PORT) (D-AUTH-1); API log in data/generated/logs/api.log
 	docker compose up -d --wait
 	uv run alembic upgrade head
 	@test -d frontend-web/node_modules || (cd frontend-web && npm ci)
 	cd frontend-web && npm run build
 	@mkdir -p data/generated/logs
-	@echo "Web app http://localhost:5173 · API http://localhost:$(API_PORT)/docs · model $(MODEL_NAME)"
-	@trap 'kill 0' INT TERM EXIT; \
-	MODEL_NAME=$(MODEL_NAME) uv run uvicorn app.api.main:app --port $(API_PORT) > data/generated/logs/api.log 2>&1 & \
-	(cd frontend-web && npx vite preview --port 5173 --strictPort) & \
-	wait
+	@echo "ClaimSense http://localhost:$(API_PORT) · model $(MODEL_NAME) · logins: docs/DEMO.md"
+	MODEL_NAME=$(MODEL_NAME) uv run uvicorn app.api.main:app --port $(API_PORT) > data/generated/logs/api.log 2>&1
 
-demo-check: ## OK/FAIL for Postgres, Ollama with the demo model loaded, the API and the web app
+demo-check: ## OK/FAIL for Postgres, Ollama with the demo model loaded, the API, the web app and the demo logins
 	MODEL_NAME=$(MODEL_NAME) uv run python -m scripts.demo.check
 
 e2e-api: ## end-to-end check through the API alone; run right after demo-reset with the API up
@@ -69,6 +66,10 @@ results: ## regenerate docs/results.md and data/generated/eval/results.json (P6.
 demo-reset: ollama-up ## clean database (migrations, seeds, demo authorizations), Qdrant ready, demo model present
 	docker compose up -d --wait
 	MODEL_NAME=$(MODEL_NAME) uv run python -m scripts.demo.reset
+
+demo-users: ## the demo logins (D-AUTH-1); passwords and SECRET_KEY in .env, written when missing
+	uv run alembic upgrade head
+	uv run python -m scripts.demo.users
 
 demo-claims: ## rebuild demo/claims/ from the synthetic claim corpus
 	uv run python -m scripts.demo.build_claims

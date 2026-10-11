@@ -24,6 +24,8 @@ import httpx
 
 from app.core.settings import get_settings
 from app.ml.client import OllamaDecisionModel
+from scripts.demo.e2e_api import login
+from scripts.demo.users import FILED_BY
 from training.evaluate.model import answer_valid, read_jsonl, score_record
 from training.generate.decision_dataset_v2 import OUT_DIR as DATASET_V2
 
@@ -82,9 +84,12 @@ def outcome(record: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def demo_round(api: httpx.Client) -> dict[str, dict[str, Any]]:
+def demo_round(sessions: dict[str, httpx.Client]) -> dict[str, dict[str, Any]]:
+    """Each demo claim filed and processed by its provider (D-AUTH-1); the record as reviewer1
+    reads it."""
     results = {}
     for path in sorted(CLAIMS.iterdir()):
+        api = sessions[FILED_BY[path.name]]
         if path.suffix == ".json":
             filed = api.post("/v1/claims/intake", json=json.loads(path.read_text()))
         else:
@@ -92,9 +97,9 @@ def demo_round(api: httpx.Client) -> dict[str, dict[str, Any]]:
         filed.raise_for_status()
         body = filed.json()  # an IntakeResult, or a claim filed with contract errors
         claim_id = body["claim"]["claim_id"] if "claim" in body else body["claim_id"]
-        processed = api.post(f"/v1/claims/{claim_id}/process")
-        processed.raise_for_status()
-        results[path.name] = outcome(processed.json())
+        api.post(f"/v1/claims/{claim_id}/process").raise_for_status()
+        record = sessions["reviewer1"].get(f"/v1/claims/{claim_id}").json()["record"]
+        results[path.name] = outcome(record)
     return results
 
 
@@ -103,12 +108,12 @@ def reset() -> None:
 
 
 def demo_claims(runs: int) -> bool:
-    api = httpx.Client(base_url=API, timeout=300)
     rounds = []
     print(f"Demo claims: {runs} rounds through the API, a reset before each")
     for n in range(runs):
         reset()
-        rounds.append(demo_round(api))
+        users = (*sorted(set(FILED_BY.values())), "reviewer1")
+        rounds.append(demo_round({u: login(API, u) for u in users}))
         print(f"  round {n + 1} done")
     reset()
     ok = True

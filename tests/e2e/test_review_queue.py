@@ -1,4 +1,4 @@
-"""P5.3: the review queue (§8.8) and reviewer access (§8.10: the X-Role header).
+"""P5.3: the review queue (§8.8), for reviewers and admins (D-AUTH-1).
 
 Golden end-to-end claims of every tier go through intake and processing: E2E-14 (QUICK), E2E-16
 (STANDARD), E2E-19 (FULL) and E2E-05 (DENIED_BY_RULE, never in the queue)."""
@@ -7,7 +7,15 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from tests.e2e.support import E2E_CASES, REVIEWER, StubModel, process_case
+from tests.e2e.support import (
+    ADMIN,
+    E2E_CASES,
+    NO_SESSION,
+    PROVIDER,
+    REVIEWER,
+    StubModel,
+    process_case,
+)
 
 
 def process_cases(api, load_case_reference, case_ids: list[str]) -> TestClient:  # noqa: ANN001
@@ -16,7 +24,7 @@ def process_cases(api, load_case_reference, case_ids: list[str]) -> TestClient: 
 
 
 def queue(client: TestClient, **params: Any) -> list[dict[str, Any]]:
-    response = client.get("/v1/review/queue", params=params, headers=REVIEWER)
+    response = client.get("/v1/review/queue", params=params)
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -24,11 +32,10 @@ def queue(client: TestClient, **params: Any) -> list[dict[str, Any]]:
 def test_only_reviewers_and_admins_see_the_queue(api) -> None:  # noqa: ANN001
     client = api(StubModel("unused"))
 
-    assert client.get("/v1/review/queue").status_code == 403
-    assert client.get("/v1/review/queue", headers={"X-Role": "provider"}).status_code == 403
-    assert client.get("/v1/review/queue", headers={"X-Role": "nobody"}).status_code == 403
+    assert client.get("/v1/review/queue", headers=NO_SESSION).status_code == 401
+    assert client.get("/v1/review/queue", headers=PROVIDER).status_code == 403
     assert client.get("/v1/review/queue", headers=REVIEWER).status_code == 200
-    assert client.get("/v1/review/queue", headers={"X-Role": "admin"}).status_code == 200
+    assert client.get("/v1/review/queue", headers=ADMIN).status_code == 200
 
 
 def test_the_queue_lists_claims_awaiting_review_by_tier(api, load_case_reference) -> None:  # noqa: ANN001
@@ -51,4 +58,4 @@ def test_the_queue_lists_claims_awaiting_review_by_tier(api, load_case_reference
         "CLM-E2E-16",
         "CLM-E2E-19",
     ]  # oldest first
-    assert client.get("/v1/review/queue?tier=SOON", headers=REVIEWER).status_code == 422
+    assert client.get("/v1/review/queue?tier=SOON").status_code == 422

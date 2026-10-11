@@ -18,7 +18,14 @@ from app.db.seed import load_reference, load_rule_tables, seed_curated, upsert
 from app.db.session import get_engine
 from app.ml.client import DecisionModel
 from tests.database import alembic_config, fresh_database
-from tests.e2e.support import StubRetriever, claim_on_file, e2e_fee_rows
+from tests.e2e.support import (
+    TEST_SECRET,
+    SessionClient,
+    StubRetriever,
+    add_test_users,
+    claim_on_file,
+    e2e_fee_rows,
+)
 from tests.rule_tables import fixture_rule_tables
 
 
@@ -34,6 +41,7 @@ def engine() -> Iterator[Engine]:
             seed_curated(session)
             load_rule_tables(session, fixture_rule_tables())
             upsert(session, FeeScheduleEntry, e2e_fee_rows())
+            add_test_users(session)
             session.commit()
         yield engine
         engine.dispose()
@@ -63,12 +71,12 @@ def api(engine: Engine) -> Iterator[Callable[[DecisionModel], TestClient]]:
         """The golden end-to-end cases are pinned to policy set v1 (D-GOLD-8); their v2 versions
         pass policy_set="v2"."""
         prompt = "decision_v2" if policy_set == "v1" else "decision_v3"
-        settings = Settings(policy_set=policy_set, prompt_version=prompt)
+        settings = Settings(policy_set=policy_set, prompt_version=prompt, secret_key=TEST_SECRET)
         app.dependency_overrides[get_engine] = lambda: engine
         app.dependency_overrides[get_decision_model] = lambda: model
         app.dependency_overrides[get_retriever] = lambda: retriever or StubRetriever()
         app.dependency_overrides[get_settings] = lambda: settings
-        client = TestClient(app)
+        client = SessionClient(app)
         clients.append(client)
         return client
 

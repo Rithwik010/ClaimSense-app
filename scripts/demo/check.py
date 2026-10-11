@@ -1,7 +1,9 @@
 """`make demo-check`: OK or FAIL for each service the demo needs.
 
-Postgres (a query), Ollama with the demo model loaded in memory, the API's /health, and the web
-app (its page and the API through its proxy).
+Postgres (a query), Ollama with the demo model loaded in memory, the API's /health, the web app
+(its page, with the API on the same origin: `make demo-up` serves both on :8000, D-AUTH-1; set
+WEB_URL=http://localhost:5173 for the dev server of `make demo`), and every demo login (the
+passwords in .env).
 
     uv run python -m scripts.demo.check
 """
@@ -14,9 +16,10 @@ from sqlalchemy import text
 
 from app.core.settings import get_settings
 from app.db.session import get_engine
+from scripts.demo.users import USERS, password
 
-WEB = "http://localhost:5173"
 API = "http://localhost:8000"
+WEB = os.environ.get("WEB_URL", API)
 
 
 def main() -> None:
@@ -53,19 +56,35 @@ def main() -> None:
 
     def web() -> tuple[bool, str]:
         page = httpx.get(WEB, timeout=5)
-        proxied = httpx.get(f"{WEB}/v1/claims", timeout=10)
-        ok = '<div id="root">' in page.text and proxied.headers.get("content-type", "").startswith(
-            "application/json"
-        )
+        api_there = httpx.get(f"{WEB}/v1/auth/me", timeout=10)  # 401 JSON: the API answers
+        ok = '<div id="root">' in page.text and api_there.headers.get(
+            "content-type", ""
+        ).startswith("application/json")
         return (
             ok,
-            "page served, API reachable through it" if ok else "page or API proxy not answering",
+            f"page and API at {WEB}" if ok else f"{WEB}: page or API missing",
+        )
+
+    def logins() -> tuple[bool, str]:
+        failed = []
+        for username, (role, _, _) in USERS.items():
+            with httpx.Client(base_url=WEB, timeout=10) as client:
+                login = client.post(
+                    "/v1/auth/login", json={"username": username, "password": password(username)}
+                )
+                me = client.get("/v1/auth/me")
+            if login.status_code != 200 or me.json().get("role") != role.value:
+                failed.append(username)
+        return (
+            not failed,
+            f"{len(USERS)} demo users log in" if not failed else f"cannot log in: {failed}",
         )
 
     probe("Postgres", postgres)
     probe("Ollama", ollama)
     probe("API", api)
     probe("Web app", web)
+    probe("Logins", logins)
     for name, ok, detail in results:
         print(f"{'OK  ' if ok else 'FAIL'} {name:8} {detail}")
     if not all(ok for _, ok, _ in results):

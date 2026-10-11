@@ -1,14 +1,17 @@
-"""Request dependencies. Tests override `get_engine`, `get_decision_model` and `get_retriever`."""
+"""Request dependencies. Tests override `get_engine`, `get_decision_model` and `get_retriever`.
+Every endpoint but login, logout and /health needs a logged-in user of the right role (D-AUTH-1)."""
 
 from collections.abc import Callable, Iterator
-from enum import StrEnum
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
+from app.auth import Role
+from app.auth.tokens import COOKIE, InvalidToken, read_token
+from app.auth.users import AuthUser, active_user
 from app.core.settings import Settings, get_settings
 from app.db.session import get_engine
 from app.ml.client import DecisionModel, OllamaDecisionModel
@@ -45,24 +48,61 @@ def get_retriever() -> Retriever:
     )
 
 
-class Role(StrEnum):
-    """The roles of the prototype's role header (§8.10); not authentication."""
+def _token(request: Request) -> str | None:
+    """The session token: an `Authorization: Bearer` header (API clients) or the session cookie
+    (the web app)."""
+    scheme, _, credentials = request.headers.get("authorization", "").partition(" ")
+    if scheme.lower() == "bearer" and credentials:
+        return credentials
+    return request.cookies.get(COOKIE)
 
-    PROVIDER = "provider"
-    REVIEWER = "reviewer"
-    ADMIN = "admin"
+
+def current_user(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> AuthUser:
+    """The logged-in user (D-AUTH-1): 401 without a valid, unexpired token of an active user whose
+    role is still the token's."""
+    token = _token(request)
+    if token is None:
+        raise _unauthorized("Not logged in")
+    if settings.secret_key is None:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, "SECRET_KEY is not set (make demo-users sets it)"
+        )
+    try:
+        claims = read_token(token, settings.secret_key.get_secret_value())
+    except InvalidToken as exc:
+        raise _unauthorized("The session has expired or is not valid; log in again") from exc
+    user = active_user(session, claims.username)
+    if user is None or user.role.value != claims.role:
+        raise _unauthorized("The session has expired or is not valid; log in again")
+    return user
 
 
-def require_role(*allowed: Role) -> Callable[..., Role]:
-    """A dependency admitting only the given roles, from the X-Role header (403 otherwise)."""
-    names = ", ".join(role.value for role in allowed)
+def _unauthorized(detail: str) -> HTTPException:
+    return HTTPException(
+        status.HTTP_401_UNAUTHORIZED, detail, headers={"WWW-Authenticate": "Bearer"}
+    )
 
-    def check(x_role: Annotated[str | None, Header()] = None) -> Role:
-        if x_role not in {role.value for role in allowed}:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, f"needs the X-Role header: {names}")
-        return Role(x_role)
+
+def require(*allowed: Role) -> Callable[..., AuthUser]:
+    """A dependency admitting only users of the given roles (403 for any other role)."""
+    names = " or ".join(role.value for role in allowed)
+
+    def check(user: Annotated[AuthUser, Depends(current_user)]) -> AuthUser:
+        if user.role not in allowed:
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN, f"a {user.role.value} cannot do this; it needs {names}"
+            )
+        return user
 
     return check
 
 
-ReviewerRole = Annotated[Role, Depends(require_role(Role.REVIEWER, Role.ADMIN))]
+ProviderUser = Annotated[AuthUser, Depends(require(Role.PROVIDER))]
+ReviewerUser = Annotated[AuthUser, Depends(require(Role.REVIEWER))]
+StaffUser = Annotated[AuthUser, Depends(require(Role.REVIEWER, Role.ADMIN))]
+AdminUser = Annotated[AuthUser, Depends(require(Role.ADMIN))]
+AnyUser = Annotated[AuthUser, Depends(require(Role.PROVIDER, Role.REVIEWER, Role.ADMIN))]

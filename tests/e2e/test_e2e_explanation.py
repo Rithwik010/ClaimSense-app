@@ -12,7 +12,15 @@ from sqlalchemy.orm import Session
 from app.domain.contracts import DecisionRecord, SourceFormat
 from app.workflow.pipeline import intake_claim_data
 from scripts.verify.e2e_v2_cases import v2_retriever
-from tests.e2e.support import E2E_CASES, E2E_V2_CASES, REVIEWER, CaseRetriever, StubModel
+from tests.e2e.support import (
+    E2E_CASES,
+    E2E_V2_CASES,
+    FILED_BY_TEST_PROVIDER,
+    CaseRetriever,
+    StubModel,
+    process_record,
+    record_of,
+)
 from tests.explain_support import html_mismatches, mismatches
 
 CASES = [E2E_CASES[k] for k in sorted(E2E_CASES)] + [E2E_V2_CASES[k] for k in sorted(E2E_V2_CASES)]
@@ -51,17 +59,18 @@ def test_the_explanation_matches_the_record(
                 given["field_confidences"],
                 SourceFormat(given["source_format"]),
                 0.85,
+                **FILED_BY_TEST_PROVIDER,
             )
     assert client.get(f"/v1/claims/{claim_id}/explanation").status_code == 404
 
     processed = client.post(f"/v1/claims/{claim_id}/process")
     assert processed.status_code == 200, processed.text
-    explained(client, claim_id, DecisionRecord.model_validate(processed.json()))
+    explained(client, claim_id, record_of(client, claim_id))
     action = given.get("review_action")
     if action is None:
         return
 
-    reviewed = client.post(f"/v1/claims/{claim_id}/review", json=action, headers=REVIEWER)
+    reviewed = client.post(f"/v1/claims/{claim_id}/review", json=action)
     assert reviewed.status_code == 200, reviewed.text
     final = DecisionRecord.model_validate(reviewed.json())
     text = explained(client, claim_id, final)
@@ -90,7 +99,7 @@ def test_a_met_quote_not_in_the_notes_pends_the_line_and_is_explained(  # D-EVID
     claim_id = case["given"]["claim"]["claim_id"]
     assert client.post("/v1/claims/intake", json=case["given"]["claim"]).status_code == 201
 
-    record = DecisionRecord.model_validate(client.post(f"/v1/claims/{claim_id}/process").json())
+    record = process_record(client, claim_id)
     text = explained(client, claim_id, record)
 
     assert record.output_errors == [f"EVIDENCE_NOT_IN_NOTES: line 1 {met['criterion_id']}"]

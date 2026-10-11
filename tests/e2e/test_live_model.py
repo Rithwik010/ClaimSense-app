@@ -15,9 +15,8 @@ from pathlib import Path
 import pytest
 
 from app.core.settings import get_settings
-from app.domain.contracts import DecisionRecord
 from app.ml.client import OllamaDecisionModel
-from tests.e2e.support import E2E_CASES
+from tests.e2e.support import E2E_CASES, record_of
 
 pytestmark = pytest.mark.skipif(
     os.environ.get("CLAIMSENSE_LIVE_MODEL") != "1", reason="set CLAIMSENSE_LIVE_MODEL=1"
@@ -36,7 +35,7 @@ def test_sample_claim_runs_through_the_base_model(api, load_case_reference) -> N
     response = client.post(f"/v1/claims/{claim['claim_id']}/process")
 
     assert response.status_code == 200, response.text
-    record = DecisionRecord.model_validate(response.json())
+    record = record_of(client, claim["claim_id"])
     assert record.status.value == "AWAITING_REVIEW"
     assert record.versions.model_name == settings.model_name
     assert [d.line_no for d in record.line_decisions] == [1]

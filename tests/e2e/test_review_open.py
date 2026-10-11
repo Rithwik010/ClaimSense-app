@@ -4,13 +4,11 @@ reviewer's latest opening before the action to the action, not from the first op
 from datetime import UTC, datetime
 from typing import Any
 
-from tests.e2e.support import E2E_CASES, REVIEWER, audit, process_case
+from tests.e2e.support import ADMIN, E2E_CASES, PROVIDER, audit, bearer, process_case
 
 
 def open_review(client, claim_id: str, reviewer: str):  # noqa: ANN001, ANN201
-    return client.post(
-        f"/v1/claims/{claim_id}/review/open", json={"reviewer_id": reviewer}, headers=REVIEWER
-    )
+    return client.post(f"/v1/claims/{claim_id}/review/open", json={"reviewer_id": reviewer})
 
 
 def accept(claim_id: str, reviewer: str) -> dict[str, Any]:
@@ -27,9 +25,10 @@ def test_opening_a_claim_awaiting_review_is_audited(api, load_case_reference) ->
     process_case(api, load_case_reference, "E2E-05")  # DENIED_BY_RULE
     url = "/v1/claims/CLM-E2E-14/review/open"
 
-    assert client.post(url, json={"reviewer_id": "reviewer-1"}).status_code == 403
-    assert client.post(url, json={"reviewer_id": "  "}, headers=REVIEWER).status_code == 422
-    assert client.post(url, json={"reviewer_id": "r" * 65}, headers=REVIEWER).status_code == 422
+    assert client.post(url, json={"reviewer_id": "reviewer-1"}, headers=PROVIDER).status_code == 403
+    assert client.post(url, json={"reviewer_id": "reviewer-1"}, headers=ADMIN).status_code == 403
+    assert client.post(url, json={"reviewer_id": "  "}).status_code == 422
+    assert client.post(url, json={"reviewer_id": "r" * 65}).status_code == 422
     assert open_review(client, "CLM-NOPE", "reviewer-1").status_code == 404
     denied = E2E_CASES["E2E-05"]["given"]["claim"]["claim_id"]
     assert open_review(client, denied, "reviewer-1").status_code == 409  # never reviewed
@@ -44,11 +43,14 @@ def test_opening_a_claim_awaiting_review_is_audited(api, load_case_reference) ->
         opened["created_at"]
     )
     assert client.get("/v1/claims/CLM-E2E-14").json()["status"] == "AWAITING_REVIEW"
-    review = client.post("/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14", "reviewer-1"))
+    url = "/v1/claims/CLM-E2E-14/review"
+    review = client.post(url, json=accept("CLM-E2E-14", "reviewer-1"), headers=PROVIDER)
     assert review.status_code == 403
-    finalized = client.post(
-        "/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14", "reviewer-1"), headers=REVIEWER
+    impostor = client.post(
+        url, json=accept("CLM-E2E-14", "reviewer-a"), headers=bearer("reviewer-1")
     )
+    assert impostor.status_code == 403  # the reviewer ID must be the logged-in reviewer's
+    finalized = client.post("/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14", "reviewer-1"))
     assert finalized.status_code == 200
     assert open_review(client, "CLM-E2E-14", "reviewer-1").status_code == 409  # final
 
@@ -62,9 +64,7 @@ def test_review_time_runs_from_the_acting_reviewers_latest_opening(
     openings = [e for e in audit(client, "CLM-E2E-14") if e["event_type"] == "REVIEW_OPENED"]
     latest_by_a = openings[2]  # not the first by anyone, the first by A, or the latest by anyone
 
-    response = client.post(
-        "/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14", "reviewer-a"), headers=REVIEWER
-    )
+    response = client.post("/v1/claims/CLM-E2E-14/review", json=accept("CLM-E2E-14", "reviewer-a"))
 
     assert response.status_code == 200, response.text
     accepted = next(e for e in audit(client, "CLM-E2E-14") if e["event_type"] == "REVIEW_ACCEPTED")

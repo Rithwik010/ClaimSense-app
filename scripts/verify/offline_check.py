@@ -3,7 +3,8 @@ after `make demo-reset` with the stack up (`make demo-up`); it runs `make e2e-ap
 runs, records the connections of every stack process:
 
 - on the laptop, with `lsof` about every 0.25 s: the API (port 8000, and the second API the e2e
-  check starts on 8001), Ollama (port 11434 and its model runner), the web server (port 5173) and
+  check starts on 8001; it also serves the web app), Ollama (port 11434 and its model runner),
+  the dev server of `make demo` (port 5173) when it runs, and
   the e2e client, each with its child processes;
 - in Docker, about every second: the Postgres and Qdrant containers' socket tables
   (/proc/net/tcp, tcp6, udp, udp6), which also keep connections closed in the last minute.

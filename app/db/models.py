@@ -387,10 +387,39 @@ class Claim(Base):
     status: Mapped[str] = mapped_column(String(24))
     intake: Mapped[dict[str, Any]] = mapped_column(JSONB)
     field_confidences: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    # The provider account that filed the claim (D-AUTH-1): a provider user sees only the claims
+    # filed under their provider ID. None for claims filed before logins existed.
+    provider_id: Mapped[str | None] = mapped_column(String(10), index=True)
+    filed_by: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+USER_ROLES = ("provider", "reviewer", "admin")
+
+
+class User(Base):
+    """A person who logs in (D-AUTH-1). The role decides what they may do; a provider user also
+    has the provider ID (an NPI from the demo data) their claims are filed under."""
+
+    __tablename__ = "users"
+    __table_args__ = (
+        one_of("role", USER_ROLES),
+        CheckConstraint(
+            "(role = 'provider') = (provider_id IS NOT NULL)", name="provider_id_for_providers"
+        ),
+        CheckConstraint("provider_id ~ '^[0-9]{10}$'", name="provider_id_ten_digits"),
+    )
+
+    username: Mapped[str] = mapped_column(String(64), primary_key=True)  # the review actor
+    display_name: Mapped[str] = mapped_column(Text)
+    password_hash: Mapped[str] = mapped_column(Text)  # Argon2 (pwdlib)
+    role: Mapped[str] = mapped_column(String(16))
+    provider_id: Mapped[str | None] = mapped_column(String(10))
+    active: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class DecisionRecordRow(Base):

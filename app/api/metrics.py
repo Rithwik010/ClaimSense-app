@@ -7,10 +7,16 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/v1/metrics", tags=["metrics"])
+from app.api.deps import require
+from app.auth import Role
+
+# Admin only (D-AUTH-1).
+router = APIRouter(
+    prefix="/v1/metrics", tags=["metrics"], dependencies=[Depends(require(Role.ADMIN))]
+)
 EVAL = Path(__file__).resolve().parents[2] / "data" / "generated" / "eval"
 MODEL_REPORTS = (
     EVAL / "v2" / "v2data-model-v1.json",
