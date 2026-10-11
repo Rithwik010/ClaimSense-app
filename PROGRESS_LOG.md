@@ -440,6 +440,12 @@ Kaggle copy for anything model-related.
   - **onnxruntime telemetry (D-PROC-4):** a `make demo-reset` aborted (134) in onnxruntime's telemetry thread, which every process loading the embedding model started, the API included. Off now (`ORT_DISABLE_TELEMETRY=1` in `app/rag/embedding.py` and the Makefile).
   - **Tests:** 2,320 pass, 1 skipped (local, data/raw + Postgres + Qdrant).
 
+- 2026-10-11 17:12 | Manideep3183 | Part 1 checks | **Request options pinned, EXPLANATION_BUILT, offline check and Ollama start-up merged (branch `p6.5-determinism-offline`; merged into `main` as `117ac63`, `--no-ff`; CI run 38136349608 passed: Python 1,957 passed, 66 skipped; web app passed).** D-MODEL-7, D-AUDIT-1, D-PROC-5, D-RAG-3.
+  - **Same claim, same answer (D-MODEL-7):** first attempt temperature 0, seed 20260921; the retry after an invalid answer temperature 0.7, seed 20261010; both pinned and checked by `make model-check`. The nine demo claims repeat exactly in 3 rounds; 7 of 8 retried test claims repeat the evaluation; DV2-TE-00273's retry varies (valid output 0.980 or 0.983). Settings and reported numbers unchanged.
+  - **EXPLANATION_BUILT (D-AUDIT-1):** written with every saved record (rule outcome, recommendation, finalization) with the SHA-256 of the text and HTML; `make e2e-api` checks the explanation shown against it.
+  - **Offline (D-PROC-5):** telemetry switches set in `app/__init__.py` (importing qdrant_client started onnxruntime's telemetry); `make offline-check` OK: nothing but the laptop and the Docker network during `make e2e-api` (139 checks). `make ollama-up` starts `ollama serve` (keep-alive, no cloud) when it is not running.
+  - **Tests:** 2,321 pass, 1 skipped (local).
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
