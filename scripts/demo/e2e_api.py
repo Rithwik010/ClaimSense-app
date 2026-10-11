@@ -168,6 +168,7 @@ def explained(check: Check, api: httpx.Client, claim_id: str) -> None:
 
 def dead_ollama_api() -> subprocess.Popen:
     env = dict(os.environ, OLLAMA_URL="http://127.0.0.1:9")
+    env.setdefault("MODEL_NAME", "claimsense-decision:v2")
     server = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "app.api.main:app", "--port", str(DEAD_API_PORT)],
         cwd=ROOT,
