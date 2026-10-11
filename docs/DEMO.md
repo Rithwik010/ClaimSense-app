@@ -24,30 +24,36 @@ top right: **Log out**.
 
 ## The nine claims
 
-A provider files and processes: **Submit claim** → Claim file → **Read claim** → **Process
-claim**; the claim then shows on **My claims**. A reviewer reviews: **Review queue** → the claim
-→ **Accept recommendation** (or **Override line**) → **Finalize claim**.
+A provider files: **Submit claim** → drop the file on the box (or choose it) → **Read claim** →
+check **Fields read** → **Process claim** (the stage strip fills in) → **Open claim result**. A
+reviewer reviews: **Review queue** → the tier's tab → the claim → **Accept all lines** (or
+**Override line**) → **Finalize claim** → confirm; then **Next claim** opens the next one waiting.
 
 | # | Who | File and steps | Expected result |
 |---|---|---|---|
-| 1 | provider1 | `01-approve-quick.json`: file and process | My claims: **In review** |
-|   | reviewer1 | Review queue → `CLM-DEMO-01` (quick tier) → click a criterion's quote → **Accept recommendation** → **Finalize claim** | **Approved**; provider1 now sees **Approved** too |
+| 1 | provider1 | `01-approve-quick.json`: file and process | **In review**; the strip shows "Waiting for a reviewer" |
+|   | reviewer1 | **Quick** tab → `CLM-DEMO-01` → click a criterion's quote (the note scrolls to it) → **Accept all lines** → **Finalize claim** | **Approved**. provider1 → **My claims** → `CLM-DEMO-01`: lines, amounts, explanation |
 | 2 | provider1 | `02-pend-standard.json`: file and process | **In review** |
-|   | reviewer1 | `CLM-DEMO-02` (standard tier) → **Accept recommendation** → **Finalize claim** | **Needs information** |
 | 3 | provider1 | `03-deny-full-override.json`: file and process | **In review** |
+|   | reviewer1 | **Standard** tab → `CLM-DEMO-02` → **Accept all lines** → **Finalize claim** → **Next claim** | 2 **Needs information**; **Next claim** opens `CLM-DEMO-03` |
 |   | reviewer1 | `CLM-DEMO-03` (full tier; the model recommends Deny) → **Override line** → New decision Approve, a reason → **Override line** → **Finalize claim** | **Approved**, amounts recomputed |
 | 4 | provider2 | `04-partial-ncci.json`: file and process | **In review** |
-|   | reviewer1 | `CLM-DEMO-04`: line 2 denied by an NCCI rule (cannot be overridden) → **Accept recommendation** → **Finalize claim** | **Partly approved** |
-| 5 | provider2 | `05-rule-deny-r15.json`: file and process | **Denied by a rule** at once: no review |
-| 6 | provider2 | `06-reject-invalid-npi.json`: file and process | **Rejected**: invalid NPI |
-| 7 | provider1 | `07-duplicate-of-01.json`: file and process | **Rejected**: duplicate of claim 1 |
-| 8 | provider2 | `08-scanned-clean.pdf`: **Read claim** (OCR, a few seconds) → check Fields read → process | **In review**; reviewer1 sees it awaiting review |
-| 9 | provider2 | `09-scanned-low-confidence.pdf`: **Read claim** → the mistyped NPI is highlighted → process | **Rejected** for a low-confidence field, never denied |
+|   | reviewer1 | `CLM-DEMO-04`: line 2 denied by an NCCI rule, CARC 236 (cannot be overridden) → **Accept all lines** → **Finalize claim** | **Partly approved** |
+| 5 | provider2 | `05-rule-deny-r15.json`: file and process → **Open claim result** | **Denied by a rule** at once: CARC 11, RARC N115, the billing article and its LCD |
+| 6 | provider2 | `06-reject-invalid-npi.json`: file and process | **Rejected**: invalid NPI, CARC 16 with RARC N257 |
+| 7 | provider1 | `07-duplicate-of-01.json`: file and process | **Rejected**: duplicate of claim 1, CARC 18 |
+| 8 | provider2 | `08-scanned-clean.pdf`: **Read claim** (OCR, a few seconds) → the confidence column → process | **In review**; it waits in the queue |
+| 9 | provider2 | `09-scanned-low-confidence.pdf`: **Read claim** → the mistyped NPI is highlighted → process | **Rejected** for a low-confidence field, never denied: CARC 16 with RARC MA130 |
 
-Then, as reviewer1: **Claims** → `CLM-DEMO-03` → **Explanation** and **Audit trail** tabs;
-**Rule outcomes** lists claims 5, 6, 7 and 9, and their claim pages show the standard codes:
-5 CARC 11 with RARC N115 and the billing article's LCD, 6 CARC 16 with N257, 7 CARC 18, 9 CARC 16
-with MA130. As admin: **Metrics**; any page of another role shows "You don't have access".
+Then:
+
+- **reviewer1**: **Rule outcomes** lists claims 5, 6, 7 and 9 with their reasons and codes;
+  **Claims** → `CLM-DEMO-03` → **Explanation** and **Audit trail** (time, event, who, versions).
+- **provider2**: **My claims** → search `DEMO-08`, or filter by status.
+- **admin**: **Overview** (demo data: final outcomes, queue by tier, decided by rules, accepted
+  or overridden) → **Model metrics** (v1, v2 and E4B side by side) → **Audit lookup**
+  `CLM-DEMO-03` → **System status**. Everything is read only; another role's page shows "You
+  don't have access".
 
 ## If a step fails
 

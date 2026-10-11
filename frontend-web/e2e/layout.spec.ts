@@ -1,7 +1,7 @@
 // Layout at the four sizes DESIGN.md and the demo use (390, 768 and 1440 px wide, and the 1280x720
 // projector), for every role's pages, the login page and the no-access page: each page loads, no
 // horizontal page scroll, and the user menu stays inside the window. Run after
-// e2e/demo-claims.spec.ts (it opens CLM-DEMO-03 and the claim still waiting, CLM-DEMO-08).
+// e2e/demo-claims.spec.ts (it opens the demo claims it files; CLM-DEMO-08 still waits for review).
 // Nothing is saved: no screenshots.
 
 import { expect, test, type Page } from "@playwright/test";
@@ -19,8 +19,10 @@ const PAGES: Record<string, [string, string][]> = {
   provider1: [
     ["/my-claims", "My claims"],
     ["/submit", "Submit claim"],
+    ["/my-claims/CLM-DEMO-01", "Claim CLM-DEMO-01"],
     ["/queue", "You don't have access"],
   ],
+  provider2: [["/my-claims/CLM-DEMO-05", "Claim CLM-DEMO-05"]],
   reviewer1: [
     ["/queue", "Review queue"],
     ["/claims", "Claims"],
@@ -30,7 +32,9 @@ const PAGES: Record<string, [string, string][]> = {
   ],
   admin: [
     ["/overview", "Overview"],
-    ["/metrics", "Metrics"],
+    ["/metrics", "Model metrics"],
+    ["/audit", "Audit lookup"],
+    ["/system", "System status"],
     ["/claims/CLM-DEMO-01", "Claim CLM-DEMO-01"],
   ],
 };

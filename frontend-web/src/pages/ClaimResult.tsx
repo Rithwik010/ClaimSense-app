@@ -23,22 +23,29 @@ function procedureCode(view: ProviderClaimView, lineNo: number): string {
 }
 
 function Lines({ view, record }: { view: ProviderClaimView; record: DecisionRecord }) {
-  const byLine = (lineNo: number | null): Adjustment[] => view.adjustments.filter((a) => a.line_no === lineNo);
+  const byLine = (lineNo: number): Adjustment[] => view.adjustments.filter((a) => a.line_no === lineNo);
   const lineAmounts = new Map((record.amounts?.lines ?? []).map((line) => [line.line_no, line]));
-  const failed = record.rules_outcome.rule_results.filter((r) => !r.passed && r.line_no === null);
+  // A claim the rules decided has no line decisions: its codes (for the claim or a line) and the
+  // reasons of every failed rule show together.
+  const decided = new Set(record.line_decisions.map((line) => line.line_no));
+  const undecided = view.adjustments.filter((a) => a.line_no === null || !decided.has(a.line_no));
+  const failed = record.rules_outcome.rule_results.filter((r) => !r.passed);
   return (
     <div className="space-y-3">
       {record.line_decisions.length === 0 && failed.length > 0 && (
         <Panel className="p-4">
-          <p className="font-semibold">The rules decided the whole claim</p>
+          <p className="font-semibold">The rules decided this claim</p>
           <ul className="mt-1 list-disc pl-5">
             {failed.map((rule, i) => (
-              <li key={`${rule.rule_id}-${i}`}>{reason(rule.reason_code)}</li>
+              <li key={`${rule.rule_id}-${i}`}>
+                {rule.line_no ? `Line ${rule.line_no}: ` : ""}
+                {reason(rule.reason_code)}
+              </li>
             ))}
           </ul>
         </Panel>
       )}
-      <AdjustmentCodes title="Reason codes for the whole claim" items={byLine(null)} />
+      <AdjustmentCodes title="Reason codes" items={undecided} />
       {record.line_decisions.map((line) => {
         const amounts = lineAmounts.get(line.line_no);
         return (

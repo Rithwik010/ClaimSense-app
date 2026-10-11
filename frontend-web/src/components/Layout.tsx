@@ -2,7 +2,7 @@
 // which fades in on navigation (motion moment 1, DESIGN.md).
 
 import { motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 
 import { AppSidebar } from "@/components/app-sidebar";
@@ -98,10 +98,11 @@ export function PageTitle({ title, hint, actions }: { title: string; hint?: stri
 }
 
 export function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
+  const id = useId();
   return (
-    <section className="mb-8">
+    <section className="mb-8" aria-labelledby={id}>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[18px] leading-[26px] font-semibold">{title}</h2>
+        <h2 id={id} className="text-[18px] leading-[26px] font-semibold">{title}</h2>
         {aside}
       </div>
       {children}
