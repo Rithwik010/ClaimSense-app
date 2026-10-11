@@ -73,7 +73,8 @@ app talks only to the API.
 - The demo: `make demo-reset`, then `make demo-up` (or `make demo` for the dev server), then
   `make demo-check`. The click-by-click runbook is [docs/DEMO.md](docs/DEMO.md).
 - Checks: `uv run pytest`, `make e2e-api` (the whole stack through the API, right after a reset),
-  `make web-check`, `make results` (regenerates [docs/results.md](docs/results.md)).
+  `make model-check` (the demo model is the one evaluated), `make web-check`, `make results`
+  (regenerates [docs/results.md](docs/results.md)).
 
 ## Where things are
 

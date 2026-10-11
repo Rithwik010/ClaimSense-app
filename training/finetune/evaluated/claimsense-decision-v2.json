@@ -1,0 +1,24 @@
+{
+  "model": "claimsense-decision:v2",
+  "recorded": "2026-10-11",
+  "ollama": "0.34.1",
+  "manifest_digest": "56726774f9f3ea8becc895aaf02b27194736f5a7895d688e19815c8ff3720d2f",
+  "weights_sha256": "7cbaf1334f194f451c97e7e5195cc61eb39a6f735edcbad31f57346b5d4219af",
+  "settings": {
+    "TEMPLATE": [
+      "{{ .Prompt }}"
+    ],
+    "RENDERER": [
+      "gemma4"
+    ],
+    "PARSER": [
+      "gemma4"
+    ],
+    "PARAMETER": [
+      "num_ctx 8192",
+      "temperature 1",
+      "top_k 64",
+      "top_p 0.95"
+    ]
+  }
+}

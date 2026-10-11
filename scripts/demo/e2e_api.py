@@ -12,12 +12,16 @@ each demo claim can be filed only once. It checks:
    (tests/explain_support.py) and that the record names the rules, model, prompt and policy
    versions where the claim reached them;
 4. bad inputs and failures: wrong file type, empty file, corrupted PDF, JSON with a missing
-   field, a duplicate claim ID, a provider calling review, and Ollama stopped (a second API on
-   :8001 pointed at a closed port): each gives a clear 4xx or a clear claim status, never a 5xx,
-   and no claim is lost;
-5. that the CARC/RARC codes come back, with official descriptions, on the DENY and REJECT lines
+   field, a duplicate claim ID, a provider calling review, and Ollama stopped: each gives a clear
+   4xx or a clear claim status, never a 5xx, and no claim is lost;
+5. recovery after Ollama comes back: a second API on :8001 reaches Ollama through a local port
+   that refuses connections (Ollama stopped: 503, the claim stays RECEIVED with nothing
+   half-written), then passes them through to the running Ollama (Ollama started; the demo
+   model stays loaded). The same API process then processes the same claim ID normally, with no
+   duplicate rejection, and after review its audit trail holds every stage once, in order;
+6. that the CARC/RARC codes come back, with official descriptions, on the DENY and REJECT lines
    and not on pended ones (D-CARC-2);
-6. with --log (repeatable), that each log holds no patient name, street address, date of birth
+7. with --log (repeatable), that each log holds no patient name, street address, date of birth
    or clinical note text of any demo claim as stored at intake (INSTRUCTIONS.md §8.9);
    --privacy-only runs just that check (the e2e run's own output is checked after the run).
 
@@ -27,14 +31,20 @@ each demo claim can be filed only once. It checks:
 import argparse
 import json
 import os
+import socket
+import socketserver
 import subprocess
 import sys
+import threading
 import time
+from collections import Counter
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
+from app.core.settings import get_settings
 from app.domain.contracts import DecisionRecord, IntakeClaim
 from app.intake.form_codec import to_form_values
 from tests.explain_support import mismatches
@@ -53,6 +63,7 @@ MODEL_EVENTS = [
     "SLM_RECOMMENDED",
     "CALCULATED",
 ]
+REVIEWED_EVENTS = [*MODEL_EVENTS, "REVIEW_OPENED", "REVIEW_ACCEPTED", "FINALIZED"]
 
 
 class Check:
@@ -166,8 +177,56 @@ def explained(check: Check, api: httpx.Client, claim_id: str) -> None:
     )
 
 
-def dead_ollama_api() -> subprocess.Popen:
-    env = dict(os.environ, OLLAMA_URL="http://127.0.0.1:9")
+class OllamaSwitch:
+    """Ollama as the second API sees it: a local port that refuses connections until `start()`
+    (Ollama stopped), then passes each connection through to the running Ollama (Ollama started).
+    The real Ollama keeps the demo model loaded throughout."""
+
+    def __init__(self) -> None:
+        url = urlsplit(get_settings().ollama_url)
+        self.target = (url.hostname or "localhost", url.port or 11434)
+        with socket.socket() as probe:  # a free port; nothing listens on it until start()
+            probe.bind(("127.0.0.1", 0))
+            self.port = probe.getsockname()[1]
+        self.url = f"http://127.0.0.1:{self.port}"
+        self._server: socketserver.ThreadingTCPServer | None = None
+
+    def start(self) -> None:
+        target = self.target
+
+        def pump(source: socket.socket, sink: socket.socket) -> None:
+            try:
+                while data := source.recv(65536):
+                    sink.sendall(data)
+            except OSError:
+                pass
+            finally:
+                try:
+                    sink.shutdown(socket.SHUT_WR)
+                except OSError:
+                    pass
+
+        class Pipe(socketserver.BaseRequestHandler):
+            def handle(self) -> None:
+                with socket.create_connection(target) as upstream:
+                    back = threading.Thread(target=pump, args=(upstream, self.request), daemon=True)
+                    back.start()
+                    pump(self.request, upstream)
+                    back.join()
+
+        socketserver.ThreadingTCPServer.allow_reuse_address = True
+        self._server = socketserver.ThreadingTCPServer(("127.0.0.1", self.port), Pipe)
+        self._server.daemon_threads = True
+        threading.Thread(target=self._server.serve_forever, daemon=True).start()
+
+    def stop(self) -> None:
+        if self._server is not None:
+            self._server.shutdown()
+            self._server.server_close()
+
+
+def second_api(ollama_url: str) -> subprocess.Popen:
+    env = dict(os.environ, OLLAMA_URL=ollama_url)
     env.setdefault("MODEL_NAME", "claimsense-decision:v2")
     server = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "app.api.main:app", "--port", str(DEAD_API_PORT)],
@@ -252,31 +311,63 @@ def main() -> None:
     )
     check(api.get("/v1/metrics/evaluation").status_code == 200, "GET /v1/metrics/evaluation")
 
-    print("Ollama stopped (a second API pointed at a closed port)")
-    server = dead_ollama_api()
+    print("Ollama stopped, then started again (a second API on :8001)")
+    switch = OllamaSwitch()
+    server = second_api(switch.url)
     try:
-        dead = httpx.Client(base_url=f"http://localhost:{DEAD_API_PORT}", timeout=60)
+        second = httpx.Client(base_url=f"http://localhost:{DEAD_API_PORT}", timeout=300)
         pdf = render_pdf(
             to_form_values(IntakeClaim.model_validate(claim_json("02-pend-standard.json")))
         )
-        dead.post(
+        second.post(
             "/v1/claims/intake/file", content=pdf, headers={"Content-Type": "application/pdf"}
         )
         down = no_5xx(
-            check, dead.post("/v1/claims/CLM-DEMO-02/process"), "process with Ollama stopped"
+            check, second.post("/v1/claims/CLM-DEMO-02/process"), "process with Ollama stopped"
         )
         check(
-            down.status_code in (409, 503) or down.status_code == 424,
+            down.status_code == 503,
             f"process with Ollama stopped: {down.status_code} {down.json().get('detail', '')[:80]}",
         )
+        kept = second.get("/v1/claims/CLM-DEMO-02").json()
+        check(
+            kept["status"] == "RECEIVED",
+            "the claim is not lost: still RECEIVED, ready to process again",
+        )
+        events = [e["event_type"] for e in second.get("/v1/claims/CLM-DEMO-02/audit").json()]
+        check(
+            events == ["INTAKE_COMPLETED"],
+            f"nothing half-written by the failed run: audit {events}",
+        )
+
+        switch.start()
+        again = no_5xx(
+            check,
+            second.post("/v1/claims/CLM-DEMO-02/process"),
+            "CLM-DEMO-02: process again after Ollama started (same API process)",
+        )
+        record = again.json()
+        check(
+            again.status_code == 200 and record.get("claim_id") == "CLM-DEMO-02",
+            f"CLM-DEMO-02: processed on the same claim ID ({again.status_code})",
+        )
+        check(
+            record.get("status") == "AWAITING_REVIEW" and record.get("review_tier") == "STANDARD",
+            "CLM-DEMO-02 (digital PDF): finished normally, awaiting standard review",
+        )
+        failed = [
+            r["reason_code"] for r in record["rules_outcome"]["rule_results"] if not r["passed"]
+        ]
+        check(
+            "RJ_DUPLICATE" not in failed and record.get("status") != "REJECTED",
+            "CLM-DEMO-02: no duplicate rejection of its own earlier attempt",
+        )
+        twice = second.post("/v1/claims/CLM-DEMO-02/process")
+        check(twice.status_code == 409, f"CLM-DEMO-02: not processed twice ({twice.status_code})")
     finally:
         server.terminate()
         server.wait(timeout=30)
-    kept = api.get("/v1/claims/CLM-DEMO-02").json()
-    check(
-        kept["status"] == "RECEIVED",
-        "the claim is not lost: still RECEIVED, ready to process again",
-    )
+        switch.stop()
 
     print("Demo claims")
     r = file_and_process(check, api, "01-approve-quick.json", "CLM-DEMO-01", "json-body")
@@ -304,19 +395,14 @@ def main() -> None:
         f"CLM-DEMO-01: full audit trail in order ({len(events)} events)",
     )
 
-    processed = no_5xx(
-        check,
-        api.post("/v1/claims/CLM-DEMO-02/process"),
-        "CLM-DEMO-02: process after Ollama is back",
-    )
-    check(
-        processed.json().get("status") == "AWAITING_REVIEW"
-        and processed.json().get("review_tier") == "STANDARD",
-        "CLM-DEMO-02 (digital PDF): awaiting standard review",
-    )
     check(
         review(api, "CLM-DEMO-02").json().get("status") == "FINAL_PENDED",
         "CLM-DEMO-02: ACCEPT -> FINAL_PENDED",
+    )
+    events = [e["event_type"] for e in api.get("/v1/claims/CLM-DEMO-02/audit").json()]
+    check(
+        subsequence(events, REVIEWED_EVENTS) and all(n == 1 for n in Counter(events).values()),
+        f"CLM-DEMO-02: complete audit trail after the recovery, each stage once ({events})",
     )
 
     r = file_and_process(check, api, "03-deny-full-override.json", "CLM-DEMO-03", "json-file")

@@ -4,6 +4,7 @@ The real embedding model is evaluated against the golden queries in test_rag_gol
 import dataclasses
 import hashlib
 import math
+import os
 import re
 from datetime import date
 
@@ -141,3 +142,14 @@ def test_the_code_filter_keeps_only_the_covering_policy() -> None:
     assert {c.policy_id for c in covering} == {"POL-IMG-002"}
     assert len(covering) == len(load_curated().policies["POL-IMG-002"].criteria)
     assert office == []  # no policy covers office visits
+
+
+def test_embedder_turns_onnxruntime_telemetry_off_before_loading(tmp_path, monkeypatch) -> None:  # noqa: ANN001
+    """D-PROC-4: no usage telemetry from onnxruntime to Microsoft, even with the model missing."""
+    from app.rag.embedding import EmbeddingUnavailable, FastEmbedder
+
+    monkeypatch.delenv("ORT_DISABLE_TELEMETRY", raising=False)
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    with pytest.raises(EmbeddingUnavailable):
+        FastEmbedder("BAAI/bge-small-en-v1.5", tmp_path).embed_query("knee pain")
+    assert os.environ["ORT_DISABLE_TELEMETRY"] == "1"
