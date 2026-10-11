@@ -1,11 +1,12 @@
-// The app shell: sidebar, a header with the breadcrumb, and the page, which fades in on navigation
-// (motion moment 1, DESIGN.md).
+// The app shell: sidebar, a header with the breadcrumb and the user menu (D-AUTH-1), and the page,
+// which fades in on navigation (motion moment 1, DESIGN.md).
 
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 
-import { AppSidebar, NAV } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { UserMenu } from "@/components/UserMenu";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { PAGES } from "@/lib/auth";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 function crumbs(pathname: string): { label: string; to?: string }[] {
@@ -26,7 +28,7 @@ function crumbs(pathname: string): { label: string; to?: string }[] {
   if (first === "claims" && second) {
     return [{ label: "Claims", to: "/claims" }, { label: decodeURIComponent(second) }];
   }
-  const item = NAV.find((n) => n.to === `/${first ?? ""}`);
+  const item = PAGES.find((n) => n.to === `/${first ?? ""}`);
   return [{ label: item?.label ?? "ClaimSense" }];
 }
 
@@ -42,7 +44,7 @@ export function Layout() {
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-rules bg-paper px-4">
           <SidebarTrigger className="-ml-1" aria-label="Show or hide the navigation" />
           <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
+          <Breadcrumb className="min-w-0 flex-1">
             <BreadcrumbList>
               {trail.map((crumb, i) => (
                 <span key={crumb.label} className="contents">
@@ -60,6 +62,7 @@ export function Layout() {
               ))}
             </BreadcrumbList>
           </Breadcrumb>
+          <UserMenu />
         </header>
         <motion.main
           key={pathname}

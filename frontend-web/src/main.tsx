@@ -8,7 +8,7 @@ import { App } from "./App";
 import { Toaster } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import "./index.css";
-import { SessionProvider } from "./lib/session";
+import { AuthProvider } from "./lib/auth";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -17,7 +17,7 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <SessionProvider>
+      <AuthProvider>
         <MotionConfig reducedMotion="user">
           <TooltipProvider>
             <BrowserRouter>
@@ -26,7 +26,7 @@ createRoot(document.getElementById("root") as HTMLElement).render(
             <Toaster position="bottom-right" />
           </TooltipProvider>
         </MotionConfig>
-      </SessionProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

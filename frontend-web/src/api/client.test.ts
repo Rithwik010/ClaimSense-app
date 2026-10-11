@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, request } from "./client";
+import { ApiError, onSessionEnded, request } from "./client";
 
 function answer(body: string, type: string, status = 200) {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(body, { status, headers: { "content-type": type } })));
@@ -39,5 +39,23 @@ describe("API client", () => {
     vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("Failed to fetch"))));
 
     await expect(request("/v1/x")).rejects.toThrow(/cannot be reached/);
+  });
+
+  it("ends the session on a 401, except for a wrong password at login", async () => {
+    const ended = vi.fn();
+    onSessionEnded(ended);
+    answer('{"detail": "Not logged in"}', "application/json", 401);
+
+    await expect(request("/v1/claims")).rejects.toThrow(/log in again/i);
+    expect(ended).toHaveBeenCalledTimes(1);
+    await expect(request("/v1/auth/login", { method: "POST", json: {} })).rejects.toThrow();
+    expect(ended).toHaveBeenCalledTimes(1);
+    onSessionEnded(null);
+  });
+
+  it("answers nothing for 204 No Content (logout)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
+
+    await expect(request("/v1/auth/logout", { method: "POST" })).resolves.toBeUndefined();
   });
 });

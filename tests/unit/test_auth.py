@@ -45,3 +45,11 @@ def test_a_token_names_the_user_and_role_and_expires_after_eight_hours() -> None
 def test_an_invalid_token_is_refused(token: str) -> None:
     with pytest.raises(InvalidToken):
         read_token(token, SECRET)
+
+
+def test_an_empty_secret_key_is_no_key() -> None:
+    from app.core.settings import Settings
+
+    assert Settings(secret_key="").secret_key is None
+    assert Settings(secret_key="   ").secret_key is None
+    assert Settings(secret_key="k" * 40).secret_key.get_secret_value() == "k" * 40

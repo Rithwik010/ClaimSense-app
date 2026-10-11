@@ -79,8 +79,8 @@ dialog, select, textarea, tooltip, sonner (toasts), skeleton, breadcrumb, chart,
 
 ## Screens
 
-- **App shell:** sidebar (Submit claim, Review queue, Claims, Rule outcomes, Metrics); the role and
-  reviewer ID in the sidebar footer; breadcrumb in the header.
+- **App shell:** sidebar with the logged-in role's pages only (D-AUTH-1); breadcrumb and the user
+  menu (name, role, Log out) in the header. The login page is the only page without the shell.
 - **Review claim** (the demo's main screen): the stage strip across the top (Intake, Rules, Policy,
   Model, Amounts, Explanation, Review), each step with its result, steps a claim never reached shown
   as "Not reached". Left: the service lines, each expanding to its criteria (Met / Not met / Not

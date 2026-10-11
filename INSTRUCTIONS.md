@@ -479,7 +479,8 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 | POST | `/v1/claims/{id}/review` | `ReviewAction` → finalized `DecisionRecord`; 409 if already final or busy, 422 if refused; reviewer role |
 | GET | `/v1/plans/{plan_id}` | Plan configuration |
 
-Authentication: a simple role header (`provider`, `reviewer`, `admin`) checked by a dependency.
+Authentication: username and password logins with roles (`provider`, `reviewer`, `admin`), a
+session cookie and role checks on every endpoint; replaces the prototype role header (D-AUTH-1).
 Prototype only; documented as such.
 
 ### 8.11 Frontend (`frontend-web/`, React; D-UI-1, D-UI-2)

@@ -1,13 +1,12 @@
-// The app shell's sidebar (started from the shadcn sidebar-07 block): navigation, then the
-// person's role and reviewer ID in the footer. Collapses to icons; a sheet on small screens.
+// The app shell's sidebar (started from the shadcn sidebar-07 block): the logged-in role's pages
+// only (D-AUTH-1). Collapses to icons; a sheet on small screens. Who is logged in is in the user
+// menu at the top right.
 
-import { BarChart3, ClipboardCheck, FileUp, Files, Scale } from "lucide-react";
 import { NavLink, useLocation } from "react-router";
 
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
@@ -16,34 +15,11 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { Role } from "@/api/types";
-import { useSession } from "@/lib/session";
-
-export const NAV = [
-  { to: "/submit", label: "Submit claim", icon: FileUp },
-  { to: "/queue", label: "Review queue", icon: ClipboardCheck },
-  { to: "/claims", label: "Claims", icon: Files },
-  { to: "/rule-outcomes", label: "Rule outcomes", icon: Scale },
-  { to: "/metrics", label: "Metrics", icon: BarChart3 },
-];
-
-const ROLES: { value: Role; label: string }[] = [
-  { value: "provider", label: "Provider" },
-  { value: "reviewer", label: "Reviewer" },
-  { value: "admin", label: "Admin" },
-];
+import { pagesFor, useUser } from "@/lib/auth";
 
 export function AppSidebar() {
   const { pathname } = useLocation();
-  const { role, setRole, reviewerId, setReviewerId } = useSession();
+  const { role } = useUser();
   const { setOpenMobile } = useSidebar();
   return (
     <Sidebar collapsible="icon">
@@ -63,12 +39,15 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {NAV.map((item) => (
+            {pagesFor(role).map((item) => (
               <SidebarMenuItem key={item.to}>
                 <SidebarMenuButton
                   asChild
                   tooltip={item.label}
-                  isActive={pathname.startsWith(item.to) || (item.to === "/queue" && pathname.startsWith("/review"))}
+                  isActive={
+                    pathname.startsWith(item.to) ||
+                    (item.to === "/queue" && pathname.startsWith("/review"))
+                  }
                 >
                   <NavLink to={item.to} onClick={() => setOpenMobile(false)}>
                     <item.icon aria-hidden />
@@ -80,33 +59,6 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="gap-3 border-t border-rules p-3 group-data-[collapsible=icon]:hidden">
-        <label className="grid gap-1 text-[13px] text-ink-muted" htmlFor="role">
-          Role
-          <Select value={role} onValueChange={(value) => setRole(value as Role)}>
-            <SelectTrigger id="role" aria-label="Role" className="w-full bg-paper text-ink">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {ROLES.map((r) => (
-                <SelectItem key={r.value} value={r.value}>
-                  {r.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </label>
-        <label className="grid gap-1 text-[13px] text-ink-muted" htmlFor="reviewer-id">
-          Reviewer ID
-          <Input
-            id="reviewer-id"
-            value={reviewerId}
-            placeholder="For example reviewer-1"
-            className="bg-paper text-ink"
-            onChange={(event) => setReviewerId(event.target.value)}
-          />
-        </label>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

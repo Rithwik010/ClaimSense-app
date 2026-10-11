@@ -19,12 +19,7 @@ export function Claims() {
       ) : claims.error ? (
         <ErrorNotice error={claims.error} onRetry={() => void claims.refetch()} />
       ) : claims.data.length === 0 ? (
-        <EmptyState title="No claims yet">
-          <Link className="font-semibold text-ink underline underline-offset-4" to="/submit">
-            Submit a claim
-          </Link>{" "}
-          to begin.
-        </EmptyState>
+        <EmptyState title="No claims yet">Claims appear here once a provider files them.</EmptyState>
       ) : (
         <div className="overflow-hidden rounded-lg border border-rules bg-paper">
           <Table>
