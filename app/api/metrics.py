@@ -12,7 +12,11 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/v1/metrics", tags=["metrics"])
 EVAL = Path(__file__).resolve().parents[2] / "data" / "generated" / "eval"
-MODEL_REPORTS = (EVAL / "v2" / "v2data-model-v1.json", EVAL / "v2" / "v2data-model-v2.json")
+MODEL_REPORTS = (
+    EVAL / "v2" / "v2data-model-v1.json",
+    EVAL / "v2" / "v2data-model-v2.json",
+    EVAL / "v2" / "v2data-model-e4b.json",  # the E4B side experiment, once evaluated
+)
 OCR_REPORT = EVAL / "ocr" / "heldout_summary.json"
 ERRORS_REPORT = EVAL / "v2" / "v2-errors.json"  # scripts/verify/v2_errors.py
 MACRO_F1_TARGET = 0.90  # P4.4

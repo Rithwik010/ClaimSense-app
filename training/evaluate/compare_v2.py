@@ -26,6 +26,9 @@ OUT = EVAL_DIR / "v2"
 MODELS = {
     "v1": ("claimsense-decision:v1", "decision_v2", "v2data-model-v1"),
     "v2": ("claimsense-decision:v2", "record", "v2data-model-v2"),
+    # E4B side experiment (D-MODEL-3, D-TRAIN-2); scored with the evidence guard (D-EVID-1),
+    # while the v1 and v2 rows were evaluated before it.
+    "e4b": ("claimsense-decision:e4b", "record", "v2data-model-e4b"),
 }
 
 
