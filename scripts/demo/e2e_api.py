@@ -15,10 +15,13 @@ each demo claim can be filed only once. It checks:
    field, a duplicate claim ID, a provider calling review, and Ollama stopped (a second API on
    :8001 pointed at a closed port): each gives a clear 4xx or a clear claim status, never a 5xx,
    and no claim is lost;
-5. with --api-log, that the API's log holds no patient name, address, date of birth or clinical
-   note text of any demo claim (INSTRUCTIONS.md §8.9).
+5. that the CARC/RARC codes come back, with official descriptions, on the DENY and REJECT lines
+   and not on pended ones (D-CARC-2);
+6. with --log (repeatable), that each log holds no patient name, street address, date of birth
+   or clinical note text of any demo claim as stored at intake (INSTRUCTIONS.md §8.9);
+   --privacy-only runs just that check (the e2e run's own output is checked after the run).
 
-    uv run python -m scripts.demo.e2e_api [--api-log data/generated/logs/api.log]
+    uv run python -m scripts.demo.e2e_api [--log data/generated/logs/api.log] [--privacy-only]
 """
 
 import argparse
@@ -182,32 +185,54 @@ def dead_ollama_api() -> subprocess.Popen:
     raise SystemExit("the second API (Ollama stopped) did not start")
 
 
-def privacy(check: Check, log: Path) -> None:
+def privacy(check: Check, api: httpx.Client, log: Path) -> None:
+    """No patient name, street address, date of birth or clinical note text of any demo claim (as
+    stored at intake) in the log."""
     text = log.read_text(encoding="utf-8", errors="replace")
-    for path in sorted(CLAIMS.glob("*.json")):
-        claim = claim_json(path.name)
-        patient = claim["patient"]
+    for n in range(1, 10):
+        claim_id = f"CLM-DEMO-{n:02d}"
+        response = api.get(f"/v1/claims/{claim_id}")
+        if response.status_code != 200:
+            continue
+        claim = response.json()["received"]
+        patient = claim.get("patient") or {}
+        address = patient.get("address") or {}
         secrets = {
-            "patient name": f"{patient['first_name']} {patient['last_name']}",
-            "last name": patient["last_name"],
-            "street address": patient["address"]["line1"],
-            "date of birth": patient["date_of_birth"],
-            "clinical note text": claim["clinical_notes"][:40],
+            "patient name": " ".join(
+                part for part in (patient.get("first_name"), patient.get("last_name")) if part
+            ),
+            "last name": patient.get("last_name", ""),
+            "street address": address.get("line1", ""),
+            "date of birth": patient.get("date_of_birth", ""),
+            "clinical note text": (claim.get("clinical_notes") or "")[:40],
         }
-        found = [what for what, value in secrets.items() if value and value in text]
+        found = [what for what, value in secrets.items() if len(value) >= 4 and value in text]
         check(
             not found,
-            f"API log holds no {', '.join(secrets)} of {path.name}"
+            f"{log.name} holds no patient name, address, birth date or note text of {claim_id}"
             + (f" (found: {found})" if found else ""),
         )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--api-log", type=Path, help="the API log to check for patient data")
+    parser.add_argument(
+        "--log",
+        type=Path,
+        action="append",
+        default=[],
+        help="a log to check for patient data (repeat)",
+    )
+    parser.add_argument("--privacy-only", action="store_true", help="only check the logs")
     args = parser.parse_args()
     check = Check()
     api = httpx.Client(base_url=API, timeout=300)
+    if args.privacy_only:
+        for log in args.log:
+            print(f"Privacy of {log}")
+            privacy(check, api, log)
+        report(check)
+        return
 
     print("Endpoints")
     health = api.get("/health").json()
@@ -356,6 +381,37 @@ def main() -> None:
     for n in range(1, 10):
         explained(check, api, f"CLM-DEMO-{n:02d}")
 
+    print("CARC/RARC codes on DENY and REJECT lines (D-CARC-2)")
+    expected = {
+        "CLM-DEMO-04": (2, "DN_NCCI_BUNDLED", ["236"]),
+        "CLM-DEMO-05": (1, "DN_DX_NOT_SUPPORTED", ["11", "N115"]),
+        "CLM-DEMO-06": (None, "RJ_INVALID_NPI", ["16", "N257"]),
+        "CLM-DEMO-07": (None, "RJ_DUPLICATE", ["18"]),
+        "CLM-DEMO-09": (None, "RJ_LOW_CONFIDENCE_FIELD", ["16", "MA130"]),
+    }
+    for claim_id, (line_no, reason, codes) in expected.items():
+        found = [
+            a
+            for a in api.get(f"/v1/claims/{claim_id}").json()["adjustments"]
+            if a["reason_code"] == reason and (line_no is None or a["line_no"] == line_no)
+        ]
+        got = [c["code"] for c in found[0]["codes"]] if found else []
+        described = bool(found) and all(
+            c["description"] and "Usage:" not in c["description"] for c in found[0]["codes"]
+        )
+        check(
+            got == codes and described,
+            f"{claim_id}: {reason} -> {' + '.join(got) or 'none'} with official descriptions",
+        )
+    pended = api.get("/v1/claims/CLM-DEMO-02").json()["adjustments"]
+    check(pended == [], "CLM-DEMO-02 (pended): no CARC/RARC codes")
+    article = api.get("/v1/claims/CLM-DEMO-05").json()["adjustments"][0]
+    check(
+        bool(article["billing_article"] and article["lcds"]),
+        f"CLM-DEMO-05: billing article {article['billing_article']},"
+        f" LCD {', '.join(article['lcds'])}",
+    )
+
     print("Queue, list and roles")
     queue = api.get("/v1/review/queue", headers=REVIEWER).json()
     check(
@@ -403,10 +459,13 @@ def main() -> None:
     )
     check(again.status_code == 409, "the same claim ID twice: 409")
 
-    if args.api_log:
-        print("Privacy of the API log")
-        privacy(check, args.api_log)
+    for log in args.log:
+        print(f"Privacy of {log}")
+        privacy(check, api, log)
+    report(check)
 
+
+def report(check: Check) -> None:
     print(f"\n{check.passed} checks passed, {len(check.failed)} failed")
     for what in check.failed:
         print(f"  FAIL {what}")

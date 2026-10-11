@@ -44,7 +44,10 @@ demo-check: ## OK/FAIL for Postgres, Ollama with the demo model loaded, the API 
 	MODEL_NAME=$(MODEL_NAME) uv run python -m scripts.demo.check
 
 e2e-api: ## end-to-end check through the API alone; run right after demo-reset with the API up
-	uv run python -m scripts.demo.e2e_api $(if $(wildcard data/generated/logs/api.log),--api-log data/generated/logs/api.log,)
+	@mkdir -p data/generated/logs
+	set -o pipefail; uv run python -m scripts.demo.e2e_api 2>&1 | tee data/generated/logs/e2e-api.log
+	uv run python -m scripts.demo.e2e_api --privacy-only --log data/generated/logs/e2e-api.log \
+		$(if $(wildcard data/generated/logs/api.log),--log data/generated/logs/api.log,)
 
 results: ## regenerate docs/results.md and data/generated/eval/results.json (P6.1)
 	uv run python -m scripts.verify.results_report
