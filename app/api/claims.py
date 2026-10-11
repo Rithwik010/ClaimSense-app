@@ -30,6 +30,7 @@ from app.domain.contracts import (
     ReviewTier,
     SourceFormat,
 )
+from app.explain.codes import adjustments
 from app.explain.render import render
 from app.intake.files import UnreadableFile, read_claim_file
 from app.ml.client import DecisionModel, ModelUnavailable
@@ -57,6 +58,31 @@ SessionDep = Annotated[Session, Depends(get_session)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
+class CodeView(BaseModel):
+    kind: str  # CARC or RARC
+    code: str
+    description: str | None
+
+
+class AdjustmentView(BaseModel):
+    """External reason codes of a DENY or REJECT reason (D-CARC-2); line_no None: the claim."""
+
+    line_no: int | None
+    reason_code: str
+    group_code: str
+    codes: list[CodeView]
+    billing_article: str | None
+    lcds: list[str]
+
+
+def _procedure_codes(received: dict[str, Any]) -> dict[int, str]:
+    return {
+        line["line_no"]: line["procedure_code"]
+        for line in received.get("service_lines") or []
+        if isinstance(line, dict) and "line_no" in line and "procedure_code" in line
+    }
+
+
 class ClaimView(BaseModel):
     claim_id: str
     status: ClaimStatus
@@ -65,6 +91,7 @@ class ClaimView(BaseModel):
     received: dict[str, Any]  # the claim as stored at intake
     field_confidences: dict[str, float]  # as stored at intake (none listed: 1.0)
     record: DecisionRecord | None
+    adjustments: list[AdjustmentView] = []  # CARC/RARC of the record's DENY and REJECT reasons
 
 
 class FiledWithErrors(BaseModel):
@@ -255,6 +282,7 @@ def list_claims(
 @router.get("/{claim_id}")
 def get_claim(claim_id: str, session: SessionDep) -> ClaimView:
     row = _claim_row(session, claim_id)
+    record = latest_record(session, claim_id)
     return ClaimView(
         claim_id=row.claim_id,
         status=ClaimStatus(row.status),
@@ -262,7 +290,11 @@ def get_claim(claim_id: str, session: SessionDep) -> ClaimView:
         intake=load_intake(row),
         received=row.intake,
         field_confidences=row.field_confidences or {},
-        record=latest_record(session, claim_id),
+        record=record,
+        adjustments=[
+            AdjustmentView.model_validate(asdict(a))
+            for a in (adjustments(record, _procedure_codes(row.intake)) if record else [])
+        ],
     )
 
 
@@ -286,5 +318,5 @@ def get_explanation(
     record = latest_record(session, claim_id)
     if record is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"claim {claim_id} has no decision yet")
-    body = render(record, fmt)
+    body = render(record, fmt, _procedure_codes(_claim_row(session, claim_id).intake))
     return HTMLResponse(body) if fmt == "html" else PlainTextResponse(body)

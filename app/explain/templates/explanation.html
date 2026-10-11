@@ -119,6 +119,25 @@
 <p>No line decisions.</p>
 {% endfor %}
 </section>
+{% if adjustments %}
+<section class="explanation-adjustments">
+<h2>Adjustment codes</h2>
+<ul>
+{% for a in adjustments %}
+<li>{{ a.where }} ({{ a.reason }}), group {{ a.group }}
+<ul>
+{% for code in a.codes %}
+<li>{{ code }}</li>
+{% endfor %}
+{% if a.article %}
+<li>{{ a.article }}</li>
+{% endif %}
+</ul>
+</li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
 {% if totals %}
 <section class="explanation-totals">
 <h2>Totals</h2>

@@ -83,6 +83,19 @@ Lines
 {% else %}
   No line decisions.
 {% endfor %}
+{% if adjustments %}
+
+Adjustment codes
+{% for a in adjustments %}
+  {{ a.where }} ({{ a.reason }}), group {{ a.group }}
+{% for code in a.codes %}
+    {{ code }}
+{% endfor %}
+{% if a.article %}
+    {{ a.article }}
+{% endif %}
+{% endfor %}
+{% endif %}
 {% if totals %}
 
 Totals
