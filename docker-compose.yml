@@ -23,6 +23,8 @@ services:
     ports:
       - "127.0.0.1:6333:6333" # REST
       - "127.0.0.1:6334:6334" # gRPC
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true" # no usage reports to qdrant.io during a demo
     volumes:
       - qdrant-data:/qdrant/storage
 

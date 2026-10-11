@@ -51,6 +51,7 @@ def test_request_carries_schema_and_deterministic_options() -> None:
         "num_ctx": MODEL_NUM_CTX,  # prompt plus answer cap never shift the context (D-MODEL-1)
     }
     assert seen["think"] is False
+    assert seen["keep_alive"] == -1  # the model stays loaded for the whole demo
     assert seen["stream"] is False
     assert [m["role"] for m in seen["messages"]] == ["system", "user"]
     assert [m["content"] for m in seen["messages"]] == ["system text", "user text"]

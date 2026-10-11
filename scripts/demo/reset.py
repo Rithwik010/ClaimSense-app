@@ -6,7 +6,8 @@
 3. Seeds curated data, the public code tables from data/raw/ and the reference data, then the
    prior authorizations the demo claims need (`demo/authorizations.jsonl`).
 4. Builds the coverage policy collections in Qdrant when one is missing.
-5. Checks that Ollama serves the demo model (`MODEL_NAME`, default claimsense-decision:v2).
+5. Checks that Ollama serves the demo model (`MODEL_NAME`, default claimsense-decision:v2), then
+   loads it and keeps it loaded (a warm-up call with keep_alive -1).
 
     uv run python -m scripts.demo.reset
 """
@@ -87,6 +88,11 @@ def main() -> None:
             f"Ollama does not serve {model}: create it from its Modelfile (docs/fine-tuning.md)"
         )
     step(f"ollama: {model} available")
+    # Warm-up: load the model now and keep it loaded, so the first demo claim is not slow.
+    httpx.post(
+        f"{settings.ollama_url}/api/generate", json={"model": model, "keep_alive": -1}, timeout=300
+    ).raise_for_status()
+    step(f"ollama: {model} loaded and kept loaded")
     print("Ready. Start the app with: make demo")
 
 

@@ -73,6 +73,15 @@ and press **Process claim** again on the claim page.
 | **Metrics** | "Model v2 against v1 on 300 synthetic test claims: macro-F1 0.853, up from 0.694, short of our 0.90 target, so every recommendation goes to a person." |
 | Point at **Where v2 goes wrong** | "Its mistakes lean towards asking for more information or approving, not towards wrong denials, and they are spread across policies." |
 
+## Offline
+
+A demo run needs no internet. Checked on 11 Oct: the app and the web app call only localhost
+(fonts are bundled); Qdrant's telemetry is off (`docker-compose.yml`); the Makefile sets
+`HF_HUB_OFFLINE=1` (the v2 policy lookup embeds nothing; the embedding model is cached by setup);
+`ollama serve` makes no calls for a local model, though the Ollama desktop app checks for updates,
+so run `ollama serve` or turn updates off. Downloads happen only in setup: Docker images, npm and
+uv packages, the embedding model, Playwright's browser.
+
 ## If a step fails
 
 | Symptom | Do |

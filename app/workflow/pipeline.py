@@ -399,6 +399,11 @@ def prompt_lookups(session: Session, claim: IntakeClaim, policy_set: str) -> Pro
     )
 
 
+def _ms(since: float) -> float:
+    """Milliseconds since a perf_counter reading (the stage timings of `claim_processed`)."""
+    return round((time.perf_counter() - since) * 1000, 1)
+
+
 def process_claim(
     session: Session,
     claim_id: str,
@@ -424,6 +429,7 @@ def process_claim(
         raise ReferenceDataUnavailable(f"reference data not loaded: {exc}") from exc
     except InvalidClaimData as exc:  # intake refuses such claims; one stored before P2.5 may not
         raise PipelineError(f"claim {claim_id} cannot be checked: {exc}") from exc
+    rules_ms = _ms(started)
     versions = Versions(rules_version=RULES_VERSION)
     record_event(session, claim_id, EventType.RULES_EVALUATED, _rules_payload(rules), versions)
     timestamps = Timestamps(received=row.received_date, processed=datetime.now(UTC))
@@ -446,7 +452,13 @@ def process_claim(
             versions,
         )
         _save(session, row, record)
-        log.info("claim_processed", claim_id=claim_id, status=status.value)
+        log.info(
+            "claim_processed",
+            claim_id=claim_id,
+            status=status.value,
+            rules_ms=rules_ms,
+            duration_ms=_ms(started),
+        )
         return record
 
     intake = load_intake(row)  # the claim passed Group A, so it passes the contract
@@ -459,6 +471,7 @@ def process_claim(
         if lookups.is_in_network(session, claim.billing_npi, member.plan_id)
         else Network.OUT_OF_NETWORK
     )
+    context_started = time.perf_counter()
     claim_lookups = prompt_lookups(session, claim, settings.policy_set)
     try:
         context = assemble_context(
@@ -474,6 +487,7 @@ def process_claim(
         versions,
     )
 
+    context_ms = _ms(context_started)
     prompt = settings.prompt_version
     user_message = render_user_message(claim, rules, context, claim_lookups, prompt)
     system = system_prompt(prompt)
@@ -505,6 +519,7 @@ def process_claim(
         versions,
     )
     output_errors = list(result.errors) + evidence_notes
+    calculator_started = time.perf_counter()
     try:
         calculation: CalculationResult | None = _calculate(
             session, claim, member, network, decisions
@@ -531,6 +546,7 @@ def process_claim(
             },
             versions,
         )
+    calculator_ms = _ms(calculator_started)
     tier = (
         ReviewTier.FULL
         if calculation is None
@@ -563,7 +579,10 @@ def process_claim(
         review_tier=tier.value,
         output_valid=result.valid,
         model=model.name,
+        rules_ms=rules_ms,
+        context_ms=context_ms,
         model_ms=model_ms,
-        duration_ms=round((time.perf_counter() - started) * 1000, 1),
+        calculator_ms=calculator_ms,
+        duration_ms=_ms(started),
     )
     return record

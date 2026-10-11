@@ -9,7 +9,7 @@ from fastapi import Depends, FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy import Engine
 
-from app.api import claims, metrics, review
+from app.api import claims, metrics, plans, review
 from app.api.health import HealthReport, build_health_report, get_http_client
 from app.core.logging import configure_logging, get_logger
 from app.core.settings import Settings, get_settings
@@ -22,6 +22,7 @@ app = FastAPI(title="ClaimSense API", version="0.1.0")
 app.include_router(claims.router)
 app.include_router(review.router)
 app.include_router(metrics.router)
+app.include_router(plans.router)
 
 
 @app.middleware("http")

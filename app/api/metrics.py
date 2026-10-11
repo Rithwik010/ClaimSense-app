@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/v1/metrics", tags=["metrics"])
@@ -125,3 +125,15 @@ def evaluation() -> Evaluation:
         ocr_target=OCR_TARGET,
         v2_errors=errors,
     )
+
+
+RESULTS = EVAL / "results.json"  # scripts/verify/results_report.py (P6.1)
+
+
+@router.get("/results")
+def results() -> dict[str, Any]:
+    """The P6.1 results (rules, calculator, extraction, models, latency per stage) as the results
+    script last wrote them; 404 until it has run."""
+    if not RESULTS.exists():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no results yet: run make results")
+    return json.loads(RESULTS.read_text())

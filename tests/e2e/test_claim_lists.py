@@ -121,3 +121,24 @@ def test_a_record_stored_under_an_older_contract_is_left_out(api, engine) -> Non
 
     assert [(c["claim_id"], c["total_allowed_cents"]) for c in listed] == [("CLM-OLD-00001", None)]
     assert queue.status_code == 200 and queue.json() == []
+
+
+def test_a_plan_is_returned_with_its_benefits_and_exclusions(api) -> None:  # noqa: ANN001
+    client = api(None, None)
+
+    plan = client.get("/v1/plans/PLN-PPO-GOLD")
+    missing = client.get("/v1/plans/PLN-NOPE")
+
+    assert plan.status_code == 200 and missing.status_code == 404
+    body = plan.json()
+    assert body["plan_id"] == "PLN-PPO-GOLD" and body["benefits"]
+    assert all(isinstance(b["covered"], bool) for b in body["benefits"])
+
+
+def test_the_results_file_is_served_once_written(api, tmp_path, monkeypatch) -> None:  # noqa: ANN001
+    client = api(None, None)
+    monkeypatch.setattr(metrics, "RESULTS", tmp_path / "results.json")
+
+    assert client.get("/v1/metrics/results").status_code == 404
+    (tmp_path / "results.json").write_text('{"reviewer_agreement": "not measured"}')
+    assert client.get("/v1/metrics/results").json() == {"reviewer_agreement": "not measured"}
