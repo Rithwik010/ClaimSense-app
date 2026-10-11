@@ -13,7 +13,7 @@ export HF_HUB_DISABLE_TELEMETRY := 1
 export ORT_DISABLE_TELEMETRY := 1
 export QDRANT__TELEMETRY_DISABLED := true
 
-.PHONY: setup ollama-up demo demo-up demo-check demo-reset demo-claims demo-users demo-video e2e-api offline-check model-check results web-check smoke
+.PHONY: setup docker-running ollama-up demo demo-up demo-check demo-reset demo-claims demo-users e2e-api offline-check model-check results web-check smoke
 
 setup: ## Python and web dependencies, database schema, reference data, policy collections
 	uv sync
@@ -23,10 +23,13 @@ setup: ## Python and web dependencies, database schema, reference data, policy c
 	uv run python -m app.db.seed
 	uv run python -m app.rag.knowledge
 
+docker-running: ## stop at once, with a clear message, when Docker is not running
+	@docker info >/dev/null 2>&1 || { echo "Start Docker Desktop, then run make $(or $(MAKECMDGOALS),demo-up) again"; exit 1; }
+
 ollama-up: ## start `ollama serve` (models kept loaded, cloud features off) unless it is running
 	uv run python -m scripts.demo.ollama_up
 
-demo: ollama-up ## database containers, then the API (port $(API_PORT)) and the web app (port 5173)
+demo: docker-running ollama-up ## database containers, then the API (port $(API_PORT)) and the web app (port 5173)
 	docker compose up -d --wait
 	uv run alembic upgrade head
 	@test -d frontend-web/node_modules || (cd frontend-web && npm ci)
@@ -36,7 +39,7 @@ demo: ollama-up ## database containers, then the API (port $(API_PORT)) and the 
 	(cd frontend-web && npm run dev) & \
 	wait
 
-demo-up: ollama-up ## the demo: the API serves the production build of the web app on http://localhost:$(API_PORT) (D-AUTH-1); API log in data/generated/logs/api.log
+demo-up: docker-running ollama-up ## the demo: the API serves the production build of the web app on http://localhost:$(API_PORT) (D-AUTH-1); API log in data/generated/logs/api.log
 	docker compose up -d --wait
 	uv run alembic upgrade head
 	@test -d frontend-web/node_modules || (cd frontend-web && npm ci)
@@ -63,7 +66,7 @@ model-check: ## the demo model in Ollama and the model its Modelfile builds, aga
 results: ## regenerate docs/results.md and data/generated/eval/results.json (P6.1)
 	uv run python -m scripts.verify.results_report
 
-demo-reset: ollama-up ## clean database (migrations, seeds, demo authorizations), Qdrant ready, demo model present
+demo-reset: docker-running ollama-up ## clean database (migrations, seeds, demo authorizations), Qdrant ready, demo model present
 	docker compose up -d --wait
 	MODEL_NAME=$(MODEL_NAME) uv run python -m scripts.demo.reset
 
@@ -73,12 +76,6 @@ demo-users: ## the demo logins (D-AUTH-1); passwords and SECRET_KEY in .env, wri
 
 demo-claims: ## rebuild demo/claims/ from the synthetic claim corpus
 	uv run python -m scripts.demo.build_claims
-
-demo-video: demo-reset ## backup video of docs/DEMO.md (needs `make demo` running), then a reset
-	cd frontend-web && DEMO_VIDEO=1 npx playwright test e2e/demo-runbook.spec.ts
-	mkdir -p demo-video && cp "$$(ls -t frontend-web/test-results/*/video.webm | head -1)" demo-video/demo.webm
-	@echo "Backup video: demo-video/demo.webm"
-	$(MAKE) demo-reset  # a recording never leaves the database full
 
 web-check: ## what CI runs for the web app: install, lint, typecheck, unit tests, build
 	cd frontend-web && npm ci && npm run lint && npm run typecheck && npm test && npm run build

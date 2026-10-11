@@ -4,8 +4,6 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "e2e",
-  // The runbook recording runs only for `make demo-video` (it files the demo claims).
-  testIgnore: process.env.DEMO_VIDEO ? [] : ["**/demo-runbook.spec.ts"],
   timeout: 120_000,
   // One database for every spec, and layout.spec.ts opens claims demo-claims.spec.ts files: one at a time.
   workers: 1,
