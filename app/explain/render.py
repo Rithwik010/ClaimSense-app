@@ -11,6 +11,7 @@ not documented, in the criterion text of the context package.
 """
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -25,6 +26,7 @@ from app.domain.contracts import (
     LineDecision,
     RetrievedCriterion,
 )
+from app.explain.codes import adjustments
 
 REASON_LABELS = {
     "RJ_MISSING_FIELD": "a required field is missing",
@@ -162,8 +164,11 @@ def _needs(results: list[CriterionResult], cited: dict[str, RetrievedCriterion])
     ] or ["documentation that supports the service"]
 
 
-def view(record: DecisionRecord) -> dict[str, Any]:
-    """Everything the templates show, taken from the record alone."""
+def view(
+    record: DecisionRecord, procedure_codes: Mapping[int, str] | None = None
+) -> dict[str, Any]:
+    """Everything the templates show, taken from the record, plus the external reason codes of its
+    DENY and REJECT reasons (looked up by reason code, D-CARC-2)."""
     context = {c.line_no: c for c in (record.context_refs.lines if record.context_refs else [])}
     checked = guarded(record.output_errors)
     model = {line.line_no: line for line in (record.slm_output.lines if record.slm_output else [])}
@@ -264,6 +269,24 @@ def view(record: DecisionRecord) -> dict[str, Any]:
             else None
         ),
         "versions": record.versions,
+        "adjustments": [
+            {
+                "where": f"Line {a.line_no}" if a.line_no else "Claim",
+                "reason": a.reason_code,
+                "group": a.group_code,
+                "codes": [
+                    f"{c.kind} {c.code}" + (f": {c.description}" if c.description else "")
+                    for c in a.codes
+                ],
+                "article": (
+                    f"Billing article {a.billing_article}"
+                    + (f", related LCD {', '.join(a.lcds)}" if a.lcds else ", no related LCD")
+                    if a.billing_article
+                    else ""
+                ),
+            }
+            for a in adjustments(record, procedure_codes)
+        ],
     }
 
 
@@ -278,7 +301,10 @@ _ENV = Environment(
 _ENV.filters["oneline"] = lambda value: " ".join(str(value).split())
 
 
-def render(record: DecisionRecord, fmt: str = "html") -> str:
-    """The explanation as an HTML fragment ("html") or plain text ("text")."""
+def render(
+    record: DecisionRecord, fmt: str = "html", procedure_codes: Mapping[int, str] | None = None
+) -> str:
+    """The explanation as an HTML fragment ("html") or plain text ("text"); `procedure_codes`
+    (line -> code, from the claim) names R15's billing article when the record has no context."""
     template = _ENV.get_template(f"explanation.{'html' if fmt == 'html' else 'txt'}")
-    return template.render(**view(record))
+    return template.render(**view(record, procedure_codes))

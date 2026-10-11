@@ -5,6 +5,7 @@
 import { useState, type ReactNode } from "react";
 
 import type { AuditEvent, ClaimView, FinalLineDecision } from "@/api/types";
+import { AdjustmentCodes } from "@/components/AdjustmentCodes";
 import { ClinicalNote, type Quote } from "@/components/ClinicalNote";
 import { FieldsTable } from "@/components/Fields";
 import { AmountsTable, RuleChecks } from "@/components/Record";
@@ -46,13 +47,22 @@ export function ClaimWorkspace({
       value: "lines",
       label: "Lines",
       content: record ? (
-        <ServiceLines
+        <div className="space-y-3">
+          <AdjustmentCodes
+            title="Claim adjustment codes"
+            items={(view.adjustments ?? []).filter(
+              (a) => a.line_no === null || !record.line_decisions.some((l) => l.line_no === a.line_no),
+            )}
+          />
+          <ServiceLines
           record={record}
           activeKey={active?.key ?? null}
           onQuote={(key) => setActive((now) => ({ key, n: (now?.n ?? 0) + 1 }))}
           actions={lineActions}
           status={lineStatus}
+          adjustments={view.adjustments ?? []}
         />
+        </div>
       ) : (
         <p className="rounded-lg border border-rules bg-paper p-4 text-ink-muted">
           Not processed yet. Process the claim to run the rules, the model and the calculator.

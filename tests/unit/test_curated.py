@@ -98,7 +98,7 @@ def test_rule_data_problems_are_found() -> None:
 
 
 def test_every_rules_v2_reason_code_has_a_carc_mapping() -> None:
-    """D-RULE-3: the CARC and RARC the team approved for each new internal reason code."""
+    """D-RULE-3, D-CARC-2: the CARC and RARC approved for each new internal reason code."""
     from app.rules.lcd_edits import REASON_RULES
 
     mapped = load_curated().reason_codes
@@ -106,7 +106,7 @@ def test_every_rules_v2_reason_code_has_a_carc_mapping() -> None:
     assert {code: (mapped[code].carc, mapped[code].rarc) for code in sorted(REASON_RULES)} == {
         "DN_DX_NOT_SUPPORTED": ("11", "N115"),
         "DN_ESI_LEVELS": ("151", "N115"),
-        "DN_FACET_LEVELS": ("50", "N115"),
+        "DN_FACET_LEVELS": ("151", "N115"),  # D-CARC-2
         "DN_HOME_TEST_PARASOMNIA": ("50", "N115"),
         "DN_MULTIPLE_BLOCKS": ("50", "N115"),
     }

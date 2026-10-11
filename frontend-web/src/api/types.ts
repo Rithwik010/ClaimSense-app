@@ -114,6 +114,15 @@ export interface DecisionRecord {
   timestamps: { received: string; processed: string | null; finalized: string | null };
 }
 
+export interface Adjustment {
+  line_no: number | null;
+  reason_code: string;
+  group_code: string;
+  codes: { kind: "CARC" | "RARC"; code: string; description: string | null }[];
+  billing_article: string | null;
+  lcds: string[];
+}
+
 export interface ClaimView {
   claim_id: string;
   status: ClaimStatus;
@@ -122,6 +131,7 @@ export interface ClaimView {
   received: Claim;
   field_confidences: Record<string, number>;
   record: DecisionRecord | null;
+  adjustments?: Adjustment[];
 }
 
 export interface QueueItem {
