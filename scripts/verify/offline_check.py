@@ -10,7 +10,10 @@ runs, records the connections of every stack process:
   (/proc/net/tcp, tcp6, udp, udp6), which also keep connections closed in the last minute.
 
 A remote address that is not the loopback (or, inside a container, its own Docker network) fails
-the check. Sampling can miss a connection opened and closed between two `lsof` samples on the
+the check. It also checks, inside the running Qdrant container, that its telemetry is off: the
+container's environment holds QDRANT__TELEMETRY_DISABLED=true (from docker-compose.yml) and its
+latest start-up logged "Telemetry reporting disabled". Sampling can miss a connection opened and
+closed between two `lsof` samples on the
 laptop; the containers' tables cannot miss one.
 
     uv run python -m scripts.verify.offline_check
@@ -161,10 +164,33 @@ class Recorder:
             self.stop.wait(CONTAINER_INTERVAL)
 
 
+def qdrant_telemetry_off(found: dict[str, tuple[str, list]]) -> tuple[bool, str]:
+    """Qdrant's telemetry setting as the running container has it, and what its start-up said."""
+    cid = next((c for c, (service, _) in found.items() if service == "qdrant"), None)
+    if cid is None:
+        return False, "no qdrant container"
+    setting = (
+        "QDRANT__TELEMETRY_DISABLED=true"
+        in json.loads(run("docker", "inspect", cid))[0]["Config"]["Env"]
+    )
+    logs = subprocess.run(["docker", "logs", cid], capture_output=True, text=True)
+    said = [
+        line.rstrip()
+        for line in (logs.stdout + logs.stderr).splitlines()
+        if "Telemetry reporting" in line
+    ]
+    logged = bool(said) and said[-1].endswith("Telemetry reporting disabled")
+    return setting and logged, (
+        ("QDRANT__TELEMETRY_DISABLED=true" if setting else "no QDRANT__TELEMETRY_DISABLED=true")
+        + f"; start-up log: {said[-1].split('qdrant: ')[-1] if said else 'no telemetry line'}"
+    )
+
+
 def main() -> None:
     found = containers()
     if not found:
         raise SystemExit("no compose containers running: start the stack (make demo-up)")
+    qdrant_ok, qdrant_detail = qdrant_telemetry_off(found)
     e2e = subprocess.Popen(["make", "e2e-api"], cwd=ROOT)
     recorder = Recorder()
     threads = [
@@ -194,7 +220,10 @@ def main() -> None:
         print(f"  {role:<20} remote addresses: {', '.join(addresses) or 'none'}")
     for detail in recorder.outside:
         print(f"FAIL outside the laptop: {detail}")
-    ok = code == 0 and not recorder.outside
+    print(
+        f"{'OK  ' if qdrant_ok else 'FAIL'} Qdrant telemetry off in its container: {qdrant_detail}"
+    )
+    ok = code == 0 and not recorder.outside and qdrant_ok
     print(
         ("OK   no connection outside the laptop" if not recorder.outside else "FAIL")
         + ("" if code == 0 else f"; make e2e-api failed ({code})")
