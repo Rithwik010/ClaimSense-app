@@ -5,7 +5,8 @@ import { ChevronDown, CircleCheck, CircleDashed, CircleMinus, CircleX } from "lu
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, type ReactNode } from "react";
 
-import type { DecisionRecord, FinalLineDecision } from "@/api/types";
+import type { Adjustment, DecisionRecord, FinalLineDecision } from "@/api/types";
+import { AdjustmentCodes } from "@/components/AdjustmentCodes";
 import { DecisionChip } from "@/components/Chip";
 import { money } from "@/lib/format";
 import { evidenceChecks, reason, SOURCE } from "@/lib/labels";
@@ -32,9 +33,11 @@ function LinePanel({
   activeKey,
   actions,
   status,
+  codes = [],
 }: {
   record: DecisionRecord;
   line: FinalLineDecision;
+  codes?: Adjustment[];
   open: boolean;
   onToggle: () => void;
   onQuote: (key: string) => void;
@@ -103,6 +106,7 @@ function LinePanel({
                   ))}
                 </ul>
               )}
+              <AdjustmentCodes items={codes} />
               {line.source === "RULE" && (
                 <p className="text-[14px] text-ink-muted">
                   Decided by a rule. Rule outcomes are automatic and cannot be overridden.
@@ -203,8 +207,10 @@ export function ServiceLines({
   activeKey,
   actions,
   status,
+  adjustments = [],
 }: {
   record: DecisionRecord;
+  adjustments?: Adjustment[];
   onQuote: (key: string) => void;
   activeKey: string | null;
   actions?: (line: FinalLineDecision) => ReactNode;
@@ -241,6 +247,7 @@ export function ServiceLines({
           activeKey={activeKey}
           actions={actions?.(line)}
           status={status?.(line)}
+          codes={line.decision === "DENY" ? adjustments.filter((a) => a.line_no === line.line_no) : []}
         />
       ))}
     </div>
