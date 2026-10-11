@@ -453,6 +453,8 @@ Kaggle copy for anything model-related.
   - **Checks:** `make e2e-api` 167 checks with logins; `make offline-check` OK; Playwright 27 passed (demo claims, layout at 390/768/1440/1280x720, smoke).
   - **Tests:** 2,346 pass, 1 skipped (local).
 
+- 2026-10-11 18:21 | Manideep3183 | Quick fixes | **Merged (branch `p7.2-quick-fixes`; `main` as `31548dd`, `--no-ff`; CI run 38140572745 passed: Python 1,982 passed, 66 skipped; web app 38 passed).** `make offline-check` now also checks inside the Qdrant container that telemetry is off (QDRANT__TELEMETRY_DISABLED=true from docker-compose.yml; start-up log "Telemetry reporting disabled"): OK. `make demo-up`, `demo` and `demo-reset` stop at once without Docker ("Start Docker Desktop, then run make demo-up again"). `make demo-video` and `e2e/demo-runbook.spec.ts` removed (they used the old role switcher); the old video file is left alone. Tests: 2,346 pass, 1 skipped (local).
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
