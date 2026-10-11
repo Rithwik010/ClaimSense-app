@@ -223,7 +223,9 @@ def test_the_v2_comparison_renders_model_v1_prompt_and_scores_both(dataset_v2, t
     assert v2["metrics"]["decisions"]["macro_f1"] == 1.0
     assert v2["metrics"]["groups"]["unseen_policies"]["records"] == 6
     text = table([v1, v2])
-    assert text.count("| stub |") == 2 and "Style D (held out)" in text
+    rows = [line for line in text.splitlines() if line.startswith("| stub |")]
+    assert len(rows) == 2 and "Style D (held out)" in text  # one row per model
+    assert "| Measure | stub | stub |" in text  # and a column per model side by side
 
 
 def test_a_run_never_resumes_on_another_version_of_the_dataset(dataset, tmp_path) -> None:  # noqa: ANN001

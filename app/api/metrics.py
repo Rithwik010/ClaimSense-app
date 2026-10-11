@@ -7,12 +7,16 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/v1/metrics", tags=["metrics"])
 EVAL = Path(__file__).resolve().parents[2] / "data" / "generated" / "eval"
-MODEL_REPORTS = (EVAL / "v2" / "v2data-model-v1.json", EVAL / "v2" / "v2data-model-v2.json")
+MODEL_REPORTS = (
+    EVAL / "v2" / "v2data-model-v1.json",
+    EVAL / "v2" / "v2data-model-v2.json",
+    EVAL / "v2" / "v2data-model-e4b.json",  # the E4B side experiment, once evaluated
+)
 OCR_REPORT = EVAL / "ocr" / "heldout_summary.json"
 ERRORS_REPORT = EVAL / "v2" / "v2-errors.json"  # scripts/verify/v2_errors.py
 MACRO_F1_TARGET = 0.90  # P4.4
@@ -121,3 +125,15 @@ def evaluation() -> Evaluation:
         ocr_target=OCR_TARGET,
         v2_errors=errors,
     )
+
+
+RESULTS = EVAL / "results.json"  # scripts/verify/results_report.py (P6.1)
+
+
+@router.get("/results")
+def results() -> dict[str, Any]:
+    """The P6.1 results (rules, calculator, extraction, models, latency per stage) as the results
+    script last wrote them; 404 until it has run."""
+    if not RESULTS.exists():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "no results yet: run make results")
+    return json.loads(RESULTS.read_text())

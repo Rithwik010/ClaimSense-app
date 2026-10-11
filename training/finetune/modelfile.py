@@ -51,11 +51,13 @@ def main() -> None:
     parser.add_argument("--gguf", type=Path, required=True)
     parser.add_argument("--version", type=int, required=True)
     parser.add_argument("--base", default="gemma4:e2b")
+    parser.add_argument("--tag", help="model tag and folder (default v<version>; e4b for E4B)")
     args = parser.parse_args()
+    tag = args.tag or f"v{args.version}"
     response = httpx.post(f"{settings.ollama_url}/api/show", json={"model": args.base}, timeout=30)
     response.raise_for_status()
-    name = f"claimsense-decision:v{args.version}"
-    out = GENERATED_DIR / "models" / f"claimsense-decision-v{args.version}"
+    name = f"claimsense-decision:{tag}"
+    out = GENERATED_DIR / "models" / f"claimsense-decision-{tag}"
     out.mkdir(parents=True, exist_ok=True)
     (out / "Modelfile").write_text(build(args.gguf, response.json()["modelfile"]))
     print(f"ollama create {name} -f {out / 'Modelfile'}")

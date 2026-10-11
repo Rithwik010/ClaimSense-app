@@ -50,6 +50,9 @@ DATASET = ROOT / "data" / "generated" / "decision_v2"
 ANSWERS = ROOT / "data" / "generated" / "eval" / "v2" / "v2data-model-v2.jsonl"
 OUT_JSON = ROOT / "data" / "generated" / "eval" / "v2" / "v2-errors.json"
 REPORT = ROOT / "docs" / "results-v2-errors.md"
+# Answers evaluated after D-EVID-1 were scored with the evidence guard; v2's were scored before it.
+GUARDED = False
+LABEL = "v2"  # the model whose answers are read
 WORDS = {"APPROVE": "approve", "PEND": "pend", "DENY": "deny"}
 
 
@@ -92,7 +95,8 @@ def analyse(session: Session) -> dict[str, Any]:
         wrong_here = 0
         for n, gold in gold_lines.items():
             pred = predicted.get(n, "PEND")
-            mismatches += pred != stored[n]
+            evaluated = guard_predicted.get(n, "PEND") if GUARDED else pred
+            mismatches += evaluated != stored[n]
             gold_all.append(gold["decision"])
             pred_all.append(pred)
             guard_all.append(guard_predicted.get(n, "PEND"))
@@ -168,7 +172,7 @@ def summarize(gold, pred, guard, wrong_lines, tiers, lines_by_policy, guard_chan
             by_type[c["type"]] += 1
             statuses[f"{c['gold']}->{c['predicted']}"] += 1
     rows = []
-    for name, decided in (("v2", pred), ("v2 + guard", guard)):
+    for name, decided in ((LABEL, pred), (f"{LABEL} + guard", guard)):
         metrics = _decision_metrics(gold, decided)
         rows.append(
             {
@@ -311,10 +315,27 @@ def guard_note(guard: dict[str, Any]) -> str:
 
 
 def main() -> None:
+    import argparse
+
+    global ANSWERS, GUARDED, LABEL
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--model",
+        default="v2",
+        choices=("v2", "e4b"),
+        help="e4b: the same breakdown of the E4B answers, printed and kept as e4b-errors.json",
+    )
+    model = parser.parse_args().model
+    ANSWERS = ANSWERS.with_name(f"v2data-model-{model}.jsonl")
+    GUARDED = model != "v2"
+    LABEL = model
     with Session(get_engine()) as session:
         result = analyse(session)
-    OUT_JSON.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    REPORT.write_text(report(result), encoding="utf-8")
+    if model == "v2":
+        OUT_JSON.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        REPORT.write_text(report(result), encoding="utf-8")
+    else:
+        OUT_JSON.with_name(f"{model}-errors.json").write_text(json.dumps(result, indent=2) + "\n")
     print(report(result))
 
 

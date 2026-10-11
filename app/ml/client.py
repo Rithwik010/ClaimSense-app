@@ -30,6 +30,8 @@ MAX_OUTPUT_TOKENS = 1536
 # answer cap fit with room to spare; Ollama's 4,096 default would leave no margin and shifts the
 # context silently when it overflows.
 MODEL_NUM_CTX = 8192
+# Keep the model loaded between claims for the whole demo, not Ollama's default 5 minutes.
+MODEL_KEEP_ALIVE = -1
 
 
 class ModelUnavailable(RuntimeError):
@@ -67,6 +69,7 @@ class OllamaDecisionModel:
                     "num_ctx": MODEL_NUM_CTX,
                 },
                 think=False,
+                keep_alive=MODEL_KEEP_ALIVE,
             )
         except (ollama.ResponseError, httpx.HTTPError, ConnectionError) as exc:
             raise ModelUnavailable(f"model {self.name} unavailable ({type(exc).__name__})") from exc
