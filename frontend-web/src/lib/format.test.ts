@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { age, money, percent } from "./format";
+import { age, basisPoints, money, percent } from "./format";
 
 describe("amounts", () => {
   it.each<[number | null | undefined, string]>([
@@ -36,5 +36,18 @@ describe("shares and ages", () => {
     expect(age("2026-10-11T09:00:00Z", now)).toBe("3 h");
     expect(age("2026-10-09T12:00:00Z", now)).toBe("2 d");
     expect(age(null, now)).toBe("—");
+  });
+});
+
+describe("rates in basis points", () => {
+  it.each<[number | null, string]>([
+    [2000, "20%"],
+    [2050, "20.5%"],
+    [1255, "12.55%"],
+    [0, "0%"],
+    [10000, "100%"],
+    [null, "—"],
+  ])("shows %s bps as %s", (bps, shown) => {
+    expect(basisPoints(bps)).toBe(shown);
   });
 });

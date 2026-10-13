@@ -8,6 +8,7 @@ import type { AuditEvent, ClaimView, FinalLineDecision } from "@/api/types";
 import { AdjustmentCodes } from "@/components/AdjustmentCodes";
 import { ClinicalNote, type Quote } from "@/components/ClinicalNote";
 import { FieldsTable } from "@/components/Fields";
+import { PlanPanel } from "@/components/PlanPanel";
 import { AmountsTable, RuleChecks } from "@/components/Record";
 import { quoteKey, ServiceLines } from "@/components/ServiceLines";
 import { StageStrip, stages } from "@/components/StageStrip";
@@ -75,6 +76,7 @@ export function ClaimWorkspace({
           { value: "amounts", label: "Amounts", content: <AmountsTable record={record} /> },
         ]
       : []),
+    { value: "plan", label: "Plan", content: <PlanPanel record={record} /> },
     {
       value: "fields",
       label: "Fields",

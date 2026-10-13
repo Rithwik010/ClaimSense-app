@@ -110,7 +110,7 @@ export interface DecisionRecord {
   claim_id: string;
   status: ClaimStatus;
   rules_outcome: { claim_outcome: string; rule_results: RuleResult[] };
-  context_refs: { lines: LineContext[] } | null;
+  context_refs: { plan_id: string; plan_type: string; network: string; excluded_codes: string[]; lines: LineContext[] } | null;
   slm_output: { lines: SLMLine[] } | null;
   output_errors: string[];
   line_decisions: FinalLineDecision[];
@@ -319,4 +319,32 @@ export interface Results {
   latency_per_stage_ms: { source: string; claims: number } & Record<string, unknown>;
   reviewer_agreement: string;
   review_time: string;
+}
+
+/** GET /v1/plans/{plan_id} (reviewers and admins): the plan's terms, benefits and exclusions. */
+export interface PlanBenefit {
+  benefit_category: string;
+  covered: boolean;
+  auth_required: boolean;
+  visit_limit: number | null;
+  cost_share_rule: string;
+  copay_cents: number | null;
+}
+
+export interface Plan {
+  plan_id: string;
+  name: string;
+  plan_type: string;
+  effective_date: string;
+  filing_window_inn_days: number;
+  filing_window_oon_days: number;
+  oon_covered: boolean;
+  inn_deductible_cents: number;
+  inn_coinsurance_bps: number;
+  inn_oop_max_cents: number;
+  oon_deductible_cents: number | null;
+  oon_coinsurance_bps: number | null;
+  oon_oop_max_cents: number | null;
+  benefits: PlanBenefit[];
+  excluded_codes: string[];
 }

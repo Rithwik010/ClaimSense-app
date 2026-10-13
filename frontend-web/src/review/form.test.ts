@@ -9,6 +9,10 @@ function record(): DecisionRecord {
     status: "AWAITING_REVIEW",
     rules_outcome: { claim_outcome: "PASS", rule_results: [] },
     context_refs: {
+      plan_id: "PLN-PPO-GOLD",
+      plan_type: "PPO",
+      network: "IN_NETWORK",
+      excluded_codes: [],
       lines: [
         { line_no: 1, procedure_code: "97110", candidate_benefits: [{ benefit_category: "PHYSICAL_THERAPY" }, { benefit_category: "CHIROPRACTIC" }], criteria: [] },
         { line_no: 2, procedure_code: "70551", candidate_benefits: [{ benefit_category: "ADVANCED_IMAGING" }], criteria: [] },

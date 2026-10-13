@@ -10,6 +10,14 @@ export function money(cents: number | null | undefined): string {
   return `${sign}$${dollars.toLocaleString("en-US")}.${String(rest).padStart(2, "0")}`;
 }
 
+/** A rate in integer basis points as a percentage: 2000 -> "20%", 2050 -> "20.5%" (no floats). */
+export function basisPoints(bps: number | null | undefined): string {
+  if (bps === null || bps === undefined) return "—";
+  const rest = bps % 100;
+  const fraction = rest ? `.${String(Math.abs(rest)).padStart(2, "0").replace(/0+$/, "")}` : "";
+  return `${(bps - rest) / 100}${fraction}%`;
+}
+
 export function percent(share: number): string {
   return `${(share * 100).toFixed(1)}%`;
 }

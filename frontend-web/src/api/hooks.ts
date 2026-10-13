@@ -16,6 +16,7 @@ import type {
   IntakeResult,
   LineOverride,
   Overview,
+  Plan,
   ProviderClaimSummary,
   ProviderClaimView,
   QueueItem,
@@ -104,14 +105,44 @@ export function useEvaluation() {
   });
 }
 
+/**
+ * Where a claim file goes: a JSON claim as JSON to POST /v1/claims/intake; a PDF or scan (or a
+ * file that is not valid JSON, so the API can say what is wrong) to POST /v1/claims/intake/file.
+ */
+export async function intakeRequest(file: File): Promise<{ path: string; json?: unknown }> {
+  const isJson = file.type === "application/json" || file.name.toLowerCase().endsWith(".json");
+  if (isJson) {
+    try {
+      return { path: "/v1/claims/intake", json: JSON.parse(await file.text()) as unknown };
+    } catch {
+      // Not valid JSON: the file route answers with the reason.
+    }
+  }
+  return { path: "/v1/claims/intake/file" };
+}
+
 export function useUpload() {
   return useMutation({
-    mutationFn: (file: File) =>
-      request<IntakeResult | FiledWithErrors>("/v1/claims/intake/file", {
-        method: "POST",
-        body: file,
-        type: file.type || "application/octet-stream",
-      }),
+    mutationFn: async (file: File) => {
+      const target = await intakeRequest(file);
+      return target.json !== undefined
+        ? request<IntakeResult | FiledWithErrors>(target.path, { method: "POST", json: target.json })
+        : request<IntakeResult | FiledWithErrors>(target.path, {
+            method: "POST",
+            body: file,
+            type: file.type || "application/octet-stream",
+          });
+    },
+  });
+}
+
+/** The plan a claim was checked against (reviewers and admins). */
+export function usePlan(planId: string | null) {
+  return useQuery({
+    queryKey: ["plan", planId],
+    queryFn: () => request<Plan>(`/v1/plans/${encodeURIComponent(planId ?? "")}`),
+    enabled: planId !== null,
+    staleTime: Infinity,
   });
 }
 

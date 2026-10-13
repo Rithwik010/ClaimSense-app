@@ -153,6 +153,9 @@ test("reviewer: rule outcomes with codes, a claim's explanation and audit trail"
   await page.goto("/claims/CLM-DEMO-03");
   await page.getByRole("tab", { name: "Explanation" }).click();
   await expect(page.getByTestId("explanation").getByText("reviewer1").first()).toBeVisible();
+  await page.getByRole("tab", { name: "Plan", exact: true }).click();
+  await expect(page.getByText("This claim", { exact: true }).first()).toBeVisible(); // its benefit
+  await expect(page.getByText("Plan values are fictional", { exact: false })).toBeVisible();
   await page.getByRole("tab", { name: "Audit trail" }).click();
   const trail = page.getByRole("list", { name: "Audit trail" });
   await expect(trail.getByText("Lines overridden")).toBeVisible();
