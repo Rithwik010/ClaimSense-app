@@ -10,7 +10,7 @@ const TONES: Record<Tone, { className: string; Icon: typeof CircleCheck }> = {
   pend: { className: "bg-pend-tint text-pend border-pend/25", Icon: CircleHelp },
   deny: { className: "bg-deny-tint text-deny border-deny/25", Icon: CircleX },
   reject: { className: "bg-reject-tint text-reject border-reject/25", Icon: CircleSlash },
-  neutral: { className: "bg-paper text-ink border-control/60", Icon: Clock },
+  neutral: { className: "bg-glow-blue/10 text-link border-glow-blue/30", Icon: Clock },
 };
 
 export function Chip({ label, showHint = false }: { label: Label; showHint?: boolean }) {
@@ -40,7 +40,7 @@ export function DecisionChip({ decision, showHint }: { decision: LineDecision; s
 /** A plain bordered badge for things that are not decisions (tiers, sources). */
 export function PlainBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex h-6 items-center rounded-md border border-control/60 bg-paper px-2 text-[13px] font-medium whitespace-nowrap text-ink">
+    <span className="inline-flex h-6 items-center rounded-md border border-white/15 bg-white/[0.04] px-2 text-[13px] font-medium whitespace-nowrap text-ink">
       {children}
     </span>
   );

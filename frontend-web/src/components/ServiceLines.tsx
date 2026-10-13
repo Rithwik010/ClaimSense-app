@@ -58,7 +58,7 @@ function LinePanel({
   const criteria = line.source === "RULE" ? [] : (answer?.criteria ?? []);
   const id = `line-${line.line_no}-body`;
   return (
-    <div className="rounded-lg border border-rules bg-paper">
+    <div className="surface rounded-lg">
       <div className="flex flex-wrap items-start gap-x-4 gap-y-2 p-4">
         <button
           type="button"
@@ -139,7 +139,7 @@ function LinePanel({
                         ) : (
                           c.evidence && (
                             <span className="mt-1 block text-[14px] text-ink-muted">
-                              {quotable ? <q className="rounded-sm bg-highlight/60 px-0.5 text-ink">{c.evidence}</q> : c.evidence}
+                              {quotable ? <q className="rounded-sm bg-highlight px-1 text-on-highlight">{c.evidence}</q> : c.evidence}
                             </span>
                           )
                         )}
@@ -152,7 +152,7 @@ function LinePanel({
                             type="button"
                             onClick={() => onQuote(key)}
                             aria-pressed={activeKey === key}
-                            className="-m-1 block w-full rounded-md p-1 text-left hover:bg-canvas"
+                            className="-m-1 block w-full rounded-md p-1 text-left transition-colors hover:bg-white/[0.05]"
                           >
                             {body}
                             <span className="sr-only">Show the quote in the clinical note</span>
@@ -222,7 +222,7 @@ export function ServiceLines({
   );
   if (lines.length === 0) {
     return (
-      <p className="rounded-lg border border-rules bg-paper p-4 text-ink-muted">
+      <p className="surface rounded-lg p-4 text-ink-muted">
         No line decisions: the rules decided the whole claim. The rule checks and the explanation say why.
       </p>
     );

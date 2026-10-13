@@ -57,7 +57,7 @@ export function AuditLookup() {
         <>
           <p className="mb-3 text-ink-muted">
             {audit.data.length} steps for claim{" "}
-            <Link className="font-semibold text-ink underline underline-offset-4" to={`/claims/${encodeURIComponent(claimId)}`}>
+            <Link className="font-semibold text-link underline underline-offset-4" to={`/claims/${encodeURIComponent(claimId)}`}>
               {claimId}
             </Link>
             .

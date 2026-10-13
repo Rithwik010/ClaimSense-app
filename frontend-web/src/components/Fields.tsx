@@ -69,9 +69,9 @@ export function FieldsTable({
             ? `${low} field${low === 1 ? "" : "s"} read with low confidence (below ${LOW_CONFIDENCE}). A rule that fails on one of them rejects the claim instead of denying it.`
             : "Every field was read with high confidence."}
       </p>
-      <div className="max-h-[28rem] overflow-auto rounded-lg border border-rules bg-paper">
+      <div className="max-h-[28rem] overflow-auto surface rounded-lg">
         <Table>
-          <TableHeader className="sticky top-0 bg-paper">
+          <TableHeader className="sticky top-0 bg-raised">
             <TableRow>
               <TableHead>Field</TableHead>
               <TableHead>Value</TableHead>

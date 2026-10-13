@@ -25,12 +25,12 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left hover:bg-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left transition-colors hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow-cyan"
         aria-label={`${user.display_name}, ${ROLE_LABELS[user.role]}: open the user menu`}
       >
         <span
           aria-hidden
-          className="grid size-8 shrink-0 place-items-center rounded-full border border-rules bg-paper text-[13px] font-semibold"
+          className="grid size-8 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,rgb(67_97_238/0.55),rgb(139_92_246/0.45))] text-[13px] font-semibold text-white ring-1 ring-white/20"
         >
           {initials(user.display_name)}
         </span>
@@ -42,7 +42,7 @@ export function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-64 border border-rules bg-paper shadow-none ring-0 data-open:animate-none data-closed:animate-none"
+        className="glass-strong w-64 rounded-lg p-1 ring-0"
       >
         <DropdownMenuLabel className="px-2 py-1.5">
           <span className="block text-[15px] font-semibold text-ink">{user.display_name}</span>

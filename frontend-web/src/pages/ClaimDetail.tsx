@@ -78,7 +78,7 @@ export function ClaimDetail() {
                   ) : (
                     <div
                       data-testid="explanation"
-                      className="explanation rounded-lg border border-rules bg-paper p-5"
+                      className="explanation surface rounded-lg p-5"
                       // The API renders this fragment from the decision record with autoescaping (§8.7).
                       dangerouslySetInnerHTML={{ __html: explanation.data }}
                     />

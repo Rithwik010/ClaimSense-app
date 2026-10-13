@@ -21,7 +21,7 @@ export function Claims() {
       ) : claims.data.length === 0 ? (
         <EmptyState title="No claims yet">Claims appear here once a provider files them.</EmptyState>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-rules bg-paper">
+        <div className="overflow-hidden surface rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
@@ -38,7 +38,7 @@ export function Claims() {
                 <TableRow key={claim.claim_id}>
                   <TableCell>
                     <Link
-                      className="font-semibold underline-offset-4 hover:underline"
+                      className="font-semibold whitespace-nowrap text-link underline-offset-4 transition-colors hover:text-white hover:underline"
                       to={`/claims/${encodeURIComponent(claim.claim_id)}`}
                     >
                       {claim.claim_id}

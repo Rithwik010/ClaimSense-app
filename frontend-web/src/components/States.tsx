@@ -20,7 +20,7 @@ export function Skeleton({ lines = 3 }: { lines?: number }) {
 
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-lg border border-dashed border-control/60 bg-paper px-6 py-10 text-center">
+    <div className="rounded-lg border border-dashed border-white/15 bg-white/[0.025] px-6 py-12 text-center">
       <p className="font-semibold">{title}</p>
       {children && <div className="mx-auto mt-2 max-w-[60ch] text-ink-muted">{children}</div>}
     </div>
@@ -31,7 +31,7 @@ export function ErrorNotice({ error, onRetry }: { error: unknown; onRetry?: () =
   const message = error instanceof Error ? error.message : "Something went wrong.";
   const unreachable = error instanceof ApiError && error.status === 0;
   return (
-    <Alert className="border-deny/30 bg-deny-tint text-deny">
+    <Alert className="border-deny/30 bg-deny-tint text-deny backdrop-blur-sm">
       {unreachable ? <WifiOff aria-hidden /> : <CircleAlert aria-hidden />}
       <AlertTitle>{unreachable ? "The server can't be reached" : "The request did not go through"}</AlertTitle>
       <AlertDescription className="text-ink">
@@ -51,7 +51,7 @@ export function Note({ children, tone = "pend" }: { children: ReactNode; tone?: 
     <div
       role="note"
       className={`rounded-lg border px-4 py-3 ${
-        tone === "pend" ? "border-pend/30 bg-pend-tint text-ink" : "border-rules bg-paper text-ink"
+        tone === "pend" ? "border-pend/30 bg-pend-tint text-ink" : "surface text-ink"
       }`}
     >
       {children}

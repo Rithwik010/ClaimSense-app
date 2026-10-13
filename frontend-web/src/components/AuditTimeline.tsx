@@ -34,12 +34,12 @@ function versions(event: AuditEvent): string {
 
 export function AuditTimeline({ events }: { events: AuditEvent[] }) {
   return (
-    <ol aria-label="Audit trail" className="rounded-lg border border-rules bg-paper px-5 py-4">
+    <ol aria-label="Audit trail" className="surface rounded-lg px-5 py-4">
       {events.map((event, i) => (
         <li key={event.id} className="relative grid grid-cols-[16px_1fr] gap-x-3 pb-4 last:pb-0">
           <span aria-hidden className="relative flex justify-center">
-            <span className="mt-2 size-2 rounded-full bg-ink" />
-            {i < events.length - 1 && <span className="absolute top-4 bottom-[-8px] w-px bg-rules" />}
+            <span className="mt-2 size-2.5 rounded-full bg-glow-blue shadow-[0_0_0_4px_rgb(111_140_255/0.16)]" />
+            {i < events.length - 1 && <span className="absolute top-5 bottom-[-6px] w-px bg-[linear-gradient(var(--color-glow-blue),rgb(103_232_249/0.25))] opacity-60" />}
           </span>
           <div className="min-w-0">
             <p className="font-semibold">{EVENTS[event.event_type] ?? event.event_type}</p>

@@ -25,11 +25,13 @@ export function DropZone({ file, onFile }: { file: File | null; onFile: (file: F
         const dropped = event.dataTransfer.files[0];
         if (dropped) onFile(dropped);
       }}
-      className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-8 text-center focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ink ${
-        over ? "border-ink bg-canvas" : "border-control/70 bg-paper"
+      className={`group/drop flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-[border-color,background-color,box-shadow] duration-200 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-glow-cyan ${
+        over ? "border-glow-cyan bg-glow-cyan/[0.06] shadow-[0_0_0_4px_rgb(103_232_249/0.12)]" : "border-white/20 bg-white/[0.025] hover:border-white/35 hover:bg-white/[0.04]"
       }`}
     >
-      <FileUp aria-hidden className="size-6 text-ink-muted" />
+      <span className="grid size-12 place-items-center rounded-full border border-white/15 bg-[linear-gradient(135deg,rgb(67_97_238/0.35),rgb(139_92_246/0.25))] shadow-[0_8px_24px_-10px_rgb(67_97_238/0.8)] transition-transform duration-200 group-hover/drop:-translate-y-0.5">
+        <FileUp aria-hidden className="size-5 text-white" />
+      </span>
       <span className="font-semibold">{file ? file.name : "Drop a claim file here, or choose one"}</span>
       <span className="text-[13px] text-ink-muted">
         {file

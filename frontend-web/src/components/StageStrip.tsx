@@ -119,9 +119,9 @@ export function stages(view: StageView, events: Pick<AuditEvent, "event_type">[]
 }
 
 const LOOK: Record<StageState, { bar: string; Icon: typeof Check; icon: string }> = {
-  done: { bar: "bg-ink", Icon: Check, icon: "text-ink" },
+  done: { bar: "bg-[linear-gradient(90deg,var(--color-glow-blue),var(--color-glow-cyan))]", Icon: Check, icon: "text-glow-cyan" },
   problem: { bar: "bg-deny", Icon: X, icon: "text-deny" },
-  waiting: { bar: "bg-control/50", Icon: Clock, icon: "text-ink-muted" },
+  waiting: { bar: "bg-glow-violet/70 animate-glow-pulse", Icon: Clock, icon: "text-glow-violet" },
   "not-reached": { bar: "bg-transparent border-t border-dashed border-control", Icon: CircleDashed, icon: "text-ink-muted" },
 };
 
@@ -130,7 +130,7 @@ export function StageStrip({ list, fill = false }: { list: Stage[]; fill?: boole
   const animate = fill && !reduce;
   let reached = 0;
   return (
-    <div className="mb-6 overflow-x-auto rounded-lg border border-rules bg-paper">
+    <div className="glass edge-light mb-6 overflow-x-auto rounded-lg">
       <ol aria-label="Pipeline stages" className="grid min-w-[760px] grid-cols-7">
         {list.map((stage) => {
           const look = LOOK[stage.state];

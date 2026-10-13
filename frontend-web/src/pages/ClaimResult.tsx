@@ -120,14 +120,14 @@ export function ClaimResult() {
         </Note>
       ) : (
         <>
+          {record.amounts && (
+            <Section title="Amounts">
+              <AmountSummary totals={record.amounts.totals} glass />
+            </Section>
+          )}
           <Section title="Lines">
             <Lines view={view} record={record} />
           </Section>
-          {record.amounts && (
-            <Section title="Amounts">
-              <AmountSummary totals={record.amounts.totals} />
-            </Section>
-          )}
           <Section title="Explanation">
             {explanation.isPending ? (
               <Skeleton lines={6} />
@@ -136,7 +136,7 @@ export function ClaimResult() {
             ) : (
               <div
                 data-testid="explanation"
-                className="explanation rounded-lg border border-rules bg-paper p-5"
+                className="explanation surface rounded-lg p-5"
                 // The API renders this fragment from the decision record with autoescaping (§8.7).
                 dangerouslySetInnerHTML={{ __html: explanation.data }}
               />

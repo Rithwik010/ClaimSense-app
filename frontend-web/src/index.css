@@ -3,29 +3,43 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/atkinson-hyperlegible-next";
 
-/* ClaimSense theme: DESIGN.md. Ink on paper; colour only for decisions; borders, not shadows. */
+/*
+ * ClaimSense theme (DESIGN.md, D-UI-5): a deep navy canvas lit by soft blue, violet and cyan
+ * light; frosted glass only where a surface floats (sidebar, header, overlays, a page's summary);
+ * colour still means a decision. Every text pair keeps WCAG AA contrast on its surface.
+ */
 
 @theme inline {
   --font-sans: "Atkinson Hyperlegible Next Variable", system-ui, sans-serif;
   --font-heading: var(--font-sans);
-  --font-mono: var(--font-sans); /* no monospace face, even for codes */
+  --font-mono: var(--font-sans); /* Atkinson tells O from 0 and I from l, which codes need */
 
-  --color-paper: #ffffff;
-  --color-canvas: #f4f5f7;
-  --color-ink: #1b2433;
-  --color-ink-muted: #525c6c;
-  --color-rules: #dadde3;
-  --color-control: #858e9e;
+  /* Surfaces and text (names kept from the light theme so every page restyles from here). */
+  --color-canvas: #070b18;
+  --color-paper: rgb(255 255 255 / 0.045);
+  --color-raised: #0f1729;
+  --color-ink: #e9eef8;
+  --color-ink-muted: #a9b4ca;
+  --color-rules: rgb(255 255 255 / 0.09);
+  --color-control: #63749a;
   --color-highlight: #ffe79a;
+  --color-on-highlight: #1b2433;
 
-  --color-approve: #1e7a4c;
-  --color-approve-tint: #e7f2ec;
-  --color-pend: #9a5b00;
-  --color-pend-tint: #fbf0df;
-  --color-deny: #b3261e;
-  --color-deny-tint: #fbe9e7;
-  --color-reject: #5b6472;
-  --color-reject-tint: #eef0f3;
+  /* Light sources: used for focus, the primary action, the stage strip and selected states. */
+  --color-glow-blue: #6f8cff;
+  --color-glow-violet: #a78bfa;
+  --color-glow-cyan: #67e8f9;
+  --color-link: #9db1ff;
+
+  /* Decisions: text and icon on a tint, never colour alone (6.3:1 or more on a panel). */
+  --color-approve: #5fdca0;
+  --color-approve-tint: rgb(52 211 153 / 0.14);
+  --color-pend: #f5c26b;
+  --color-pend-tint: rgb(245 180 69 / 0.14);
+  --color-deny: #ff9189;
+  --color-deny-tint: rgb(255 107 107 / 0.14);
+  --color-reject: #b7c0d0;
+  --color-reject-tint: rgb(183 192 208 / 0.12);
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -37,6 +51,7 @@
   --color-sidebar: var(--sidebar);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -56,56 +71,69 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
 
-  /* Controls 6 px, panels 10 px. */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --radius-xl: 10px;
-  --radius-2xl: 10px;
-  --radius-3xl: 10px;
-  --radius-4xl: 10px;
+  /* Controls 8 px, panels 14 px, floating layers 18 px. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 18px;
+  --radius-3xl: 22px;
+  --radius-4xl: 22px;
 
-  /* Borders, not shadows. */
-  --shadow-2xs: 0 0 #0000;
-  --shadow-xs: 0 0 #0000;
-  --shadow-sm: 0 0 #0000;
-  --shadow: 0 0 #0000;
-  --shadow-md: 0 0 #0000;
-  --shadow-lg: 0 0 #0000;
-  --shadow-xl: 0 0 #0000;
-  --shadow-2xl: 0 0 #0000;
+  /* Soft, low shadows: depth comes from light and borders, not heavy drop shadows. */
+  --shadow-2xs: 0 1px 0 rgb(255 255 255 / 0.04) inset;
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-sm: 0 2px 8px -2px rgb(0 0 0 / 0.45);
+  --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.55);
+  --shadow-md: 0 12px 32px -16px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 24px 48px -24px rgb(0 0 0 / 0.65);
+  --shadow-xl: 0 32px 64px -28px rgb(2 6 23 / 0.75);
+  --shadow-2xl: 0 40px 80px -32px rgb(2 6 23 / 0.8);
+
+  --animate-glow-pulse: glow-pulse 2.4s ease-in-out infinite;
 }
 
 :root {
-  --background: #f4f5f7;
-  --foreground: #1b2433;
-  --card: #ffffff;
-  --card-foreground: #1b2433;
-  --popover: #ffffff;
-  --popover-foreground: #1b2433;
-  --primary: #1b2433;
+  --background: #070b18;
+  --foreground: #e9eef8;
+  --card: #0f1729;
+  --card-foreground: #e9eef8;
+  --popover: rgb(14 21 40 / 0.94);
+  --popover-foreground: #e9eef8;
+  --primary: #4361ee;
   --primary-foreground: #ffffff;
-  --secondary: #ffffff;
-  --secondary-foreground: #1b2433;
-  --muted: #f4f5f7;
-  --muted-foreground: #525c6c;
-  --accent: #eef0f3;
-  --accent-foreground: #1b2433;
-  --destructive: #b3261e;
-  --border: #dadde3;
-  --input: #858e9e;
-  --ring: #1b2433;
-  --chart-1: #9aa3b2;
-  --chart-2: #1b2433;
-  --radius: 10px;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1b2433;
-  --sidebar-primary: #1b2433;
+  --secondary: rgb(255 255 255 / 0.06);
+  --secondary-foreground: #e9eef8;
+  --muted: rgb(255 255 255 / 0.05);
+  --muted-foreground: #a9b4ca;
+  --accent: rgb(255 255 255 / 0.08);
+  --accent-foreground: #ffffff;
+  --destructive: #ff9189;
+  --border: rgb(255 255 255 / 0.09);
+  --input: #63749a;
+  --ring: #67e8f9;
+  --chart-1: #64748b;
+  --chart-2: #8da2ff;
+  --chart-3: #67e8f9;
+  --radius: 14px;
+  --sidebar: rgb(9 14 28 / 0.62);
+  --sidebar-foreground: #e9eef8;
+  --sidebar-primary: #4361ee;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eef0f3;
-  --sidebar-accent-foreground: #1b2433;
-  --sidebar-border: #dadde3;
-  --sidebar-ring: #1b2433;
+  --sidebar-accent: rgb(255 255 255 / 0.07);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-ring: #67e8f9;
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @layer base {
@@ -113,22 +141,125 @@
     @apply border-border;
   }
   html {
-    color-scheme: light;
+    color-scheme: dark;
+    background: #070b18;
   }
   body {
-    @apply bg-canvas text-ink font-sans antialiased;
+    @apply text-ink font-sans antialiased;
     font-size: 15px;
     line-height: 24px;
+    min-height: 100svh;
+    background-color: #070b18;
+    /* Atmosphere: three soft light sources, fixed so content scrolls over them. */
+    background-image:
+      radial-gradient(56rem 36rem at 8% -12%, rgb(67 97 238 / 0.24), transparent 62%),
+      radial-gradient(48rem 32rem at 100% -6%, rgb(139 92 246 / 0.17), transparent 60%),
+      radial-gradient(60rem 38rem at 55% 115%, rgb(34 211 238 / 0.09), transparent 60%);
+    background-attachment: fixed;
+  }
+  /* A faint grid behind everything, fading out toward the edges. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.028) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black, transparent 75%);
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
+    text-wrap: balance;
   }
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-glow-cyan);
     outline-offset: 2px;
+  }
+  ::selection {
+    background: rgb(111 140 255 / 0.38);
+    color: #ffffff;
+  }
+  a {
+    text-underline-offset: 4px;
   }
   .tabular-nums,
   td,
   th {
     font-variant-numeric: tabular-nums;
   }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.16) transparent;
+  }
+}
+
+/* Frosted glass, for surfaces that float above the canvas. Text on it keeps 14:1 or more. */
+@utility glass {
+  background-color: rgb(12 18 34 / 0.58);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.025));
+  border: 1px solid rgb(255 255 255 / 0.1);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    0 24px 48px -28px rgb(0 0 0 / 0.7);
+}
+
+/* Denser glass for menus, dialogs and sheets, so what is behind never competes with them. */
+@utility glass-strong {
+  background-color: rgb(13 20 38 / 0.9);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.015));
+  border: 1px solid rgb(255 255 255 / 0.12);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 32px 64px -24px rgb(2 6 23 / 0.8);
+}
+
+/* A plain panel: a quiet lift off the canvas without blur. Lists and tables sit on it. */
+@utility surface {
+  background-color: rgb(255 255 255 / 0.035);
+  border: 1px solid var(--color-rules);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+/* A hairline of light along the top edge of a glass card. */
+@utility edge-light {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: 12%;
+    top: -1px;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgb(157 177 255 / 0.7), rgb(103 232 249 / 0.6), transparent);
+  }
+}
+
+/* Calm hover for cards and rows that open something: lift 1 px, border brightens. */
+@utility hover-lift {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgb(255 255 255 / 0.16);
+  }
+}
+
+@utility text-glow {
+  background-image: linear-gradient(92deg, #e9eef8 10%, #c7d2fe 55%, #a5f3fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -141,12 +272,13 @@
   }
 }
 
-/* Evidence quotes in the clinical note. */
+/* Evidence quotes in the clinical note: dark text on the highlight, 12.7:1. */
 mark.evidence {
   background: var(--color-highlight);
-  color: var(--color-ink);
-  border-radius: 2px;
-  padding: 0 1px;
+  color: var(--color-on-highlight);
+  border-radius: 3px;
+  padding: 0 2px;
+  box-shadow: 0 0 0 1px rgb(255 231 154 / 0.25);
 }
 
 /* The explanation is an HTML fragment rendered by the API from the decision record (§8.7). */
@@ -193,4 +325,14 @@ mark.evidence {
   margin: 4px 0 8px 20px;
   list-style: disc;
   font-size: 13px;
+}
+.explanation a {
+  color: var(--color-link);
+}
+
+/* Toasts (sonner) sit on dense glass. */
+.cn-toast {
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 24px 48px -24px rgb(2 6 23 / 0.8);
 }

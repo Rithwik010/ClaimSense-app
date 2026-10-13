@@ -111,7 +111,7 @@ function Finalized({ record }: { record: DecisionRecord }) {
   // The next claim in the queue's order (most work first, then the oldest).
   const next = queue.data?.find((item) => item.claim_id !== record.claim_id);
   return (
-    <div role="status" className="rounded-lg border border-rules bg-paper p-5">
+    <div role="status" className="surface rounded-lg p-5">
       <div className="flex flex-wrap items-center gap-3">
         <p className="font-semibold">Claim {record.claim_id} is final</p>
         <StatusChip status={record.status} showHint />
@@ -227,7 +227,7 @@ function Review({
           <ErrorNotice error={submit.error} />
         </div>
       )}
-      <div className="sticky bottom-0 z-10 mt-6 -mx-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-rules bg-paper px-4 py-3 md:-mx-8 md:px-8">
+      <div className="sticky bottom-0 z-10 mt-6 -mx-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 bg-[#0a1020]/80 px-4 py-3 shadow-[0_-16px_40px_-24px_rgb(0_0_0/0.8)] backdrop-blur-xl backdrop-saturate-150 md:-mx-8 md:px-8">
         <Button
           size="lg"
           disabled={submit.isPending}
@@ -350,7 +350,7 @@ export function ReviewClaim() {
       )}
       {!record || view.status !== "AWAITING_REVIEW" ? (
         <EmptyState title="This claim is not awaiting review">
-          <Link className="font-semibold underline underline-offset-4" to={`/claims/${encodeURIComponent(view.claim_id)}`}>
+          <Link className="font-semibold text-link underline underline-offset-4" to={`/claims/${encodeURIComponent(view.claim_id)}`}>
             Open the claim
           </Link>{" "}
           to see its decision and explanation.

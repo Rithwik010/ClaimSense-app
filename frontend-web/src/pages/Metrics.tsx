@@ -57,7 +57,7 @@ function SideBySide({ models, guard, target }: { models: ModelRow[]; guard: Guar
     { label: "95th percentile time", cell: (m) => seconds(m.p95_ms_per_claim) },
   ];
   return (
-    <div className="overflow-x-auto rounded-lg border border-rules bg-paper">
+    <div className="overflow-x-auto surface rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
@@ -88,7 +88,7 @@ function SideBySide({ models, guard, target }: { models: ModelRow[]; guard: Guar
 
 function PerClass({ models }: { models: ModelRow[] }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-rules bg-paper">
+    <div className="overflow-x-auto surface rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
@@ -126,7 +126,7 @@ function PerClass({ models }: { models: ModelRow[] }) {
 
 function GuardRows({ rows }: { rows: GuardRow[] }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-rules bg-paper">
+    <div className="overflow-x-auto surface rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
@@ -165,7 +165,7 @@ function AlsoRecorded({ results }: { results: Results }) {
   const extraction = results.extraction;
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <dl className="rounded-lg border border-rules bg-paper px-4 py-2">
+      <dl className="surface rounded-lg px-4 py-2">
         {[
           ["Retrieval recall@3", results.retrieval_recall_at_3],
           ["Reviewer agreement", results.reviewer_agreement],
@@ -188,7 +188,7 @@ function AlsoRecorded({ results }: { results: Results }) {
         ))}
       </dl>
       {stages.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-rules bg-paper">
+        <div className="overflow-x-auto surface rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
@@ -218,7 +218,8 @@ function AlsoRecorded({ results }: { results: Results }) {
   );
 }
 
-const SHADES = ["#9AA3B2", "#1B2433", "#5B6472"];
+// v1 muted slate, v2 blue (the demo model), E4B cyan: each 3:1 or more against the panel.
+const SHADES = ["#7C8AA5", "#7B93FF", "#5FD8EA"];
 
 function Chart({ models }: { models: ModelRow[] }) {
   const measures: { key: keyof ModelRow; label: string }[] = [
@@ -236,17 +237,17 @@ function Chart({ models }: { models: ModelRow[] }) {
     ...Object.fromEntries(models.map((m) => [keyOf(m.model), m[measure.key]])),
   }));
   return (
-    <div className="mt-6 rounded-lg border border-rules bg-paper p-4">
+    <div className="mt-6 surface rounded-lg p-4">
       <h3 className="mb-2 font-semibold">The same measures as bars (0 to 1)</h3>
       <ChartContainer config={config} className="aspect-auto h-72 w-full">
         <BarChart data={data} margin={{ left: -16, right: 8 }}>
-          <CartesianGrid vertical={false} stroke="#DADDE3" />
-          <XAxis dataKey="measure" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 12, fill: "#525C6C" }} />
-          <YAxis domain={[0, 1]} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "#525C6C" }} />
+          <CartesianGrid vertical={false} stroke="rgb(255 255 255 / 0.08)" />
+          <XAxis dataKey="measure" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 12, fill: "#A9B4CA" }} />
+          <YAxis domain={[0, 1]} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "#A9B4CA" }} />
           <ChartTooltip content={<ChartTooltipContent />} />
           <ChartLegend content={<ChartLegendContent />} />
           {Object.keys(config).map((key) => (
-            <Bar key={key} dataKey={key} fill={`var(--color-${key})`} radius={[2, 2, 0, 0]} isAnimationActive={false} />
+            <Bar key={key} dataKey={key} fill={`var(--color-${key})`} radius={[4, 4, 0, 0]} isAnimationActive={false} />
           ))}
         </BarChart>
       </ChartContainer>

@@ -26,7 +26,7 @@ function shortDate(value: string | null): string {
 
 function Rows({ items, reviewer }: { items: QueueItem[]; reviewer: boolean }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-rules bg-paper">
+    <div className="overflow-x-auto surface rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
@@ -44,7 +44,7 @@ function Rows({ items, reviewer }: { items: QueueItem[]; reviewer: boolean }) {
             <TableRow key={item.claim_id}>
               <TableCell>
                 <Link
-                  className="font-semibold underline-offset-4 hover:underline"
+                  className="font-semibold whitespace-nowrap text-link underline-offset-4 transition-colors hover:text-white hover:underline"
                   to={`/${reviewer ? "review" : "claims"}/${encodeURIComponent(item.claim_id)}`}
                 >
                   {item.claim_id}

@@ -64,7 +64,7 @@ export function ClaimWorkspace({
         />
         </div>
       ) : (
-        <p className="rounded-lg border border-rules bg-paper p-4 text-ink-muted">
+        <p className="surface rounded-lg p-4 text-ink-muted">
           Not processed yet. Process the claim to run the rules, the model and the calculator.
         </p>
       ),
@@ -108,10 +108,10 @@ export function ClaimWorkspace({
             </TabsContent>
           ))}
         </Tabs>
-        <aside aria-label="Clinical note" className="min-w-0 lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-lg border border-rules bg-paper">
+        <aside aria-label="Clinical note" className="min-w-0 lg:sticky lg:top-20 lg:self-start">
+          <div className="glass edge-light rounded-lg">
             <h2 className="border-b border-rules px-4 py-3 font-semibold">Clinical note</h2>
-            <div className="max-h-none overflow-auto px-4 py-4 lg:max-h-[calc(100vh-8rem)]">
+            <div className="max-h-none overflow-auto px-4 py-4 lg:max-h-[calc(100vh-11rem)]">
               <ClinicalNote notes={notes} quotes={quotes} active={active} />
             </div>
           </div>

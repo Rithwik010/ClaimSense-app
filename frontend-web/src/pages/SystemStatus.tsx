@@ -35,7 +35,7 @@ export function SystemStatus() {
         ) : health.error ? (
           <ErrorNotice error={health.error} onRetry={() => void health.refetch()} />
         ) : (
-          <ul className="divide-y divide-rules rounded-lg border border-rules bg-paper">
+          <ul className="divide-y divide-rules surface rounded-lg">
             {SERVICES.map(([key, label]) => {
               const service = health.data[key];
               return (
@@ -63,7 +63,7 @@ export function SystemStatus() {
           <ErrorNotice error={versions.error} onRetry={() => void versions.refetch()} />
         ) : (
           <div className="space-y-6">
-            <dl className="grid gap-x-6 rounded-lg border border-rules bg-paper px-4 py-3 sm:grid-cols-2 lg:grid-cols-5">
+            <dl className="grid gap-x-6 surface rounded-lg px-4 py-3 sm:grid-cols-2 lg:grid-cols-5">
               {Object.entries(versions.data.configured).map(([key, value]) => (
                 <div key={key} className="py-1.5">
                   <dt className="text-[13px] text-ink-muted">{CONFIGURED[key] ?? key} the API uses</dt>
@@ -74,7 +74,7 @@ export function SystemStatus() {
             {versions.data.in_records.length === 0 ? (
               <EmptyState title="No decision records yet">Process a claim and its versions appear here.</EmptyState>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-rules bg-paper">
+              <div className="overflow-x-auto surface rounded-lg">
                 <Table>
                   <TableHeader>
                     <TableRow>

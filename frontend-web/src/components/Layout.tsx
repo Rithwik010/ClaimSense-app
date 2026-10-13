@@ -1,5 +1,6 @@
 // The app shell: sidebar, a header with the breadcrumb and the user menu (D-AUTH-1), and the page,
-// which fades in on navigation (motion moment 1, DESIGN.md).
+// which fades in and rises 4 px on navigation (DESIGN.md). The header is frosted glass so the page
+// scrolls under it.
 
 import { motion, useReducedMotion } from "motion/react";
 import { useId, type ReactNode } from "react";
@@ -43,10 +44,10 @@ export function Layout() {
   return (
     <SidebarProvider defaultOpen={wide}>
       <AppSidebar />
-      <SidebarInset className="min-w-0 bg-canvas">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-rules bg-paper px-4">
+      <SidebarInset className="min-w-0 bg-transparent">
+        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-rules bg-canvas/60 px-4 backdrop-blur-xl backdrop-saturate-150 md:px-6">
           <SidebarTrigger className="-ml-1" aria-label="Show or hide the navigation" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Separator orientation="vertical" className="mr-2 h-4 bg-rules" />
           <Breadcrumb className="min-w-0 flex-1">
             <BreadcrumbList>
               {trail.map((crumb, i) => (
@@ -67,19 +68,20 @@ export function Layout() {
           </Breadcrumb>
           <UserMenu />
         </header>
-        <motion.main
+        {/* SidebarInset is the page's <main> landmark; this is its animated content. */}
+        <motion.div
           key={pathname}
-          initial={{ opacity: reduce ? 1 : 0 }}
-          animate={{ opacity: 1 }}
+          initial={reduce ? false : { opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduce ? 0 : 0.18, ease: "easeOut" }}
-          className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8"
+          className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-10"
         >
           <div className="mx-auto max-w-[1280px]">
             <ErrorBoundary resetKey={pathname}>
               <Outlet />
             </ErrorBoundary>
           </div>
-        </motion.main>
+        </motion.div>
       </SidebarInset>
     </SidebarProvider>
   );
@@ -87,10 +89,12 @@ export function Layout() {
 
 export function PageTitle({ title, hint, actions }: { title: string; hint?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-[24px] leading-8 font-semibold break-words">{title}</h1>
-        {hint && <p className="mt-1 max-w-[72ch] text-ink-muted">{hint}</p>}
+        <h1 className="text-[26px] leading-[34px] font-semibold tracking-[-0.02em] break-words md:text-[30px] md:leading-[38px]">
+          {title}
+        </h1>
+        {hint && <p className="mt-2 max-w-[72ch] text-ink-muted">{hint}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
     </div>
@@ -110,7 +114,15 @@ export function Section({ title, children, aside }: { title: string; children: R
   );
 }
 
-/** A bordered paper panel (10 px radius); lists and tables sit directly on it. */
-export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-lg border border-rules bg-paper ${className}`}>{children}</div>;
+/** A panel (14 px radius): a quiet surface by default, frosted glass for a page's summary. */
+export function Panel({
+  children,
+  className = "",
+  glass = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  glass?: boolean;
+}) {
+  return <div className={`rounded-lg ${glass ? "glass edge-light" : "surface"} ${className}`}>{children}</div>;
 }

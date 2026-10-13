@@ -14,7 +14,7 @@ export function RuleChecks({ record }: { record: DecisionRecord }) {
       <p className="mb-3 text-[13px] text-ink-muted">
         {rules.length} rule checks, {failed.length ? `${failed.length} failed` : "all passed"}.
       </p>
-      <div className="overflow-hidden rounded-lg border border-rules bg-paper">
+      <div className="overflow-hidden surface rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
@@ -60,7 +60,7 @@ export function AmountsTable({ record }: { record: DecisionRecord }) {
     return <p className="text-ink-muted">No amounts: the calculator did not run for this claim.</p>;
   }
   return (
-    <div className="overflow-hidden rounded-lg border border-rules bg-paper">
+    <div className="overflow-hidden surface rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
@@ -105,16 +105,16 @@ const SUMMARY: [keyof Amounts, string][] = [
 ];
 
 /** The four totals people ask about first, as the calculator worked them out. */
-export function AmountSummary({ totals }: { totals: Amounts }) {
+export function AmountSummary({ totals, glass = false }: { totals: Amounts; glass?: boolean }) {
   return (
-    <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-rules bg-paper sm:grid-cols-4">
+    <dl className={`grid grid-cols-2 overflow-hidden rounded-lg sm:grid-cols-4 ${glass ? "glass edge-light" : "surface"}`}>
       {SUMMARY.map(([key, label], i) => (
         <div
           key={key}
-          className={`px-4 py-3 ${i % 2 ? "border-l border-rules" : ""} ${i >= 2 ? "border-t border-rules sm:border-t-0" : ""} ${i === 2 ? "sm:border-l" : ""}`}
+          className={`px-5 py-4 ${i % 2 ? "border-l border-rules" : ""} ${i >= 2 ? "border-t border-rules sm:border-t-0" : ""} ${i === 2 ? "sm:border-l" : ""}`}
         >
           <dt className="text-[13px] text-ink-muted">{label}</dt>
-          <dd className="text-[18px] leading-[26px] font-semibold tabular-nums">{money(totals[key])}</dd>
+          <dd className="mt-1 text-[22px] leading-[30px] font-semibold tracking-[-0.01em] tabular-nums">{money(totals[key])}</dd>
         </div>
       ))}
     </dl>

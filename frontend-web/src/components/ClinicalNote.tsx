@@ -72,7 +72,7 @@ export function ClinicalNote({
       <mark
         key={part.start}
         data-keys={part.keys.join(" ")}
-        className={`evidence ${selected ? "underline decoration-ink decoration-2 underline-offset-4" : ""}`}
+        className={`evidence ${selected ? "underline decoration-[#1b2433] decoration-2 underline-offset-4 ring-2 ring-glow-cyan/70" : ""}`}
       >
         {notes.slice(part.start, part.end)}
       </mark>,

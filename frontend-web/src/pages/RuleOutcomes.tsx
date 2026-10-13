@@ -32,7 +32,7 @@ export function RuleOutcomes() {
           processing.
         </EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-rules bg-paper">
+        <div className="overflow-x-auto surface rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
@@ -47,7 +47,7 @@ export function RuleOutcomes() {
                 <TableRow key={claim.claim_id}>
                   <TableCell>
                     <Link
-                      className="font-semibold underline-offset-4 hover:underline"
+                      className="font-semibold whitespace-nowrap text-link underline-offset-4 transition-colors hover:text-white hover:underline"
                       to={`/claims/${encodeURIComponent(claim.claim_id)}`}
                     >
                       {claim.claim_id}
