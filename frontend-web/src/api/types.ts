@@ -131,6 +131,38 @@ export interface Adjustment {
   lcds: string[];
 }
 
+/** The label key every dashboard shows (D-UI-6): one per claim, from its status and lines. */
+export type Outcome =
+  | "NOT_PROCESSED"
+  | "IN_REVIEW"
+  | "APPROVED"
+  | "PARTLY_APPROVED"
+  | "PENDED"
+  | "DENIED"
+  | "REJECTED";
+
+/** The original file kept with a claim (D-DOC-1). */
+export interface DocumentInfo {
+  file_name: string;
+  content_type: "application/json" | "application/pdf" | "image/png" | "image/jpeg";
+  size_bytes: number;
+}
+
+/** One reason a claim or line was not paid as billed (reviewers and admins). */
+export interface Reason {
+  code: string;
+  rule_id: string | null;
+  line_no: number | null;
+  short: string;
+}
+
+/** The claim summary (reviewers and admins), built from the record by the API. */
+export interface ClaimSummaryLines {
+  outcome: Outcome;
+  outcome_label: string;
+  items: { kind: "glance" | "checks" | "line" | "amounts" | "flags" | "outcome"; text: string; line_no: number | null }[];
+}
+
 export interface ClaimView {
   claim_id: string;
   status: ClaimStatus;
@@ -140,6 +172,9 @@ export interface ClaimView {
   field_confidences: Record<string, number>;
   record: DecisionRecord | null;
   adjustments?: Adjustment[];
+  outcome: Outcome;
+  summary: ClaimSummaryLines;
+  document: DocumentInfo | null;
 }
 
 export interface QueueItem {
@@ -155,6 +190,7 @@ export interface QueueItem {
   total_billed_cents: number | null;
   lines: number;
   flags: string[];
+  member_id: string;
 }
 
 export interface ClaimSummary {
@@ -170,6 +206,11 @@ export interface ClaimSummary {
   plan_pays_cents: number | null;
   failed_rules: Omit<RuleResult, "passed">[];
   adjustments: Adjustment[];
+  member_id: string;
+  provider_npi: string | null;
+  provider_name: string | null;
+  outcome: Outcome;
+  reasons: Reason[];
 }
 
 export interface AuditEvent {
@@ -222,25 +263,73 @@ export interface Evaluation {
   v2_errors: V2Errors | null;
 }
 
+/** A line of the provider's explanation: the whole claim (line_no null) or one line. */
+export interface ExplanationItem {
+  line_no: number | null;
+  text: string;
+}
+
+export interface CodeGroup {
+  line_no: number | null;
+  codes: { kind: "CARC" | "RARC"; code: string; description: string | null }[];
+  billing_article: string | null;
+  lcds: string[];
+}
+
+export interface Reduction {
+  kind: "allowed_amount" | "out_of_network" | "not_paid" | "deductible" | "copay" | "coinsurance" | "other_plan" | "note";
+  amount_cents: number | null;
+  text: string;
+}
+
+export interface BillingAmounts {
+  billed_cents: number;
+  allowed_cents: number;
+  deductible_cents: number;
+  copay_cents: number;
+  coinsurance_cents: number;
+  plan_pays_cents: number;
+  patient_pays_cents: number;
+  other_plan_paid_cents: number;
+}
+
+export interface BillingLine extends BillingAmounts {
+  line_no: number;
+  procedure_code: string;
+  paid: boolean;
+  reductions: Reduction[];
+}
+
+/** The provider's view of a final claim (D-UI-6), built by the API from the record. */
+export interface ProviderExplanation {
+  outcome: Outcome;
+  heading: string;
+  why: ExplanationItem[];
+  review: ExplanationItem[];
+  codes: CodeGroup[];
+  billing: { lines: BillingLine[]; totals: BillingAmounts } | null;
+}
+
 /** A provider's own claim (D-AUTH-1): the decision only once final; until then IN_REVIEW. */
 export interface ProviderClaimView {
   claim_id: string;
   status: ClaimStatus | "IN_REVIEW";
+  outcome: Outcome;
   final: boolean;
   source_format: SourceFormat;
   received: Claim;
-  field_confidences: Record<string, number>;
   filed_by: string | null;
-  record: DecisionRecord | null;
-  adjustments: Adjustment[];
+  explanation: ProviderExplanation | null;
   /** The audit event types the claim went through, in order (no payloads): the stage strip. */
   stages: string[];
+  document: DocumentInfo | null;
 }
 
 /** A provider's own claim in their list: the decision and amounts only once final. */
 export interface ProviderClaimSummary {
   claim_id: string;
   status: ClaimStatus | "IN_REVIEW";
+  outcome: Outcome;
   final: boolean;
   source_format: SourceFormat;
   received_date: string;
@@ -249,7 +338,6 @@ export interface ProviderClaimSummary {
   total_billed_cents: number | null;
   total_allowed_cents: number | null;
   plan_pays_cents: number | null;
-  failed_rules: { rule_id: string; outcome: string; reason_code: string | null; detail: string; line_no: number | null }[];
 }
 
 /** GET /health (public). */

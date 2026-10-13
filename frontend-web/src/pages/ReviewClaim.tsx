@@ -10,10 +10,11 @@ import { toast } from "sonner";
 
 import { useAudit, useClaim, useOpenReview, useQueue, useSubmitReview } from "@/api/hooks";
 import type { DecisionRecord, FinalLineDecision, LineDecision } from "@/api/types";
-import { Chip, StatusChip } from "@/components/Chip";
+import { Chip, OutcomeChip, StatusChip } from "@/components/Chip";
 import { ClaimWorkspace } from "@/components/ClaimWorkspace";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PageTitle } from "@/components/Layout";
+import { OriginalFileButton } from "@/components/OriginalFile";
 import { AmountSummary } from "@/components/Record";
 import { EmptyState, ErrorNotice, Note, Skeleton } from "@/components/States";
 import { Button } from "@/components/ui/button";
@@ -107,6 +108,7 @@ export function OverrideForm({
 
 function Finalized({ record }: { record: DecisionRecord }) {
   const audit = useAudit(record.claim_id);
+  const claim = useClaim(record.claim_id); // the outcome every dashboard shows (D-UI-6)
   const queue = useQueue(null);
   // The next claim in the queue's order (most work first, then the oldest).
   const next = queue.data?.find((item) => item.claim_id !== record.claim_id);
@@ -114,7 +116,11 @@ function Finalized({ record }: { record: DecisionRecord }) {
     <div role="status" className="surface rounded-lg p-5">
       <div className="flex flex-wrap items-center gap-3">
         <p className="font-semibold">Claim {record.claim_id} is final</p>
-        <StatusChip status={record.status} showHint />
+        {claim.data?.status === record.status ? (
+          <OutcomeChip outcome={claim.data.outcome} showHint />
+        ) : (
+          <StatusChip status={record.status} showHint />
+        )}
       </div>
       <div className="mt-4 space-y-4">
         {audit.data && <ChangedAmounts events={audit.data} />}
@@ -336,10 +342,11 @@ export function ReviewClaim() {
         title={`Review claim ${view.claim_id}`}
         actions={
           <>
-            <StatusChip status={view.status} />
+            <OutcomeChip outcome={view.outcome} />
             {record?.review_tier && (
               <span className="text-[13px] text-ink-muted">{TIER[record.review_tier].label} review tier</span>
             )}
+            <OriginalFileButton claimId={view.claim_id} document={view.document} />
           </>
         }
       />

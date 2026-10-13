@@ -42,6 +42,7 @@ class QueueItem:
     total_billed_cents: int | None = None
     lines: int = 0
     flags: list[str] = field(default_factory=list)
+    member_id: str = ""  # for the queue's search (D-UI-6)
 
 
 def queue_flags(
@@ -110,6 +111,7 @@ def review_queue(
                 flags=queue_flags(
                     record, row.field_confidences or {}, confidence_min, high_dollar_cents
                 ),
+                member_id=row.member_id,
             )
         )
     oldest = datetime.min.replace(tzinfo=None)

@@ -9,14 +9,14 @@ import { toast } from "sonner";
 import { ApiError } from "@/api/client";
 import { useProcess, useUpload } from "@/api/hooks";
 import type { FiledWithErrors, IntakeResult } from "@/api/types";
-import { Chip } from "@/components/Chip";
+import { OutcomeChip } from "@/components/Chip";
 import { DropZone } from "@/components/DropZone";
 import { FieldsTable } from "@/components/Fields";
 import { PageTitle, Panel, Section } from "@/components/Layout";
 import { providerStages, StageStrip } from "@/components/StageStrip";
 import { ErrorNotice, Note } from "@/components/States";
 import { Button } from "@/components/ui/button";
-import { providerStatus } from "@/lib/labels";
+import { providerOutcome } from "@/lib/labels";
 
 const FORMATS: Record<string, string> = {
   JSON: "a JSON claim",
@@ -44,7 +44,7 @@ export function SubmitClaim() {
   const runProcess = () => {
     if (!claimId) return;
     process.mutate(claimId, {
-      onSuccess: (view) => toast.success(`Claim processed: ${providerStatus(view.status).label.toLowerCase()}`),
+      onSuccess: (view) => toast.success(`Claim processed: ${providerOutcome(view.outcome).label.toLowerCase()}`),
     });
   };
 
@@ -135,7 +135,7 @@ export function SubmitClaim() {
               <StageStrip list={providerStages(result)} fill />
               <Panel className="flex flex-wrap items-center gap-4 p-5">
                 <div className="min-w-0 flex-1 basis-72">
-                  <Chip label={providerStatus(result.status)} showHint />
+                  <OutcomeChip outcome={result.outcome} provider showHint />
                   <p className="mt-2 text-ink-muted">
                     {result.final
                       ? "The decision is final: the rules decided it."

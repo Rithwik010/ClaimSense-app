@@ -73,7 +73,8 @@ def test_a_provider_sees_the_steps_of_a_claim_in_review_and_nothing_more(
         "CALCULATED",
         "EXPLANATION_BUILT",
     ]
-    assert view["record"] is None and "APPROVE" not in json.dumps(view["stages"])
+    assert view["explanation"] is None and "record" not in view
+    assert "APPROVE" not in json.dumps(view["stages"])
 
 
 def test_the_claim_list_carries_the_codes_of_rule_outcomes(api, load_case_reference) -> None:  # noqa: ANN001

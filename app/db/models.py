@@ -18,6 +18,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -47,6 +48,7 @@ CLAIM_STATUSES = (
     "FINAL_DENIED",
     "FINAL_PENDED",
 )
+DOCUMENT_TYPES = ("application/json", "application/pdf", "image/png", "image/jpeg")
 AUDIT_EVENT_TYPES = (
     "INTAKE_COMPLETED",
     "RULES_EVALUATED",
@@ -395,6 +397,28 @@ class Claim(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class ClaimDocument(Base):
+    """The original file a claim was filed from (D-DOC-1): the JSON, PDF, PNG or JPEG bytes as
+    uploaded, kept for every claim created from them so each role can see the claim as sent. A
+    file refused at upload creates no claim and is not kept. Synthetic data only; `make
+    demo-reset` drops it with every other table."""
+
+    __tablename__ = "claim_documents"
+    __table_args__ = (
+        one_of("content_type", DOCUMENT_TYPES),
+        CheckConstraint("size_bytes > 0", name="size_bytes_positive"),
+        CheckConstraint("sha256 ~ '^[0-9a-f]{64}$'", name="sha256_hex"),
+    )
+
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.claim_id"), primary_key=True)
+    file_name: Mapped[str] = mapped_column(String(128))  # sanitized at upload
+    content_type: Mapped[str] = mapped_column(String(32))
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(String(64))
+    content: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 USER_ROLES = ("provider", "reviewer", "admin")

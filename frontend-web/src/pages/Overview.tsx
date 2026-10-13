@@ -72,7 +72,7 @@ function OutcomeBars({ outcomes }: { outcomes: Record<string, number> }) {
       {rows.map((s, i) => (
         <div key={s} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5">
           <dt className="min-w-0">
-            <StatusChip status={s} />
+            <StatusChip status={s} showHint />
           </dt>
           <dd className="text-[18px] font-semibold">
             <NumberTicker value={outcomes[s] ?? 0} />
@@ -147,7 +147,7 @@ export function Overview() {
                 ))}
               </dl>
             </Tile>
-            <Tile title="Decided by the rules alone" link={{ to: "/rule-outcomes", label: "Open rule outcomes" }}>
+            <Tile title="Decided by the rules alone" link={{ to: "/rule-outcomes", label: "Open returned and auto-denied" }}>
               <dl>
                 <Count label="Claims" value={overview.data.decided_by_rules} />
                 <Count label="Of all claims on file" value={overview.data.claims} />

@@ -1,6 +1,7 @@
 """`make demo-reset` (demo plan item 8): a clean database ready for the demo claims.
 
-1. Drops every table and migrates to the latest schema (alembic downgrade base, upgrade head).
+1. Drops every table and migrates to the latest schema (alembic downgrade base, upgrade head),
+   which deletes every claim with its stored original file (D-DOC-1).
 2. Generates the synthetic reference data if `data/generated/reference/` is missing (seeded, so
    always the same members, providers and plans).
 3. Seeds curated data, the public code tables from data/raw/ and the reference data, then the
@@ -24,6 +25,7 @@ import httpx
 from alembic import command
 from alembic.config import Config
 from qdrant_client import QdrantClient
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session
 
 from app.core.settings import get_settings
@@ -44,12 +46,33 @@ def step(text: str) -> None:
     print(f"- {text}", flush=True)
 
 
+def stored_files(url: str) -> int:
+    """How many original claim files the database holds (0 before migration 0008)."""
+    engine = create_engine(url)
+    try:
+        with engine.connect() as conn:
+            if "claim_documents" not in inspect(conn).get_table_names():
+                return 0
+            return conn.execute(text("SELECT count(*) FROM claim_documents")).scalar_one()
+    finally:
+        engine.dispose()
+
+
+def reset_database(alembic: Config, url: str) -> int:
+    """Drop every table (claims, their records, audit trails and stored files included) and
+    migrate to the latest schema; returns how many stored files were deleted."""
+    deleted = stored_files(url)
+    command.downgrade(alembic, "base")
+    command.upgrade(alembic, "head")
+    return deleted
+
+
 def main() -> None:
     settings = get_settings()
     alembic = Config(str(ROOT / "alembic.ini"))
     step("database: dropping every table and migrating to the latest schema")
-    command.downgrade(alembic, "base")
-    command.upgrade(alembic, "head")
+    deleted = reset_database(alembic, settings.database_url)
+    step(f"stored claim files deleted: {deleted}")
 
     if not REFERENCE.exists():
         step("reference data: generating (seeded)")

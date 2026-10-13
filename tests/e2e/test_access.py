@@ -48,6 +48,7 @@ def endpoints() -> list[tuple[str, str, dict[str, Any], set[str]]]:
         ("GET", "/v1/claims", {}, everyone),
         ("GET", f"/v1/claims/{CLAIM}", {}, everyone),
         ("GET", f"/v1/claims/{CLAIM}/explanation", {}, everyone),
+        ("GET", f"/v1/claims/{CLAIM}/document", {}, everyone),
         ("GET", f"/v1/claims/{CLAIM}/audit", {}, staff),
         ("GET", "/v1/review/queue", {}, staff),
         ("GET", "/v1/plans/PLN-PPO-GOLD", {}, staff),
@@ -95,6 +96,7 @@ def test_a_provider_cannot_open_another_providers_claim(api, load_case_reference
     for method, path in (
         ("GET", f"/v1/claims/{CLAIM}"),
         ("GET", f"/v1/claims/{CLAIM}/explanation"),
+        ("GET", f"/v1/claims/{CLAIM}/document"),
         ("POST", f"/v1/claims/{CLAIM}/process"),
     ):
         response = client.request(method, path, headers=other)
@@ -108,7 +110,8 @@ def test_a_provider_sees_in_review_until_the_decision_is_final(api, load_case_re
     client = process_case(api, load_case_reference, "E2E-14")
 
     view = client.get(f"/v1/claims/{CLAIM}", headers=PROVIDER).json()
-    assert (view["status"], view["final"], view["record"]) == ("IN_REVIEW", False, None)
+    assert (view["status"], view["final"], view["explanation"]) == ("IN_REVIEW", False, None)
+    assert view["outcome"] == "IN_REVIEW" and "record" not in view
     assert view["filed_by"] == "provider-test" and "review_tier" not in str(view)
     listed = client.get("/v1/claims", headers=PROVIDER).json()[0]
     assert (listed["status"], listed["claim_decision"], listed["total_allowed_cents"]) == (
@@ -128,8 +131,8 @@ def test_a_provider_sees_in_review_until_the_decision_is_final(api, load_case_re
     assert client.post(f"/v1/claims/{CLAIM}/review", json=accept).status_code == 200
 
     view = client.get(f"/v1/claims/{CLAIM}", headers=PROVIDER).json()
-    assert (view["status"], view["final"]) == ("FINAL_APPROVED", True)
-    assert view["record"]["review"]["reviewer_id"] == "reviewer-golden"
+    assert (view["status"], view["final"], view["outcome"]) == ("FINAL_APPROVED", True, "APPROVED")
+    assert view["explanation"]["heading"] == "Claim approved" and view["explanation"]["billing"]
     listed = client.get("/v1/claims", headers=PROVIDER).json()[0]
     assert listed["claim_decision"] == "APPROVE" and listed["total_allowed_cents"] is not None
     assert client.get(f"/v1/claims/{CLAIM}/explanation", headers=PROVIDER).status_code == 200
@@ -139,8 +142,8 @@ def test_a_rule_outcome_is_final_for_the_provider_at_once(api, load_case_referen
     client = process_case(api, load_case_reference, "E2E-05")  # DENIED_BY_RULE
     claim_id = E2E_CASES["E2E-05"]["given"]["claim"]["claim_id"]
     view = client.get(f"/v1/claims/{claim_id}", headers=PROVIDER).json()
-    assert (view["status"], view["final"]) == ("DENIED_BY_RULE", True)
-    assert view["record"]["status"] == "DENIED_BY_RULE" and view["adjustments"]
+    assert (view["status"], view["final"], view["outcome"]) == ("DENIED_BY_RULE", True, "DENIED")
+    assert view["explanation"]["heading"] == "Claim denied" and view["explanation"]["codes"]
 
 
 def test_review_actions_name_the_logged_in_reviewer(api, load_case_reference) -> None:  # noqa: ANN001

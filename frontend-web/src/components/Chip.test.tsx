@@ -1,17 +1,17 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import type { ClaimStatus, LineDecision } from "../api/types";
-import { FLAGS, lineReason, providerStatus, STATUS } from "../lib/labels";
-import { Chip, DecisionChip, PlainBadge, StatusChip } from "./Chip";
+import type { ClaimStatus, LineDecision, Outcome } from "../api/types";
+import { FLAGS, lineReason, OUTCOME, providerOutcome, STAFF_FILTERS, STATUS } from "../lib/labels";
+import { Chip, DecisionChip, OutcomeChip, PlainBadge, StatusChip } from "./Chip";
 
 describe("status chips", () => {
   it.each<[ClaimStatus, string, string]>([
     ["FINAL_APPROVED", "Approved", "bg-approve-tint"],
-    ["FINAL_PENDED", "Needs information", "bg-pend-tint"],
-    ["PENDED_BY_RULE", "Pended by a rule", "bg-pend-tint"],
+    ["FINAL_PENDED", "Pended", "bg-pend-tint"],
+    ["PENDED_BY_RULE", "Pended", "bg-pend-tint"],
     ["FINAL_DENIED", "Denied", "bg-deny-tint"],
-    ["DENIED_BY_RULE", "Denied by a rule", "bg-deny-tint"],
+    ["DENIED_BY_RULE", "Denied", "bg-deny-tint"],
     ["REJECTED", "Rejected", "bg-reject-tint"],
   ])("shows %s as text and an icon on a tint", (status, label, tint) => {
     render(<StatusChip status={status} />);
@@ -19,6 +19,29 @@ describe("status chips", () => {
     const chip = screen.getByText(label);
     expect(chip).toHaveClass(tint);
     expect(chip.querySelector("svg")).not.toBeNull(); // never colour alone
+  });
+
+  it("uses one label set for statuses and outcomes, told apart by their hints", () => {
+    const labels = new Set(Object.values(OUTCOME).map((l) => l.label));
+    for (const status of Object.keys(STATUS) as ClaimStatus[]) expect(labels).toContain(STATUS[status].label);
+    expect(STATUS.DENIED_BY_RULE.hint).not.toBe(STATUS.FINAL_DENIED.hint);
+    expect([...labels]).toEqual([
+      "Not processed",
+      "In review",
+      "Approved",
+      "Partly approved",
+      "Pended",
+      "Denied",
+      "Rejected",
+    ]);
+    expect(STAFF_FILTERS).toHaveLength(7);
+  });
+
+  it.each(Object.keys(OUTCOME) as Outcome[])("shows the outcome %s as text and an icon", (outcome) => {
+    render(<OutcomeChip outcome={outcome} />);
+
+    const chip = screen.getByText(OUTCOME[outcome].label);
+    expect(chip.querySelector("svg")).not.toBeNull();
   });
 
   it("shows the plain-language hint when asked", () => {
@@ -53,7 +76,7 @@ describe("status chips", () => {
 
 describe("what a provider sees", () => {
   it("shows a claim in review as In review, neutral, with no decision colour", () => {
-    render(<Chip label={providerStatus("IN_REVIEW")} showHint />);
+    render(<Chip label={providerOutcome("IN_REVIEW")} showHint />);
 
     const chip = screen.getByText("In review");
     expect(chip).not.toHaveClass("bg-approve-tint");
@@ -61,9 +84,10 @@ describe("what a provider sees", () => {
     expect(screen.getByText("A reviewer checks it; the decision shows once it is final")).toBeInTheDocument();
   });
 
-  it("shows a final status as the reviewer sees it", () => {
-    expect(providerStatus("FINAL_APPROVED")).toBe(STATUS.FINAL_APPROVED);
-    expect(providerStatus("REJECTED").label).toBe("Rejected");
+  it("shows a claim not processed yet as in review, and a final outcome as the reviewer sees it", () => {
+    expect(providerOutcome("NOT_PROCESSED").label).toBe("In review");
+    expect(providerOutcome("APPROVED")).toBe(OUTCOME.APPROVED);
+    expect(providerOutcome("REJECTED").label).toBe("Rejected");
   });
 
   it("explains a line in plain words, from its reasons or its decision", () => {

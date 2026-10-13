@@ -7,7 +7,7 @@ import { motion, useReducedMotion } from "motion/react";
 
 import type { AuditEvent, ClaimStatus, ClaimView, ProviderClaimView } from "@/api/types";
 import { money } from "@/lib/format";
-import { evidenceChecks, LOW_CONFIDENCE, STATUS, TIER, answerErrors } from "@/lib/labels";
+import { evidenceChecks, LOW_CONFIDENCE, OUTCOME, providerOutcome, STATUS, TIER, answerErrors } from "@/lib/labels";
 
 export type StageState = "done" | "problem" | "waiting" | "not-reached";
 
@@ -29,10 +29,13 @@ const RULE_OUTCOME: Record<string, string> = {
   PEND: "Pended",
 };
 
-type StageView = Pick<ClaimView, "record" | "field_confidences" | "source_format"> & { status: string };
+type StageView = Pick<ClaimView, "record" | "field_confidences" | "source_format"> & {
+  status: string;
+  outcome?: ClaimView["outcome"];
+};
 
-function intakeStage(view: Pick<ClaimView, "field_confidences" | "source_format">): Stage {
-  const low = Object.values(view.field_confidences).filter((v) => v < LOW_CONFIDENCE).length;
+function intakeStage(view: { source_format: ClaimView["source_format"]; field_confidences?: Record<string, number> }): Stage {
+  const low = Object.values(view.field_confidences ?? {}).filter((v) => v < LOW_CONFIDENCE).length;
   return {
     name: "Intake",
     state: "done",
@@ -41,29 +44,32 @@ function intakeStage(view: Pick<ClaimView, "field_confidences" | "source_format"
 }
 
 /**
- * The stages a provider sees while their claim is in review (D-AUTH-1): how far it went, from the
- * step names alone, with nothing of the recommendation or the amounts. A final claim shows the
- * full strip from its record.
+ * The stages a provider sees (D-AUTH-1, D-UI-6): how far the claim went, from the step names alone,
+ * with nothing of the recommendation, the amounts or the confidence of the fields read; once final,
+ * the outcome where the claim stopped (the checks, or the review).
  */
 export function providerStages(view: ProviderClaimView): Stage[] {
-  if (view.record) {
-    return stages({ ...view, status: view.status as ClaimStatus }, view.stages.map((event_type) => ({ event_type }) as AuditEvent));
-  }
   const seen = new Set(view.stages);
+  const byChecks = seen.has("AUTO_OUTCOME");
+  const outcome = providerOutcome(view.outcome).label;
   const step = (name: string, events: string[], result: string): Stage =>
     events.some((e) => seen.has(e))
       ? { name, state: "done", result }
       : { name, state: "not-reached", result: view.status === "RECEIVED" ? "Not processed yet" : "Not reached" };
   return [
     intakeStage(view),
-    step("Rules", ["RULES_EVALUATED"], "Checked"),
+    byChecks ? { name: "Rules", state: "problem", result: outcome } : step("Rules", ["RULES_EVALUATED"], "Checked"),
     step("Policy", ["CONTEXT_ASSEMBLED"], "Criteria found"),
     step("Model", ["SLM_RECOMMENDED", "OUTPUT_INVALID"], "Recommendation made"),
     step("Amounts", ["CALCULATED", "CALCULATION_FAILED"], "Worked out"),
     step("Explanation", ["EXPLANATION_BUILT"], "Ready"),
-    view.status === "IN_REVIEW"
-      ? { name: "Review", state: "waiting", result: "Waiting for a reviewer" }
-      : { name: "Review", state: "not-reached", result: "Not processed yet" },
+    view.final
+      ? byChecks
+        ? { name: "Review", state: "not-reached", result: "Not needed: decided by the checks" }
+        : { name: "Review", state: "done", result: outcome }
+      : view.status === "IN_REVIEW"
+        ? { name: "Review", state: "waiting", result: "Waiting for a reviewer" }
+        : { name: "Review", state: "not-reached", result: "Not processed yet" },
   ];
 }
 
@@ -107,7 +113,11 @@ export function stages(view: StageView, events: Pick<AuditEvent, "event_type">[]
   const explanation: Stage = { name: "Explanation", state: "done", result: "Ready" };
   const final = view.status.startsWith("FINAL_");
   const review: Stage = final
-    ? { name: "Review", state: "done", result: STATUS[view.status as ClaimStatus].label }
+    ? {
+        name: "Review",
+        state: "done",
+        result: view.outcome ? OUTCOME[view.outcome].label : STATUS[view.status as ClaimStatus].label,
+      }
     : view.status === "AWAITING_REVIEW"
       ? {
           name: "Review",

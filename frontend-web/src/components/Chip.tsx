@@ -2,8 +2,8 @@
 
 import { CircleCheck, CircleHelp, CircleSlash, CircleX, Clock } from "lucide-react";
 
-import type { ClaimStatus, LineDecision } from "@/api/types";
-import { DECISION, STATUS, type Label, type Tone } from "@/lib/labels";
+import type { ClaimStatus, LineDecision, Outcome } from "@/api/types";
+import { DECISION, OUTCOME, providerOutcome, STATUS, type Label, type Tone } from "@/lib/labels";
 
 const TONES: Record<Tone, { className: string; Icon: typeof CircleCheck }> = {
   approve: { className: "bg-approve-tint text-approve border-approve/25", Icon: CircleCheck },
@@ -31,6 +31,19 @@ export function Chip({ label, showHint = false }: { label: Label; showHint?: boo
 
 export function StatusChip({ status, showHint }: { status: ClaimStatus; showHint?: boolean }) {
   return <Chip label={STATUS[status]} showHint={showHint} />;
+}
+
+/** A claim's outcome, as the API names it (D-UI-6); `provider`: in review until final. */
+export function OutcomeChip({
+  outcome,
+  showHint,
+  provider = false,
+}: {
+  outcome: Outcome;
+  showHint?: boolean;
+  provider?: boolean;
+}) {
+  return <Chip label={provider ? providerOutcome(outcome) : OUTCOME[outcome]} showHint={showHint} />;
 }
 
 export function DecisionChip({ decision, showHint }: { decision: LineDecision; showHint?: boolean }) {

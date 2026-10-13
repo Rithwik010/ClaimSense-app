@@ -1,0 +1,3123 @@
+[
+ {
+  "claim_id": "CLM-DEMO-01",
+  "coinsurance_bps": 2000,
+  "field_confidences": {},
+  "outcome": "APPROVED",
+  "received": {
+   "billing_npi": "2829620345",
+   "billing_tin": "319970926",
+   "claim_id": "CLM-DEMO-01",
+   "clinical_notes": "The patient starts physical therapy with an initial evaluation. Past medical history was reviewed without changes. Treatment includes guided strengthening and balance training that need a physical therapist's skills. The patient understands the plan and wants to go ahead. A written plan of care from the evaluation sets goals: climb stairs without pain. Plan: physical therapy evaluation, low complexity.",
+   "diagnoses": [
+    "R262"
+   ],
+   "frequency_code": "1",
+   "member_id": "MBR-000152",
+   "other_coverage": null,
+   "patient": {
+    "address": {
+     "city": "West Michelle",
+     "line1": "315 Kerr Crescent",
+     "state": "NY",
+     "zip_code": "13210"
+    },
+    "date_of_birth": "1998-01-23",
+    "first_name": "Timothy",
+    "last_name": "Townsend",
+    "sex": "M"
+   },
+   "prior_auth_number": "AUTH-S60921-00006",
+   "received_date": "2026-10-28",
+   "referring_npi": "1102596032",
+   "service_lines": [
+    {
+     "charge_cents": 20100,
+     "date_of_service": "2026-10-06",
+     "diagnosis_pointers": [
+      "A"
+     ],
+     "line_no": 1,
+     "modifiers": [],
+     "place_of_service": "11",
+     "procedure_code": "97161",
+     "rendering_npi": "2829620345",
+     "units": 1
+    }
+   ],
+   "subscriber_is_patient": true
+  },
+  "record": {
+   "amounts": {
+    "lines": [
+     {
+      "allowed_cents": 12233,
+      "balance_bill_exposure_cents": 0,
+      "billed_cents": 20100,
+      "cob_primary_paid_cents": 0,
+      "coinsurance_cents": 0,
+      "contractual_adjustment_cents": 7867,
+      "copay_cents": 200,
+      "deductible_cents": 0,
+      "line_no": 1,
+      "member_pays_cents": 200,
+      "plan_pays_cents": 12033
+     }
+    ],
+    "totals": {
+     "allowed_cents": 12233,
+     "balance_bill_exposure_cents": 0,
+     "billed_cents": 20100,
+     "cob_primary_paid_cents": 0,
+     "coinsurance_cents": 0,
+     "contractual_adjustment_cents": 7867,
+     "copay_cents": 200,
+     "deductible_cents": 0,
+     "member_pays_cents": 200,
+     "plan_pays_cents": 12033
+    }
+   },
+   "claim_decision": "APPROVE",
+   "claim_id": "CLM-DEMO-01",
+   "context_refs": {
+    "claim_id": "CLM-DEMO-01",
+    "excluded_codes": [
+     "95044"
+    ],
+    "lines": [
+     {
+      "candidate_benefits": [
+       {
+        "auth_required": true,
+        "benefit_category": "REHAB_THERAPY",
+        "cost_share_rule": "COPAY",
+        "covered": true,
+        "visit_limit": 20,
+        "visits_used": 12
+       }
+      ],
+      "criteria": [
+       {
+        "criterion_id": "POL-REHAB-001.c6",
+        "criterion_type": "requirement",
+        "effective_date": "2026-01-01",
+        "policy_id": "POL-REHAB-001",
+        "policy_title": "Outpatient physical therapy",
+        "source": "LCD L34428 v93 cov-017.",
+        "text": "Services must need the skills of a licensed physical therapist: because of their complexity or the patient's condition, they can be performed safely and effectively only by a physical therapist or under a physical therapist's supervision."
+       }
+      ],
+      "line_no": 1,
+      "procedure_code": "97161",
+      "rule_flags": []
+     }
+    ],
+    "network": "IN_NETWORK",
+    "plan_id": "PLN-HMO",
+    "plan_type": "HMO"
+   },
+   "line_decisions": [
+    {
+     "benefit_category": "REHAB_THERAPY",
+     "decision": "APPROVE",
+     "line_no": 1,
+     "reason_codes": [],
+     "source": "MODEL"
+    }
+   ],
+   "output_errors": [],
+   "review": {
+    "action": "ACCEPT",
+    "claim_id": "CLM-DEMO-01",
+    "line_overrides": [],
+    "reason": null,
+    "reviewer_id": "reviewer1",
+    "timestamp": "2026-10-11T10:00:00Z"
+   },
+   "review_tier": "QUICK",
+   "rules_outcome": {
+    "claim_outcome": "PASS",
+    "flags": [],
+    "line_outcomes": [
+     {
+      "flags": [],
+      "line_no": 1,
+      "outcome": "PASS",
+      "reason_codes": []
+     }
+    ],
+    "rule_results": [
+     {
+      "detail": "Every required field is present.",
+      "fields_used": [],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R01"
+     },
+     {
+      "detail": "Every diagnosis, procedure and place-of-service code is valid.",
+      "fields_used": [
+       "diagnoses",
+       "service_lines.0.procedure_code",
+       "service_lines.0.place_of_service",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R02"
+     },
+     {
+      "detail": "Every NPI has a valid check digit.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi",
+       "referring_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R03"
+     },
+     {
+      "detail": "Member MBR-000152 found.",
+      "fields_used": [
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R04"
+     },
+     {
+      "detail": "No claim on file has the same member, provider, date and code.",
+      "fields_used": [
+       "member_id",
+       "billing_npi",
+       "service_lines.0.date_of_service",
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "DUP"
+     },
+     {
+      "detail": "Every date of service is within coverage 2025-01-01 to open.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R05"
+     },
+     {
+      "detail": "Every billing and rendering provider is enrolled.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R06"
+     },
+     {
+      "detail": "Received 22 days after the last date of service 2026-10-06; PLN-HMO in-network window 90 days.",
+      "fields_used": [
+       "received_date",
+       "service_lines.0.date_of_service",
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R07"
+     },
+     {
+      "detail": "2829620345 is in network for PLN-HMO.",
+      "fields_used": [
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R08"
+     },
+     {
+      "detail": "Referring provider 1102596032 is on the claim.",
+      "fields_used": [
+       "referring_npi",
+       "service_lines.0.rendering_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R09"
+     },
+     {
+      "detail": "Every line that needs prior authorization has one.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.procedure_code",
+       "service_lines.0.rendering_npi",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R10"
+     },
+     {
+      "detail": "No NCCI edit denies a line.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R11"
+     },
+     {
+      "detail": "No code exceeds its MUE limit on a date of service.",
+      "fields_used": [
+       "service_lines.0.units",
+       "service_lines.0.procedure_code",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R12"
+     },
+     {
+      "detail": "No code is on PLN-HMO's exclusion list.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R13"
+     },
+     {
+      "detail": "No ESI line meets another block on its date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R14"
+     },
+     {
+      "detail": "Every checked line's diagnoses support its code.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R15"
+     },
+     {
+      "detail": "No home sleep test line is for a parasomnia.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R16"
+     },
+     {
+      "detail": "No nerve conduction line is billed without needle EMG.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R17"
+     },
+     {
+      "detail": "No ESI exceeds its level limits.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R18"
+     },
+     {
+      "detail": "No third-level facet procedure and no two spinal regions on one date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R19"
+     },
+     {
+      "detail": "No more than 8 hours of testing.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R20"
+     }
+    ]
+   },
+   "slm_output": {
+    "complexity": "LOW",
+    "lines": [
+     {
+      "benefit_category": "REHAB_THERAPY",
+      "criteria": [
+       {
+        "criterion_id": "POL-REHAB-001.c6",
+        "evidence": "Treatment includes guided strengthening and balance training that need a physical therapist's skills.",
+        "status": "MET"
+       }
+      ],
+      "decision": "APPROVE",
+      "line_no": 1,
+      "missing_information": [],
+      "reasons": []
+     }
+    ]
+   },
+   "status": "FINAL_APPROVED",
+   "timestamps": {
+    "finalized": "2026-10-13T14:23:54.729540Z",
+    "processed": "2026-10-13T14:23:52.989441Z",
+    "received": "2026-10-28"
+   },
+   "versions": {
+    "model_name": "claimsense-decision:v2",
+    "policy_versions": {
+     "POL-REHAB-001": "v2@2026-01-01"
+    },
+    "prompt_version": "decision_v3",
+    "rules_version": "2.1.0"
+   }
+  },
+  "status": "FINAL_APPROVED"
+ },
+ {
+  "claim_id": "CLM-DEMO-02",
+  "coinsurance_bps": 1000,
+  "field_confidences": {
+   "billing_npi": 1.0,
+   "billing_tin": 1.0,
+   "claim_id": 1.0,
+   "clinical_notes": 1.0,
+   "diagnoses.0": 1.0,
+   "frequency_code": 1.0,
+   "member_id": 1.0,
+   "patient.address.city": 1.0,
+   "patient.address.line1": 1.0,
+   "patient.address.state": 1.0,
+   "patient.address.zip_code": 1.0,
+   "patient.date_of_birth": 1.0,
+   "patient.first_name": 1.0,
+   "patient.last_name": 1.0,
+   "patient.sex": 1.0,
+   "received_date": 1.0,
+   "service_lines.0.charge_cents": 1.0,
+   "service_lines.0.date_of_service": 1.0,
+   "service_lines.0.diagnosis_pointers": 1.0,
+   "service_lines.0.place_of_service": 1.0,
+   "service_lines.0.procedure_code": 1.0,
+   "service_lines.0.rendering_npi": 1.0,
+   "service_lines.0.units": 1.0,
+   "subscriber_is_patient": 1.0
+  },
+  "outcome": "PENDED",
+  "received": {
+   "billing_npi": "2149113906",
+   "billing_tin": "329215212",
+   "claim_id": "CLM-DEMO-02",
+   "clinical_notes": "The patient is seen for heart rhythm symptoms. Plan: wearable heart rhythm recording for up to 48 hours, with analysis and report. Vital signs are stable.",
+   "diagnoses": [
+    "R002"
+   ],
+   "frequency_code": "1",
+   "member_id": "MBR-000042",
+   "other_coverage": null,
+   "patient": {
+    "address": {
+     "city": "West Vincent",
+     "line1": "277 Robert Divide",
+     "state": "SD",
+     "zip_code": "93130"
+    },
+    "date_of_birth": "1993-03-05",
+    "first_name": "Edward",
+    "last_name": "Powers",
+    "sex": "M"
+   },
+   "prior_auth_number": null,
+   "received_date": "2026-12-15",
+   "referring_npi": null,
+   "service_lines": [
+    {
+     "charge_cents": 13200,
+     "date_of_service": "2026-11-20",
+     "diagnosis_pointers": [
+      "A"
+     ],
+     "line_no": 1,
+     "modifiers": [],
+     "place_of_service": "11",
+     "procedure_code": "93224",
+     "rendering_npi": "2149113906",
+     "units": 1
+    }
+   ],
+   "subscriber_is_patient": true
+  },
+  "record": {
+   "amounts": {
+    "lines": [
+     {
+      "allowed_cents": 0,
+      "balance_bill_exposure_cents": 0,
+      "billed_cents": 13200,
+      "cob_primary_paid_cents": 0,
+      "coinsurance_cents": 0,
+      "contractual_adjustment_cents": 0,
+      "copay_cents": 0,
+      "deductible_cents": 0,
+      "line_no": 1,
+      "member_pays_cents": 0,
+      "plan_pays_cents": 0
+     }
+    ],
+    "totals": {
+     "allowed_cents": 0,
+     "balance_bill_exposure_cents": 0,
+     "billed_cents": 13200,
+     "cob_primary_paid_cents": 0,
+     "coinsurance_cents": 0,
+     "contractual_adjustment_cents": 0,
+     "copay_cents": 0,
+     "deductible_cents": 0,
+     "member_pays_cents": 0,
+     "plan_pays_cents": 0
+    }
+   },
+   "claim_decision": "PEND",
+   "claim_id": "CLM-DEMO-02",
+   "context_refs": {
+    "claim_id": "CLM-DEMO-02",
+    "excluded_codes": [],
+    "lines": [
+     {
+      "candidate_benefits": [
+       {
+        "auth_required": false,
+        "benefit_category": "DIAGNOSTIC_TESTS",
+        "cost_share_rule": "DEDUCTIBLE_COINSURANCE",
+        "covered": true,
+        "visit_limit": null,
+        "visits_used": 0
+       }
+      ],
+      "criteria": [
+       {
+        "criterion_id": "POL-CAR-002.c4",
+        "criterion_type": "requirement",
+        "effective_date": "2026-01-01",
+        "policy_id": "POL-CAR-002",
+        "policy_title": "Wearable and event heart rhythm monitoring",
+        "source": "LCD L34636 v38 cov-004, cov-005 to cov-018.",
+        "text": "Recording for up to 48 hours is covered for one or more of: palpitations, fainting or near fainting, dizziness, chest pain, transient ischemic episodes, shortness of breath, or arrhythmias; checking the response to antiarrhythmic drugs; heart attack survivors with an ejection fraction of 40% or less; coronary artery disease with active symptoms, to correlate chest pain with ST-segment changes; other acute and subacute forms of ischemic heart disease; or detecting arrhythmias after an ablation procedure."
+       }
+      ],
+      "line_no": 1,
+      "procedure_code": "93224",
+      "rule_flags": []
+     }
+    ],
+    "network": "IN_NETWORK",
+    "plan_id": "PLN-HDHP",
+    "plan_type": "PPO"
+   },
+   "line_decisions": [
+    {
+     "benefit_category": "DIAGNOSTIC_TESTS",
+     "decision": "PEND",
+     "line_no": 1,
+     "reason_codes": [
+      "PD_MISSING_DOCUMENTATION"
+     ],
+     "source": "MODEL"
+    }
+   ],
+   "output_errors": [],
+   "review": {
+    "action": "ACCEPT",
+    "claim_id": "CLM-DEMO-02",
+    "line_overrides": [],
+    "reason": null,
+    "reviewer_id": "reviewer1",
+    "timestamp": "2026-10-11T10:00:00Z"
+   },
+   "review_tier": "STANDARD",
+   "rules_outcome": {
+    "claim_outcome": "PASS",
+    "flags": [],
+    "line_outcomes": [
+     {
+      "flags": [],
+      "line_no": 1,
+      "outcome": "PASS",
+      "reason_codes": []
+     }
+    ],
+    "rule_results": [
+     {
+      "detail": "Every required field is present.",
+      "fields_used": [],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R01"
+     },
+     {
+      "detail": "Every diagnosis, procedure and place-of-service code is valid.",
+      "fields_used": [
+       "diagnoses",
+       "service_lines.0.procedure_code",
+       "service_lines.0.place_of_service",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R02"
+     },
+     {
+      "detail": "Every NPI has a valid check digit.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi",
+       "referring_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R03"
+     },
+     {
+      "detail": "Member MBR-000042 found.",
+      "fields_used": [
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R04"
+     },
+     {
+      "detail": "No claim on file has the same member, provider, date and code.",
+      "fields_used": [
+       "member_id",
+       "billing_npi",
+       "service_lines.0.date_of_service",
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "DUP"
+     },
+     {
+      "detail": "Every date of service is within coverage 2026-01-01 to open.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R05"
+     },
+     {
+      "detail": "Every billing and rendering provider is enrolled.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R06"
+     },
+     {
+      "detail": "Received 25 days after the last date of service 2026-11-20; PLN-HDHP in-network window 90 days.",
+      "fields_used": [
+       "received_date",
+       "service_lines.0.date_of_service",
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R07"
+     },
+     {
+      "detail": "2149113906 is in network for PLN-HDHP.",
+      "fields_used": [
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R08"
+     },
+     {
+      "detail": "No line needs a referral on PLN-HDHP.",
+      "fields_used": [
+       "referring_npi",
+       "service_lines.0.rendering_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R09"
+     },
+     {
+      "detail": "Every line that needs prior authorization has one.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.procedure_code",
+       "service_lines.0.rendering_npi",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R10"
+     },
+     {
+      "detail": "No NCCI edit denies a line.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R11"
+     },
+     {
+      "detail": "No code exceeds its MUE limit on a date of service.",
+      "fields_used": [
+       "service_lines.0.units",
+       "service_lines.0.procedure_code",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R12"
+     },
+     {
+      "detail": "No code is on PLN-HDHP's exclusion list.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R13"
+     },
+     {
+      "detail": "No ESI line meets another block on its date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R14"
+     },
+     {
+      "detail": "Every checked line's diagnoses support its code.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R15"
+     },
+     {
+      "detail": "No home sleep test line is for a parasomnia.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R16"
+     },
+     {
+      "detail": "No nerve conduction line is billed without needle EMG.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R17"
+     },
+     {
+      "detail": "No ESI exceeds its level limits.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R18"
+     },
+     {
+      "detail": "No third-level facet procedure and no two spinal regions on one date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R19"
+     },
+     {
+      "detail": "No more than 8 hours of testing.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R20"
+     }
+    ]
+   },
+   "slm_output": {
+    "complexity": "MEDIUM",
+    "lines": [
+     {
+      "benefit_category": "DIAGNOSTIC_TESTS",
+      "criteria": [
+       {
+        "criterion_id": "POL-CAR-002.c4",
+        "evidence": "Not documented in the clinical notes.",
+        "status": "NOT_DOCUMENTED"
+       }
+      ],
+      "decision": "PEND",
+      "line_no": 1,
+      "missing_information": [
+       "Symptoms or a known heart condition that call for rhythm monitoring"
+      ],
+      "reasons": [
+       "PD_MISSING_DOCUMENTATION"
+      ]
+     }
+    ]
+   },
+   "status": "FINAL_PENDED",
+   "timestamps": {
+    "finalized": "2026-10-13T14:23:54.763684Z",
+    "processed": "2026-10-13T14:23:49.895234Z",
+    "received": "2026-12-15"
+   },
+   "versions": {
+    "model_name": "claimsense-decision:v2",
+    "policy_versions": {
+     "POL-CAR-002": "v2@2026-01-01"
+    },
+    "prompt_version": "decision_v3",
+    "rules_version": "2.1.0"
+   }
+  },
+  "status": "FINAL_PENDED"
+ },
+ {
+  "claim_id": "CLM-DEMO-03",
+  "coinsurance_bps": 2000,
+  "field_confidences": {},
+  "outcome": "APPROVED",
+  "received": {
+   "billing_npi": "1038710061",
+   "billing_tin": "830009852",
+   "claim_id": "CLM-DEMO-03",
+   "clinical_notes": "The patient is seen in the allergy clinic. Hives and lip swelling within minutes of eating shellfish suggest a food allergy. Vital signs are stable. A standard panel was run without linking the tests to the patient's history. Plan: skin prick allergy tests, per allergen.",
+   "diagnoses": [
+    "J4530"
+   ],
+   "frequency_code": "1",
+   "member_id": "MBR-000495",
+   "other_coverage": null,
+   "patient": {
+    "address": {
+     "city": "Lake Robert",
+     "line1": "67663 Beth Hills",
+     "state": "WI",
+     "zip_code": "63481"
+    },
+    "date_of_birth": "1995-12-01",
+    "first_name": "James",
+    "last_name": "Freeman",
+    "sex": "M"
+   },
+   "prior_auth_number": null,
+   "received_date": "2026-12-07",
+   "referring_npi": null,
+   "service_lines": [
+    {
+     "charge_cents": 17200,
+     "date_of_service": "2026-11-18",
+     "diagnosis_pointers": [
+      "A"
+     ],
+     "line_no": 1,
+     "modifiers": [],
+     "place_of_service": "11",
+     "procedure_code": "95004",
+     "rendering_npi": "1038710061",
+     "units": 21
+    }
+   ],
+   "subscriber_is_patient": true
+  },
+  "record": {
+   "amounts": {
+    "lines": [
+     {
+      "allowed_cents": 9639,
+      "balance_bill_exposure_cents": 0,
+      "billed_cents": 17200,
+      "cob_primary_paid_cents": 0,
+      "coinsurance_cents": 0,
+      "contractual_adjustment_cents": 7561,
+      "copay_cents": 0,
+      "deductible_cents": 9639,
+      "line_no": 1,
+      "member_pays_cents": 9639,
+      "plan_pays_cents": 0
+     }
+    ],
+    "totals": {
+     "allowed_cents": 9639,
+     "balance_bill_exposure_cents": 0,
+     "billed_cents": 17200,
+     "cob_primary_paid_cents": 0,
+     "coinsurance_cents": 0,
+     "contractual_adjustment_cents": 7561,
+     "copay_cents": 0,
+     "deductible_cents": 9639,
+     "member_pays_cents": 9639,
+     "plan_pays_cents": 0
+    }
+   },
+   "claim_decision": "APPROVE",
+   "claim_id": "CLM-DEMO-03",
+   "context_refs": {
+    "claim_id": "CLM-DEMO-03",
+    "excluded_codes": [],
+    "lines": [
+     {
+      "candidate_benefits": [
+       {
+        "auth_required": false,
+        "benefit_category": "DIAGNOSTIC_TESTS",
+        "cost_share_rule": "DEDUCTIBLE_COINSURANCE",
+        "covered": true,
+        "visit_limit": null,
+        "visits_used": 0
+       }
+      ],
+      "criteria": [
+       {
+        "criterion_id": "POL-DX-003.c4",
+        "criterion_type": "requirement",
+        "effective_date": "2026-01-01",
+        "policy_id": "POL-DX-003",
+        "policy_title": "Allergy testing",
+        "source": "LCD L33261 v40 cov-007, cov-008, cov-009, cov-058.",
+        "text": "Skin prick tests are covered to evaluate IgE-mediated allergy to airborne allergens, foods, stinging-insect venom, certain drugs or chemicals; intradermal tests are covered for the same allergies except foods. The tests must be correlated with the patient's history and examination."
+       },
+       {
+        "criterion_id": "POL-DX-003.c7",
+        "criterion_type": "requirement",
+        "effective_date": "2026-01-01",
+        "policy_id": "POL-DX-003",
+        "policy_title": "Allergy testing",
+        "source": "LCD L33261 v40 cov-055, cov-056.",
+        "text": "The tests chosen must match the patient's history and physical findings, and the number of tests must be justified. For an initial evaluation of airborne allergens, guidelines justify fewer than 70 prick and 40 intradermal tests; up to 80 patch tests may be needed to diagnose allergic contact dermatitis."
+       }
+      ],
+      "line_no": 1,
+      "procedure_code": "95004",
+      "rule_flags": []
+     }
+    ],
+    "network": "IN_NETWORK",
+    "plan_id": "PLN-PPO-GOLD",
+    "plan_type": "PPO"
+   },
+   "line_decisions": [
+    {
+     "benefit_category": "DIAGNOSTIC_TESTS",
+     "decision": "APPROVE",
+     "line_no": 1,
+     "reason_codes": [],
+     "source": "REVIEWER"
+    }
+   ],
+   "output_errors": [],
+   "review": {
+    "action": "OVERRIDE",
+    "claim_id": "CLM-DEMO-03",
+    "line_overrides": [
+     {
+      "benefit_category": null,
+      "decision": "APPROVE",
+      "line_no": 1,
+      "reason": "The note documents the criterion."
+     }
+    ],
+    "reason": null,
+    "reviewer_id": "reviewer1",
+    "timestamp": "2026-10-11T10:00:00Z"
+   },
+   "review_tier": "FULL",
+   "rules_outcome": {
+    "claim_outcome": "PASS",
+    "flags": [],
+    "line_outcomes": [
+     {
+      "flags": [],
+      "line_no": 1,
+      "outcome": "PASS",
+      "reason_codes": []
+     }
+    ],
+    "rule_results": [
+     {
+      "detail": "Every required field is present.",
+      "fields_used": [],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R01"
+     },
+     {
+      "detail": "Every diagnosis, procedure and place-of-service code is valid.",
+      "fields_used": [
+       "diagnoses",
+       "service_lines.0.procedure_code",
+       "service_lines.0.place_of_service",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R02"
+     },
+     {
+      "detail": "Every NPI has a valid check digit.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi",
+       "referring_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R03"
+     },
+     {
+      "detail": "Member MBR-000495 found.",
+      "fields_used": [
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R04"
+     },
+     {
+      "detail": "No claim on file has the same member, provider, date and code.",
+      "fields_used": [
+       "member_id",
+       "billing_npi",
+       "service_lines.0.date_of_service",
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "DUP"
+     },
+     {
+      "detail": "Every date of service is within coverage 2025-01-01 to open.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R05"
+     },
+     {
+      "detail": "Every billing and rendering provider is enrolled.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R06"
+     },
+     {
+      "detail": "Received 19 days after the last date of service 2026-11-18; PLN-PPO-GOLD in-network window 90 days.",
+      "fields_used": [
+       "received_date",
+       "service_lines.0.date_of_service",
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R07"
+     },
+     {
+      "detail": "1038710061 is in network for PLN-PPO-GOLD.",
+      "fields_used": [
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R08"
+     },
+     {
+      "detail": "No line needs a referral on PLN-PPO-GOLD.",
+      "fields_used": [
+       "referring_npi",
+       "service_lines.0.rendering_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R09"
+     },
+     {
+      "detail": "Every line that needs prior authorization has one.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.procedure_code",
+       "service_lines.0.rendering_npi",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R10"
+     },
+     {
+      "detail": "No NCCI edit denies a line.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R11"
+     },
+     {
+      "detail": "No code exceeds its MUE limit on a date of service.",
+      "fields_used": [
+       "service_lines.0.units",
+       "service_lines.0.procedure_code",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R12"
+     },
+     {
+      "detail": "No code is on PLN-PPO-GOLD's exclusion list.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R13"
+     },
+     {
+      "detail": "No ESI line meets another block on its date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R14"
+     },
+     {
+      "detail": "Every checked line's diagnoses support its code.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R15"
+     },
+     {
+      "detail": "No home sleep test line is for a parasomnia.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R16"
+     },
+     {
+      "detail": "No nerve conduction line is billed without needle EMG.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R17"
+     },
+     {
+      "detail": "No ESI exceeds its level limits.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R18"
+     },
+     {
+      "detail": "No third-level facet procedure and no two spinal regions on one date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R19"
+     },
+     {
+      "detail": "No more than 8 hours of testing.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R20"
+     }
+    ]
+   },
+   "slm_output": {
+    "complexity": "MEDIUM",
+    "lines": [
+     {
+      "benefit_category": "DIAGNOSTIC_TESTS",
+      "criteria": [
+       {
+        "criterion_id": "POL-DX-003.c4",
+        "evidence": "Hives and lip swelling within minutes of eating shellfish suggest a food allergy.",
+        "status": "MET"
+       },
+       {
+        "criterion_id": "POL-DX-003.c7",
+        "evidence": "A standard panel was run without linking the tests to the patient's history.",
+        "status": "NOT_MET"
+       }
+      ],
+      "decision": "DENY",
+      "line_no": 1,
+      "missing_information": [],
+      "reasons": [
+       "DN_NOT_MEDICALLY_NECESSARY"
+      ]
+     }
+    ]
+   },
+   "status": "FINAL_APPROVED",
+   "timestamps": {
+    "finalized": "2026-10-13T14:23:57.379952Z",
+    "processed": "2026-10-13T14:23:54.804536Z",
+    "received": "2026-12-07"
+   },
+   "versions": {
+    "model_name": "claimsense-decision:v2",
+    "policy_versions": {
+     "POL-DX-003": "v2@2026-01-01"
+    },
+    "prompt_version": "decision_v3",
+    "rules_version": "2.1.0"
+   }
+  },
+  "status": "FINAL_APPROVED"
+ },
+ {
+  "claim_id": "CLM-DEMO-04",
+  "coinsurance_bps": 2000,
+  "field_confidences": {},
+  "outcome": "PARTLY_APPROVED",
+  "received": {
+   "billing_npi": "1816701100",
+   "billing_tin": "991233153",
+   "claim_id": "CLM-DEMO-04",
+   "clinical_notes": "Onychomycotic nails, painful. PMH reviewed, no change. Monofilament: absent at 5/5 sites right foot. Non-professional care unsafe. Plan -> trimming and cleaning of thickened toenails, 6 or more nails.",
+   "diagnoses": [
+    "E1140",
+    "B351"
+   ],
+   "frequency_code": "1",
+   "member_id": "MBR-000150",
+   "other_coverage": null,
+   "patient": {
+    "address": {
+     "city": "Andreborough",
+     "line1": "019 Lyons Grove Suite 183",
+     "state": "UT",
+     "zip_code": "02349"
+    },
+    "date_of_birth": "1956-03-10",
+    "first_name": "Stephanie",
+    "last_name": "Wilson",
+    "sex": "F"
+   },
+   "prior_auth_number": null,
+   "received_date": "2026-10-10",
+   "referring_npi": null,
+   "service_lines": [
+    {
+     "charge_cents": 11500,
+     "date_of_service": "2026-10-02",
+     "diagnosis_pointers": [
+      "A",
+      "B"
+     ],
+     "line_no": 1,
+     "modifiers": [],
+     "place_of_service": "11",
+     "procedure_code": "11721",
+     "rendering_npi": "1816701100",
+     "units": 1
+    },
+    {
+     "charge_cents": 7500,
+     "date_of_service": "2026-10-02",
+     "diagnosis_pointers": [
+      "A",
+      "B"
+     ],
+     "line_no": 2,
+     "modifiers": [],
+     "place_of_service": "11",
+     "procedure_code": "11720",
+     "rendering_npi": "1816701100",
+     "units": 1
+    }
+   ],
+   "subscriber_is_patient": true
+  },
+  "record": {
+   "amounts": {
+    "lines": [
+     {
+      "allowed_cents": 5636,
+      "balance_bill_exposure_cents": 0,
+      "billed_cents": 11500,
+      "cob_primary_paid_cents": 0,
+      "coinsurance_cents": 427,
+      "contractual_adjustment_cents": 5864,
+      "copay_cents": 0,
+      "deductible_cents": 3500,
+      "line_no": 1,
+      "member_pays_cents": 3927,
+      "plan_pays_cents": 1709
+     },
+     {
+      "allowed_cents": 0,
+      "balance_bill_exposure_cents": 0,
+      "billed_cents": 7500,
+      "cob_primary_paid_cents": 0,
+      "coinsurance_cents": 0,
+      "contractual_adjustment_cents": 0,
+      "copay_cents": 0,
+      "deductible_cents": 0,
+      "line_no": 2,
+      "member_pays_cents": 0,
+      "plan_pays_cents": 0
+     }
+    ],
+    "totals": {
+     "allowed_cents": 5636,
+     "balance_bill_exposure_cents": 0,
+     "billed_cents": 19000,
+     "cob_primary_paid_cents": 0,
+     "coinsurance_cents": 427,
+     "contractual_adjustment_cents": 5864,
+     "copay_cents": 0,
+     "deductible_cents": 3500,
+     "member_pays_cents": 3927,
+     "plan_pays_cents": 1709
+    }
+   },
+   "claim_decision": "PARTIAL",
+   "claim_id": "CLM-DEMO-04",
+   "context_refs": {
+    "claim_id": "CLM-DEMO-04",
+    "excluded_codes": [],
+    "lines": [
+     {
+      "candidate_benefits": [
+       {
+        "auth_required": false,
+        "benefit_category": "MINOR_PROCEDURES",
+        "cost_share_rule": "DEDUCTIBLE_COINSURANCE",
+        "covered": true,
+        "visit_limit": null,
+        "visits_used": 0
+       }
+      ],
+      "criteria": [
+       {
+        "criterion_id": "POL-FOOT-001.c1",
+        "criterion_type": "conditional",
+        "effective_date": "2026-01-01",
+        "group": "indication",
+        "policy_id": "POL-FOOT-001",
+        "policy_title": "Routine foot care (nail debridement)",
+        "source": "LCD L33941 v23, Covered indications.",
+        "text": "Routine foot care is covered for nerve damage in the feet (without blood-vessel impairment) severe enough that care by a non-professional would put the patient at risk. The record must document loss of protective sensation: no feeling at 2 or more of 5 sites on either foot with the 5.07 Semmes-Weinstein monofilament."
+       },
+       {
+        "criterion_id": "POL-FOOT-001.c2",
+        "criterion_type": "conditional",
+        "effective_date": "2026-01-01",
+        "group": "indication",
+        "policy_id": "POL-FOOT-001",
+        "policy_title": "Routine foot care (nail debridement)",
+        "source": "LCD L33941 v23, Covered indications.",
+        "text": "It is covered for patients on blood thinners when the record documents the significant risk of non-professional foot care."
+       },
+       {
+        "criterion_id": "POL-FOOT-001.c4",
+        "criterion_type": "conditional",
+        "effective_date": "2026-01-01",
+        "group": "indication",
+        "policy_id": "POL-FOOT-001",
+        "policy_title": "Routine foot care (nail debridement)",
+        "source": "Medicare Benefit Policy Manual Ch. 15 \u00a7290.C.3, \u00a7290.D, \u00a7290.F, \u00a7290.G; LCD L33941 v23 cov-000.",
+        "text": "Foot care that would otherwise be routine is covered when a systemic condition, such as diabetes, arteriosclerosis obliterans, Buerger's disease, chronic thrombophlebitis or a peripheral neuropathy involving the feet, causes severe circulatory problems or areas of reduced sensation in the legs or feet, so that care by a non-professional would be hazardous. A diagnosis alone does not show the severity: the record must show it, for example by a non-traumatic amputation of the foot or part of it; two Class B findings (absent posterior tibial pulse, absent dorsalis pedis pulse, or advanced trophic changes, three of which are needed); or one Class B and two Class C findings (claudication, temperature changes such as cold feet, edema, paresthesias, burning). For diabetes, chronic thrombophlebitis and the neuropathies marked in the manual, the patient must be under the active care of a doctor of medicine or osteopathy who documents the condition."
+       },
+       {
+        "criterion_id": "POL-FOOT-001.c5",
+        "criterion_type": "conditional",
+        "effective_date": "2026-01-01",
+        "group": "indication",
+        "policy_id": "POL-FOOT-001",
+        "policy_title": "Routine foot care (nail debridement)",
+        "source": "Medicare Benefit Policy Manual Ch. 15 \u00a7290.C.4; LCD L33941 v23 cov-000.",
+        "text": "Without a systemic condition, treatment of mycotic (fungal) toenails is covered only when the physician attending the mycotic condition documents clinical evidence of mycosis of the toenail and, for a patient who can walk, marked limitation of walking, pain, or secondary infection caused by the thickened, dystrophic nail plate; for a patient who cannot walk, pain or secondary infection caused by it."
+       },
+       {
+        "criterion_id": "POL-FOOT-001.c6",
+        "criterion_type": "exclusion",
+        "effective_date": "2026-01-01",
+        "policy_id": "POL-FOOT-001",
+        "policy_title": "Routine foot care (nail debridement)",
+        "source": "Medicare Benefit Policy Manual Ch. 15 \u00a7290.B.2; LCD L33941 v23 cov-000.",
+        "text": "Except in the situations this policy covers, routine foot care, such as cutting or removing corns and calluses or trimming, cutting, clipping or debriding nails, is not covered."
+       }
+      ],
+      "line_no": 1,
+      "procedure_code": "11721",
+      "rule_flags": []
+     }
+    ],
+    "network": "IN_NETWORK",
+    "plan_id": "PLN-PPO-GOLD",
+    "plan_type": "PPO"
+   },
+   "line_decisions": [
+    {
+     "benefit_category": "MINOR_PROCEDURES",
+     "decision": "APPROVE",
+     "line_no": 1,
+     "reason_codes": [],
+     "source": "MODEL"
+    },
+    {
+     "benefit_category": null,
+     "decision": "DENY",
+     "line_no": 2,
+     "reason_codes": [
+      "DN_NCCI_BUNDLED"
+     ],
+     "source": "RULE"
+    }
+   ],
+   "output_errors": [],
+   "review": {
+    "action": "ACCEPT",
+    "claim_id": "CLM-DEMO-04",
+    "line_overrides": [],
+    "reason": null,
+    "reviewer_id": "reviewer1",
+    "timestamp": "2026-10-11T10:00:00Z"
+   },
+   "review_tier": "FULL",
+   "rules_outcome": {
+    "claim_outcome": "PASS",
+    "flags": [],
+    "line_outcomes": [
+     {
+      "flags": [],
+      "line_no": 1,
+      "outcome": "PASS",
+      "reason_codes": []
+     },
+     {
+      "flags": [],
+      "line_no": 2,
+      "outcome": "DENY",
+      "reason_codes": [
+       "DN_NCCI_BUNDLED"
+      ]
+     }
+    ],
+    "rule_results": [
+     {
+      "detail": "Every required field is present.",
+      "fields_used": [],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R01"
+     },
+     {
+      "detail": "Every diagnosis, procedure and place-of-service code is valid.",
+      "fields_used": [
+       "diagnoses",
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code",
+       "service_lines.0.place_of_service",
+       "service_lines.1.place_of_service",
+       "service_lines.0.modifiers",
+       "service_lines.1.modifiers",
+       "service_lines.0.date_of_service",
+       "service_lines.1.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R02"
+     },
+     {
+      "detail": "Every NPI has a valid check digit.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi",
+       "service_lines.1.rendering_npi",
+       "referring_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R03"
+     },
+     {
+      "detail": "Member MBR-000150 found.",
+      "fields_used": [
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R04"
+     },
+     {
+      "detail": "No claim on file has the same member, provider, date and code.",
+      "fields_used": [
+       "member_id",
+       "billing_npi",
+       "service_lines.0.date_of_service",
+       "service_lines.1.date_of_service",
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "DUP"
+     },
+     {
+      "detail": "Every date of service is within coverage 2025-01-01 to open.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.date_of_service",
+       "service_lines.1.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R05"
+     },
+     {
+      "detail": "Every billing and rendering provider is enrolled.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi",
+       "service_lines.1.rendering_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R06"
+     },
+     {
+      "detail": "Received 8 days after the last date of service 2026-10-02; PLN-PPO-GOLD in-network window 90 days.",
+      "fields_used": [
+       "received_date",
+       "service_lines.0.date_of_service",
+       "service_lines.1.date_of_service",
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R07"
+     },
+     {
+      "detail": "1816701100 is in network for PLN-PPO-GOLD.",
+      "fields_used": [
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R08"
+     },
+     {
+      "detail": "No line needs a referral on PLN-PPO-GOLD.",
+      "fields_used": [
+       "referring_npi",
+       "service_lines.0.rendering_npi",
+       "service_lines.1.rendering_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R09"
+     },
+     {
+      "detail": "Every line that needs prior authorization has one.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code",
+       "service_lines.0.rendering_npi",
+       "service_lines.1.rendering_npi",
+       "service_lines.0.date_of_service",
+       "service_lines.1.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R10"
+     },
+     {
+      "detail": "No code exceeds its MUE limit on a date of service.",
+      "fields_used": [
+       "service_lines.0.units",
+       "service_lines.1.units",
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code",
+       "service_lines.0.date_of_service",
+       "service_lines.1.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R12"
+     },
+     {
+      "detail": "No code is on PLN-PPO-GOLD's exclusion list.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R13"
+     },
+     {
+      "detail": "No ESI line meets another block on its date.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R14"
+     },
+     {
+      "detail": "Every checked line's diagnoses support its code.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R15"
+     },
+     {
+      "detail": "No home sleep test line is for a parasomnia.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R16"
+     },
+     {
+      "detail": "No nerve conduction line is billed without needle EMG.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R17"
+     },
+     {
+      "detail": "No ESI exceeds its level limits.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R18"
+     },
+     {
+      "detail": "No third-level facet procedure and no two spinal regions on one date.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R19"
+     },
+     {
+      "detail": "No more than 8 hours of testing.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R20"
+     },
+     {
+      "detail": "Line 2 is bundled: NCCI edit 11721/11720 (modifier indicator 0) with line 1, no bypass allowed.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.1.procedure_code",
+       "service_lines.0.modifiers",
+       "service_lines.1.modifiers",
+       "service_lines.0.date_of_service",
+       "service_lines.1.date_of_service"
+      ],
+      "line_no": 2,
+      "outcome": "DENY",
+      "passed": false,
+      "reason_code": "DN_NCCI_BUNDLED",
+      "rule_id": "R11"
+     }
+    ]
+   },
+   "slm_output": {
+    "complexity": "HIGH",
+    "lines": [
+     {
+      "benefit_category": "MINOR_PROCEDURES",
+      "criteria": [
+       {
+        "criterion_id": "POL-FOOT-001.c1",
+        "evidence": "Monofilament: absent at 5/5 sites right foot.",
+        "status": "MET"
+       },
+       {
+        "criterion_id": "POL-FOOT-001.c2",
+        "evidence": "Does not apply to this service.",
+        "status": "NOT_APPLICABLE"
+       },
+       {
+        "criterion_id": "POL-FOOT-001.c4",
+        "evidence": "Does not apply to this service.",
+        "status": "NOT_APPLICABLE"
+       },
+       {
+        "criterion_id": "POL-FOOT-001.c5",
+        "evidence": "Does not apply to this service.",
+        "status": "NOT_APPLICABLE"
+       },
+       {
+        "criterion_id": "POL-FOOT-001.c6",
+        "evidence": "Does not apply to this service.",
+        "status": "NOT_APPLICABLE"
+       }
+      ],
+      "decision": "APPROVE",
+      "line_no": 1,
+      "missing_information": [],
+      "reasons": []
+     }
+    ]
+   },
+   "status": "FINAL_PARTIAL",
+   "timestamps": {
+    "finalized": "2026-10-13T14:24:01.724678Z",
+    "processed": "2026-10-13T14:23:57.428775Z",
+    "received": "2026-10-10"
+   },
+   "versions": {
+    "model_name": "claimsense-decision:v2",
+    "policy_versions": {
+     "POL-FOOT-001": "v2@2026-01-01"
+    },
+    "prompt_version": "decision_v3",
+    "rules_version": "2.1.0"
+   }
+  },
+  "status": "FINAL_PARTIAL"
+ },
+ {
+  "claim_id": "CLM-DEMO-05",
+  "coinsurance_bps": null,
+  "field_confidences": {},
+  "outcome": "DENIED",
+  "received": {
+   "billing_npi": "1039186980",
+   "billing_tin": "626413097",
+   "claim_id": "CLM-DEMO-05",
+   "clinical_notes": "The patient reports hard stools and infrequent bowel movements. Plan: therapeutic exercise to build strength, flexibility or endurance, each 15 minutes. Past medical history was reviewed without changes.",
+   "diagnoses": [
+    "K5900"
+   ],
+   "frequency_code": "1",
+   "member_id": "MBR-000325",
+   "other_coverage": null,
+   "patient": {
+    "address": {
+     "city": "Nicholasfurt",
+     "line1": "203 Brown Circle",
+     "state": "AR",
+     "zip_code": "38055"
+    },
+    "date_of_birth": "1979-11-13",
+    "first_name": "Nathaniel",
+    "last_name": "Williams",
+    "sex": "M"
+   },
+   "prior_auth_number": null,
+   "received_date": "2026-11-09",
+   "referring_npi": null,
+   "service_lines": [
+    {
+     "charge_cents": 19700,
+     "date_of_service": "2026-11-04",
+     "diagnosis_pointers": [
+      "A"
+     ],
+     "line_no": 1,
+     "modifiers": [],
+     "place_of_service": "11",
+     "procedure_code": "97110",
+     "rendering_npi": "1039186980",
+     "units": 3
+    }
+   ],
+   "subscriber_is_patient": true
+  },
+  "record": {
+   "amounts": null,
+   "claim_decision": null,
+   "claim_id": "CLM-DEMO-05",
+   "context_refs": null,
+   "line_decisions": [],
+   "output_errors": [],
+   "review": null,
+   "review_tier": null,
+   "rules_outcome": {
+    "claim_outcome": "DENY",
+    "flags": [],
+    "line_outcomes": [
+     {
+      "flags": [],
+      "line_no": 1,
+      "outcome": "DENY",
+      "reason_codes": [
+       "DN_DX_NOT_SUPPORTED"
+      ]
+     }
+    ],
+    "rule_results": [
+     {
+      "detail": "Every required field is present.",
+      "fields_used": [],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R01"
+     },
+     {
+      "detail": "Every diagnosis, procedure and place-of-service code is valid.",
+      "fields_used": [
+       "diagnoses",
+       "service_lines.0.procedure_code",
+       "service_lines.0.place_of_service",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R02"
+     },
+     {
+      "detail": "Every NPI has a valid check digit.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi",
+       "referring_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R03"
+     },
+     {
+      "detail": "Member MBR-000325 found.",
+      "fields_used": [
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R04"
+     },
+     {
+      "detail": "No claim on file has the same member, provider, date and code.",
+      "fields_used": [
+       "member_id",
+       "billing_npi",
+       "service_lines.0.date_of_service",
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "DUP"
+     },
+     {
+      "detail": "Every date of service is within coverage 2026-01-01 to open.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R05"
+     },
+     {
+      "detail": "Every billing and rendering provider is enrolled.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R06"
+     },
+     {
+      "detail": "Received 5 days after the last date of service 2026-11-04; PLN-PPO-SILVER in-network window 90 days.",
+      "fields_used": [
+       "received_date",
+       "service_lines.0.date_of_service",
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R07"
+     },
+     {
+      "detail": "1039186980 is in network for PLN-PPO-SILVER.",
+      "fields_used": [
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R08"
+     },
+     {
+      "detail": "No line needs a referral on PLN-PPO-SILVER.",
+      "fields_used": [
+       "referring_npi",
+       "service_lines.0.rendering_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R09"
+     },
+     {
+      "detail": "Every line that needs prior authorization has one.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.procedure_code",
+       "service_lines.0.rendering_npi",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R10"
+     },
+     {
+      "detail": "No NCCI edit denies a line.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R11"
+     },
+     {
+      "detail": "No code exceeds its MUE limit on a date of service.",
+      "fields_used": [
+       "service_lines.0.units",
+       "service_lines.0.procedure_code",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R12"
+     },
+     {
+      "detail": "No code is on PLN-PPO-SILVER's exclusion list.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R13"
+     },
+     {
+      "detail": "No ESI line meets another block on its date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R14"
+     },
+     {
+      "detail": "No home sleep test line is for a parasomnia.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R16"
+     },
+     {
+      "detail": "No nerve conduction line is billed without needle EMG.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R17"
+     },
+     {
+      "detail": "No ESI exceeds its level limits.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R18"
+     },
+     {
+      "detail": "No third-level facet procedure and no two spinal regions on one date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R19"
+     },
+     {
+      "detail": "No more than 8 hours of testing.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R20"
+     },
+     {
+      "detail": "Line 1: no diagnosis of the line supports 97110 under A53065.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.0.diagnosis_pointers",
+       "diagnoses.0"
+      ],
+      "line_no": 1,
+      "outcome": "DENY",
+      "passed": false,
+      "reason_code": "DN_DX_NOT_SUPPORTED",
+      "rule_id": "R15"
+     }
+    ]
+   },
+   "slm_output": null,
+   "status": "DENIED_BY_RULE",
+   "timestamps": {
+    "finalized": null,
+    "processed": "2026-10-13T14:24:01.789005Z",
+    "received": "2026-11-09"
+   },
+   "versions": {
+    "model_name": null,
+    "policy_versions": {},
+    "prompt_version": null,
+    "rules_version": "2.1.0"
+   }
+  },
+  "status": "DENIED_BY_RULE"
+ },
+ {
+  "claim_id": "CLM-DEMO-06",
+  "coinsurance_bps": null,
+  "field_confidences": {},
+  "outcome": "REJECTED",
+  "received": {
+   "billing_npi": "1816701101",
+   "billing_tin": "991233153",
+   "claim_id": "CLM-DEMO-06",
+   "clinical_notes": "Onychomycotic nails, painful. Monofilament: absent at 4/5 sites left foot. VS WNL. Non-professional care unsafe. Plan -> trimming and cleaning of thickened toenails, 6 or more nails.",
+   "diagnoses": [
+    "G609",
+    "B351"
+   ],
+   "frequency_code": "1",
+   "member_id": "MBR-000128",
+   "other_coverage": null,
+   "patient": {
+    "address": {
+     "city": "Lake Elizabethmouth",
+     "line1": "1630 Lucas Points",
+     "state": "MD",
+     "zip_code": "67488"
+    },
+    "date_of_birth": "1974-04-06",
+    "first_name": "Paula",
+    "last_name": "Gross",
+    "sex": "F"
+   },
+   "prior_auth_number": null,
+   "received_date": "2026-11-27",
+   "referring_npi": null,
+   "service_lines": [
+    {
+     "charge_cents": 9200,
+     "date_of_service": "2026-11-24",
+     "diagnosis_pointers": [
+      "A",
+      "B"
+     ],
+     "line_no": 1,
+     "modifiers": [],
+     "place_of_service": "11",
+     "procedure_code": "11721",
+     "rendering_npi": "1816701100",
+     "units": 1
+    }
+   ],
+   "subscriber_is_patient": true
+  },
+  "record": {
+   "amounts": null,
+   "claim_decision": null,
+   "claim_id": "CLM-DEMO-06",
+   "context_refs": null,
+   "line_decisions": [],
+   "output_errors": [],
+   "review": null,
+   "review_tier": null,
+   "rules_outcome": {
+    "claim_outcome": "REJECT",
+    "flags": [],
+    "line_outcomes": [],
+    "rule_results": [
+     {
+      "detail": "NPI not 10 digits with a valid check digit: billing_npi.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi",
+       "referring_npi"
+      ],
+      "line_no": null,
+      "outcome": "REJECT",
+      "passed": false,
+      "reason_code": "RJ_INVALID_NPI",
+      "rule_id": "R03"
+     },
+     {
+      "detail": "Member MBR-000128 found.",
+      "fields_used": [
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R04"
+     }
+    ]
+   },
+   "slm_output": null,
+   "status": "REJECTED",
+   "timestamps": {
+    "finalized": null,
+    "processed": "2026-10-13T14:24:01.983843Z",
+    "received": "2026-11-27"
+   },
+   "versions": {
+    "model_name": null,
+    "policy_versions": {},
+    "prompt_version": null,
+    "rules_version": "2.1.0"
+   }
+  },
+  "status": "REJECTED"
+ },
+ {
+  "claim_id": "CLM-DEMO-07",
+  "coinsurance_bps": null,
+  "field_confidences": {},
+  "outcome": "REJECTED",
+  "received": {
+   "billing_npi": "2829620345",
+   "billing_tin": "319970926",
+   "claim_id": "CLM-DEMO-07",
+   "clinical_notes": "The patient starts physical therapy with an initial evaluation. Past medical history was reviewed without changes. Treatment includes guided strengthening and balance training that need a physical therapist's skills. The patient understands the plan and wants to go ahead. A written plan of care from the evaluation sets goals: climb stairs without pain. Plan: physical therapy evaluation, low complexity.",
+   "diagnoses": [
+    "R262"
+   ],
+   "frequency_code": "1",
+   "member_id": "MBR-000152",
+   "other_coverage": null,
+   "patient": {
+    "address": {
+     "city": "West Michelle",
+     "line1": "315 Kerr Crescent",
+     "state": "NY",
+     "zip_code": "13210"
+    },
+    "date_of_birth": "1998-01-23",
+    "first_name": "Timothy",
+    "last_name": "Townsend",
+    "sex": "M"
+   },
+   "prior_auth_number": "AUTH-S60921-00006",
+   "received_date": "2026-10-28",
+   "referring_npi": "1102596032",
+   "service_lines": [
+    {
+     "charge_cents": 20100,
+     "date_of_service": "2026-10-06",
+     "diagnosis_pointers": [
+      "A"
+     ],
+     "line_no": 1,
+     "modifiers": [],
+     "place_of_service": "11",
+     "procedure_code": "97161",
+     "rendering_npi": "2829620345",
+     "units": 1
+    }
+   ],
+   "subscriber_is_patient": true
+  },
+  "record": {
+   "amounts": null,
+   "claim_decision": null,
+   "claim_id": "CLM-DEMO-07",
+   "context_refs": null,
+   "line_decisions": [],
+   "output_errors": [],
+   "review": null,
+   "review_tier": null,
+   "rules_outcome": {
+    "claim_outcome": "REJECT",
+    "flags": [],
+    "line_outcomes": [],
+    "rule_results": [
+     {
+      "detail": "Every required field is present.",
+      "fields_used": [],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R01"
+     },
+     {
+      "detail": "Every diagnosis, procedure and place-of-service code is valid.",
+      "fields_used": [
+       "diagnoses",
+       "service_lines.0.procedure_code",
+       "service_lines.0.place_of_service",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R02"
+     },
+     {
+      "detail": "Every NPI has a valid check digit.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi",
+       "referring_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R03"
+     },
+     {
+      "detail": "Member MBR-000152 found.",
+      "fields_used": [
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R04"
+     },
+     {
+      "detail": "Duplicate of a claim on file: line 1 repeats claim CLM-DEMO-01.",
+      "fields_used": [
+       "member_id",
+       "billing_npi",
+       "service_lines.0.date_of_service",
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "REJECT",
+      "passed": false,
+      "reason_code": "RJ_DUPLICATE",
+      "rule_id": "DUP"
+     }
+    ]
+   },
+   "slm_output": null,
+   "status": "REJECTED",
+   "timestamps": {
+    "finalized": null,
+    "processed": "2026-10-13T14:24:02.023314Z",
+    "received": "2026-10-28"
+   },
+   "versions": {
+    "model_name": null,
+    "policy_versions": {},
+    "prompt_version": null,
+    "rules_version": "2.1.0"
+   }
+  },
+  "status": "REJECTED"
+ },
+ {
+  "claim_id": "CLM-DEMO-08",
+  "coinsurance_bps": 3000,
+  "field_confidences": {
+   "billing_npi": 0.95,
+   "billing_tin": 0.96,
+   "claim_id": 0.66,
+   "clinical_notes": 0.95,
+   "diagnoses.0": 0.0,
+   "frequency_code": 0.9,
+   "member_id": 0.9,
+   "patient.address.city": 0.88,
+   "patient.address.line1": 0.95,
+   "patient.address.state": 0.94,
+   "patient.address.zip_code": 0.96,
+   "patient.date_of_birth": 0.92,
+   "patient.first_name": 0.96,
+   "patient.last_name": 0.92,
+   "patient.sex": 0.88,
+   "received_date": 0.96,
+   "service_lines.0.charge_cents": 0.92,
+   "service_lines.0.date_of_service": 0.96,
+   "service_lines.0.diagnosis_pointers": 0.96,
+   "service_lines.0.place_of_service": 0.94,
+   "service_lines.0.procedure_code": 0.96,
+   "service_lines.0.rendering_npi": 0.96,
+   "service_lines.0.units": 0.78,
+   "subscriber_is_patient": 0.96
+  },
+  "outcome": "IN_REVIEW",
+  "received": {
+   "billing_npi": "2149113906",
+   "billing_tin": "329215212",
+   "claim_id": "CLM-DEMO-08",
+   "clinical_notes": "The patient is seen for heart rhythm symptoms. Allergies: none known. The patient reports episodes of palpitations with lightheadedness. Plan: wearable heart rhythm recording for up to 48 hours, with analysis and report. Past medical history was reviewed without changes.",
+   "diagnoses": [
+    "I4891"
+   ],
+   "frequency_code": "1",
+   "member_id": "MBR-000300",
+   "other_coverage": null,
+   "patient": {
+    "address": {
+     "city": "Campbellborough",
+     "line1": "071 Sarah Station Suite 984",
+     "state": "FM",
+     "zip_code": "35215"
+    },
+    "date_of_birth": "2000-09-01",
+    "first_name": "Victoria",
+    "last_name": "Garcia",
+    "sex": "F"
+   },
+   "prior_auth_number": null,
+   "received_date": "2026-10-16",
+   "referring_npi": null,
+   "service_lines": [
+    {
+     "charge_cents": 16800,
+     "date_of_service": "2026-10-02",
+     "diagnosis_pointers": [
+      "A"
+     ],
+     "line_no": 1,
+     "modifiers": [],
+     "place_of_service": "11",
+     "procedure_code": "93224",
+     "rendering_npi": "2149113906",
+     "units": 1
+    }
+   ],
+   "subscriber_is_patient": true
+  },
+  "record": {
+   "amounts": {
+    "lines": [
+     {
+      "allowed_cents": 8810,
+      "balance_bill_exposure_cents": 0,
+      "billed_cents": 16800,
+      "cob_primary_paid_cents": 0,
+      "coinsurance_cents": 0,
+      "contractual_adjustment_cents": 7990,
+      "copay_cents": 0,
+      "deductible_cents": 8810,
+      "line_no": 1,
+      "member_pays_cents": 8810,
+      "plan_pays_cents": 0
+     }
+    ],
+    "totals": {
+     "allowed_cents": 8810,
+     "balance_bill_exposure_cents": 0,
+     "billed_cents": 16800,
+     "cob_primary_paid_cents": 0,
+     "coinsurance_cents": 0,
+     "contractual_adjustment_cents": 7990,
+     "copay_cents": 0,
+     "deductible_cents": 8810,
+     "member_pays_cents": 8810,
+     "plan_pays_cents": 0
+    }
+   },
+   "claim_decision": "APPROVE",
+   "claim_id": "CLM-DEMO-08",
+   "context_refs": {
+    "claim_id": "CLM-DEMO-08",
+    "excluded_codes": [
+     "64635"
+    ],
+    "lines": [
+     {
+      "candidate_benefits": [
+       {
+        "auth_required": false,
+        "benefit_category": "DIAGNOSTIC_TESTS",
+        "cost_share_rule": "DEDUCTIBLE_COINSURANCE",
+        "covered": true,
+        "visit_limit": null,
+        "visits_used": 0
+       }
+      ],
+      "criteria": [
+       {
+        "criterion_id": "POL-CAR-002.c4",
+        "criterion_type": "requirement",
+        "effective_date": "2026-01-01",
+        "policy_id": "POL-CAR-002",
+        "policy_title": "Wearable and event heart rhythm monitoring",
+        "source": "LCD L34636 v38 cov-004, cov-005 to cov-018.",
+        "text": "Recording for up to 48 hours is covered for one or more of: palpitations, fainting or near fainting, dizziness, chest pain, transient ischemic episodes, shortness of breath, or arrhythmias; checking the response to antiarrhythmic drugs; heart attack survivors with an ejection fraction of 40% or less; coronary artery disease with active symptoms, to correlate chest pain with ST-segment changes; other acute and subacute forms of ischemic heart disease; or detecting arrhythmias after an ablation procedure."
+       }
+      ],
+      "line_no": 1,
+      "procedure_code": "93224",
+      "rule_flags": []
+     }
+    ],
+    "network": "IN_NETWORK",
+    "plan_id": "PLN-PPO-SILVER",
+    "plan_type": "PPO"
+   },
+   "line_decisions": [
+    {
+     "benefit_category": "DIAGNOSTIC_TESTS",
+     "decision": "APPROVE",
+     "line_no": 1,
+     "reason_codes": [],
+     "source": "MODEL"
+    }
+   ],
+   "output_errors": [],
+   "review": null,
+   "review_tier": "STANDARD",
+   "rules_outcome": {
+    "claim_outcome": "PASS",
+    "flags": [],
+    "line_outcomes": [
+     {
+      "flags": [],
+      "line_no": 1,
+      "outcome": "PASS",
+      "reason_codes": []
+     }
+    ],
+    "rule_results": [
+     {
+      "detail": "Every required field is present.",
+      "fields_used": [],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R01"
+     },
+     {
+      "detail": "Every diagnosis, procedure and place-of-service code is valid.",
+      "fields_used": [
+       "diagnoses",
+       "service_lines.0.procedure_code",
+       "service_lines.0.place_of_service",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R02"
+     },
+     {
+      "detail": "Every NPI has a valid check digit.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi",
+       "referring_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R03"
+     },
+     {
+      "detail": "Member MBR-000300 found.",
+      "fields_used": [
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R04"
+     },
+     {
+      "detail": "No claim on file has the same member, provider, date and code.",
+      "fields_used": [
+       "member_id",
+       "billing_npi",
+       "service_lines.0.date_of_service",
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "DUP"
+     },
+     {
+      "detail": "Every date of service is within coverage 2026-01-01 to open.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R05"
+     },
+     {
+      "detail": "Every billing and rendering provider is enrolled.",
+      "fields_used": [
+       "billing_npi",
+       "service_lines.0.rendering_npi"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R06"
+     },
+     {
+      "detail": "Received 14 days after the last date of service 2026-10-02; PLN-PPO-SILVER in-network window 90 days.",
+      "fields_used": [
+       "received_date",
+       "service_lines.0.date_of_service",
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R07"
+     },
+     {
+      "detail": "2149113906 is in network for PLN-PPO-SILVER.",
+      "fields_used": [
+       "billing_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R08"
+     },
+     {
+      "detail": "No line needs a referral on PLN-PPO-SILVER.",
+      "fields_used": [
+       "referring_npi",
+       "service_lines.0.rendering_npi",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R09"
+     },
+     {
+      "detail": "Every line that needs prior authorization has one.",
+      "fields_used": [
+       "member_id",
+       "service_lines.0.procedure_code",
+       "service_lines.0.rendering_npi",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R10"
+     },
+     {
+      "detail": "No NCCI edit denies a line.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "service_lines.0.modifiers",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R11"
+     },
+     {
+      "detail": "No code exceeds its MUE limit on a date of service.",
+      "fields_used": [
+       "service_lines.0.units",
+       "service_lines.0.procedure_code",
+       "service_lines.0.date_of_service"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R12"
+     },
+     {
+      "detail": "No code is on PLN-PPO-SILVER's exclusion list.",
+      "fields_used": [
+       "service_lines.0.procedure_code",
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R13"
+     },
+     {
+      "detail": "No ESI line meets another block on its date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R14"
+     },
+     {
+      "detail": "Every checked line's diagnoses support its code.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R15"
+     },
+     {
+      "detail": "No home sleep test line is for a parasomnia.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R16"
+     },
+     {
+      "detail": "No nerve conduction line is billed without needle EMG.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R17"
+     },
+     {
+      "detail": "No ESI exceeds its level limits.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R18"
+     },
+     {
+      "detail": "No third-level facet procedure and no two spinal regions on one date.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R19"
+     },
+     {
+      "detail": "No more than 8 hours of testing.",
+      "fields_used": [
+       "service_lines.0.procedure_code"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R20"
+     }
+    ]
+   },
+   "slm_output": {
+    "complexity": "LOW",
+    "lines": [
+     {
+      "benefit_category": "DIAGNOSTIC_TESTS",
+      "criteria": [
+       {
+        "criterion_id": "POL-CAR-002.c4",
+        "evidence": "The patient reports episodes of palpitations with lightheadedness.",
+        "status": "MET"
+       }
+      ],
+      "decision": "APPROVE",
+      "line_no": 1,
+      "missing_information": [],
+      "reasons": []
+     }
+    ]
+   },
+   "status": "AWAITING_REVIEW",
+   "timestamps": {
+    "finalized": null,
+    "processed": "2026-10-13T14:24:05.893022Z",
+    "received": "2026-10-16"
+   },
+   "versions": {
+    "model_name": "claimsense-decision:v2",
+    "policy_versions": {
+     "POL-CAR-002": "v2@2026-01-01"
+    },
+    "prompt_version": "decision_v3",
+    "rules_version": "2.1.0"
+   }
+  },
+  "status": "AWAITING_REVIEW"
+ },
+ {
+  "claim_id": "CLM-DEMO-09",
+  "coinsurance_bps": null,
+  "field_confidences": {
+   "billing_npi": 0.0,
+   "billing_tin": 0.95,
+   "claim_id": 0.9,
+   "clinical_notes": 0.94,
+   "diagnoses.0": 0.82,
+   "frequency_code": 0.9,
+   "member_id": 0.91,
+   "patient.address.city": 0.96,
+   "patient.address.line1": 0.95,
+   "patient.address.state": 0.95,
+   "patient.address.zip_code": 0.96,
+   "patient.date_of_birth": 0.94,
+   "patient.first_name": 0.96,
+   "patient.last_name": 0.95,
+   "patient.sex": 0.93,
+   "prior_auth_number": 0.88,
+   "received_date": 0.94,
+   "referring_npi": 0.96,
+   "service_lines.0.charge_cents": 0.96,
+   "service_lines.0.date_of_service": 0.96,
+   "service_lines.0.diagnosis_pointers": 0.96,
+   "service_lines.0.place_of_service": 0.96,
+   "service_lines.0.procedure_code": 0.86,
+   "service_lines.0.rendering_npi": 0.94,
+   "service_lines.0.units": 0.96,
+   "subscriber_is_patient": 0.96
+  },
+  "outcome": "REJECTED",
+  "received": {
+   "billing_tin": "730981964",
+   "claim_id": "CLM-DEMO-09",
+   "clinical_notes": "The patient is seen for cataract surgery planning. Allergies: none known. Glare and blurred vision in the left eye make night driving and reading hard, and vision is 20/80 even with new glasses; other eye diseases were ruled out. The patient describes daily problems caused by the cataract, not only a finding on exam. Plan: cataract removal with lens implant, routine case. Past medical history was reviewed without changes.",
+   "diagnoses": [
+    "H25.11"
+   ],
+   "frequency_code": "1",
+   "member_id": "MBR-000105",
+   "other_coverage": null,
+   "patient": {
+    "address": {
+     "city": "North Brian",
+     "line1": "617 Davidson Inlet Apt. 983",
+     "state": "VT",
+     "zip_code": "85357"
+    },
+    "date_of_birth": "1955-05-11",
+    "first_name": "Matthew",
+    "last_name": "Hancock",
+    "sex": "M"
+   },
+   "prior_auth_number": "AUTH-S60921-00003",
+   "received_date": "2026-11-24",
+   "referring_npi": "2186976371",
+   "service_lines": [
+    {
+     "charge_cents": 110500,
+     "date_of_service": "2026-11-03",
+     "diagnosis_pointers": [
+      "A"
+     ],
+     "line_no": 1,
+     "modifiers": [],
+     "place_of_service": "22",
+     "procedure_code": "66984",
+     "rendering_npi": "2595165814",
+     "units": 1
+    }
+   ],
+   "subscriber_is_patient": true
+  },
+  "record": {
+   "amounts": null,
+   "claim_decision": null,
+   "claim_id": "CLM-DEMO-09",
+   "context_refs": null,
+   "line_decisions": [],
+   "output_errors": [],
+   "review": null,
+   "review_tier": null,
+   "rules_outcome": {
+    "claim_outcome": "REJECT",
+    "flags": [],
+    "line_outcomes": [],
+    "rule_results": [
+     {
+      "detail": "Required field missing: billing_npi. Read with confidence below 0.85: billing_npi (0.00); RJ_MISSING_FIELD becomes RJ_LOW_CONFIDENCE_FIELD (H5).",
+      "fields_used": [
+       "billing_npi"
+      ],
+      "line_no": null,
+      "outcome": "REJECT",
+      "passed": false,
+      "reason_code": "RJ_LOW_CONFIDENCE_FIELD",
+      "rule_id": "R01"
+     },
+     {
+      "detail": "Member MBR-000105 found.",
+      "fields_used": [
+       "member_id"
+      ],
+      "line_no": null,
+      "outcome": "PASS",
+      "passed": true,
+      "reason_code": null,
+      "rule_id": "R04"
+     }
+    ]
+   },
+   "slm_output": null,
+   "status": "REJECTED",
+   "timestamps": {
+    "finalized": null,
+    "processed": "2026-10-13T14:24:11.135438Z",
+    "received": "2026-11-24"
+   },
+   "versions": {
+    "model_name": null,
+    "policy_versions": {},
+    "prompt_version": null,
+    "rules_version": "2.1.0"
+   }
+  },
+  "status": "REJECTED"
+ }
+]

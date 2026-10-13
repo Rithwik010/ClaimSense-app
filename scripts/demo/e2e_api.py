@@ -27,16 +27,24 @@ each demo claim can be filed only once. It checks:
 6. that the CARC/RARC codes come back, with official descriptions, on the DENY and REJECT lines
    and not on pended ones (D-CARC-2);
 7. with --log (repeatable), that each log holds no patient name, street address, date of birth
-   or clinical note text of any demo claim as stored at intake (INSTRUCTIONS.md §8.9);
-   --privacy-only runs just that check (the e2e run's own output is checked after the run).
+   or clinical note text of any demo claim as stored at intake (INSTRUCTIONS.md §8.9), and no
+   part of any stored original file (D-DOC-1); --privacy-only runs just that check (the e2e
+   run's own output is checked after the run);
+8. D-DOC-1 and D-UI-6 for the nine demo claims: each original file is served (to its provider,
+   reviewers and admins; 404 to another provider) with its type and the SHA-256 of the upload; the
+   provider's explanation appears only once the claim is final and holds no rule IDs or internal
+   codes; claims not paid as billed carry their reason texts; the reviewer's summary names the
+   outcome the record gives; and each paid claim's billing adds up to the cent.
 
     uv run python -m scripts.demo.e2e_api [--log data/generated/logs/api.log] [--privacy-only]
 """
 
 import argparse
+import base64
 import hashlib
 import json
 import os
+import re
 import socket
 import socketserver
 import subprocess
@@ -50,7 +58,8 @@ from urllib.parse import urlsplit
 import httpx
 
 from app.core.settings import get_settings
-from app.domain.contracts import DecisionRecord, IntakeClaim
+from app.domain.contracts import ClaimStatus, DecisionRecord, IntakeClaim
+from app.explain.reasons import REASONED_OUTCOMES, claim_outcome
 from app.intake.form_codec import to_form_values
 from scripts.demo.users import FILED_BY, USERS, password
 from tests.explain_support import mismatches
@@ -125,6 +134,14 @@ def login(base_url: str, username: str) -> httpx.Client:
     return client
 
 
+UPLOADED: dict[str, tuple[bytes, str]] = {}  # claim ID -> (the bytes filed, their content type)
+HIDDEN = re.compile(
+    r"\bR(?:0[1-9]|1[0-9]|20)\b|\bDUP\b|\b(?:RJ|DN|PD|RV)_[A-Z0-9_]+\b"
+    r"|\bMODEL_OUTPUT_INVALID\b|\bPOL-[A-Z]+-[0-9]{3}\.c[0-9]+\b"
+)
+TYPES = {".json": "application/json", ".pdf": "application/pdf"}
+
+
 def file_and_process(
     check: Check, sessions: dict[str, httpx.Client], name: str, claim_id: str, via: str
 ) -> dict[str, Any]:
@@ -132,27 +149,41 @@ def file_and_process(
     record as the reviewer reads it (the provider's answer holds no recommendation)."""
     filer = FILED_BY[name]
     api = sessions[filer]
+    named = {"X-File-Name": name}
     if via == "json-body":
-        filed = api.post("/v1/claims/intake", json=claim_json(name))
+        body = (CLAIMS / name).read_bytes()
+        UPLOADED[claim_id] = (body, "application/json")
+        filed = api.post(
+            "/v1/claims/intake",
+            content=body,
+            headers={"Content-Type": "application/json", **named},
+        )
     elif via == "digital-pdf":
         pdf = render_pdf(to_form_values(IntakeClaim.model_validate(claim_json(name))))
+        UPLOADED[claim_id] = (pdf, "application/pdf")
         filed = api.post(
-            "/v1/claims/intake/file", content=pdf, headers={"Content-Type": "application/pdf"}
+            "/v1/claims/intake/file",
+            content=pdf,
+            headers={"Content-Type": "application/pdf", **named},
         )
         check(
             filed.json().get("source_format") == "DIGITAL_PDF", f"{claim_id}: read as a digital PDF"
         )
     else:
-        filed = api.post("/v1/claims/intake/file", content=(CLAIMS / name).read_bytes())
+        body = (CLAIMS / name).read_bytes()
+        UPLOADED[claim_id] = (body, TYPES[Path(name).suffix])
+        filed = api.post("/v1/claims/intake/file", content=body, headers=named)
     no_5xx(check, filed, f"{claim_id}: intake ({via}) by {filer}")
     check(filed.status_code == 201, f"{claim_id}: filed (201) by {filer}")
     processed = no_5xx(check, api.post(f"/v1/claims/{claim_id}/process"), f"{claim_id}: process")
     check(processed.status_code == 200, f"{claim_id}: processed (200)")
     view = processed.json()
     record = sessions[REVIEWER_ID].get(f"/v1/claims/{claim_id}").json()["record"]
-    shown = view.get("record") is not None
+    shown = view.get("explanation") is not None
     check(
-        shown == view.get("final") and (view["status"] == "IN_REVIEW") != shown,
+        shown == view.get("final")
+        and (view["status"] == "IN_REVIEW") != shown
+        and "record" not in view,
         f"{claim_id}: {filer} sees {view['status']}"
         + (" with the decision (final)" if shown else ", no recommendation"),
     )
@@ -290,9 +321,108 @@ def second_api(ollama_url: str) -> subprocess.Popen:
     raise SystemExit("the second API (Ollama stopped) did not start")
 
 
+def billing_errors(billing: dict[str, Any]) -> list[str]:
+    """Billed minus the reductions to the allowed amount is the allowed amount; the allowed amount
+    is what the plan, the patient and another plan pay; per line and in total, to the cent."""
+    to_allowed = ("allowed_amount", "out_of_network", "not_paid")
+    found = []
+    cut_total = 0
+    for line in billing["lines"]:
+        cut = sum(r["amount_cents"] for r in line["reductions"] if r["kind"] in to_allowed)
+        cut_total += cut
+        if line["billed_cents"] - cut != line["allowed_cents"]:
+            found.append(f"line {line['line_no']}: billed - reductions != allowed")
+        paid = line["plan_pays_cents"] + line["patient_pays_cents"] + line["other_plan_paid_cents"]
+        if paid != line["allowed_cents"]:
+            found.append(f"line {line['line_no']}: plan + patient + other plan != allowed")
+    t = billing["totals"]
+    if t["billed_cents"] - cut_total != t["allowed_cents"]:
+        found.append("totals: billed - reductions != allowed")
+    if (
+        t["plan_pays_cents"] + t["patient_pays_cents"] + t["other_plan_paid_cents"]
+        != t["allowed_cents"]
+    ):
+        found.append("totals: plan + patient + other plan != allowed")
+    return found
+
+
+def documents_and_views(check: Check, sessions: dict[str, httpx.Client]) -> None:
+    rv, ad = sessions[REVIEWER_ID], sessions["admin"]
+    for n in range(1, 10):
+        claim_id = f"CLM-DEMO-{n:02d}"
+        filer = next(FILED_BY[f] for f in FILED_BY if f.startswith(f"{n:02d}-"))
+        other = sessions["provider2" if filer == "provider1" else "provider1"]
+        body, kind = UPLOADED[claim_id]
+        url = f"/v1/claims/{claim_id}/document"
+        served = {who: sessions[who].get(url) for who in (filer, REVIEWER_ID, "admin")}
+        check(
+            all(
+                r.status_code == 200
+                and r.headers["content-type"] == kind
+                and r.headers["x-content-type-options"] == "nosniff"
+                and r.headers["content-disposition"].startswith("inline;")
+                and hashlib.sha256(r.content).hexdigest() == hashlib.sha256(body).hexdigest()
+                for r in served.values()
+            ),
+            f"{claim_id}: original file served to {filer}, reviewer1 and admin as {kind}, its"
+            " SHA-256 the upload's",
+        )
+        check(other.get(url).status_code == 404, f"{claim_id}: another provider gets 404")
+
+        staff = rv.get(f"/v1/claims/{claim_id}").json()
+        record = DecisionRecord.model_validate(staff["record"])
+        outcome = claim_outcome(ClaimStatus(staff["status"]), record)
+        check(
+            staff["outcome"] == staff["summary"]["outcome"] == outcome,
+            f"{claim_id}: the summary's outcome is the record's ({outcome})",
+        )
+        listed = next(c for c in ad.get("/v1/claims").json() if c["claim_id"] == claim_id)
+        reasons = listed["reasons"]
+        check(
+            (bool(reasons) and all(r["short"] for r in reasons))
+            if outcome in REASONED_OUTCOMES
+            else reasons == [],
+            f"{claim_id}: Reason column "
+            + (f"'{reasons[0]['short']}'" if reasons else "'—'")
+            + (f" +{len(reasons) - 1} more" if len(reasons) > 1 else ""),
+        )
+        mine = sessions[filer].get(f"/v1/claims/{claim_id}").json()
+        listed_mine = sessions[filer].get("/v1/claims").json()
+        hidden = HIDDEN.findall(json.dumps(mine)) + HIDDEN.findall(json.dumps(listed_mine))
+        check(hidden == [], f"{claim_id}: {filer}'s view holds no rule IDs or internal codes")
+        explanation = mine["explanation"]
+        if not mine["final"]:
+            check(explanation is None, f"{claim_id}: {filer} sees no explanation while in review")
+            continue
+        check(
+            explanation is not None
+            and explanation["outcome"] == outcome
+            and (bool(explanation["why"]) == (outcome in REASONED_OUTCOMES)),
+            f"{claim_id}: {filer} sees '{explanation['heading'] if explanation else None}'"
+            + (f" with {len(explanation['why'])} reason(s)" if explanation else ""),
+        )
+        if explanation and explanation["billing"]:
+            errors = billing_errors(explanation["billing"])
+            check(errors == [], f"{claim_id}: the billing adds up to the cent {errors or ''}")
+
+
+def file_fragments(data: bytes) -> dict[str, str]:
+    """Pieces of a stored file as they could appear in a log: a stretch of its text, and a chunk
+    of its bytes as base64 and as hex."""
+    middle = data[len(data) // 2 : len(data) // 2 + 48]
+    found = {
+        "file bytes (base64)": base64.b64encode(middle).decode(),
+        "file bytes (hex)": middle.hex(),
+    }
+    if data.lstrip()[:1] == b"{":
+        text = " ".join(data.decode("utf-8", "replace").split())
+        found["file text"] = text[len(text) // 3 : len(text) // 3 + 60]
+    return found
+
+
 def privacy(check: Check, api: httpx.Client, log: Path) -> None:
-    """No patient name, street address, date of birth or clinical note text of any demo claim (as
-    stored at intake) in the log."""
+    """No patient name, street address, date of birth, clinical note text or stored original file
+    of any demo claim (as stored at intake) in the log."""
     text = log.read_text(encoding="utf-8", errors="replace")
     for n in range(1, 10):
         claim_id = f"CLM-DEMO-{n:02d}"
@@ -302,6 +432,7 @@ def privacy(check: Check, api: httpx.Client, log: Path) -> None:
         claim = response.json()["received"]
         patient = claim.get("patient") or {}
         address = patient.get("address") or {}
+        notes = " ".join((claim.get("clinical_notes") or "").split())
         secrets = {
             "patient name": " ".join(
                 part for part in (patient.get("first_name"), patient.get("last_name")) if part
@@ -309,13 +440,25 @@ def privacy(check: Check, api: httpx.Client, log: Path) -> None:
             "last name": patient.get("last_name", ""),
             "street address": address.get("line1", ""),
             "date of birth": patient.get("date_of_birth", ""),
-            "clinical note text": (claim.get("clinical_notes") or "")[:40],
         }
-        found = [what for what, value in secrets.items() if len(value) >= 4 and value in text]
+        # every 40-character stretch of the note, 20 characters apart
+        for start in range(0, max(len(notes) - 40, 0) + 1, 20):
+            secrets[f"clinical note text ({start})"] = notes[start : start + 40]
+        document = api.get(f"/v1/claims/{claim_id}/document")
+        if document.status_code == 200:
+            secrets |= file_fragments(document.content)
+        flat = " ".join(text.split())
+        found = sorted(
+            {
+                what.split(" (")[0] if what.startswith("clinical") else what
+                for what, value in secrets.items()
+                if len(value) >= 4 and (value in text or value in flat)
+            }
+        )
         check(
             not found,
-            f"{log.name} holds no patient name, address, birth date or note text of {claim_id}"
-            + (f" (found: {found})" if found else ""),
+            f"{log.name} holds no patient name, address, birth date, note text or stored file"
+            f" of {claim_id}" + (f" (found: {found})" if found else ""),
         )
 
 
@@ -386,8 +529,11 @@ def main() -> None:
         pdf = render_pdf(
             to_form_values(IntakeClaim.model_validate(claim_json("02-pend-standard.json")))
         )
+        UPLOADED["CLM-DEMO-02"] = (pdf, "application/pdf")
         second.post(
-            "/v1/claims/intake/file", content=pdf, headers={"Content-Type": "application/pdf"}
+            "/v1/claims/intake/file",
+            content=pdf,
+            headers={"Content-Type": "application/pdf", "X-File-Name": "02-pend-standard.pdf"},
         )
         down = no_5xx(
             check, second.post("/v1/claims/CLM-DEMO-02/process"), "process with Ollama stopped"
@@ -457,7 +603,7 @@ def main() -> None:
     final_view = p1.get("/v1/claims/CLM-DEMO-01").json()
     check(
         (final_view["status"], final_view["final"]) == ("FINAL_APPROVED", True)
-        and final_view["record"] is not None,
+        and final_view["explanation"] is not None,
         "provider1 sees CLM-DEMO-01's decision once final",
     )
     payload = finalized_payload(rv, "CLM-DEMO-01")
@@ -589,7 +735,7 @@ def main() -> None:
     )
     own = p2.get("/v1/claims/CLM-DEMO-06").json()
     check(
-        own["final"] and [a["codes"][0]["code"] for a in own["adjustments"]] == ["16"],
+        own["final"] and [g["codes"][0]["code"] for g in own["explanation"]["codes"]] == ["16"],
         "provider2 sees CLM-DEMO-06's rejection codes at once (a rule outcome is final)",
     )
 
@@ -617,6 +763,9 @@ def main() -> None:
         (waiting["status"], waiting["claim_decision"]) == ("IN_REVIEW", None),
         "provider2 sees CLM-DEMO-08 as IN_REVIEW, without its recommendation",
     )
+
+    print("Original files and the pages' explanations (D-DOC-1, D-UI-6)")
+    documents_and_views(check, sessions)
 
     print("Bad inputs")
     for what, body, headers in (

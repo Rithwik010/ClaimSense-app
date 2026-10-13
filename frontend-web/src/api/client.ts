@@ -50,10 +50,11 @@ export async function request<T>(
     json?: unknown;
     body?: BodyInit;
     type?: string;
+    headers?: Record<string, string>;
     expect?: "json" | "text"; // what the endpoint answers (default JSON)
   } = {},
 ): Promise<T> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...options.headers };
   let body = options.body;
   if (options.json !== undefined) {
     headers["Content-Type"] = "application/json";

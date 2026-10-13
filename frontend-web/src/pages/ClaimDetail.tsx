@@ -1,14 +1,16 @@
 // Claim detail: the review layout, read-only, plus the explanation rendered by the API from the
-// decision record (§8.7) and the audit trail as a timeline.
+// decision record (§8.7); the summary, clinical note and audit trail as tabs on the right (D-UI-6),
+// and the original file the claim was filed from (D-DOC-1).
 
 import { Link, useLocation, useParams } from "react-router";
 
 import { useAudit, useClaim, useExplanation } from "@/api/hooks";
 import type { AuditEvent } from "@/api/types";
 import { AuditTimeline } from "@/components/AuditTimeline";
-import { StatusChip } from "@/components/Chip";
+import { OutcomeChip } from "@/components/Chip";
 import { ClaimWorkspace } from "@/components/ClaimWorkspace";
 import { PageTitle } from "@/components/Layout";
+import { OriginalFileButton } from "@/components/OriginalFile";
 import { ErrorNotice, Note, Skeleton } from "@/components/States";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/lib/auth";
@@ -51,7 +53,8 @@ export function ClaimDetail() {
         title={`Claim ${view.claim_id}`}
         actions={
           <>
-            <StatusChip status={view.status} showHint />
+            <OutcomeChip outcome={view.outcome} showHint />
+            <OriginalFileButton claimId={view.claim_id} document={view.document} />
             {action}
           </>
         }
@@ -65,6 +68,17 @@ export function ClaimDetail() {
         view={view}
         events={audit.data ?? []}
         fill={fill}
+        audit={
+          audit.isPending ? (
+            <Skeleton lines={4} />
+          ) : audit.error ? (
+            <ErrorNotice error={audit.error} onRetry={() => void audit.refetch()} />
+          ) : (
+            <div data-testid="audit-trail">
+              <AuditTimeline events={audit.data} />
+            </div>
+          )
+        }
         extraTabs={[
           ...(record
             ? [
@@ -86,19 +100,6 @@ export function ClaimDetail() {
                 },
               ]
             : []),
-          {
-            value: "audit",
-            label: "Audit trail",
-            content: audit.isPending ? (
-              <Skeleton lines={4} />
-            ) : audit.error ? (
-              <ErrorNotice error={audit.error} onRetry={() => void audit.refetch()} />
-            ) : (
-              <div data-testid="audit-trail">
-                <AuditTimeline events={audit.data} />
-              </div>
-            ),
-          },
         ]}
       />
     </>

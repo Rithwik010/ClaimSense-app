@@ -28,7 +28,7 @@ const PAGES: Record<string, [string, string][]> = {
     ["/claims", "Claims"],
     ["/claims/CLM-DEMO-03", "Claim CLM-DEMO-03"],
     ["/review/CLM-DEMO-08", "Review claim CLM-DEMO-08"],
-    ["/rule-outcomes", "Rule outcomes"],
+    ["/rule-outcomes", "Returned and auto-denied"],
   ],
   admin: [
     ["/overview", "Overview"],

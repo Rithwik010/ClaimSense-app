@@ -72,12 +72,12 @@ test("01 clean approve: in review for the provider, accepted by reviewer1, then 
 
   await loginAs(page, "provider1");
   await page.getByRole("link", { name: "CLM-DEMO-01" }).click();
-  await expect(page.getByRole("region", { name: "Lines", exact: true })).toBeVisible();
-  await expect(page.getByText("Covered under the plan's benefits.")).toBeVisible();
-  for (const label of ["Billed", "Allowed", "Plan pays", "Member pays"]) {
-    await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Claim approved" })).toBeVisible();
+  const billing = page.getByRole("table", { name: "Billing" });
+  for (const label of ["Billed", "Allowed", "Plan pays", "Patient pays"]) {
+    await expect(billing.getByRole("columnheader", { name: label, exact: true })).toBeVisible();
   }
-  await expect(page.getByTestId("explanation").getByRole("heading", { name: "Summary" })).toBeVisible();
+  await expect(page.getByTestId("explanation")).toHaveCount(0); // the reviewer's explanation is not shown
 });
 
 test("02 model pend: filed now, reviewed once claim 3 waits too", async ({ page }) => {
@@ -90,7 +90,7 @@ test("03 model deny: after accepting claim 2, Next claim opens it; a line overri
   await expect(page.getByText("Standard review tier")).toBeVisible();
   await page.getByRole("button", { name: "Accept all lines" }).click();
   await finalize(page, "CLM-DEMO-02");
-  await expect(page.getByRole("status").getByText("Needs information", { exact: true })).toBeVisible();
+  await expect(page.getByRole("status").getByText("Pended", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Next claim" }).click();
 
   await expect(page.getByRole("heading", { name: "Review claim CLM-DEMO-03" })).toBeVisible();
@@ -116,7 +116,7 @@ test("04 partial: a rule denies one line with its CARC, the model approves the o
 });
 
 test("05 every line denied by R15: final at once, with CARC 11, RARC N115, the article and its LCD", async ({ page }) => {
-  await submit(page, "05-rule-deny-r15.json", "CLM-DEMO-05", /Denied by a rule/);
+  await submit(page, "05-rule-deny-r15.json", "CLM-DEMO-05", /Denied/);
   await expect(page.getByText("CARC 11").first()).toBeVisible();
   await expect(page.getByText("RARC N115").first()).toBeVisible();
   await expect(page.getByText(/Billing article A\d+; related LCD L\d+/).first()).toBeVisible();
@@ -143,7 +143,7 @@ test("09 scanned form with a mistyped NPI: rejected for a low-confidence field",
   await expect(page.getByText("RARC MA130").first()).toBeVisible();
 });
 
-test("reviewer: rule outcomes with codes, a claim's explanation and audit trail", async ({ page }) => {
+test("reviewer: returned and auto-denied claims with codes, a claim's explanation and audit trail", async ({ page }) => {
   await loginAs(page, "reviewer1");
   await page.goto("/rule-outcomes");
   for (const id of ["CLM-DEMO-05", "CLM-DEMO-06", "CLM-DEMO-07", "CLM-DEMO-09"]) {

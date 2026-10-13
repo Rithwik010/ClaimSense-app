@@ -31,6 +31,7 @@ class QueueItemView(BaseModel):
     total_billed_cents: int | None
     lines: int
     flags: list[str]  # app.workflow.review.queue_flags
+    member_id: str
 
 
 @router.get("/queue")

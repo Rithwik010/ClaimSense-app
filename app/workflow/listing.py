@@ -1,6 +1,8 @@
 """Claim lists for the UI (P5.5): every claim, or the claims of some statuses, newest first, with
 the figures and reasons of each one's latest decision record (left out when it was stored under an
-older contract and no longer validates)."""
+older contract and no longer validates). Each claim also carries what the lists search and filter
+on (D-UI-6): its member ID, billing provider (NPI and name), its label key and, for a claim not
+paid as billed, its reasons from the reason table."""
 
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -9,9 +11,10 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db.models import Claim
+from app.db.models import Claim, Provider
 from app.domain.contracts import ClaimDecision, ClaimStatus, ReviewTier
 from app.explain.codes import Adjustment, adjustments, procedure_codes
+from app.explain.reasons import ClaimReason, claim_outcome, shown_reasons
 from app.workflow.pipeline import latest_record
 
 
@@ -39,6 +42,11 @@ class ClaimSummary:
     failed_rules: list[FailedRule] = field(default_factory=list)
     # CARC/RARC codes of the record's DENY and REJECT reasons (D-CARC-2), for the lists' codes.
     adjustments: list[Adjustment] = field(default_factory=list)
+    member_id: str = ""
+    provider_npi: str | None = None  # the billing NPI as filed
+    provider_name: str | None = None  # when the reference data knows it
+    outcome: str = "NOT_PROCESSED"  # app.explain.reasons.claim_outcome
+    reasons: list[ClaimReason] = field(default_factory=list)  # shown_reasons
 
 
 def claim_summaries(
@@ -57,10 +65,15 @@ def claim_summaries(
         except ValidationError:  # a record stored under an older contract: listed without it
             record = None
         totals = record.amounts.totals if record and record.amounts else None
+        npi = row.intake.get("billing_npi")
+        npi = npi if isinstance(npi, str) else None
+        provider = session.get(Provider, npi) if npi else None
+        status = ClaimStatus(row.status)
+        outcome = claim_outcome(status, record)
         found.append(
             ClaimSummary(
                 claim_id=row.claim_id,
-                status=ClaimStatus(row.status),
+                status=status,
                 source_format=row.source_format,
                 received_date=row.received_date,
                 updated=row.updated_at,
@@ -75,6 +88,11 @@ def claim_summaries(
                     if not r.passed
                 ],
                 adjustments=adjustments(record, procedure_codes(row.intake)) if record else [],
+                member_id=row.member_id,
+                provider_npi=npi,
+                provider_name=provider.name if provider else None,
+                outcome=outcome,
+                reasons=shown_reasons(outcome, record),
             )
         )
     return found

@@ -45,7 +45,7 @@ from app.core.logging import get_logger
 from app.core.settings import Settings
 from app.db import lookups
 from app.db.curated import load_curated
-from app.db.models import Claim, DecisionRecordRow, Member
+from app.db.models import Claim, ClaimDocument, DecisionRecordRow, Member
 from app.db.rules_reference import reference_for_claim
 from app.domain.contracts import (
     ClaimStatus,
@@ -66,6 +66,7 @@ from app.domain.contracts import (
 )
 from app.explain.codes import procedure_codes
 from app.explain.render import render
+from app.intake.documents import OriginalFile
 from app.ml.client import DecisionModel
 from app.ml.evidence import evidence_guard
 from app.ml.prompt import (
@@ -146,12 +147,15 @@ def intake_claim_data(
     threshold: float,
     provider_id: str | None = None,
     filed_by: str | None = None,
+    document: OriginalFile | None = None,
 ) -> tuple[IntakeResult | None, list[str]]:
     """Store a received claim (status RECEIVED) and write INTAKE_COMPLETED. Returns the validated
     claim, or None for a claim that fails the contract, and its contract errors. Such a claim is
     stored as received when every error is one R01, R02 or R03 reports (A-R8), so the rules
     reject it; otherwise it is refused. `provider_id` and `filed_by` name the provider account
-    that filed it (D-AUTH-1); the filing user is INTAKE_COMPLETED's actor."""
+    that filed it (D-AUTH-1); the filing user is INTAKE_COMPLETED's actor. `document`, the file
+    the claim came from, is kept with the claim in the same transaction (D-DOC-1): a refused claim
+    keeps nothing."""
     claim_id, member_id, received_date = _filing_fields(data)
     if any(not 0.0 <= value <= 1.0 for value in field_confidences.values()):
         raise IntakeRefused("field confidences must be between 0 and 1")
@@ -180,6 +184,17 @@ def intake_claim_data(
     except IntegrityError as exc:
         session.rollback()
         raise DuplicateClaim(f"claim {claim_id} already exists") from exc
+    if document is not None:
+        session.add(
+            ClaimDocument(
+                claim_id=claim_id,
+                file_name=document.file_name,
+                content_type=document.content_type,
+                size_bytes=document.size_bytes,
+                sha256=document.sha256,
+                content=document.content,
+            )
+        )
     lines = data.get("service_lines")
     record_event(
         session,

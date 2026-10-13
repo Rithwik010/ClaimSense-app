@@ -3,7 +3,7 @@
 // scrolls under it.
 
 import { motion, useReducedMotion } from "motion/react";
-import { useId, type ReactNode } from "react";
+import { Fragment, useId, type ReactNode } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 
 import { AppSidebar } from "@/components/app-sidebar";
@@ -51,7 +51,7 @@ export function Layout() {
           <Breadcrumb className="min-w-0 flex-1">
             <BreadcrumbList>
               {trail.map((crumb, i) => (
-                <span key={crumb.label} className="contents">
+                <Fragment key={crumb.label}>
                   {i > 0 && <BreadcrumbSeparator />}
                   <BreadcrumbItem>
                     {crumb.to ? (
@@ -62,7 +62,7 @@ export function Layout() {
                       <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                     )}
                   </BreadcrumbItem>
-                </span>
+                </Fragment>
               ))}
             </BreadcrumbList>
           </Breadcrumb>

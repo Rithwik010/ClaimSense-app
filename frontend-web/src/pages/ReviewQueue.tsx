@@ -1,20 +1,23 @@
 // Review queue (a reviewer's home): the claims waiting for a person, by tier (quick, standard,
 // full) with a count on each tab, oldest first within a tier. Reviewers open a claim to review it;
-// an admin opens it read-only (D-AUTH-1).
+// an admin opens it read-only (D-AUTH-1). A search by claim ID, member ID, provider name or NPI,
+// kept in the URL; no status filter, since every claim here is in review (D-UI-6).
 
 import { useState } from "react";
 import { Link } from "react-router";
 
 import { useQueue } from "@/api/hooks";
 import type { QueueItem, ReviewTier } from "@/api/types";
+import { ClaimFilters, NoMatch, useClaimFilters } from "@/components/ClaimFilters";
 import { PlainBadge } from "@/components/Chip";
 import { PageTitle } from "@/components/Layout";
 import { EmptyState, ErrorNotice, Skeleton } from "@/components/States";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/lib/auth";
+import { matches } from "@/lib/filters";
 import { age, money } from "@/lib/format";
-import { FLAGS, TIER } from "@/lib/labels";
+import { FLAGS, OUTCOME, TIER } from "@/lib/labels";
 
 const TIERS: ReviewTier[] = ["QUICK", "STANDARD", "FULL"];
 
@@ -80,8 +83,11 @@ function Rows({ items, reviewer }: { items: QueueItem[]; reviewer: boolean }) {
 export function ReviewQueue() {
   const { role } = useUser();
   const queue = useQueue(null);
+  const filters = useClaimFilters(null);
   const [chosen, setChosen] = useState<ReviewTier | null>(null);
-  const items = queue.data ?? [];
+  const items = (queue.data ?? []).filter((item) =>
+    matches(item, filters.query, filters.status, "all"),
+  );
   const count = (tier: ReviewTier) => items.filter((item) => item.review_tier === tier).length;
   // Most work first: open on the fullest tier that has claims, unless one was chosen.
   const tier = chosen ?? (["FULL", "STANDARD", "QUICK"] as ReviewTier[]).find((t) => count(t) > 0) ?? "QUICK";
@@ -102,12 +108,20 @@ export function ReviewQueue() {
         <Skeleton lines={5} />
       ) : queue.error ? (
         <ErrorNotice error={queue.error} onRetry={() => void queue.refetch()} />
-      ) : items.length === 0 ? (
+      ) : (queue.data ?? []).length === 0 ? (
         <EmptyState title="Nothing to review">
           A claim appears here once a provider files and processes it and the model recommends a decision.
         </EmptyState>
       ) : (
         <>
+          <ClaimFilters
+            filters={filters}
+            searchLabel="Search the queue"
+            placeholder="Claim ID, member ID, provider name or NPI"
+            options={null}
+            label={(outcome) => OUTCOME[outcome]}
+            shown={shown.length}
+          />
           <Tabs value={tier} onValueChange={(value) => setChosen(value as ReviewTier)}>
             <div className="overflow-x-auto">
               <TabsList variant="line" aria-label="Review tier" className="mb-4 h-10 gap-6 border-b border-rules px-0">
@@ -122,15 +136,19 @@ export function ReviewQueue() {
                 ))}
               </TabsList>
             </div>
+            <TabsContent value={tier}>
+              <p className="mb-3 text-[13px] text-ink-muted">{TIER[tier].hint}.</p>
+              {shown.length === 0 && filters.active ? (
+                <NoMatch onClear={filters.clear} />
+              ) : shown.length === 0 ? (
+                <EmptyState title={`No ${TIER[tier].label.toLowerCase()} reviews waiting`}>
+                  Choose another tier above.
+                </EmptyState>
+              ) : (
+                <Rows items={shown} reviewer={role === "reviewer"} />
+              )}
+            </TabsContent>
           </Tabs>
-          <p className="mb-3 text-[13px] text-ink-muted">{TIER[tier].hint}.</p>
-          {shown.length === 0 ? (
-            <EmptyState title={`No ${TIER[tier].label.toLowerCase()} reviews waiting`}>
-              Choose another tier above.
-            </EmptyState>
-          ) : (
-            <Rows items={shown} reviewer={role === "reviewer"} />
-          )}
         </>
       )}
     </>

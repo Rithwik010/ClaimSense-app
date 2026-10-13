@@ -1,7 +1,9 @@
-// Plain-language labels with short hints for statuses, decisions, tiers and reason codes. The
-// reason labels are the same wording the explanation uses (app/explain/render.py).
+// Plain-language labels with short hints for outcomes, statuses, decisions, tiers and reason codes.
+// One outcome label set for every dashboard (D-UI-6): the API names each claim's outcome; the
+// status labels use the same words, with hints that tell the review and the automatic checks
+// apart. The reason labels are the wording the reviewer's explanation uses (render.py).
 
-import type { ClaimStatus, LineDecision, ReviewTier } from "../api/types";
+import type { ClaimStatus, LineDecision, Outcome, ReviewTier } from "../api/types";
 
 export type Tone = "approve" | "pend" | "deny" | "reject" | "neutral";
 
@@ -11,16 +13,33 @@ export interface Label {
   tone: Tone;
 }
 
+/** The outcome labels every dashboard shows (the API's `outcome`). */
+export const OUTCOME: Record<Outcome, Label> = {
+  NOT_PROCESSED: { label: "Not processed", hint: "Received, not processed yet", tone: "neutral" },
+  IN_REVIEW: { label: "In review", hint: "A reviewer decides", tone: "neutral" },
+  APPROVED: { label: "Approved", hint: "Every line approved", tone: "approve" },
+  PARTLY_APPROVED: { label: "Partly approved", hint: "Some lines paid, some not", tone: "approve" },
+  PENDED: { label: "Pended", hint: "On hold: more information needed", tone: "pend" },
+  DENIED: { label: "Denied", hint: "The plan does not pay", tone: "deny" },
+  REJECTED: { label: "Rejected", hint: "Returned: the claim data could not be used", tone: "reject" },
+};
+
+/** The status filter's options: the provider's, the reviewer's and admin's, and the returned page's. */
+export const PROVIDER_FILTERS: Outcome[] = ["IN_REVIEW", "APPROVED", "PARTLY_APPROVED", "PENDED", "DENIED", "REJECTED"];
+export const STAFF_FILTERS: Outcome[] = [...PROVIDER_FILTERS, "NOT_PROCESSED"];
+export const RETURNED_FILTERS: Outcome[] = ["REJECTED", "DENIED", "PENDED"];
+
+/** Status labels in the same words, for counts kept by status (the admin overview). */
 export const STATUS: Record<ClaimStatus, Label> = {
-  RECEIVED: { label: "Received", hint: "Not processed yet", tone: "neutral" },
-  AWAITING_REVIEW: { label: "Awaiting review", hint: "A reviewer decides", tone: "neutral" },
-  FINAL_APPROVED: { label: "Approved", hint: "Every line approved", tone: "approve" },
-  FINAL_PARTIAL: { label: "Partly approved", hint: "Some lines approved", tone: "approve" },
-  FINAL_DENIED: { label: "Denied", hint: "No line approved", tone: "deny" },
-  FINAL_PENDED: { label: "Needs information", hint: "Pended: needs more information", tone: "pend" },
-  REJECTED: { label: "Rejected", hint: "The claim data cannot be used", tone: "reject" },
-  DENIED_BY_RULE: { label: "Denied by a rule", hint: "A coverage rule failed", tone: "deny" },
-  PENDED_BY_RULE: { label: "Pended by a rule", hint: "Needs more information", tone: "pend" },
+  RECEIVED: { label: "Not processed", hint: "Received, not processed yet", tone: "neutral" },
+  AWAITING_REVIEW: { label: "In review", hint: "A reviewer decides", tone: "neutral" },
+  FINAL_APPROVED: { label: "Approved", hint: "Every line approved after review", tone: "approve" },
+  FINAL_PARTIAL: { label: "Partly approved", hint: "Some lines approved after review", tone: "approve" },
+  FINAL_DENIED: { label: "Denied", hint: "No line approved after review", tone: "deny" },
+  FINAL_PENDED: { label: "Pended", hint: "More information needed after review", tone: "pend" },
+  REJECTED: { label: "Rejected", hint: "Returned by the automatic checks", tone: "reject" },
+  DENIED_BY_RULE: { label: "Denied", hint: "Denied by the automatic checks", tone: "deny" },
+  PENDED_BY_RULE: { label: "Pended", hint: "Put on hold by the automatic checks", tone: "pend" },
 };
 
 export const DECISION: Record<LineDecision, Label> = {
@@ -57,8 +76,9 @@ export const IN_REVIEW: Label = {
   tone: "neutral",
 };
 
-export function providerStatus(status: ClaimStatus | "IN_REVIEW"): Label {
-  return status === "IN_REVIEW" ? IN_REVIEW : STATUS[status];
+/** A provider's label for their claim's outcome (IN_REVIEW until final). */
+export function providerOutcome(outcome: Outcome): Label {
+  return outcome === "IN_REVIEW" || outcome === "NOT_PROCESSED" ? IN_REVIEW : OUTCOME[outcome];
 }
 
 export const CLAIM_DECISION: Record<string, Label> = {

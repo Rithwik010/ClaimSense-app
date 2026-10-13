@@ -1,33 +1,24 @@
 // My claims (a provider's home, D-AUTH-1): the claims filed under the provider's ID, newest first,
-// "In review" until a reviewer finalizes them. Search by claim ID and filter by status; open a claim
-// for its result.
+// "In review" until a reviewer finalizes them. Search by claim ID and filter by status (the label set
+// every dashboard uses, D-UI-6), both kept in the URL; open a claim for its result.
 
-import { Search } from "lucide-react";
-import { useState } from "react";
 import { Link } from "react-router";
 
 import { useMyClaims } from "@/api/hooks";
-import { Chip } from "@/components/Chip";
+import { ClaimFilters, NoMatch, useClaimFilters } from "@/components/ClaimFilters";
+import { OutcomeChip } from "@/components/Chip";
 import { PageTitle } from "@/components/Layout";
 import { EmptyState, ErrorNotice, Skeleton } from "@/components/States";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { matches } from "@/lib/filters";
 import { dateTime, money } from "@/lib/format";
-import { providerStatus } from "@/lib/labels";
-
-const ALL = "all";
+import { PROVIDER_FILTERS, providerOutcome } from "@/lib/labels";
 
 export function MyClaims() {
   const claims = useMyClaims();
-  const [query, setQuery] = useState("");
-  const [status, setStatus] = useState(ALL);
-  const statuses = [...new Set((claims.data ?? []).map((c) => c.status))];
-  const shown = (claims.data ?? []).filter(
-    (c) =>
-      c.claim_id.toLowerCase().includes(query.trim().toLowerCase()) && (status === ALL || c.status === status),
-  );
+  const filters = useClaimFilters(PROVIDER_FILTERS);
+  const shown = (claims.data ?? []).filter((c) => matches(c, filters.query, filters.status, "claim"));
   return (
     <>
       <PageTitle
@@ -47,39 +38,16 @@ export function MyClaims() {
         <EmptyState title="No claims filed yet">Submit a claim and it appears here.</EmptyState>
       ) : (
         <>
-          <div className="mb-4 flex flex-wrap items-end gap-3">
-            <label className="grid min-w-0 flex-1 basis-56 gap-1.5 text-[13px] font-semibold" htmlFor="claim-search">
-              Search by claim ID
-              <span className="relative">
-                <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />
-                <Input
-                  id="claim-search"
-                  value={query}
-                  placeholder="For example CLM-DEMO-01"
-                  className="h-10 bg-paper pl-9 text-[15px] font-normal"
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </span>
-            </label>
-            <label className="grid basis-56 gap-1.5 text-[13px] font-semibold" htmlFor="status-filter">
-              Status
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger id="status-filter" className="h-10 w-full bg-paper text-[15px] font-normal">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL}>All statuses</SelectItem>
-                  {statuses.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {providerStatus(s).label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-          </div>
+          <ClaimFilters
+            filters={filters}
+            searchLabel="Search by claim ID"
+            placeholder="For example CLM-DEMO-01"
+            options={PROVIDER_FILTERS}
+            label={providerOutcome}
+            shown={shown.length}
+          />
           {shown.length === 0 ? (
-            <EmptyState title="No claim matches">Clear the search or choose all statuses.</EmptyState>
+            <NoMatch onClear={filters.clear} />
           ) : (
             <div className="overflow-x-auto surface rounded-lg">
               <Table>
@@ -103,7 +71,7 @@ export function MyClaims() {
                         </Link>
                       </TableCell>
                       <TableCell>
-                        <Chip label={providerStatus(claim.status)} />
+                        <OutcomeChip outcome={claim.outcome} provider />
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap tabular-nums">
                         {claim.final ? money(claim.plan_pays_cents) : "—"}

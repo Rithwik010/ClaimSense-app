@@ -40,7 +40,7 @@ export const PAGES: Page[] = [
   { to: "/overview", label: "Overview", icon: LayoutDashboard, roles: ["admin"] },
   { to: "/queue", label: "Review queue", icon: ClipboardCheck, roles: ["reviewer", "admin"] },
   { to: "/claims", label: "Claims", icon: Files, roles: ["reviewer", "admin"] },
-  { to: "/rule-outcomes", label: "Rule outcomes", icon: Scale, roles: ["reviewer", "admin"] },
+  { to: "/rule-outcomes", label: "Returned and auto-denied", icon: Scale, roles: ["reviewer", "admin"] },
   { to: "/metrics", label: "Model metrics", icon: BarChart3, roles: ["admin"] },
   { to: "/audit", label: "Audit lookup", icon: History, roles: ["admin"] },
   { to: "/system", label: "System status", icon: Activity, roles: ["admin"] },

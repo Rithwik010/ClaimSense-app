@@ -106,14 +106,17 @@ export function useEvaluation() {
 }
 
 /**
- * Where a claim file goes: a JSON claim as JSON to POST /v1/claims/intake; a PDF or scan (or a
- * file that is not valid JSON, so the API can say what is wrong) to POST /v1/claims/intake/file.
+ * Where a claim file goes: a JSON claim to POST /v1/claims/intake, as its own text (the API keeps
+ * the bytes as sent, D-DOC-1); a PDF or scan (or a file that is not valid JSON, so the API can say
+ * what is wrong) to POST /v1/claims/intake/file. Both name the file in X-File-Name.
  */
-export async function intakeRequest(file: File): Promise<{ path: string; json?: unknown }> {
+export async function intakeRequest(file: File): Promise<{ path: string; text?: string }> {
   const isJson = file.type === "application/json" || file.name.toLowerCase().endsWith(".json");
   if (isJson) {
+    const text = await file.text();
     try {
-      return { path: "/v1/claims/intake", json: JSON.parse(await file.text()) as unknown };
+      JSON.parse(text);
+      return { path: "/v1/claims/intake", text };
     } catch {
       // Not valid JSON: the file route answers with the reason.
     }
@@ -125,12 +128,19 @@ export function useUpload() {
   return useMutation({
     mutationFn: async (file: File) => {
       const target = await intakeRequest(file);
-      return target.json !== undefined
-        ? request<IntakeResult | FiledWithErrors>(target.path, { method: "POST", json: target.json })
+      const headers = { "X-File-Name": encodeURIComponent(file.name) };
+      return target.text !== undefined
+        ? request<IntakeResult | FiledWithErrors>(target.path, {
+            method: "POST",
+            body: target.text,
+            type: "application/json",
+            headers,
+          })
         : request<IntakeResult | FiledWithErrors>(target.path, {
             method: "POST",
             body: file,
             type: file.type || "application/octet-stream",
+            headers,
           });
     },
   });

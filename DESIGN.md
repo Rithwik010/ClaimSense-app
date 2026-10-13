@@ -72,7 +72,8 @@ Radii: controls 8 px, panels 14 px, floating layers 18 px. Shadows are soft and 
 
 Atkinson Hyperlegible Next (variable, bundled with `@fontsource-variable/atkinson-hyperlegible-next`)
 for everything, including codes: it tells O from 0 and I from l, which matters in codes such as
-O09.90 and I10. Amounts and other columns of figures use `tabular-nums`.
+O09.90 and I10. Amounts and other columns of figures use `tabular-nums`. One exception: a JSON
+claim shown in the original-file sheet is pretty-printed in the system monospace font (D-UI-6).
 
 | Role | Size / line height | Weight |
 |---|---|---|
@@ -110,7 +111,8 @@ Motion (`motion/react`) and CSS transitions, restrained:
 2. Hover: 120–160 ms colour and border changes; cards that open something lift 1 px; buttons
    press to 98%.
 3. Expanding and collapsing a service line.
-4. The evidence pulse: the highlight behind a quote pulses once when its criterion is clicked.
+4. The evidence pulse: the highlight behind a quote pulses once when its criterion is clicked
+   (the right column switches to its Clinical note tab first).
 5. After "Process claim", the stage strip fills in step by step (one stagger, about 1 s); the
    step waiting for a reviewer glows softly.
 6. Entrances: login content and admin tiles blur-fade in once (400 ms, small stagger).
@@ -129,9 +131,9 @@ Checked at 390, 768 and 1440 px; no horizontal page scroll at any of them.
 
 | Width | Shell | Review claim and claim detail | Tables |
 |---|---|---|---|
-| 390 px | sidebar becomes a sheet behind a menu button; login shows the card only | one column: strip (scrolls sideways inside itself), lines, then the note | scroll sideways inside their panel |
-| 768 px | sidebar collapsed to icons | one column; the note follows the lines | as at 390 px where needed |
-| 1440 px | sidebar open; login splits into story and card | two columns: lines left (about 60%), note right, sticky | full width |
+| 390 px | sidebar becomes a sheet behind a menu button; login shows the card only | one column: strip (scrolls sideways inside itself), lines, then the Summary, Clinical note and Audit trail tabs | scroll sideways inside their panel |
+| 768 px | sidebar collapsed to icons | one column; the tabs follow the lines | as at 390 px where needed |
+| 1440 px | sidebar open; login splits into story and card | two columns: lines left (about 60%), the Summary, Clinical note and Audit trail tabs right, sticky (Summary first) | full width |
 
 ## Accessibility
 
