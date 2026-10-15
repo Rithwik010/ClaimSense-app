@@ -135,6 +135,13 @@ Checked at 390, 768 and 1440 px; no horizontal page scroll at any of them.
 | 768 px | sidebar collapsed to icons | one column; the tabs follow the lines | as at 390 px where needed |
 | 1440 px | sidebar open; login splits into story and card | two columns: lines left (about 60%), the Summary, Clinical note and Audit trail tabs right, sticky (Summary first) | full width |
 
+## Print
+
+The patient EOB (D-EOB-1) is meant to be printed: in print the sidebar, header, toasts and buttons
+are hidden, and the page is black text on white with grey rules, no glass, light or shadow
+(`@media print` in `src/index.css`, the `print:` variants). The services table replaces the phone
+cards. Decisions keep their text and icon, so nothing relies on colour on paper either.
+
 ## Accessibility
 
 Visible focus on every interactive element: a 2 px cyan outline with a 2 px offset (buttons add a

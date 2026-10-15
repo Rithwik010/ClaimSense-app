@@ -451,7 +451,11 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
   update or delete code paths.
 - Event types: `INTAKE_COMPLETED`, `RULES_EVALUATED`, `CONTEXT_ASSEMBLED`, `SLM_RECOMMENDED`,
   `OUTPUT_INVALID`, `CALCULATED`, `CALCULATION_FAILED`, `EXPLANATION_BUILT`, `REVIEW_OPENED`,
-  `REVIEW_ACCEPTED`, `REVIEW_OVERRIDDEN`, `FINALIZED`, `AUTO_OUTCOME`.
+  `REVIEW_ACCEPTED`, `REVIEW_OVERRIDDEN`, `FINALIZED`, `AUTO_OUTCOME`, `FIELD_CORRECTED` (a
+  provider's correction of a box read from the form before processing, D-FIX-1, migration 0010).
+- Each event keeps the ID of the API request that wrote it (`request_id`, D-OBS-1); the request's
+  log lines and its `X-Request-ID` response header carry the same ID. `RULES_EVALUATED` names the
+  reference data versions (the curated files' digest and each rule table's sources).
 - `CALCULATION_FAILED` (P2.4) is written instead of `CALCULATED` when the calculator cannot run
   (for example no fee for an approved line, or out-of-network care on a plan without out-of-network
   terms); the claim then waits for FULL review without amounts.
@@ -478,6 +482,10 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 | POST | `/v1/claims/{id}/review/open` | `{reviewer_id}` → records `REVIEW_OPENED`, the start of the review time (D-REV-6); 409 unless `AWAITING_REVIEW`; reviewer role |
 | POST | `/v1/claims/{id}/review` | `ReviewAction` → finalized `DecisionRecord`; 409 if already final or busy, 422 if refused; reviewer role |
 | GET | `/v1/plans/{plan_id}` | Plan configuration |
+| GET | `/v1/claims/{id}/check` | Before processing: what the rules would do, in plain words, and each passing line's coverage criteria; writes nothing (D-CHK-1); the provider's own claim |
+| GET | `/v1/claims/{id}/form` | A claim read from our form, box by box as printed, with confidences and corrections (D-FIX-1) |
+| POST | `/v1/claims/{id}/corrections` | Correct boxes of a form claim not processed yet; audited as `FIELD_CORRECTED` (D-FIX-1); the provider's own claim |
+| GET | `/v1/claims/{id}/eob` | The patient's explanation of benefits of a decided claim (D-EOB-1) |
 
 Authentication: username and password logins with roles (`provider`, `reviewer`, `admin`), a
 session cookie and role checks on every endpoint; replaces the prototype role header (D-AUTH-1).

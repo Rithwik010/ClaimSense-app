@@ -1,5 +1,7 @@
 """Read-only queries for reference data used while processing a claim."""
 
+import hashlib
+from collections import defaultdict
 from datetime import date
 
 from sqlalchemy import select
@@ -16,6 +18,7 @@ from app.db.models import (
     ProcedureCode,
     Provider,
     ProviderNetwork,
+    ReferenceSource,
     VisitUsage,
 )
 
@@ -106,3 +109,21 @@ def procedure_descriptions(session: Session, codes: list[str]) -> dict[str, str]
         select(ProcedureCode.code, ProcedureCode.description).where(ProcedureCode.code.in_(codes))
     )
     return {code: description for code, description in rows if description}
+
+
+def reference_versions(session: Session) -> dict[str, str]:
+    """Per rule table, twelve hex characters naming the source files it was loaded from (their
+    SHA-256 in `reference_sources`, D-DATA-1), recorded with every rules run (D-OBS-1): ICD-10-CM,
+    the procedure code table, NCCI, MUE, the billing articles and place of service."""
+    rows = session.execute(
+        select(
+            ReferenceSource.table_name, ReferenceSource.source_path, ReferenceSource.sha256
+        ).order_by(ReferenceSource.table_name, ReferenceSource.source_path)
+    ).all()
+    sources: defaultdict[str, list[str]] = defaultdict(list)
+    for table, path, sha in rows:
+        sources[table].append(f"{path} {sha}")
+    return {
+        table: hashlib.sha256("\n".join(lines).encode()).hexdigest()[:12]
+        for table, lines in sources.items()
+    }

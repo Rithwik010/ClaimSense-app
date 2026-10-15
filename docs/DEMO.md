@@ -66,6 +66,27 @@ and `page 2.png`): choose or drop both on **Submit claim** (or **Add page 2 as a
 check that **Page 1** is the claim and **Page 2** the clinical note (**Swap pages** if not), then
 **Read claim**. The claim page's **View original files** shows each file.
 
+Before processing, a provider can **Check claim** (on Submit claim, or on an unprocessed claim's
+page): the rules run as processing would run them and nothing is saved. The check says whether
+the claim would be rejected, denied or put on hold and why, in plain words, and what each line's
+coverage policy asks the clinical notes to show. For a claim read from a PDF or a scan, any box
+read wrong has a **Correct** button: type the value as the form shows it (the dialog gives the
+format), **Save correction**, and the check runs again. To show it, make a claim with a misread
+NPI and file it as provider1:
+
+    uv run python -m scripts.demo.claim_image --claim-id CLM-FIX-0001 --days 21 --format pdf \
+        --misread billing_npi=1234567890 --out /tmp/claim-misread.pdf
+
+**Check claim** says it would be rejected, with the billing NPI read as 1234567890 → **Correct
+Billing NPI** → `2829620345` → **Save correction** → the check is ready, with the physical therapy
+policy's criterion. Process it; once a reviewer finalizes it, the audit trail shows the correction
+(before and after).
+
+A decided claim has a **Patient EOB** button (provider, reviewer and admin): the patient's
+explanation of benefits with each service, what the plan allowed and paid, what the patient may
+owe, the deductible and out-of-pocket so far this year, and "This is not a bill." **Print** gives
+black text on white. Try it on `CLM-DEMO-01` (approved) or `CLM-DEMO-04` (partly approved).
+
 Every dashboard uses one set of status labels: In review, Approved, Partly approved (some lines
 paid, some not), Pended, Denied, Rejected; reviewers and admins also see Not processed for a
 claim filed but never processed (a provider sees it as In review).

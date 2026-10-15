@@ -38,7 +38,14 @@ each demo claim can be filed only once. It checks:
 9. D-DOC-2: a claim filed from its form's two pages as two scanned images (CLM-E2E-PAGES, demo
    claim 01 three weeks later): one claim, its note read from page 2, both files kept in page
    order and served with their hashes; the same pages in the wrong order are refused, keeping
-   nothing.
+   nothing;
+10. D-CHK-1, D-FIX-1, D-EOB-1, D-OBS-1: a digital PDF with a misread billing NPI (CLM-E2E-FIX,
+   demo claim 01 four weeks later): the check says it would be rejected and names that box only;
+   a bad correction is refused, a good one is audited as FIELD_CORRECTED with the request ID of
+   its response; the check is then ready, with the line's coverage criteria; processed, accepted
+   and finalized, its patient EOB matches the calculator to the cent, with the year to date; a
+   rejected claim has no EOB, a claim the rules denied has one without amounts; every audit event
+   of a request carries its X-Request-ID, and the rules event names the reference data versions.
 
     uv run python -m scripts.demo.e2e_api [--log data/generated/logs/api.log] [--privacy-only]
 """
@@ -65,7 +72,7 @@ from app.core.settings import get_settings
 from app.domain.contracts import ClaimStatus, DecisionRecord, IntakeClaim
 from app.explain.reasons import REASONED_OUTCOMES, claim_outcome
 from app.intake.form_codec import to_form_values
-from scripts.demo.claim_image import images
+from scripts.demo.claim_image import digital_pdf, images
 from scripts.demo.users import FILED_BY, USERS, password
 from tests.explain_support import mismatches
 from training.generate.forms import render_pdf
@@ -465,6 +472,96 @@ def pages_in_files(check: Check, sessions: dict[str, httpx.Client]) -> None:
         )
 
 
+FIX_CLAIM = "CLM-E2E-FIX"
+MISREAD_NPI = "1234567890"  # fails the NPI check digit
+
+
+def provider_tools(check: Check, sessions: dict[str, httpx.Client]) -> None:
+    """Check, correct, process, review and the patient EOB (D-CHK-1, D-FIX-1, D-EOB-1, D-OBS-1)."""
+    p1, rv = sessions["provider1"], sessions[REVIEWER_ID]
+    npi = claim_json("01-approve-quick.json")["billing_npi"]
+    pdf = digital_pdf(FIX_CLAIM, 28, {"billing_npi": MISREAD_NPI})
+    filed = no_5xx(
+        check,
+        p1.post("/v1/claims/intake/file", content=pdf, headers={"X-File-Name": "fix.pdf"}),
+        "PDF with a misread NPI",
+    )
+    check(filed.status_code == 201, f"{FIX_CLAIM}: filed from a PDF with a misread NPI")
+    found = no_5xx(check, p1.get(f"/v1/claims/{FIX_CLAIM}/check"), "check").json()
+    check(
+        found.get("outcome") == "REJECTED"
+        and [p["fields"] for p in found.get("problems", [])] == [["billing_npi"]],
+        f"{FIX_CLAIM}: the check says rejected, for the billing NPI box only",
+    )
+    bad = p1.post(
+        f"/v1/claims/{FIX_CLAIM}/corrections",
+        json={"corrections": [{"field": "billing_npi", "value": "1234567891"}]},
+    )
+    check(bad.status_code == 422, f"a correction that fails the NPI check: 422 ({bad.text[:60]})")
+    good = no_5xx(
+        check,
+        p1.post(
+            f"/v1/claims/{FIX_CLAIM}/corrections",
+            json={"corrections": [{"field": "billing_npi", "value": npi}]},
+        ),
+        "correction",
+    )
+    boxes = {b["field"]: b for b in good.json().get("boxes", [])}
+    check(
+        good.status_code == 200
+        and (boxes["billing_npi"]["text"], boxes["billing_npi"]["corrected"]) == (npi, True),
+        f"{FIX_CLAIM}: the billing NPI corrected",
+    )
+    events = rv.get(f"/v1/claims/{FIX_CLAIM}/audit").json()
+    corrected = [e for e in events if e["event_type"] == "FIELD_CORRECTED"]
+    check(
+        len(corrected) == 1
+        and corrected[0]["actor"] == "provider1"
+        and corrected[0]["request_id"] == good.headers.get("x-request-id")
+        and corrected[0]["payload"]["fields"][0]["before"] == MISREAD_NPI,
+        "FIELD_CORRECTED: by provider1, the box before and after, its response's request ID",
+    )
+    ready = p1.get(f"/v1/claims/{FIX_CLAIM}/check").json()
+    check(
+        ready.get("outcome") == "READY" and bool(ready.get("coverage")),
+        f"{FIX_CLAIM}: the check is then ready, with the line's coverage criteria",
+    )
+    processed = p1.post(f"/v1/claims/{FIX_CLAIM}/process")
+    check(processed.status_code == 200, f"{FIX_CLAIM}: processed")
+    in_review = p1.get(f"/v1/claims/{FIX_CLAIM}/eob")
+    check(in_review.status_code == 409, "no EOB while the claim is in review")
+    reviewed = review(rv, FIX_CLAIM)
+    check(reviewed.status_code == 200, f"{FIX_CLAIM}: accepted and finalized")
+    record = DecisionRecord.model_validate(rv.get(f"/v1/claims/{FIX_CLAIM}").json()["record"])
+    eob = p1.get(f"/v1/claims/{FIX_CLAIM}/eob").json()
+    totals = record.amounts.totals if record.amounts else None
+    check(
+        totals is not None
+        and eob["totals"]["plan_pays_cents"] == totals.plan_pays_cents
+        and eob["totals"]["patient_pays_cents"] == totals.member_pays_cents
+        and eob["notes"][0] == "This is not a bill."
+        and eob["year_to_date"] is not None,
+        f"{FIX_CLAIM}: the patient EOB matches the calculator, with the year to date",
+    )
+    check(
+        sessions["provider2"].get("/v1/claims/CLM-DEMO-06/eob").status_code == 409,
+        "CLM-DEMO-06 (rejected): no EOB",
+    )
+    denied = sessions["provider2"].get("/v1/claims/CLM-DEMO-05/eob").json()
+    check(
+        denied.get("totals") is None and denied.get("lines", [{}])[0].get("billed_cents"),
+        "CLM-DEMO-05 (denied by the rules): an EOB with its charges and no other amount",
+    )
+    events = rv.get(f"/v1/claims/{FIX_CLAIM}/audit").json()
+    rules = next(e for e in events if e["event_type"] == "RULES_EVALUATED")
+    check(
+        all(e.get("request_id") for e in events)
+        and rules["request_id"] == processed.headers.get("x-request-id")
+        and "ncci_ptp_edits" in rules["payload"]["reference_data"]["tables"],
+        "every audit event names its request; the rules event, the reference data versions",
+    )
+
+
 def file_fragments(data: bytes) -> dict[str, str]:
     """Pieces of a stored file as they could appear in a log: a stretch of its text, and a chunk
     of its bytes as base64 and as hex."""
@@ -831,6 +928,9 @@ def main() -> None:
 
     print("One claim from its form's pages in two files (D-DOC-2)")
     pages_in_files(check, sessions)
+
+    print("Check, correct, process and the patient EOB (D-CHK-1, D-FIX-1, D-EOB-1, D-OBS-1)")
+    provider_tools(check, sessions)
 
     print("Bad inputs")
     for what, body, headers in (

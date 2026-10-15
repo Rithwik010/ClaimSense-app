@@ -1,7 +1,9 @@
 // Claim detail: the review layout, read-only, plus the explanation rendered by the API from the
 // decision record (§8.7); the summary, clinical note and audit trail as tabs on the right (D-UI-6),
-// and the original file the claim was filed from (D-DOC-1).
+// the original file the claim was filed from (D-DOC-1) and, once decided, the patient's EOB
+// (D-EOB-1).
 
+import { FileText } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router";
 
 import { useAudit, useClaim, useExplanation } from "@/api/hooks";
@@ -55,6 +57,13 @@ export function ClaimDetail() {
           <>
             <OutcomeChip outcome={view.outcome} showHint />
             <OriginalFileButton claimId={view.claim_id} documents={view.documents} />
+            {view.eob && (
+              <Button asChild variant="outline">
+                <Link to={`/claims/${encodeURIComponent(view.claim_id)}/eob`}>
+                  <FileText aria-hidden /> Patient EOB
+                </Link>
+              </Button>
+            )}
             {action}
           </>
         }

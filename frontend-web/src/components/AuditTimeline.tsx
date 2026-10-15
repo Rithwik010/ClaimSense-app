@@ -1,8 +1,10 @@
-// The audit trail as a simple timeline (§8.9): when, what happened, who did it, and the versions
-// the step ran with. Read from GET /v1/claims/{id}/audit; insert-only on the server.
+// The audit trail as a simple timeline (§8.9): when, what happened, who did it, the versions the
+// step ran with and the request that wrote it (D-OBS-1). A provider's corrections before processing
+// name the boxes and, for all but the patient's, the text before and after (D-FIX-1). Read from
+// GET /v1/claims/{id}/audit; insert-only on the server.
 
 import type { AuditEvent } from "@/api/types";
-import { dateTime } from "@/lib/format";
+import { dateTime, fieldLabel } from "@/lib/format";
 
 export const EVENTS: Record<string, string> = {
   INTAKE_COMPLETED: "Claim received",
@@ -19,7 +21,25 @@ export const EVENTS: Record<string, string> = {
   REVIEW_ACCEPTED: "Recommendation accepted",
   REVIEW_OVERRIDDEN: "Lines overridden",
   FINALIZED: "Finalized",
+  FIELD_CORRECTED: "Boxes corrected by the provider",
 };
+
+interface Corrected {
+  field: string;
+  before?: string | null;
+  after?: string | null;
+}
+
+/** What a FIELD_CORRECTED event changed, one box per item. */
+export function corrections(event: AuditEvent): string[] {
+  if (event.event_type !== "FIELD_CORRECTED") return [];
+  const fields = (event.payload.fields as Corrected[] | undefined) ?? [];
+  return fields.map((f) =>
+    "after" in f
+      ? `${fieldLabel(f.field)}: ${f.before ?? "(blank)"} → ${f.after ?? "(blank)"}`
+      : `${fieldLabel(f.field)} (patient detail, not shown)`,
+  );
+}
 
 function versions(event: AuditEvent): string {
   const parts = [
@@ -46,7 +66,19 @@ export function AuditTimeline({ events }: { events: AuditEvent[] }) {
             <p className="text-[13px] text-ink-muted">
               <time dateTime={event.created_at}>{dateTime(event.created_at)}</time>, by {event.actor}
             </p>
+            {corrections(event).length > 0 && (
+              <ul className="text-[13px] break-words text-ink-muted">
+                {corrections(event).map((text) => (
+                  <li key={text}>{text}</li>
+                ))}
+              </ul>
+            )}
             {versions(event) && <p className="text-[13px] break-words text-ink-muted">{versions(event)}</p>}
+            {event.request_id && (
+              <p className="text-[13px] text-ink-muted">
+                Request <span className="tabular-nums">{event.request_id.slice(0, 12)}</span>
+              </p>
+            )}
           </div>
         </li>
       ))}

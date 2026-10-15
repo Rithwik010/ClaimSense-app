@@ -6,6 +6,8 @@ import { useUser } from "../lib/auth";
 import { request } from "./client";
 import type {
   AuditEvent,
+  ClaimCheck,
+  ClaimForm,
   ClaimStatus,
   ClaimSummary,
   ClaimView,
@@ -16,6 +18,7 @@ import type {
   IntakeResult,
   LineOverride,
   Overview,
+  PatientEob,
   Plan,
   ProviderClaimSummary,
   ProviderClaimView,
@@ -186,9 +189,17 @@ export function usePlan(planId: string | null) {
 function useRefresh() {
   const client = useQueryClient();
   return (claimId: string) => {
-    for (const key of [["claim", claimId], ["audit", claimId], ["explanation", claimId], ["overview"]]) {
+    for (const key of [
+      ["claim", claimId],
+      ["audit", claimId],
+      ["explanation", claimId],
+      ["form", claimId],
+      ["eob", claimId],
+      ["overview"],
+    ]) {
       void client.invalidateQueries({ queryKey: key });
     }
+    client.removeQueries({ queryKey: ["check", claimId] }); // a processed claim is not checked
     void client.invalidateQueries({ queryKey: ["claims"] });
     void client.invalidateQueries({ queryKey: ["queue"] });
   };
@@ -234,5 +245,50 @@ export function useSubmitReview() {
         },
       }),
     onSuccess: (record) => refresh(record.claim_id),
+  });
+}
+
+/** A claim read from our form, box by box (D-FIX-1); only asked for claims read from a form. */
+export function useClaimForm(claimId: string, enabled = true) {
+  return useQuery({
+    queryKey: ["form", claimId],
+    queryFn: () => request<ClaimForm>(`/v1/claims/${encodeURIComponent(claimId)}/form`),
+    enabled: enabled && claimId !== "",
+  });
+}
+
+/** What processing would find, before it runs (D-CHK-1): asked for with "Check claim", and asked
+ * again after each correction while it is shown. */
+export function useClaimCheck(claimId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["check", claimId],
+    queryFn: () => request<ClaimCheck>(`/v1/claims/${encodeURIComponent(claimId)}/check`),
+    enabled: enabled && claimId !== "",
+    staleTime: 0,
+  });
+}
+
+/** Correct boxes of the provider's claim before processing (D-FIX-1). */
+export function useCorrect(claimId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (corrections: { field: string; value: string }[]) =>
+      request<ClaimForm>(`/v1/claims/${encodeURIComponent(claimId)}/corrections`, {
+        method: "POST",
+        json: { corrections },
+      }),
+    onSuccess: (form) => {
+      client.setQueryData(["form", claimId], form);
+      void client.invalidateQueries({ queryKey: ["check", claimId] });
+      void client.invalidateQueries({ queryKey: ["claim", claimId] });
+    },
+  });
+}
+
+/** The patient's explanation of benefits of a decided claim (D-EOB-1). */
+export function usePatientEob(claimId: string) {
+  return useQuery({
+    queryKey: ["eob", claimId],
+    queryFn: () => request<PatientEob>(`/v1/claims/${encodeURIComponent(claimId)}/eob`),
   });
 }

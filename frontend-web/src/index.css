@@ -336,3 +336,42 @@ mark.evidence {
   backdrop-filter: blur(20px) saturate(1.4);
   box-shadow: 0 24px 48px -24px rgb(2 6 23 / 0.8);
 }
+
+/* Printing (the patient's EOB, D-EOB-1): black text on white paper, without the app around the
+   page, the glass or the lights. Decisions keep their text and icon. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    color-scheme: light;
+    background: #ffffff !important;
+    background-image: none !important;
+  }
+  body::before,
+  [data-slot="sidebar"],
+  [data-slot="sidebar-gap"],
+  [data-slot="sidebar-container"],
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+  .eob,
+  .eob * {
+    color: #111827 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border-color: #9ca3af !important;
+  }
+  .eob .edge-light::after {
+    display: none;
+  }
+  .eob table {
+    break-inside: auto;
+  }
+  .eob tr {
+    break-inside: avoid;
+  }
+}

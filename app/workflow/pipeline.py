@@ -44,7 +44,7 @@ from app.context.assemble import ContextError, assemble_context
 from app.core.logging import get_logger
 from app.core.settings import Settings
 from app.db import lookups
-from app.db.curated import load_curated
+from app.db.curated import curated_digest, load_curated
 from app.db.models import Claim, ClaimDocument, DecisionRecordRow, Member
 from app.db.rules_reference import reference_for_claim
 from app.domain.contracts import (
@@ -121,7 +121,7 @@ def low_confidence_fields(intake: IntakeResult, threshold: float) -> list[str]:
     return sorted(path for path, value in intake.field_confidences.items() if value < threshold)
 
 
-def _filing_fields(data: Mapping[str, Any]) -> tuple[str, str, date]:
+def filing_fields(data: Mapping[str, Any]) -> tuple[str, str, date]:
     """Claim ID, member ID and received date: what filing a claim needs (P2.5 decision 3)."""
     claim_id, member_id, received = (
         data.get("claim_id"),
@@ -156,7 +156,7 @@ def intake_claim_data(
     that filed it (D-AUTH-1); the filing user is INTAKE_COMPLETED's actor. `documents`, the files
     the claim came from in page order, are kept with the claim in the same transaction (D-DOC-1,
     D-DOC-2): a refused claim keeps nothing."""
-    claim_id, member_id, received_date = _filing_fields(data)
+    claim_id, member_id, received_date = filing_fields(data)
     if any(not 0.0 <= value <= 1.0 for value in field_confidences.values()):
         raise IntakeRefused("field confidences must be between 0 and 1")
     try:
@@ -293,7 +293,7 @@ def _explanation_built(session: Session, row: Claim, record: DecisionRecord, ver
     )
 
 
-def _rules_payload(rules: RulesOutcome) -> dict:
+def _rules_payload(rules: RulesOutcome, reference: dict[str, Any]) -> dict:
     return {
         "claim_outcome": rules.claim_outcome.value,
         "failures": [
@@ -302,7 +302,15 @@ def _rules_payload(rules: RulesOutcome) -> dict:
             if not r.passed
         ],
         "line_outcomes": [o.model_dump(mode="json") for o in rules.line_outcomes],
+        "reference_data": reference,
     }
+
+
+def reference_data(session: Session) -> dict[str, Any]:
+    """The reference data the rules ran on (D-OBS-1): the committed curated files and each rule
+    table's source files, so a decision names every input version besides the rules, model,
+    prompt and policies (`Versions`)."""
+    return {"curated": curated_digest(), "tables": lookups.reference_versions(session)}
 
 
 def _context_payload(context: ContextPackage, settings: Settings) -> dict:
@@ -477,7 +485,13 @@ def process_claim(
         raise PipelineError(f"claim {claim_id} cannot be checked: {exc}") from exc
     rules_ms = _ms(started)
     versions = Versions(rules_version=RULES_VERSION)
-    record_event(session, claim_id, EventType.RULES_EVALUATED, _rules_payload(rules), versions)
+    record_event(
+        session,
+        claim_id,
+        EventType.RULES_EVALUATED,
+        _rules_payload(rules, reference_data(session)),
+        versions,
+    )
     timestamps = Timestamps(received=row.received_date, processed=datetime.now(UTC))
 
     if rules.claim_outcome is not RuleOutcomeValue.PASS:

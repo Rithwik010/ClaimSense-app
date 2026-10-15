@@ -1,7 +1,8 @@
 // Submit claim (providers, D-AUTH-1): drop a JSON claim, a PDF of the form or a scanned form, or the
-// form's two pages as two files (one claim, D-DOC-2); check the fields read and their confidence;
-// process the claim, and the stage strip fills in (motion moment 4). If the model is down (503) the
-// claim stays received and "Try again" processes it.
+// form's two pages as two files (one claim, D-DOC-2); check the claim (D-CHK-1) and the boxes read
+// with their confidence, correcting any read wrong (D-FIX-1); process the claim, and the stage strip
+// fills in (motion moment 5). If the model is down (503) the claim stays received and "Try again"
+// processes it.
 
 import { useState } from "react";
 import { Link } from "react-router";
@@ -11,8 +12,8 @@ import { ApiError } from "@/api/client";
 import { useProcess, useUpload } from "@/api/hooks";
 import type { FiledWithErrors, IntakeResult } from "@/api/types";
 import { OutcomeChip } from "@/components/Chip";
+import { ClaimPrep } from "@/components/ClaimPrep";
 import { DropZone } from "@/components/DropZone";
-import { FieldsTable } from "@/components/Fields";
 import { PageTitle, Panel, Section } from "@/components/Layout";
 import { providerStages, StageStrip } from "@/components/StageStrip";
 import { ErrorNotice, Note } from "@/components/States";
@@ -52,7 +53,7 @@ export function SubmitClaim() {
 
   return (
     <>
-      <PageTitle title="Submit claim" hint="Read the claim, check the fields, then process it." />
+      <PageTitle title="Submit claim" hint="Read the claim, check it and correct any box read wrong, then process it." />
       <Panel className="mb-6 space-y-4 p-5">
         <DropZone files={files} onFiles={choose} />
         <div className="flex flex-wrap items-center gap-3">
@@ -158,25 +159,13 @@ export function SubmitClaim() {
             </Section>
           )}
 
-          {errors && (
-            <div className="mb-6">
-              <Note>
-                <p className="font-semibold">The claim was filed, but the rules will reject it:</p>
-                <ul className="mt-1 list-disc pl-5">
-                  {errors.contract_errors.map((error) => (
-                    <li key={error}>{error}</li>
-                  ))}
-                </ul>
-              </Note>
-            </div>
-          )}
-          <Section title="Fields read">
-            <FieldsTable
-              claim={read ? read.claim : (errors?.received ?? {})}
-              confidences={(read ? read.field_confidences : errors?.field_confidences) ?? {}}
-              jsonClaim={filed.source_format === "JSON"}
-            />
-          </Section>
+          <ClaimPrep
+            claimId={claimId}
+            sourceFormat={filed.source_format}
+            claim={read ? read.claim : (errors?.received ?? {})}
+            contractErrors={errors?.contract_errors ?? []}
+            processed={Boolean(result)}
+          />
         </>
       )}
     </>

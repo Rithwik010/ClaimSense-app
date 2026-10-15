@@ -22,15 +22,17 @@ import { PAGES } from "@/lib/auth";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 function crumbs(pathname: string): { label: string; to?: string }[] {
-  const [first, second] = pathname.split("/").filter(Boolean);
+  const [first, second, third] = pathname.split("/").filter(Boolean);
   if (first === "review" && second) {
     return [{ label: "Review queue", to: "/queue" }, { label: decodeURIComponent(second) }];
   }
-  if (first === "claims" && second) {
-    return [{ label: "Claims", to: "/claims" }, { label: decodeURIComponent(second) }];
-  }
-  if (first === "my-claims" && second) {
-    return [{ label: "My claims", to: "/my-claims" }, { label: decodeURIComponent(second) }];
+  const lists: Record<string, string> = { claims: "Claims", "my-claims": "My claims" };
+  if (first && first in lists && second) {
+    const claim = { label: decodeURIComponent(second), to: `/${first}/${second}` };
+    const list = { label: lists[first] ?? first, to: `/${first}` };
+    return third === "eob"
+      ? [list, claim, { label: "Patient EOB" }]
+      : [list, { label: claim.label }];
   }
   const item = PAGES.find((n) => n.to === `/${first ?? ""}`);
   return [{ label: item?.label ?? "ClaimSense" }];
@@ -45,7 +47,7 @@ export function Layout() {
     <SidebarProvider defaultOpen={wide}>
       <AppSidebar />
       <SidebarInset className="min-w-0 bg-transparent">
-        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-rules bg-canvas/60 px-4 backdrop-blur-xl backdrop-saturate-150 md:px-6">
+        <header className="sticky top-0 z-20 flex h-14 print:hidden shrink-0 items-center gap-2 border-b border-rules bg-canvas/60 px-4 backdrop-blur-xl backdrop-saturate-150 md:px-6">
           <SidebarTrigger className="-ml-1" aria-label="Show or hide the navigation" />
           <Separator orientation="vertical" className="mr-2 h-4 bg-rules" />
           <Breadcrumb className="min-w-0 flex-1">

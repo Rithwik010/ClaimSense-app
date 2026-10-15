@@ -19,6 +19,11 @@ A provider's claim carries no rule IDs, internal reason codes, rule checks, crit
 output, confidence scores or versions: once final, the provider's explanation and billing built
 from the record and the reason table (D-UI-6). Reviewers and admins get the record, a summary and
 each claim's reasons.
+
+Before processing, a provider can check their claim (`GET /v1/claims/{id}/check`: the rules as
+processing runs them, nothing written, D-CHK-1) and correct the boxes of a claim read from our
+form (`GET /v1/claims/{id}/form`, `POST /v1/claims/{id}/corrections`, D-FIX-1). Once a claim is
+decided, `GET /v1/claims/{id}/eob` gives the patient's explanation of benefits (D-EOB-1).
 """
 
 import base64
@@ -57,7 +62,8 @@ from app.audit.events import list_events
 from app.auth import Role
 from app.auth.users import AuthUser
 from app.core.settings import Settings, get_settings
-from app.db.models import DOCUMENT_TYPES, Claim, ClaimDocument, Plan
+from app.db.curated import load_curated
+from app.db.models import DOCUMENT_TYPES, AuditEvent, Claim, ClaimDocument, Member, Plan, Provider
 from app.domain.contracts import (
     ClaimDecision,
     ClaimStatus,
@@ -69,6 +75,8 @@ from app.domain.contracts import (
     SourceFormat,
 )
 from app.explain.codes import adjustments, procedure_codes
+from app.explain.eob import EOB_STATUSES, PatientEob, YearToDate, patient_eob
+from app.explain.fields import field_label
 from app.explain.provider import ProviderExplanation, provider_explanation
 from app.explain.reasons import ClaimReason, claim_outcome, provider_outcome
 from app.explain.render import render
@@ -79,6 +87,14 @@ from app.intake.files import UnreadableFile, read_claim_file, read_claim_files
 from app.ml.client import DecisionModel, ModelUnavailable
 from app.rag.retrieve import RetrievalUnavailable, Retriever
 from app.review.actions import ReviewRefused
+from app.workflow.check import ClaimCheck, check_claim
+from app.workflow.corrections import (
+    ClaimForm,
+    CorrectionNotAllowed,
+    CorrectionRefused,
+    claim_form,
+    correct_claim,
+)
 from app.workflow.finalize import ReviewBusy, finalize_review
 from app.workflow.listing import ClaimSummary, claim_summaries
 from app.workflow.pipeline import (
@@ -150,6 +166,7 @@ class ClaimView(BaseModel):
     outcome: str  # the label key every dashboard shows (D-UI-6)
     summary: Summary  # a few short lines from the record (D-UI-6)
     documents: list[DocumentInfo]  # the original files kept, in page order (D-DOC-1, D-DOC-2)
+    eob: bool = False  # GET /v1/claims/{id}/eob has the patient's EOB (D-EOB-1)
 
 
 # A provider sees a claim's decision once it is final; a rule outcome is final at once.
@@ -190,6 +207,7 @@ class ProviderClaimView(BaseModel):
     # the stage strip.
     stages: list[str] = []
     documents: list[DocumentInfo] = []  # the original files kept, in page order
+    eob: bool = False  # GET /v1/claims/{id}/eob has the patient's EOB (D-EOB-1)
 
 
 def _claim_row(session: Session, claim_id: str) -> Claim:
@@ -269,6 +287,7 @@ def _provider_view(session: Session, row: Claim, settings: Settings) -> Provider
         else None,
         stages=[event.event_type for event in list_events(session, row.claim_id)],
         documents=_documents(session, row.claim_id),
+        eob=claim_status in EOB_STATUSES,
     )
 
 
@@ -293,6 +312,7 @@ class AuditEventView(BaseModel):
     model_name: str | None
     prompt_version: str | None
     policy_versions: dict[str, Any] | None
+    request_id: str | None = None  # the API request that wrote it (D-OBS-1)
     created_at: datetime
 
 
@@ -621,6 +641,7 @@ def get_claim(
             settings.review_high_dollar_cents,
         ),
         documents=_documents(session, claim_id),
+        eob=claim_status in EOB_STATUSES,
     )
 
 
@@ -686,3 +707,142 @@ def get_explanation(
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"claim {claim_id} has no decision yet")
     body = render(record, fmt, procedure_codes(row.intake))
     return HTMLResponse(body) if fmt == "html" else PlainTextResponse(body)
+
+
+# --- Before processing: check and correct (D-CHK-1, D-FIX-1) -------------------------------------
+
+
+class Correction(BaseModel):
+    field: Annotated[str, StringConstraints(max_length=64)]  # a box of the form
+    value: Annotated[str, StringConstraints(max_length=200)]  # as the form prints it; "" clears
+
+
+class Corrections(BaseModel):
+    corrections: Annotated[list[Correction], Field(min_length=1, max_length=60)]
+
+
+@router.get("/{claim_id}/form")
+def get_form(claim_id: str, session: SessionDep, user: AnyUser) -> ClaimForm:
+    """The claim's boxes as our form prints them, with each box's confidence and whether the
+    provider corrected it; `correctable` while the claim, read from a form, is not processed yet.
+    A provider's own claims only (another provider's is 404)."""
+    row = _own_claim(session, claim_id, user)
+    return claim_form(session, row)
+
+
+@router.post("/{claim_id}/corrections")
+def correct(
+    claim_id: str, body: Corrections, session: SessionDep, settings: SettingsDep, user: ProviderUser
+) -> ClaimForm:
+    """Correct boxes of the provider's own claim before it is processed (D-FIX-1): 409 once it is
+    processed or for a JSON claim, 422 for a box that cannot be corrected or a value that fails
+    its format check (nothing changes). Answers with the claim's boxes as corrected."""
+    _own_claim(session, claim_id, user)
+    try:
+        correct_claim(
+            session,
+            claim_id,
+            {item.field: item.value for item in body.corrections},
+            user.username,
+            settings.extraction_confidence_min,
+        )
+    except ClaimNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    except (InvalidTransition, CorrectionNotAllowed) as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except CorrectionRefused as exc:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, f"{field_label(exc.field)}: {exc.problem}"
+        ) from exc
+    except IntakeRefused as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    return claim_form(session, _claim_row(session, claim_id))
+
+
+@router.get("/{claim_id}/check")
+def check(
+    claim_id: str,
+    session: SessionDep,
+    settings: SettingsDep,
+    retriever: Annotated[Retriever, Depends(get_retriever)],
+    user: ProviderUser,
+) -> ClaimCheck:
+    """What processing would find on the provider's own claim, before it runs (D-CHK-1): the
+    rules' outcome in plain words with the boxes involved, and each passing line's coverage
+    criteria. Nothing is written. 409 once the claim is processed."""
+    _own_claim(session, claim_id, user)
+    try:
+        return check_claim(session, claim_id, settings, retriever)
+    except ClaimNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    except InvalidTransition as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except PipelineError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    except ReferenceDataUnavailable as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+
+
+# --- The patient's explanation of benefits (D-EOB-1) ---------------------------------------------
+
+
+def _year_to_date(session: Session, claim_id: str, plan: Plan | None) -> YearToDate | None:
+    """The deductible and out-of-pocket amounts stored when the claim was finalized, against
+    the plan's limits for the claim's network."""
+    payload = session.scalars(
+        select(AuditEvent.payload)
+        .where(AuditEvent.claim_id == claim_id, AuditEvent.event_type == "FINALIZED")
+        .order_by(AuditEvent.id.desc())
+        .limit(1)
+    ).first()
+    stored = (payload or {}).get("accumulators")
+    if plan is None or not isinstance(stored, dict) or not isinstance(stored.get("after"), dict):
+        return None
+    network = Network(stored["network"])
+    deductible, oop_max = (
+        (plan.inn_deductible_cents, plan.inn_oop_max_cents)
+        if network is Network.IN_NETWORK
+        else (plan.oon_deductible_cents, plan.oon_oop_max_cents)
+    )
+    if deductible is None or oop_max is None:
+        return None
+    return YearToDate(
+        network=network.value,
+        period_start=str(stored["period_start"]),
+        deductible_met_cents=int(stored["after"]["deductible_met_cents"]),
+        deductible_cents=deductible,
+        oop_met_cents=int(stored["after"]["oop_met_cents"]),
+        oop_max_cents=oop_max,
+    )
+
+
+@router.get("/{claim_id}/eob")
+def get_eob(claim_id: str, session: SessionDep, settings: SettingsDep, user: AnyUser) -> PatientEob:
+    """The patient's explanation of benefits of a decided claim (D-EOB-1): finalized by a
+    reviewer, or denied by the rules. 409 for any other claim: in review, rejected (returned
+    without processing) or on hold by the rules. A provider's own claims only."""
+    row = _own_claim(session, claim_id, user)
+    claim_status = ClaimStatus(row.status)
+    record = latest_record(session, claim_id)
+    if claim_status not in EOB_STATUSES or record is None:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"claim {claim_id} has no explanation of benefits: it is made once the plan decides "
+            "the claim (a rejected claim is returned without being processed)",
+        )
+    member = session.get(Member, row.member_id)
+    plan_id = record.context_refs.plan_id if record.context_refs else (member and member.plan_id)
+    plan = session.get(Plan, plan_id) if plan_id else None
+    npi = row.intake.get("billing_npi")
+    provider = session.get(Provider, npi) if isinstance(npi, str) else None
+    return patient_eob(
+        claim_status,
+        claim_outcome(claim_status, record),
+        record,
+        row.intake,
+        plan_name=plan.name if plan else None,
+        provider_name=provider.name if provider else None,
+        descriptions=load_curated().descriptions,
+        year_to_date=_year_to_date(session, claim_id, plan),
+        coinsurance_bps=_coinsurance_bps(session, record),
+    )

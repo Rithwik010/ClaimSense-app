@@ -206,6 +206,52 @@ def test_downgrading_0004_keeps_audited_review_openings(db_url: str) -> None:
     assert kept == ["REVIEW_OPENED"]
 
 
+def test_a_field_correction_is_audited_with_its_request_id(migrated: Engine) -> None:
+    """Migration 0010 (D-FIX-1, D-OBS-1): FIELD_CORRECTED joins the event types, and an event
+    keeps the ID of the request that wrote it."""
+    with migrated.begin() as conn:
+        insert_claim(conn, "CLM-TEST-FIX")
+        conn.execute(
+            text(
+                "INSERT INTO audit_events (claim_id, event_type, actor, payload, request_id) "
+                "VALUES ('CLM-TEST-FIX', 'FIELD_CORRECTED', 'provider-1', '{}', 'abc123')"
+            )
+        )
+        found = conn.execute(text("SELECT request_id FROM audit_events")).scalar_one()
+    assert found == "abc123"
+
+
+def test_downgrading_0010_keeps_audited_corrections(db_url: str) -> None:
+    """Going back to 0009 keeps FIELD_CORRECTED rows (append-only) without their request ID; new
+    ones are refused."""
+    config = alembic_config(db_url)
+    command.upgrade(config, "head")
+    engine = create_engine(db_url)
+    insert = text(
+        "INSERT INTO audit_events (claim_id, event_type, actor, payload) "
+        "VALUES ('CLM-TEST-DOWN', 'FIELD_CORRECTED', 'provider-1', '{}')"
+    )
+    with engine.begin() as conn:
+        insert_claim(conn, "CLM-TEST-DOWN")
+        conn.execute(insert)
+
+    command.downgrade(config, "0009")
+
+    with engine.connect() as conn:
+        kept = conn.execute(text("SELECT event_type FROM audit_events")).scalars().all()
+        columns = {c["name"] for c in inspect(conn).get_columns("audit_events")}
+    with (
+        pytest.raises(DBAPIError, match="ck_audit_events_event_type_allowed"),
+        engine.begin() as conn,
+    ):
+        conn.execute(insert)
+    engine.dispose()
+    command.downgrade(config, "base")
+
+    assert kept == ["FIELD_CORRECTED"]
+    assert "request_id" not in columns
+
+
 def test_claim_status_must_be_a_known_value(migrated: Engine) -> None:
     with pytest.raises(DBAPIError, match="ck_claims_status_allowed"), migrated.begin() as conn:
         conn.execute(

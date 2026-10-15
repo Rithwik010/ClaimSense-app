@@ -7,7 +7,7 @@
 // motion. Nothing is saved: no screenshots.
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,6 +31,8 @@ const LABELS: Record<string, string> = {
 };
 const IMAGE_CLAIM = `CLM-IMG-${String(Date.now()).slice(-6)}`; // digits: the OCR reads them reliably
 const PAGES_CLAIM = `CLM-PGS-${String(Date.now() + 1).slice(-6)}`;
+const FIX_CLAIM = `CLM-FIX-${String(Date.now() + 2).slice(-6)}`;
+const MISREAD_NPI = "1234567890"; // fails the NPI check digit
 
 test.describe.configure({ mode: "serial" });
 test.setTimeout(120_000);
@@ -321,6 +323,86 @@ test("one claim from its form's two pages in two files (D-DOC-2)", async ({ page
   };
   expect(claim.documents).toHaveLength(2);
   expect((claim.received.clinical_notes ?? "").length).toBeGreaterThan(20); // read from page 2
+});
+
+test("check a claim, correct a misread box, then the patient EOB (D-CHK-1, D-FIX-1, D-EOB-1)", async ({ page }) => {
+  const demo = JSON.parse(readFileSync(join(ROOT, "demo/claims/01-approve-quick.json"), "utf-8")) as { billing_npi: string };
+  const folder = mkdtempSync(join(tmpdir(), "claimsense-fix-"));
+  const pdf = join(folder, "claim with a misread NPI.pdf");
+  try {
+    execFileSync(
+      "uv",
+      ["run", "python", "-m", "scripts.demo.claim_image", "--claim-id", FIX_CLAIM, "--days", "21", "--format", "pdf"]
+        .concat(["--misread", `billing_npi=${MISREAD_NPI}`, "--out", pdf]),
+      { cwd: ROOT, stdio: "ignore" },
+    );
+    await loginAs(page, "provider1");
+    await page.goto("/submit");
+    await page.getByLabel("Claim file").setInputFiles(pdf);
+    await page.getByRole("button", { name: "Read claim" }).click();
+    await expect(page.getByText(`Claim ${FIX_CLAIM} was filed from a digital PDF`)).toBeVisible({ timeout: 60_000 });
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+
+  await page.getByRole("button", { name: "Check claim" }).click();
+  await expect(page.getByText("Would be rejected", { exact: true })).toBeVisible();
+  const found = page.getByRole("list", { name: "What the checks found" });
+  await expect(found).toContainText(`Billing provider NPI, read as: ${MISREAD_NPI}`);
+  await expect(page.getByRole("row", { name: /Billing NPI/ })).toContainText("Named by the check");
+  expect(await providerPageText(page)).not.toMatch(HIDDEN);
+  await axeClean(page, "submit: the check");
+
+  await found.getByRole("button", { name: "Correct Billing NPI" }).click();
+  const dialog = page.getByRole("dialog", { name: "Correct Billing NPI" });
+  await dialog.getByLabel("Billing NPI").fill("1234567891");
+  await dialog.getByRole("button", { name: "Save correction" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("enter a 10-digit NPI"); // refused, kept open
+  await axeClean(page, "the correction dialog", '[role="dialog"]');
+  await dialog.getByLabel("Billing NPI").fill(demo.billing_npi);
+  await dialog.getByRole("button", { name: "Save correction" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("row", { name: /Billing NPI/ })).toContainText("Corrected");
+  await expect(page.getByText("Ready to process", { exact: true })).toBeVisible(); // checked again
+  await expect(page.getByRole("list", { name: "Coverage criteria by line" })).toContainText("Line 1");
+  await axeClean(page, "submit: ready after the correction");
+
+  await page.getByRole("button", { name: "Process claim" }).click();
+  const result = page.getByRole("region", { name: "Result" });
+  await expect(result.getByText(/In review/).first()).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByRole("button", { name: /^Correct / })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Check claim" })).toHaveCount(0);
+
+  await loginAs(page, "reviewer1");
+  await page.goto(`/review/${FIX_CLAIM}`);
+  await page.getByRole("button", { name: "Accept all lines" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Finalize claim" }).click();
+  await expect(page.getByText(`Claim ${FIX_CLAIM} is final`)).toBeVisible();
+  await page.goto(`/claims/${FIX_CLAIM}`);
+  const side = page.getByRole("complementary", { name: "Summary, clinical note and audit trail" });
+  await side.getByRole("tab", { name: "Audit trail" }).click();
+  await expect(side.getByRole("list", { name: "Audit trail" })).toContainText(
+    `Billing NPI: ${MISREAD_NPI} → ${demo.billing_npi}`,
+  );
+  await page.getByRole("link", { name: "Patient EOB" }).click();
+  await expect(page.getByRole("heading", { name: "Explanation of benefits" })).toBeVisible();
+
+  await loginAs(page, "provider1");
+  await page.goto(`/my-claims/${FIX_CLAIM}`);
+  await page.getByRole("link", { name: "Patient EOB" }).click();
+  await expect(page).toHaveURL(new RegExp(`/my-claims/${FIX_CLAIM}/eob$`));
+  await expect(page.getByText("This is not a bill.")).toBeVisible();
+  const services = page.getByRole("table", { name: "Services" });
+  await expect(services.getByRole("row", { name: /^Total/ })).toBeVisible();
+  await expect(page.getByRole("region", { name: "This benefit year so far" })).toContainText("Deductible met");
+  expect(await providerPageText(page)).not.toMatch(HIDDEN);
+  await axeClean(page, "patient EOB");
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByRole("button", { name: "Print" })).toBeHidden();
+  await expect(page.locator("header").first()).toBeHidden();
+  await page.emulateMedia({ media: "screen" });
+  await page.getByRole("link", { name: "Back to the claim" }).click();
+  await expect(page).toHaveURL(new RegExp(`/my-claims/${FIX_CLAIM}$`));
 });
 
 test("claim page: the summary first, then the clinical note and the audit trail as tabs", async ({ page }) => {

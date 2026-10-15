@@ -57,6 +57,15 @@ def endpoints() -> list[tuple[str, str, dict[str, Any], set[str]]]:
         ("GET", f"/v1/claims/{CLAIM}/document", {}, everyone),
         ("GET", f"/v1/claims/{CLAIM}/document/1", {}, everyone),
         ("GET", f"/v1/claims/{CLAIM}/audit", {}, staff),
+        ("GET", f"/v1/claims/{CLAIM}/form", {}, everyone),
+        ("GET", f"/v1/claims/{CLAIM}/check", {}, {"provider"}),
+        (
+            "POST",
+            f"/v1/claims/{CLAIM}/corrections",
+            {"json": {"corrections": [{"field": "billing_npi", "value": "1234567893"}]}},
+            {"provider"},
+        ),
+        ("GET", f"/v1/claims/{CLAIM}/eob", {}, everyone),
         ("GET", "/v1/review/queue", {}, staff),
         ("GET", "/v1/plans/PLN-PPO-GOLD", {}, staff),
         ("GET", "/v1/metrics/evaluation", {}, {"admin"}),
@@ -105,9 +114,15 @@ def test_a_provider_cannot_open_another_providers_claim(api, load_case_reference
         ("GET", f"/v1/claims/{CLAIM}/explanation"),
         ("GET", f"/v1/claims/{CLAIM}/document"),
         ("GET", f"/v1/claims/{CLAIM}/document/1"),
+        ("GET", f"/v1/claims/{CLAIM}/form"),
+        ("GET", f"/v1/claims/{CLAIM}/check"),
+        ("POST", f"/v1/claims/{CLAIM}/corrections"),
+        ("GET", f"/v1/claims/{CLAIM}/eob"),
         ("POST", f"/v1/claims/{CLAIM}/process"),
     ):
-        response = client.request(method, path, headers=other)
+        body = {"corrections": [{"field": "billing_npi", "value": "1234567893"}]}
+        extra = {"json": body} if path.endswith("/corrections") else {}
+        response = client.request(method, path, headers=other, **extra)
         assert response.status_code == 404, (method, path)  # as if it did not exist
         assert response.json()["detail"] == f"claim {CLAIM} not found"
     assert client.get("/v1/claims", headers=other).json() == []

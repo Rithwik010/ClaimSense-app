@@ -15,6 +15,7 @@ import { Login } from "./pages/Login";
 import { Metrics } from "./pages/Metrics";
 import { MyClaims } from "./pages/MyClaims";
 import { Overview } from "./pages/Overview";
+import { PatientEob } from "./pages/PatientEob";
 import { ReviewClaim } from "./pages/ReviewClaim";
 import { Returned } from "./pages/Returned";
 import { ReviewQueue } from "./pages/ReviewQueue";
@@ -31,6 +32,7 @@ export function App() {
           <Route element={<Allow roles={["provider"]} />}>
             <Route path="my-claims" element={<MyClaims />} />
             <Route path="my-claims/:claimId" element={<ClaimResult />} />
+            <Route path="my-claims/:claimId/eob" element={<PatientEob />} />
             <Route path="submit" element={<SubmitClaim />} />
           </Route>
           <Route element={<Allow roles={["reviewer"]} />}>
@@ -40,6 +42,7 @@ export function App() {
             <Route path="queue" element={<ReviewQueue />} />
             <Route path="claims" element={<Claims />} />
             <Route path="claims/:claimId" element={<ClaimDetail />} />
+            <Route path="claims/:claimId/eob" element={<PatientEob />} />
             <Route path="rule-outcomes" element={<Returned />} />
           </Route>
           <Route element={<Allow roles={["admin"]} />}>

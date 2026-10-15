@@ -13,7 +13,13 @@ from sqlalchemy import Engine
 
 from app.api import auth, claims, metrics, plans, review
 from app.api.health import HealthReport, build_health_report, get_http_client
-from app.core.logging import configure_logging, get_logger
+from app.core.logging import (
+    REQUEST_ID_HEADER,
+    bind_request_id,
+    clear_request_id,
+    configure_logging,
+    get_logger,
+)
 from app.core.settings import Settings, get_settings
 from app.db.session import get_engine
 
@@ -40,17 +46,24 @@ app.include_router(plans.router)
 async def log_requests(
     request: Request, call_next: Callable[[Request], Awaitable[Response]]
 ) -> Response:
+    """Log every request as one JSON line with its request ID (D-OBS-1), which every other log
+    line and audit event of the request carries too, and which the response returns."""
     started = time.perf_counter()
-    response = await call_next(request)
-    route = request.scope.get("route")
-    log.info(
-        "request",
-        method=request.method,
-        route=getattr(route, "path", request.url.path),
-        status=response.status_code,
-        duration_ms=round((time.perf_counter() - started) * 1000, 1),
-    )
-    return response
+    request_id = bind_request_id()
+    try:
+        response = await call_next(request)
+        response.headers[REQUEST_ID_HEADER] = request_id
+        route = request.scope.get("route")
+        log.info(
+            "request",
+            method=request.method,
+            route=getattr(route, "path", request.url.path),
+            status=response.status_code,
+            duration_ms=round((time.perf_counter() - started) * 1000, 1),
+        )
+        return response
+    finally:
+        clear_request_id()
 
 
 @app.get("/health")

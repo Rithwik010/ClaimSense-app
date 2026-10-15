@@ -63,6 +63,7 @@ AUDIT_EVENT_TYPES = (
     "REVIEW_OVERRIDDEN",
     "FINALIZED",
     "AUTO_OUTCOME",
+    "FIELD_CORRECTED",
 )
 
 
@@ -477,4 +478,7 @@ class AuditEvent(Base):
     model_name: Mapped[str | None] = mapped_column(String(64))
     prompt_version: Mapped[str | None] = mapped_column(String(32))
     policy_versions: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # The API request that wrote the event (D-OBS-1): the X-Request-ID of the request's log lines
+    # and response; None for events written outside a request (scripts, seeding, tests).
+    request_id: Mapped[str | None] = mapped_column(String(64), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

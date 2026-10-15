@@ -6,6 +6,7 @@ synthetic generators (`training/generate/`) read the same values, so both always
 """
 
 import csv
+import hashlib
 import re
 from dataclasses import dataclass, field
 from datetime import date
@@ -623,3 +624,21 @@ def _rule_data_problems(data: CuratedData) -> list[str]:
     if data.ptp_modifiers and not data.bypass_modifiers <= set(data.ptp_modifiers):
         problems.append("the v1 bypass modifiers are not all NCCI PTP-associated modifiers")
     return problems
+
+
+@lru_cache
+def curated_digest() -> str:
+    """Twelve hex characters naming the committed curated files (plans, benefits, exclusions, fee
+    rule, reason codes, policies, scope), recorded with every rules run (D-OBS-1). They are the
+    files the seed loads and the running code reads; a database seeded from other files is not
+    detected (`make demo-reset` seeds from these)."""
+    digest = hashlib.sha256()
+    files = sorted(
+        path
+        for path in CURATED_DIR.rglob("*")
+        if path.is_file() and not any(part.startswith((".", "__")) for part in path.parts)
+    )
+    for path in files:
+        digest.update(path.relative_to(CURATED_DIR).as_posix().encode() + b"\0")
+        digest.update(path.read_bytes() + b"\0")
+    return digest.hexdigest()[:12]

@@ -176,6 +176,8 @@ export interface ClaimView {
   outcome: Outcome;
   summary: ClaimSummaryLines;
   documents: DocumentInfo[];
+  /** GET /v1/claims/{id}/eob has the patient's explanation of benefits (D-EOB-1). */
+  eob?: boolean;
 }
 
 export interface QueueItem {
@@ -223,6 +225,8 @@ export interface AuditEvent {
   model_name?: string | null;
   prompt_version?: string | null;
   policy_versions?: Record<string, string> | null;
+  /** The API request that wrote it (D-OBS-1). */
+  request_id?: string | null;
   created_at: string;
 }
 
@@ -324,6 +328,7 @@ export interface ProviderClaimView {
   /** The audit event types the claim went through, in order (no payloads): the stage strip. */
   stages: string[];
   documents: DocumentInfo[];
+  eob?: boolean;
 }
 
 /** A provider's own claim in their list: the decision and amounts only once final. */
@@ -436,4 +441,104 @@ export interface Plan {
   oon_oop_max_cents: number | null;
   benefits: PlanBenefit[];
   excluded_codes: string[];
+}
+
+/** One box of our claim form as read (D-FIX-1): its text as the form prints it. */
+export interface FormBox {
+  field: string;
+  text: string | null;
+  confidence: number | null;
+  correctable: boolean;
+  corrected: boolean;
+}
+
+/** A claim read from our form, box by box, and whether its boxes can still be corrected. */
+export interface ClaimForm {
+  claim_id: string;
+  status: string;
+  source_format: SourceFormat;
+  correctable: boolean;
+  boxes: FormBox[];
+  contract_errors: string[];
+}
+
+export type CheckOutcome = "READY" | "LINES_DENIED" | "REJECTED" | "DENIED" | "PENDED";
+
+export interface CheckItem {
+  line_no: number | null;
+  text: string;
+  checks: string[];
+  fields: string[];
+}
+
+export interface CoverageLine {
+  line_no: number;
+  procedure_code: string;
+  policies: string[];
+  needed: string[];
+  one_of: string[];
+  applies_when: string[];
+  not_covered: string[];
+}
+
+/** What processing would find, before it runs (D-CHK-1). */
+export interface ClaimCheck {
+  claim_id: string;
+  outcome: CheckOutcome;
+  heading: string;
+  problems: CheckItem[];
+  notes: CheckItem[];
+  coverage: CoverageLine[] | null;
+  coverage_note: string | null;
+}
+
+export interface EobLine {
+  line_no: number;
+  date_of_service: string | null;
+  procedure_code: string;
+  service: string | null;
+  status: "PAID" | "NOT_PAID" | "PENDING";
+  billed_cents: number | null;
+  allowed_cents: number | null;
+  plan_pays_cents: number | null;
+  patient_pays_cents: number | null;
+  other_plan_paid_cents: number | null;
+  notes: string[];
+  codes: string[];
+}
+
+export interface EobTotals {
+  billed_cents: number;
+  allowed_cents: number;
+  plan_pays_cents: number;
+  patient_pays_cents: number;
+  other_plan_paid_cents: number;
+}
+
+export interface YearToDate {
+  network: string;
+  period_start: string;
+  deductible_met_cents: number;
+  deductible_cents: number;
+  oop_met_cents: number;
+  oop_max_cents: number;
+}
+
+/** The patient's explanation of benefits of a decided claim (D-EOB-1). */
+export interface PatientEob {
+  claim_id: string;
+  outcome: Outcome;
+  patient_name: string | null;
+  member_id: string | null;
+  plan_name: string | null;
+  provider_name: string | null;
+  provider_npi: string | null;
+  network: string | null;
+  received: string;
+  processed: string | null;
+  lines: EobLine[];
+  totals: EobTotals | null;
+  year_to_date: YearToDate | null;
+  notes: string[];
+  codes: string[];
 }

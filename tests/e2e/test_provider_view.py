@@ -9,6 +9,11 @@
   is what the plan pays plus what the patient pays plus what another plan paid first, to the cent;
 - a reviewer's claim carries the summary of the same outcome, and the list the reasons with their
   codes and rules for the Reason column.
+
+D-CHK-1: checking the claim before it is processed predicts what the rules then do (rejected,
+denied, on hold, or going on to review) and writes nothing. D-EOB-1: a decided claim's patient EOB
+shows the calculator's amounts line by line and in total, to the cent; a claim in review, rejected
+or on hold by the rules has none (409).
 """
 
 import json
@@ -18,7 +23,8 @@ from typing import Any
 import pytest
 from sqlalchemy.orm import Session
 
-from app.domain.contracts import ClaimStatus, DecisionRecord, SourceFormat
+from app.domain.contracts import ClaimStatus, DecisionRecord, LineDecision, SourceFormat
+from app.explain.eob import EOB_STATUSES, NOT_A_BILL
 from app.explain.reasons import REASONED_OUTCOMES, claim_outcome
 from app.workflow.pipeline import intake_claim_data
 from scripts.verify.e2e_v2_cases import v2_retriever
@@ -54,6 +60,18 @@ HIDDEN_KEYS = (
     "criterion_id",
 )
 TO_ALLOWED = ("allowed_amount", "out_of_network", "not_paid")
+# What a check before processing says for each status processing then gives (D-CHK-1).
+PREDICTED = {
+    "REJECTED": {"REJECTED"},
+    "DENIED_BY_RULE": {"DENIED"},
+    "PENDED_BY_RULE": {"PENDED"},
+    "AWAITING_REVIEW": {"READY", "LINES_DENIED"},
+}
+EOB_LINE = {
+    LineDecision.APPROVE: "PAID",
+    LineDecision.DENY: "NOT_PAID",
+    LineDecision.PEND: "PENDING",
+}
 
 
 def provider_safe(response: Any) -> list[str]:  # noqa: ANN401
@@ -142,7 +160,65 @@ def check_provider(client, claim_id: str, record: DecisionRecord) -> dict[str, A
         assert billing_errors(explanation["billing"]) == []
     else:
         assert explanation["billing"] is None
+    assert view["eob"] is (record.status in EOB_STATUSES)
+    check_eob(client, claim_id, record)
     return view
+
+
+def check_eob(client, claim_id: str, record: DecisionRecord) -> None:  # noqa: ANN001
+    """The patient EOB of a decided claim matches the calculator to the cent; others have none."""
+    response = client.get(f"/v1/claims/{claim_id}/eob", headers=PROVIDER)
+    if record.status not in EOB_STATUSES:
+        assert response.status_code == 409, response.text
+        return
+    assert response.status_code == 200, response.text
+    eob = response.json()
+    assert provider_safe(eob) == []
+    assert eob["notes"][0] == NOT_A_BILL
+    assert eob["outcome"] == claim_outcome(record.status, record)
+    if record.amounts is None:
+        assert eob["totals"] is None
+        assert all(line["allowed_cents"] is None for line in eob["lines"])
+        assert all(line["status"] == "NOT_PAID" for line in eob["lines"])
+        return
+    t = record.amounts.totals
+    assert eob["totals"] == {
+        "billed_cents": t.billed_cents,
+        "allowed_cents": t.allowed_cents,
+        "plan_pays_cents": t.plan_pays_cents,
+        "patient_pays_cents": t.member_pays_cents,
+        "other_plan_paid_cents": t.cob_primary_paid_cents,
+    }
+    decisions = {d.line_no: d.decision for d in record.line_decisions}
+    for line, amounts in zip(eob["lines"], record.amounts.lines, strict=True):
+        assert line["line_no"] == amounts.line_no
+        assert (line["billed_cents"], line["allowed_cents"]) == (
+            amounts.billed_cents,
+            amounts.allowed_cents,
+        )
+        assert (line["plan_pays_cents"], line["patient_pays_cents"]) == (
+            amounts.plan_pays_cents,
+            amounts.member_pays_cents,
+        )
+        assert line["status"] == EOB_LINE[decisions[amounts.line_no]]
+    assert eob["year_to_date"] is not None
+
+
+def check_before_processing(client, claim_id: str, expected: str) -> None:  # noqa: ANN001
+    """The check predicts what processing does, and writes nothing."""
+    events = len(client.get(f"/v1/claims/{claim_id}/audit", headers=REVIEWER).json())
+    response = client.get(f"/v1/claims/{claim_id}/check", headers=PROVIDER)
+    assert response.status_code == 200, response.text
+    check = response.json()
+    assert provider_safe(check) == []
+    assert check["outcome"] in PREDICTED[expected], check
+    if check["outcome"] != "READY":
+        assert check["problems"], check
+    if expected == "AWAITING_REVIEW":
+        assert check["coverage"] is not None
+    assert len(client.get(f"/v1/claims/{claim_id}/audit", headers=REVIEWER).json()) == events
+    view = client.get(f"/v1/claims/{claim_id}", headers=REVIEWER).json()
+    assert view["status"] == "RECEIVED" and view["record"] is None
 
 
 def check_reviewer(client, claim_id: str, record: DecisionRecord) -> None:  # noqa: ANN001
@@ -169,11 +245,15 @@ def test_the_provider_view_and_the_summary(
     claim_id = case["given"]["claim"]["claim_id"]
     before = client.get(f"/v1/claims/{claim_id}", headers=PROVIDER).json()
     assert (before["outcome"], before["explanation"]) == ("IN_REVIEW", None)  # not processed
+    expected = case["expected"]["status_after_processing"]
+    check_before_processing(client, claim_id, expected)
 
     processed = client.post(f"/v1/claims/{claim_id}/process")
     assert processed.status_code == 200, processed.text
     assert provider_safe(processed.json()) == []
     record = record_of(client, claim_id)
+    assert record.status.value == expected
+    assert client.get(f"/v1/claims/{claim_id}/check", headers=PROVIDER).status_code == 409
     check_provider(client, claim_id, record)
     check_reviewer(client, claim_id, record)
     action = case["given"].get("review_action")
