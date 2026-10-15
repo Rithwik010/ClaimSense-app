@@ -34,7 +34,11 @@ each demo claim can be filed only once. It checks:
    reviewers and admins; 404 to another provider) with its type and the SHA-256 of the upload; the
    provider's explanation appears only once the claim is final and holds no rule IDs or internal
    codes; claims not paid as billed carry their reason texts; the reviewer's summary names the
-   outcome the record gives; and each paid claim's billing adds up to the cent.
+   outcome the record gives; and each paid claim's billing adds up to the cent;
+9. D-DOC-2: a claim filed from its form's two pages as two scanned images (CLM-E2E-PAGES, demo
+   claim 01 three weeks later): one claim, its note read from page 2, both files kept in page
+   order and served with their hashes; the same pages in the wrong order are refused, keeping
+   nothing.
 
     uv run python -m scripts.demo.e2e_api [--log data/generated/logs/api.log] [--privacy-only]
 """
@@ -61,6 +65,7 @@ from app.core.settings import get_settings
 from app.domain.contracts import ClaimStatus, DecisionRecord, IntakeClaim
 from app.explain.reasons import REASONED_OUTCOMES, claim_outcome
 from app.intake.form_codec import to_form_values
+from scripts.demo.claim_image import images
 from scripts.demo.users import FILED_BY, USERS, password
 from tests.explain_support import mismatches
 from training.generate.forms import render_pdf
@@ -406,6 +411,60 @@ def documents_and_views(check: Check, sessions: dict[str, httpx.Client]) -> None
             check(errors == [], f"{claim_id}: the billing adds up to the cent {errors or ''}")
 
 
+PAGES_CLAIM = "CLM-E2E-PAGES"
+
+
+def pages_in_files(check: Check, sessions: dict[str, httpx.Client]) -> None:
+    p1, p2, rv = sessions["provider1"], sessions["provider2"], sessions[REVIEWER_ID]
+    pages = images(PAGES_CLAIM, "PNG", days=21)
+    body = {
+        "files": [
+            {"name": f"scan page {n}.png", "content_base64": base64.b64encode(page).decode()}
+            for n, page in enumerate(pages, start=1)
+        ]
+    }
+    before = len(rv.get("/v1/claims").json())
+    swapped = {"files": list(reversed(body["files"]))}
+    refused = no_5xx(check, p1.post("/v1/claims/intake/files", json=swapped), "pages swapped")
+    check(
+        refused.status_code == 422
+        and "page 2" in refused.json().get("detail", "")
+        and len(rv.get("/v1/claims").json()) == before,
+        f"pages in the wrong order: 422, nothing filed ({refused.json().get('detail', '')[:60]})",
+    )
+    filed = no_5xx(check, p1.post("/v1/claims/intake/files", json=body), "two page files")
+    read = filed.json()
+    claim = read.get("claim") or read.get("received") or {}
+    check(
+        filed.status_code == 201
+        and read.get("source_format") == "SCANNED"
+        and claim.get("claim_id") == PAGES_CLAIM,
+        f"{PAGES_CLAIM}: filed from two image files as one scanned claim ({filed.status_code})",
+    )
+    check(
+        len(claim.get("clinical_notes") or "") > 20,
+        f"{PAGES_CLAIM}: its clinical note read from page 2"
+        f" ({len(claim.get('clinical_notes') or '')} characters)",
+    )
+    kept = rv.get(f"/v1/claims/{PAGES_CLAIM}").json()["documents"]
+    check(
+        [(d["file_no"], d["file_name"], d["content_type"]) for d in kept]
+        == [(1, "scan page 1.png", "image/png"), (2, "scan page 2.png", "image/png")],
+        f"{PAGES_CLAIM}: both files kept, in page order",
+    )
+    for number, page in enumerate(pages, start=1):
+        url = f"/v1/claims/{PAGES_CLAIM}/document/{number}"
+        check(
+            all(
+                hashlib.sha256(client.get(url).content).hexdigest()
+                == hashlib.sha256(page).hexdigest()
+                for client in (p1, rv, sessions["admin"])
+            )
+            and p2.get(url).status_code == 404,
+            f"{PAGES_CLAIM}: file {number} served with the upload's SHA-256; another provider 404",
+        )
+
+
 def file_fragments(data: bytes) -> dict[str, str]:
     """Pieces of a stored file as they could appear in a log: a stretch of its text, and a chunk
     of its bytes as base64 and as hex."""
@@ -424,8 +483,7 @@ def privacy(check: Check, api: httpx.Client, log: Path) -> None:
     """No patient name, street address, date of birth, clinical note text or stored original file
     of any demo claim (as stored at intake) in the log."""
     text = log.read_text(encoding="utf-8", errors="replace")
-    for n in range(1, 10):
-        claim_id = f"CLM-DEMO-{n:02d}"
+    for claim_id in [*(f"CLM-DEMO-{n:02d}" for n in range(1, 10)), PAGES_CLAIM]:
         response = api.get(f"/v1/claims/{claim_id}")
         if response.status_code != 200:
             continue
@@ -444,9 +502,13 @@ def privacy(check: Check, api: httpx.Client, log: Path) -> None:
         # every 40-character stretch of the note, 20 characters apart
         for start in range(0, max(len(notes) - 40, 0) + 1, 20):
             secrets[f"clinical note text ({start})"] = notes[start : start + 40]
-        document = api.get(f"/v1/claims/{claim_id}/document")
-        if document.status_code == 200:
-            secrets |= file_fragments(document.content)
+        for kept in response.json().get("documents", []):
+            document = api.get(f"/v1/claims/{claim_id}/document/{kept['file_no']}")
+            if document.status_code == 200:
+                secrets |= {
+                    f"{what} of file {kept['file_no']}": value
+                    for what, value in file_fragments(document.content).items()
+                }
         flat = " ".join(text.split())
         found = sorted(
             {
@@ -766,6 +828,9 @@ def main() -> None:
 
     print("Original files and the pages' explanations (D-DOC-1, D-UI-6)")
     documents_and_views(check, sessions)
+
+    print("One claim from its form's pages in two files (D-DOC-2)")
+    pages_in_files(check, sessions)
 
     print("Bad inputs")
     for what, body, headers in (

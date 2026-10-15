@@ -1,6 +1,7 @@
-// Submit claim (providers, D-AUTH-1): drop a JSON claim, a PDF of the form or a scanned form; check
-// the fields read and their confidence; process the claim, and the stage strip fills in (motion
-// moment 4). If the model is down (503) the claim stays received and "Try again" processes it.
+// Submit claim (providers, D-AUTH-1): drop a JSON claim, a PDF of the form or a scanned form, or the
+// form's two pages as two files (one claim, D-DOC-2); check the fields read and their confidence;
+// process the claim, and the stage strip fills in (motion moment 4). If the model is down (503) the
+// claim stays received and "Try again" processes it.
 
 import { useState } from "react";
 import { Link } from "react-router";
@@ -25,7 +26,8 @@ const FORMATS: Record<string, string> = {
 };
 
 export function SubmitClaim() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [sent, setSent] = useState(0); // how many files the claim was read from
   const upload = useUpload();
   const process = useProcess();
   const filed = upload.data;
@@ -36,8 +38,8 @@ export function SubmitClaim() {
   const modelDown = process.error instanceof ApiError && process.error.status === 503;
   const result = process.data;
 
-  const choose = (next: File | null) => {
-    setFile(next);
+  const choose = (next: File[]) => {
+    setFiles(next);
     upload.reset();
     process.reset();
   };
@@ -52,19 +54,22 @@ export function SubmitClaim() {
     <>
       <PageTitle title="Submit claim" hint="Read the claim, check the fields, then process it." />
       <Panel className="mb-6 space-y-4 p-5">
-        <DropZone file={file} onFile={choose} />
+        <DropZone files={files} onFiles={choose} />
         <div className="flex flex-wrap items-center gap-3">
           <Button
             size="lg"
             variant={filed ? "outline" : "default"}
-            disabled={!file || upload.isPending}
-            onClick={() => file && upload.mutate(file, { onSuccess: () => toast.success("Claim read") })}
+            disabled={files.length === 0 || upload.isPending}
+            onClick={() => {
+              setSent(files.length);
+              upload.mutate(files, { onSuccess: () => toast.success("Claim read") });
+            }}
           >
             {upload.isPending ? "Reading" : "Read claim"}
           </Button>
           {upload.isPending && (
             <p role="status" className="text-[13px] text-ink-muted">
-              Reading the file. A scanned form takes a few seconds.
+              {files.length > 1 ? "Reading the files." : "Reading the file."} A scanned form takes a few seconds.
             </p>
           )}
         </div>
@@ -91,7 +96,8 @@ export function SubmitClaim() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="min-w-0 flex-1 basis-72">
                 <p className="font-semibold">
-                  Claim {claimId} was filed from {FORMATS[filed.source_format] ?? filed.source_format}.
+                  Claim {claimId} was filed from {sent > 1 ? `${sent} files, ` : ""}
+                  {FORMATS[filed.source_format] ?? filed.source_format}.
                 </p>
                 <p className="text-[13px] text-ink-muted">
                   Processing runs the rules, the coverage policy lookup, the model recommendation and the calculator.
@@ -145,7 +151,7 @@ export function SubmitClaim() {
                 <Button asChild size="lg">
                   <Link to={`/my-claims/${encodeURIComponent(result.claim_id)}`}>Open claim result</Link>
                 </Button>
-                <Button size="lg" variant="outline" onClick={() => choose(null)}>
+                <Button size="lg" variant="outline" onClick={() => choose([])}>
                   Submit another claim
                 </Button>
               </Panel>

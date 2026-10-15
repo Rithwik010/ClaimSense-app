@@ -22,20 +22,29 @@ def _words_in(words: list[Word], box: Box) -> list[Word]:
     return sorted(inside, key=lambda w: (round(w[1]), w[0]))
 
 
-def read_form_values(pdf: bytes) -> dict[str, str]:
-    """Text found inside every layout box, keyed by field path (empty boxes are omitted)."""
+def page_words(page: pymupdf.Page) -> list[Word]:
+    """The words of a PDF page's text layer, with their boxes."""
+    return [(w[0], w[1], w[2], w[3], w[4]) for w in page.get_text("words")]
+
+
+def box_values(words: list[Word], boxes: list[Box]) -> dict[str, str]:
+    """Text found inside each of `boxes` on one page, keyed by field path (empty boxes omitted)."""
     values: dict[str, str] = {}
-    with pymupdf.open(stream=pdf, filetype="pdf") as doc:
-        pages: list[list[Word]] = [
-            [(w[0], w[1], w[2], w[3], w[4]) for w in page.get_text("words")] for page in doc
-        ]
-    boxes = ALL_PAGE_ONE_BOXES + [NOTES_BOX] + PRIMARY_PAID_BOXES
     for box in boxes:
-        if box.page >= len(pages):
-            continue
-        text = " ".join(w[4] for w in _words_in(pages[box.page], box))
+        text = " ".join(w[4] for w in _words_in(words, box))
         if text:
             values[box.field] = text
+    return values
+
+
+def read_form_values(pdf: bytes) -> dict[str, str]:
+    """Text found inside every layout box, keyed by field path (empty boxes are omitted)."""
+    with pymupdf.open(stream=pdf, filetype="pdf") as doc:
+        pages = [page_words(page) for page in doc]
+    boxes = ALL_PAGE_ONE_BOXES + [NOTES_BOX] + PRIMARY_PAID_BOXES
+    values: dict[str, str] = {}
+    for index, words in enumerate(pages):
+        values |= box_values(words, [box for box in boxes if box.page == index])
     return values
 
 

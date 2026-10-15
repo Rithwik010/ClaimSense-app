@@ -34,7 +34,7 @@ export function ClaimResult() {
         actions={
           <>
             <OutcomeChip outcome={view.outcome} provider showHint />
-            <OriginalFileButton claimId={view.claim_id} document={view.document} />
+            <OriginalFileButton claimId={view.claim_id} documents={view.documents} />
             {view.status === "RECEIVED" && (
               <Button
                 size="lg"

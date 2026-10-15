@@ -11,7 +11,9 @@ themselves; an admin reads everything and changes nothing.
 `POST /v1/claims/intake/file` takes a claim file as the request body (P5.1): JSON, a digital PDF
 or a scanned form, read with each field's confidence. Both intake routes keep the original file
 (JSON, PDF, PNG or JPEG) with the claim they create, named by the X-File-Name header when given
-(D-DOC-1); `GET /v1/claims/{id}/document` serves it back to whoever may open the claim.
+(D-DOC-1); `POST /v1/claims/intake/files` takes a claim's form pages as several files, each kept
+in page order (D-DOC-2). `GET /v1/claims/{id}/document` (the first file) and
+`GET /v1/claims/{id}/document/{n}` serve them back to whoever may open the claim.
 
 A provider's claim carries no rule IDs, internal reason codes, rule checks, criterion IDs, model
 output, confidence scores or versions: once final, the provider's explanation and billing built
@@ -19,6 +21,8 @@ from the record and the reason table (D-UI-6). Reviewers and admins get the reco
 each claim's reasons.
 """
 
+import base64
+import binascii
 from dataclasses import asdict
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
@@ -29,6 +33,7 @@ from fastapi import (
     Depends,
     Header,
     HTTPException,
+    Path,
     Query,
     Request,
     Response,
@@ -36,6 +41,7 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel, Field, StringConstraints
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import (
@@ -69,7 +75,7 @@ from app.explain.render import render
 from app.explain.summary import ClaimSummary as Summary
 from app.explain.summary import claim_summary
 from app.intake.documents import original_file
-from app.intake.files import UnreadableFile, read_claim_file
+from app.intake.files import UnreadableFile, read_claim_file, read_claim_files
 from app.ml.client import DecisionModel, ModelUnavailable
 from app.rag.retrieve import RetrievalUnavailable, Retriever
 from app.review.actions import ReviewRefused
@@ -113,8 +119,10 @@ class AdjustmentView(BaseModel):
 
 
 class DocumentInfo(BaseModel):
-    """The original file kept with a claim (D-DOC-1); GET /v1/claims/{id}/document serves it."""
+    """An original file kept with a claim (D-DOC-1, D-DOC-2), numbered in page order;
+    GET /v1/claims/{id}/document/{file_no} serves it."""
 
+    file_no: int
     file_name: str
     content_type: str
     size_bytes: int
@@ -141,7 +149,7 @@ class ClaimView(BaseModel):
     adjustments: list[AdjustmentView] = []  # CARC/RARC of the record's DENY and REJECT reasons
     outcome: str  # the label key every dashboard shows (D-UI-6)
     summary: Summary  # a few short lines from the record (D-UI-6)
-    document: DocumentInfo | None  # the original file, when one was kept (D-DOC-1)
+    documents: list[DocumentInfo]  # the original files kept, in page order (D-DOC-1, D-DOC-2)
 
 
 # A provider sees a claim's decision once it is final; a rule outcome is final at once.
@@ -181,7 +189,7 @@ class ProviderClaimView(BaseModel):
     # The pipeline steps the claim went through (audit event types in order, nothing else), for
     # the stage strip.
     stages: list[str] = []
-    document: DocumentInfo | None = None
+    documents: list[DocumentInfo] = []  # the original files kept, in page order
 
 
 def _claim_row(session: Session, claim_id: str) -> Claim:
@@ -207,15 +215,21 @@ def _adjustments(row: Claim, record: DecisionRecord | None) -> list[AdjustmentVi
     ]
 
 
-def _document(session: Session, claim_id: str) -> DocumentInfo | None:
-    document = session.get(ClaimDocument, claim_id)
-    if document is None:
-        return None
-    return DocumentInfo(
-        file_name=document.file_name,
-        content_type=document.content_type,
-        size_bytes=document.size_bytes,
+def _documents(session: Session, claim_id: str) -> list[DocumentInfo]:
+    rows = session.scalars(
+        select(ClaimDocument)
+        .where(ClaimDocument.claim_id == claim_id)
+        .order_by(ClaimDocument.file_no)
     )
+    return [
+        DocumentInfo(
+            file_no=row.file_no,
+            file_name=row.file_name,
+            content_type=row.content_type,
+            size_bytes=row.size_bytes,
+        )
+        for row in rows
+    ]
 
 
 def _coinsurance_bps(session: Session, record: DecisionRecord) -> int | None:
@@ -254,7 +268,7 @@ def _provider_view(session: Session, row: Claim, settings: Settings) -> Provider
         if record is not None
         else None,
         stages=[event.event_type for event in list_events(session, row.claim_id)],
-        document=_document(session, row.claim_id),
+        documents=_documents(session, row.claim_id),
     )
 
 
@@ -308,10 +322,13 @@ def _file(
     session: Session,
     settings: Settings,
     user: AuthUser,
-    data: bytes,
-    file_name: str | None,
+    files: list[tuple[bytes, str | None]],
 ) -> IntakeResult | FiledWithErrors:
+    """File the claim read from `files` ((bytes, the name the client gave), in page order),
+    keeping each file of a type that is kept (D-DOC-1)."""
     claim_id = claim.get("claim_id")
+    filed_as = claim_id if isinstance(claim_id, str) else ""
+    kept = [original_file(data, name, filed_as) for data, name in files]
     try:
         result, errors = intake_claim_data(
             session,
@@ -321,7 +338,7 @@ def _file(
             settings.extraction_confidence_min,
             provider_id=user.provider_id,
             filed_by=user.username,
-            document=original_file(data, file_name, claim_id if isinstance(claim_id, str) else ""),
+            documents=[document for document in kept if document is not None],
         )
     except IntakeRefused as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
@@ -354,7 +371,7 @@ def intake(
     """A JSON claim: every field has confidence 1.0, so no field is listed (§8.2). A claim that
     fails the contract is filed with its errors when rules R01 to R03 report them all. Filed under
     the provider's ID, with the body as sent kept as its original file."""
-    return _file(claim, {}, SourceFormat.JSON, session, settings, user, data, file_name)
+    return _file(claim, {}, SourceFormat.JSON, session, settings, user, [(data, file_name)])
 
 
 @router.post("/intake/file", status_code=status.HTTP_201_CREATED)
@@ -374,7 +391,45 @@ def intake_file(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     if not isinstance(claim, dict):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "the claim must be an object")
-    return _file(claim, confidences, source, session, settings, user, data, file_name)
+    return _file(claim, confidences, source, session, settings, user, [(data, file_name)])
+
+
+class ClaimFile(BaseModel):
+    name: Annotated[str, StringConstraints(max_length=255)] | None = None
+    content_base64: str
+
+
+class ClaimFiles(BaseModel):
+    """A claim's form pages as several files, in page order (D-DOC-2)."""
+
+    files: Annotated[list[ClaimFile], Field(min_length=1, max_length=10)]
+
+
+@router.post("/intake/files", status_code=status.HTTP_201_CREATED)
+def intake_files(
+    body: ClaimFiles,
+    session: SessionDep,
+    settings: SettingsDep,
+    user: ProviderUser,
+) -> IntakeResult | FiledWithErrors:
+    """One claim from several files (D-DOC-2): its form's pages as PDF, PNG or JPEG files in page
+    order (page 1, the claim; page 2, its attachments), each sent base64-encoded in a JSON body.
+    Each page is read by its text layer or by OCR; every file is kept with the claim."""
+    files: list[tuple[bytes, str | None]] = []
+    for number, part in enumerate(body.files, start=1):
+        try:
+            files.append((base64.b64decode(part.content_base64, validate=True), part.name))
+        except (binascii.Error, ValueError) as exc:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT, f"file {number} is not valid base64"
+            ) from exc
+    try:
+        claim, confidences, source = read_claim_files([data for data, _ in files])
+    except UnreadableFile as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    if not isinstance(claim, dict):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "the claim must be an object")
+    return _file(claim, confidences, source, session, settings, user, files)
 
 
 @router.post("/{claim_id}/process")
@@ -565,19 +620,33 @@ def get_claim(
             settings.extraction_confidence_min,
             settings.review_high_dollar_cents,
         ),
-        document=_document(session, claim_id),
+        documents=_documents(session, claim_id),
     )
 
 
 @router.get("/{claim_id}/document", response_class=Response, response_model=None)
 def get_document(claim_id: str, session: SessionDep, user: AnyUser) -> Response:
-    """The original file the claim was filed from (D-DOC-1), shown inline: a provider's own claims
-    only (another provider's is 404), every claim for reviewers and admins. 404 when no file was
-    kept (a TIFF scan, or a claim filed before files were kept)."""
+    """The claim's first original file (D-DOC-1); see get_document_file."""
+    return _document_file(session, claim_id, user, 1)
+
+
+@router.get("/{claim_id}/document/{file_no}", response_class=Response, response_model=None)
+def get_document_file(
+    claim_id: str, file_no: Annotated[int, Path(ge=1)], session: SessionDep, user: AnyUser
+) -> Response:
+    """One original file the claim was filed from (D-DOC-1, D-DOC-2; 1 is the first, in page
+    order), shown inline: a provider's own claims only (another provider's is 404), every claim
+    for reviewers and admins. 404 when there is no such file (a TIFF scan is not kept)."""
+    return _document_file(session, claim_id, user, file_no)
+
+
+def _document_file(session: Session, claim_id: str, user: AuthUser, file_no: int) -> Response:
     _own_claim(session, claim_id, user)
-    document = session.get(ClaimDocument, claim_id)
+    document = session.get(ClaimDocument, (claim_id, file_no))
     if document is None or document.content_type not in DOCUMENT_TYPES:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"claim {claim_id} has no original file")
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, f"claim {claim_id} has no original file {file_no}"
+        )
     return Response(
         content=document.content,
         media_type=document.content_type,

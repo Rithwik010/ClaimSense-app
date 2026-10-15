@@ -1,7 +1,8 @@
-// "View original file" (D-DOC-1): the file a claim was filed from, in a wide side sheet. A PDF in
-// the browser's own viewer, an image fitted to the width with zoom, a JSON claim pretty-printed in a
-// monospace font; "Open in new tab" opens the same file. Everything comes from the API on the app's
-// own origin (GET /v1/claims/{id}/document); no outside viewer.
+// "View original file" (D-DOC-1): the file a claim was filed from, in a wide side sheet; a claim
+// filed from its form's pages in several files shows each in turn (File 1, File 2; D-DOC-2). A PDF
+// in the browser's own viewer, an image fitted to the width with zoom, a JSON claim pretty-printed
+// in a monospace font; "Open in new tab" opens the same file. Everything comes from the API on the
+// app's own origin (GET /v1/claims/{id}/document/{n}); no outside viewer.
 
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, FileText, Minus, Plus } from "lucide-react";
@@ -21,8 +22,8 @@ const KINDS: Record<DocumentInfo["content_type"], string> = {
 };
 const ZOOMS = [1, 1.5, 2, 3];
 
-export function documentUrl(claimId: string): string {
-  return `/v1/claims/${encodeURIComponent(claimId)}/document`;
+export function documentUrl(claimId: string, fileNo = 1): string {
+  return `/v1/claims/${encodeURIComponent(claimId)}/document/${fileNo}`;
 }
 
 function size(bytes: number): string {
@@ -82,55 +83,87 @@ function ImageFile({ url, name }: { url: string; name: string }) {
   );
 }
 
-export function OriginalFileButton({ claimId, document }: { claimId: string; document: DocumentInfo | null }) {
+function Viewer({ claimId, document }: { claimId: string; document: DocumentInfo }) {
+  const url = documentUrl(claimId, document.file_no);
+  return (
+    <>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener"
+        className="inline-flex w-fit items-center gap-1.5 text-[14px] font-semibold text-link underline-offset-4 hover:text-white hover:underline"
+      >
+        Open in new tab <ExternalLink aria-hidden className="size-3.5" />
+      </a>
+      {document.content_type === "application/pdf" ? (
+        <iframe
+          title={`Original file: ${document.file_name}`}
+          src={url}
+          className="min-h-[60vh] w-full flex-1 rounded-md border border-rules bg-white"
+        />
+      ) : document.content_type === "application/json" ? (
+        <JsonFile url={url} />
+      ) : (
+        <ImageFile key={url} url={url} name={document.file_name} />
+      )}
+    </>
+  );
+}
+
+function describe(document: DocumentInfo): string {
+  return `${document.file_name} · ${KINDS[document.content_type]} · ${size(document.size_bytes)}`;
+}
+
+export function OriginalFileButton({ claimId, documents }: { claimId: string; documents: DocumentInfo[] }) {
   const [open, setOpen] = useState(false);
-  const url = documentUrl(claimId);
+  const [chosen, setChosen] = useState(1);
+  const shown = documents.find((d) => d.file_no === chosen) ?? documents[0];
+  const several = documents.length > 1;
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="lg">
-          <FileText aria-hidden /> View original file
+          <FileText aria-hidden /> {several ? "View original files" : "View original file"}
         </Button>
       </SheetTrigger>
-        <SheetContent className="w-full gap-3 data-[side=right]:w-full data-[side=right]:sm:max-w-3xl">
-          <SheetHeader className="px-6 pt-6 pb-0">
-            <SheetTitle className="pr-8 text-[18px] font-semibold">Original file</SheetTitle>
-            <SheetDescription className="break-all text-ink-muted">
-              {document
-                ? `${document.file_name} · ${KINDS[document.content_type]} · ${size(document.size_bytes)}`
+      <SheetContent className="w-full gap-3 data-[side=right]:w-full data-[side=right]:sm:max-w-3xl">
+        <SheetHeader className="px-6 pt-6 pb-0">
+          <SheetTitle className="pr-8 text-[18px] font-semibold">{several ? "Original files" : "Original file"}</SheetTitle>
+          <SheetDescription className="break-all text-ink-muted">
+            {several
+              ? `Filed from ${documents.length} files, in page order.`
+              : shown
+                ? describe(shown)
                 : `Claim ${claimId}`}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 pb-6">
-            {document ? (
-              <>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener"
-                  className="inline-flex w-fit items-center gap-1.5 text-[14px] font-semibold text-link underline-offset-4 hover:text-white hover:underline"
+          </SheetDescription>
+        </SheetHeader>
+        <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 pb-6">
+          {several && (
+            <div role="group" aria-label="Files" className="flex flex-wrap gap-2">
+              {documents.map((d) => (
+                <Button
+                  key={d.file_no}
+                  variant="outline"
+                  size="sm"
+                  aria-pressed={d.file_no === shown?.file_no}
+                  className="aria-pressed:border-glow-blue aria-pressed:bg-glow-blue/15 aria-pressed:text-white"
+                  onClick={() => setChosen(d.file_no)}
                 >
-                  Open in new tab <ExternalLink aria-hidden className="size-3.5" />
-                </a>
-                {document.content_type === "application/pdf" ? (
-                  <iframe
-                    title={`Original file: ${document.file_name}`}
-                    src={url}
-                    className="min-h-[60vh] w-full flex-1 rounded-md border border-rules bg-white"
-                  />
-                ) : document.content_type === "application/json" ? (
-                  <JsonFile url={url} />
-                ) : (
-                  <ImageFile url={url} name={document.file_name} />
-                )}
-              </>
-            ) : (
-              <p className="rounded-md border border-dashed border-white/15 px-4 py-10 text-center text-ink-muted">
-                Original file not available
-              </p>
-            )}
-          </div>
-        </SheetContent>
+                  File {d.file_no}
+                </Button>
+              ))}
+            </div>
+          )}
+          {several && shown && <p className="text-[13px] break-all text-ink-muted">{describe(shown)}</p>}
+          {shown ? (
+            <Viewer claimId={claimId} document={shown} />
+          ) : (
+            <p className="rounded-md border border-dashed border-white/15 px-4 py-10 text-center text-ink-muted">
+              Original file not available
+            </p>
+          )}
+        </div>
+      </SheetContent>
     </Sheet>
   );
 }

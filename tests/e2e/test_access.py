@@ -44,11 +44,18 @@ def endpoints() -> list[tuple[str, str, dict[str, Any], set[str]]]:
     return [
         ("POST", "/v1/claims/intake", {"json": claim}, {"provider"}),
         ("POST", "/v1/claims/intake/file", {"content": b"not a claim"}, {"provider"}),
+        (
+            "POST",
+            "/v1/claims/intake/files",
+            {"json": {"files": [{"name": "a.pdf", "content_base64": "bm90IGEgY2xhaW0="}]}},
+            {"provider"},
+        ),
         ("POST", f"/v1/claims/{CLAIM}/process", {}, {"provider"}),
         ("GET", "/v1/claims", {}, everyone),
         ("GET", f"/v1/claims/{CLAIM}", {}, everyone),
         ("GET", f"/v1/claims/{CLAIM}/explanation", {}, everyone),
         ("GET", f"/v1/claims/{CLAIM}/document", {}, everyone),
+        ("GET", f"/v1/claims/{CLAIM}/document/1", {}, everyone),
         ("GET", f"/v1/claims/{CLAIM}/audit", {}, staff),
         ("GET", "/v1/review/queue", {}, staff),
         ("GET", "/v1/plans/PLN-PPO-GOLD", {}, staff),
@@ -97,6 +104,7 @@ def test_a_provider_cannot_open_another_providers_claim(api, load_case_reference
         ("GET", f"/v1/claims/{CLAIM}"),
         ("GET", f"/v1/claims/{CLAIM}/explanation"),
         ("GET", f"/v1/claims/{CLAIM}/document"),
+        ("GET", f"/v1/claims/{CLAIM}/document/1"),
         ("POST", f"/v1/claims/{CLAIM}/process"),
     ):
         response = client.request(method, path, headers=other)

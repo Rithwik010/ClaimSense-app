@@ -105,10 +105,14 @@ export function useEvaluation() {
   });
 }
 
+/** The most files one claim is filed from: its form's two pages (D-DOC-2). */
+export const MAX_CLAIM_FILES = 2;
+
 /**
  * Where a claim file goes: a JSON claim to POST /v1/claims/intake, as its own text (the API keeps
  * the bytes as sent, D-DOC-1); a PDF or scan (or a file that is not valid JSON, so the API can say
- * what is wrong) to POST /v1/claims/intake/file. Both name the file in X-File-Name.
+ * what is wrong) to POST /v1/claims/intake/file. Both name the file in X-File-Name. A claim's form
+ * pages in several files go together to POST /v1/claims/intake/files (D-DOC-2).
  */
 export async function intakeRequest(file: File): Promise<{ path: string; text?: string }> {
   const isJson = file.type === "application/json" || file.name.toLowerCase().endsWith(".json");
@@ -124,9 +128,32 @@ export async function intakeRequest(file: File): Promise<{ path: string; text?: 
   return { path: "/v1/claims/intake/file" };
 }
 
+/** A file's bytes as base64, in chunks so a large scan does not overflow the call stack. */
+export async function toBase64(file: Blob): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
+
+/** The body of POST /v1/claims/intake/files: the files in page order, each base64-encoded. */
+export async function filesBody(files: File[]): Promise<{ files: { name: string; content_base64: string }[] }> {
+  return { files: await Promise.all(files.map(async (f) => ({ name: f.name, content_base64: await toBase64(f) }))) };
+}
+
 export function useUpload() {
   return useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async (files: File[]) => {
+      const [file] = files;
+      if (!file) throw new Error("Choose a claim file first.");
+      if (files.length > 1) {
+        return request<IntakeResult | FiledWithErrors>("/v1/claims/intake/files", {
+          method: "POST",
+          json: await filesBody(files),
+        });
+      }
       const target = await intakeRequest(file);
       const headers = { "X-File-Name": encodeURIComponent(file.name) };
       return target.text !== undefined

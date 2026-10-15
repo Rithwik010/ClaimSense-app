@@ -346,7 +346,7 @@ export function ReviewClaim() {
             {record?.review_tier && (
               <span className="text-[13px] text-ink-muted">{TIER[record.review_tier].label} review tier</span>
             )}
-            <OriginalFileButton claimId={view.claim_id} document={view.document} />
+            <OriginalFileButton claimId={view.claim_id} documents={view.documents} />
           </>
         }
       />

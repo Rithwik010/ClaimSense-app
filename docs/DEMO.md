@@ -61,6 +61,11 @@ Then:
   E4B side by side) → **Audit lookup** `CLM-DEMO-03` → **System status**. Everything is read
   only; another role's page shows "You don't have access".
 
+A claim can also come as its form's two pages in two files (for example two scans, `page 1.png`
+and `page 2.png`): choose or drop both on **Submit claim** (or **Add page 2 as another file**),
+check that **Page 1** is the claim and **Page 2** the clinical note (**Swap pages** if not), then
+**Read claim**. The claim page's **View original files** shows each file.
+
 Every dashboard uses one set of status labels: In review, Approved, Partly approved (some lines
 paid, some not), Pended, Denied, Rejected; reviewers and admins also see Not processed for a
 claim filed but never processed (a provider sees it as In review).

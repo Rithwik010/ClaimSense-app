@@ -15,7 +15,7 @@ from app.intake.field_formats import format_ok, kind
 from app.intake.files import UnreadableFile, read_claim_file
 from app.intake.form_codec import to_form_values
 from app.intake.layout import ALL_PAGE_ONE_BOXES, PRIMARY_PAID_BOXES
-from app.intake.ocr import page_images, read_scan, skew_angle
+from app.intake.ocr import page_images, page_title, read_scan, skew_angle
 from scripts.verify.ocr_accuracy import scanned_pdf
 from tests.unit.test_forms import full_claim
 from training.generate.forms import render_pdf, render_scan
@@ -114,3 +114,16 @@ def test_a_scanned_form_is_read_with_confidences(seed: int) -> None:
     assert not [f for f in FIELDS if f not in scan.values and f in reads]  # blank stays blank
     assert all(0.0 <= value <= 1.0 for value in confidences.values())
     assert all(confidences[f] == 0.0 for f in confidences if not format_ok(f, reads[f].text))
+
+
+@pytest.mark.skipif(shutil.which("tesseract") is None, reason="Tesseract is not installed")
+def test_a_scanned_page_s_title_tells_page_1_from_page_2() -> None:
+    """D-DOC-2: the title band is read without straightening, so the pages of a claim sent as
+    separate files are put in order by what they print."""
+    claim = full_claim()
+    scan = render_scan(to_form_values(claim), random.Random(7), value_noise_rate=0.0)
+
+    first, second = (page_title(page.convert("L")) for page in scan.pages)
+
+    assert "CLAIM FORM" in first and "ATTACHMENTS" not in first
+    assert "ATTACHMENTS" in second

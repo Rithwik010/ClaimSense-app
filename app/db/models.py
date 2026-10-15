@@ -400,19 +400,22 @@ class Claim(Base):
 
 
 class ClaimDocument(Base):
-    """The original file a claim was filed from (D-DOC-1): the JSON, PDF, PNG or JPEG bytes as
+    """An original file a claim was filed from (D-DOC-1): the JSON, PDF, PNG or JPEG bytes as
     uploaded, kept for every claim created from them so each role can see the claim as sent. A
-    file refused at upload creates no claim and is not kept. Synthetic data only; `make
-    demo-reset` drops it with every other table."""
+    claim filed from its form's pages in several files keeps each one, numbered in page order
+    (D-DOC-2). A file refused at upload creates no claim and is not kept. Synthetic data only;
+    `make demo-reset` drops it with every other table."""
 
     __tablename__ = "claim_documents"
     __table_args__ = (
         one_of("content_type", DOCUMENT_TYPES),
         CheckConstraint("size_bytes > 0", name="size_bytes_positive"),
         CheckConstraint("sha256 ~ '^[0-9a-f]{64}$'", name="sha256_hex"),
+        CheckConstraint("file_no >= 1", name="file_no_positive"),
     )
 
     claim_id: Mapped[str] = mapped_column(ForeignKey("claims.claim_id"), primary_key=True)
+    file_no: Mapped[int] = mapped_column(Integer, primary_key=True)  # 1, 2, ... in page order
     file_name: Mapped[str] = mapped_column(String(128))  # sanitized at upload
     content_type: Mapped[str] = mapped_column(String(32))
     size_bytes: Mapped[int] = mapped_column(Integer)

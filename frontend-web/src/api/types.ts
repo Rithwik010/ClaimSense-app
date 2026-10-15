@@ -141,8 +141,9 @@ export type Outcome =
   | "DENIED"
   | "REJECTED";
 
-/** The original file kept with a claim (D-DOC-1). */
+/** An original file kept with a claim (D-DOC-1), numbered in page order (D-DOC-2). */
 export interface DocumentInfo {
+  file_no: number;
   file_name: string;
   content_type: "application/json" | "application/pdf" | "image/png" | "image/jpeg";
   size_bytes: number;
@@ -174,7 +175,7 @@ export interface ClaimView {
   adjustments?: Adjustment[];
   outcome: Outcome;
   summary: ClaimSummaryLines;
-  document: DocumentInfo | null;
+  documents: DocumentInfo[];
 }
 
 export interface QueueItem {
@@ -322,7 +323,7 @@ export interface ProviderClaimView {
   explanation: ProviderExplanation | null;
   /** The audit event types the claim went through, in order (no payloads): the stage strip. */
   stages: string[];
-  document: DocumentInfo | null;
+  documents: DocumentInfo[];
 }
 
 /** A provider's own claim in their list: the decision and amounts only once final. */

@@ -54,7 +54,7 @@ export function ClaimDetail() {
         actions={
           <>
             <OutcomeChip outcome={view.outcome} showHint />
-            <OriginalFileButton claimId={view.claim_id} document={view.document} />
+            <OriginalFileButton claimId={view.claim_id} documents={view.documents} />
             {action}
           </>
         }

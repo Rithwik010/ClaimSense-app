@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { intakeRequest } from "./hooks";
+import { filesBody, intakeRequest, toBase64 } from "./hooks";
 
 describe("where a claim file goes", () => {
   it("sends a JSON claim to POST /v1/claims/intake as its own text, kept as sent", async () => {
@@ -24,5 +24,26 @@ describe("where a claim file goes", () => {
     ]) {
       await expect(intakeRequest(file)).resolves.toEqual({ path: "/v1/claims/intake/file" });
     }
+  });
+});
+
+describe("a claim in several files (D-DOC-2)", () => {
+  it("sends each file base64-encoded, in page order, with its name", async () => {
+    const pages = [new File(["page one"], "p1.pdf"), new File(["page two"], "p2.pdf")];
+
+    await expect(filesBody(pages)).resolves.toEqual({
+      files: [
+        { name: "p1.pdf", content_base64: btoa("page one") },
+        { name: "p2.pdf", content_base64: btoa("page two") },
+      ],
+    });
+  });
+
+  it("encodes every byte of a large file", async () => {
+    const bytes = new Uint8Array(100_000).map((_, i) => i % 256);
+
+    const encoded = await toBase64(new Blob([bytes]));
+
+    expect(Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0))).toEqual(bytes);
   });
 });

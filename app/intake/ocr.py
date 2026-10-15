@@ -274,17 +274,40 @@ def read_box(page: Image.Image, box: Box) -> FieldRead | None:
     return (passing or reads or [None])[0]
 
 
+FORM_BOXES = [*ALL_PAGE_ONE_BOXES, NOTES_BOX, *PRIMARY_PAID_BOXES]
+TITLE_BAND = (25.0, 15.0, 590.0, 66.0)  # points: the band holding a page's printed title
+
+
+def page_title(page: Image.Image) -> str:
+    """The printed title at the top of a scanned page, upper case ("HEALTH INSURANCE CLAIM FORM
+    ..." on page 1, "ATTACHMENTS FOR CLAIM ..." on page 2), read without straightening: the band
+    is tall enough for the skew a scan has."""
+    scale = page.width / PAGE_WIDTH
+    x0, y0, x1, y1 = (round(v * scale) for v in TITLE_BAND)
+    crop = page.crop((x0, y0, x1, y1))
+    if scale < TARGET_SCALE:
+        size = (round(crop.width * TARGET_SCALE / scale), round(crop.height * TARGET_SCALE / scale))
+        crop = crop.resize(size, Image.Resampling.LANCZOS)
+    return " ".join(pytesseract.image_to_string(crop, config="--psm 6").split()).upper()
+
+
+def read_page(page: Image.Image, index: int) -> dict[str, FieldRead]:
+    """Every non-blank box of page `index` (0: the claim, 1: its attachments) of a scanned form,
+    keyed by layout field path; the page is straightened first."""
+    straight = straighten(page)
+    found = {}
+    for box in FORM_BOXES:
+        if box.page == index and (read := read_box(straight, box)) is not None:
+            found[box.field] = read
+    return found
+
+
 def read_scan(pages: list[Image.Image]) -> dict[str, FieldRead]:
     """Every non-blank box of a scanned form, keyed by layout field path."""
-    straight = [straighten(page) for page in pages]
-    boxes = list(ALL_PAGE_ONE_BOXES) + [NOTES_BOX, *PRIMARY_PAID_BOXES]
-    found = {}
-    for box in boxes:
-        if box.page >= len(straight):
-            continue
-        read = read_box(straight[box.page], box)
-        if read is not None:
-            found[box.field] = read
+    found: dict[str, FieldRead] = {}
+    for index, page in enumerate(pages):
+        if any(box.page == index for box in FORM_BOXES):
+            found |= read_page(page, index)
     return found
 
 

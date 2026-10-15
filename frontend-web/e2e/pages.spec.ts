@@ -30,6 +30,7 @@ const LABELS: Record<string, string> = {
   REJECTED: "Rejected",
 };
 const IMAGE_CLAIM = `CLM-IMG-${String(Date.now()).slice(-6)}`; // digits: the OCR reads them reliably
+const PAGES_CLAIM = `CLM-PGS-${String(Date.now() + 1).slice(-6)}`;
 
 test.describe.configure({ mode: "serial" });
 test.setTimeout(120_000);
@@ -238,7 +239,7 @@ test("the original file: a JSON claim, a PDF and an image, in the sheet and a ne
   await sheet.getByRole("button", { name: "Zoom in" }).click();
   expect(await picture.evaluate((img) => img.getBoundingClientRect().width)).toBeGreaterThan(fitted * 1.3);
   const [tab] = await Promise.all([page.waitForEvent("popup"), sheet.getByRole("link", { name: "Open in new tab" }).click()]);
-  expect(tab.url()).toMatch(new RegExp(`/v1/claims/${IMAGE_CLAIM}/document$`));
+  expect(tab.url()).toMatch(new RegExp(`/v1/claims/${IMAGE_CLAIM}/document/1$`));
   await tab.close();
   await axeClean(page, "image in the sheet", '[role="dialog"]');
   await page.keyboard.press("Escape");
@@ -259,13 +260,13 @@ test("the original file: a JSON claim, a PDF and an image, in the sheet and a ne
   await page.goto("/review/CLM-DEMO-08");
   await page.getByRole("button", { name: "View original file" }).click();
   const frame = sheet.locator("iframe");
-  await expect(frame).toHaveAttribute("src", "/v1/claims/CLM-DEMO-08/document");
+  await expect(frame).toHaveAttribute("src", "/v1/claims/CLM-DEMO-08/document/1");
   const served = await page.request.get("/v1/claims/CLM-DEMO-08/document");
   expect([served.status(), served.headers()["content-type"]]).toEqual([200, "application/pdf"]);
   // Headless Chromium hands a PDF tab to a download, so the tab's own URL stays empty: the link and
   // the new tab it opens are checked, and the file it serves above.
   const link = sheet.getByRole("link", { name: "Open in new tab" });
-  await expect(link).toHaveAttribute("href", "/v1/claims/CLM-DEMO-08/document");
+  await expect(link).toHaveAttribute("href", "/v1/claims/CLM-DEMO-08/document/1");
   await expect(link).toHaveAttribute("target", "_blank");
   const [pdf] = await Promise.all([page.waitForEvent("popup"), link.click()]);
   await pdf.close();
@@ -273,6 +274,53 @@ test("the original file: a JSON claim, a PDF and an image, in the sheet and a ne
   await page.goto("/claims");
   await chooseStatus(page, "Not processed"); // filed, never processed: "In review" to its provider
   await expect.poll(() => shownClaims(page)).toContain(IMAGE_CLAIM);
+});
+
+test("one claim from its form's two pages in two files (D-DOC-2)", async ({ page }) => {
+  const folder = mkdtempSync(join(tmpdir(), "claimsense-pages-"));
+  const [first, second] = [join(folder, "scan page 1.png"), join(folder, "scan page 2.png")];
+  try {
+    execFileSync(
+      "uv",
+      ["run", "python", "-m", "scripts.demo.claim_image", "--claim-id", PAGES_CLAIM, "--days", "14", "--out", first, "--out-page2", second],
+      { cwd: ROOT, stdio: "ignore" },
+    );
+    await loginAs(page, "provider1");
+    await page.goto("/submit");
+    await page.getByLabel("Claim file").setInputFiles([second, first]); // chosen out of order
+    const chosen = page.getByRole("list", { name: "Files chosen, in page order" });
+    await expect(chosen.getByRole("listitem")).toHaveText([/^Page 1scan page 1\.png/, /^Page 2scan page 2\.png/]);
+    await page.getByRole("button", { name: "Swap pages" }).click();
+    await expect(chosen.getByRole("listitem").first()).toContainText("scan page 2.png");
+    await page.getByRole("button", { name: "Swap pages" }).click();
+    await axeClean(page, "submit with two files");
+    await page.getByRole("button", { name: "Read claim" }).click();
+    await expect(page.getByText(`Claim ${PAGES_CLAIM} was filed from 2 files, a scanned form`)).toBeVisible({
+      timeout: 60_000,
+    });
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+
+  await page.goto(`/my-claims/${PAGES_CLAIM}`);
+  await page.getByRole("button", { name: "View original files" }).click();
+  const sheet = page.getByRole("dialog", { name: "Original files" });
+  await expect(sheet.getByRole("img", { name: "Original file: scan page 1.png" })).toBeVisible();
+  await sheet.getByRole("button", { name: "File 2" }).click();
+  await expect(sheet.getByRole("img", { name: "Original file: scan page 2.png" })).toBeVisible();
+  await expect(sheet.getByRole("link", { name: "Open in new tab" })).toHaveAttribute(
+    "href",
+    `/v1/claims/${PAGES_CLAIM}/document/2`,
+  );
+  await axeClean(page, "two files in the sheet", '[role="dialog"]');
+
+  await loginAs(page, "reviewer1");
+  const claim = (await (await page.request.get(`/v1/claims/${PAGES_CLAIM}`)).json()) as {
+    received: { clinical_notes?: string };
+    documents: unknown[];
+  };
+  expect(claim.documents).toHaveLength(2);
+  expect((claim.received.clinical_notes ?? "").length).toBeGreaterThan(20); // read from page 2
 });
 
 test("claim page: the summary first, then the clinical note and the audit trail as tabs", async ({ page }) => {
