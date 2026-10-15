@@ -5,7 +5,7 @@ Synthetic data only. The nine claims are in `demo/claims/`; run them in this ord
 ## Before
 
 1. `make demo-reset` (clean database, demo logins, model loaded), then `make demo-up` in a
-   second terminal (it starts `ollama serve` itself if needed).
+   second terminal. Both start Docker Desktop and `ollama serve` themselves if needed.
 2. `make demo-check`: five OK lines, Logins included.
 3. Open **http://localhost:8000**. No internet is needed (`make offline-check`).
 

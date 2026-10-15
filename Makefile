@@ -1,10 +1,13 @@
 # ClaimSense local commands (D-UI-1). `make demo` starts the database containers, the API and the
-# React web app together; Ctrl-C stops the API and the web app. Ollama runs natively: `make ollama-up`
-# (part of demo, demo-up and demo-reset) starts `ollama serve` when it is not running.
+# React web app together; Ctrl-C stops the API and the web app. Docker Desktop and Ollama start by
+# themselves: `make docker-up` and `make ollama-up` (part of setup, demo, demo-up and demo-reset)
+# start them when they are not running.
 # First time on a machine: `make setup`.
 SHELL := /bin/bash
 MODEL_NAME ?= claimsense-decision:v2
 API_PORT ?= 8000
+# Seconds `make docker-up` waits for Docker Desktop to start.
+DOCKER_WAIT ?= 120
 # No internet during a demo (D-PROC-4, `make offline-check`). No downloads: the embedding model is
 # cached by setup (and the v2 lookup needs none); no Hugging Face, onnxruntime or Qdrant telemetry
 # (app/rag/embedding.py sets ORT_DISABLE_TELEMETRY too; docker-compose.yml sets Qdrant's).
@@ -13,9 +16,9 @@ export HF_HUB_DISABLE_TELEMETRY := 1
 export ORT_DISABLE_TELEMETRY := 1
 export QDRANT__TELEMETRY_DISABLED := true
 
-.PHONY: setup docker-running ollama-up demo demo-up demo-check demo-reset demo-claims demo-users e2e-api offline-check model-check results web-check smoke
+.PHONY: setup docker-up ollama-up demo demo-up demo-check demo-reset demo-claims demo-users e2e-api offline-check model-check results web-check smoke
 
-setup: ## Python and web dependencies, database schema, reference data, policy collections
+setup: docker-up ## Python and web dependencies, database schema, reference data, policy collections
 	uv sync
 	cd frontend-web && npm ci
 	docker compose up -d --wait
@@ -23,13 +26,19 @@ setup: ## Python and web dependencies, database schema, reference data, policy c
 	uv run python -m app.db.seed
 	uv run python -m app.rag.knowledge
 
-docker-running: ## stop at once, with a clear message, when Docker is not running
-	@docker info >/dev/null 2>&1 || { echo "Start Docker Desktop, then run make $(or $(MAKECMDGOALS),demo-up) again"; exit 1; }
+docker-up: ## start Docker Desktop when Docker is not running, and wait until it answers
+	@docker info >/dev/null 2>&1 || { \
+	  echo "Docker is not running: starting Docker Desktop"; \
+	  if [ "$$(uname)" = Darwin ]; then open -g -a Docker; \
+	  else systemctl --user start docker-desktop 2>/dev/null || systemctl start docker 2>/dev/null; fi; \
+	  for i in $$(seq 1 $(DOCKER_WAIT)); do docker info >/dev/null 2>&1 && break; sleep 1; done; \
+	  docker info >/dev/null 2>&1 || { echo "Docker did not start within $(DOCKER_WAIT) s: start Docker Desktop, then run make $(or $(MAKECMDGOALS),demo-up) again"; exit 1; }; \
+	  echo "Docker is running"; }
 
 ollama-up: ## start `ollama serve` (models kept loaded, cloud features off) unless it is running
 	uv run python -m scripts.demo.ollama_up
 
-demo: docker-running ollama-up ## database containers, then the API (port $(API_PORT)) and the web app (port 5173)
+demo: docker-up ollama-up ## database containers, then the API (port $(API_PORT)) and the web app (port 5173)
 	docker compose up -d --wait
 	uv run alembic upgrade head
 	@test -d frontend-web/node_modules || (cd frontend-web && npm ci)
@@ -39,7 +48,7 @@ demo: docker-running ollama-up ## database containers, then the API (port $(API_
 	(cd frontend-web && npm run dev) & \
 	wait
 
-demo-up: docker-running ollama-up ## the demo: the API serves the production build of the web app on http://localhost:$(API_PORT) (D-AUTH-1); API log in data/generated/logs/api.log
+demo-up: docker-up ollama-up ## the demo: the API serves the production build of the web app on http://localhost:$(API_PORT) (D-AUTH-1); API log in data/generated/logs/api.log
 	docker compose up -d --wait
 	uv run alembic upgrade head
 	@test -d frontend-web/node_modules || (cd frontend-web && npm ci)
@@ -66,7 +75,7 @@ model-check: ## the demo model in Ollama and the model its Modelfile builds, aga
 results: ## regenerate docs/results.md and data/generated/eval/results.json (P6.1)
 	uv run python -m scripts.verify.results_report
 
-demo-reset: docker-running ollama-up ## clean database (migrations, seeds, demo authorizations), Qdrant ready, demo model present
+demo-reset: docker-up ollama-up ## clean database (migrations, seeds, demo authorizations), Qdrant ready, demo model present
 	docker compose up -d --wait
 	MODEL_NAME=$(MODEL_NAME) uv run python -m scripts.demo.reset
 

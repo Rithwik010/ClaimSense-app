@@ -469,6 +469,8 @@ Kaggle copy for anything model-related.
 
 - 2026-10-15 10:27 | Manideep3183 | Claim from several files | **On branch `p8.3-ui-team-changes`; not merged.** D-DOC-2. A claim can be uploaded as its form's two pages in two files (PDF, PNG or JPEG): each page read by its text layer or by OCR, put in order by the title it prints (page 2 first or page 1 twice is refused), every file kept in page order (migration 0009, `GET /v1/claims/{id}/document/{n}`). New route `POST /v1/claims/intake/files` (files base64-encoded in JSON: no new dependency). Submit claim takes up to two files (Page 1 and Page 2, "Swap pages", "Add page 2 as another file"); "View original files" shows each. **Checks:** local 2,607 passed, 1 skipped; web unit 91; Playwright 44 passed; `make offline-check` OK (e2e 232, privacy 40); CI run 38684248794 passed (Python 2,243 passed, 66 skipped; web 91).
 
+- 2026-10-15 21:05 | Manideep3183 | Make targets | `make demo-up`, `demo`, `demo-reset` and `setup` now start Docker Desktop themselves when it is not running (`make docker-up`, waits up to 120 s, `DOCKER_WAIT`), instead of stopping with "Start Docker Desktop". Branch `p8.3-ui-team-changes`.
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
