@@ -76,6 +76,8 @@ def main() -> None:
                 ({**job, "job_id": f"verify-{row['job_id']}"}, messages, stage["sampling"])
             )
         out_path = args.out / "verifier_out.jsonl"
+    done = {row["job_id"] for row in read_jsonl(out_path)}  # a rerun skips what is saved
+    items = [item for item in items if item[0]["job_id"] not in done]
     if not items:
         print(f"{args.stage}: no jobs")
         return
@@ -89,52 +91,62 @@ def main() -> None:
         model=stage["model"],
         dtype=settings["dtype"],
         tensor_parallel_size=settings["tensor_parallel_size"],
-        max_model_len=settings["max_model_len"],
+        max_model_len=stage.get("max_model_len", settings["max_model_len"]),
         gpu_memory_utilization=settings["gpu_memory_utilization"],
         seed=0,
     )
     loaded = time.time()
     tokenizer = llm.get_tokenizer()
-    prompts = [
-        tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        for _, messages, _ in items
-    ]
-    params = [
-        SamplingParams(
-            temperature=s["temperature"],
-            top_p=s.get("top_p", 1.0),
-            max_tokens=s["max_tokens"],
-            seed=int(job.get("seed", 0)),
-        )
-        for job, _, s in items
-    ]
-    outputs = llm.generate(prompts, params)
-    finished = time.time()
     model_revision = revision(stage["model"])
     prompt_tokens = output_tokens = 0
-    with out_path.open("a", encoding="utf-8") as f:  # written once generation is done
-        for (job, _, _), output in zip(items, outputs, strict=True):
-            choice = output.outputs[0]
-            prompt_tokens += len(output.prompt_token_ids)
-            output_tokens += len(choice.token_ids)
-            f.write(
-                json.dumps(
-                    {
-                        "job_id": job["job_id"],
-                        "sheet_id": job["sheet_id"],
-                        "attempt": job["attempt"],
-                        "writer": job.get("writer"),
-                        "text": choice.text,
-                        "finish_reason": choice.finish_reason,
-                        "model": stage["model"],
-                        "revision": model_revision,
-                        "prompt_tokens": len(output.prompt_token_ids),
-                        "output_tokens": len(choice.token_ids),
-                    },
-                    ensure_ascii=False,
-                )
-                + "\n"
+    size = int(settings.get("chunk_size", 256))
+    budget = float(settings.get("stage_hours", {}).get(args.stage, 1e9)) * 3600
+    done_jobs = 0
+    for first in range(0, len(items), size):  # saved after each chunk
+        if time.time() - started > budget:  # the rest waits for the next round
+            print(f"{args.stage}: time budget reached, {done_jobs}/{len(items)} done", flush=True)
+            break
+        chunk = items[first : first + size]
+        prompts = [
+            tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            for _, messages, _ in chunk
+        ]
+        params = [
+            SamplingParams(
+                temperature=s["temperature"],
+                top_p=s.get("top_p", 1.0),
+                max_tokens=s["max_tokens"],
+                seed=int(job.get("seed", 0)),
             )
+            for job, _, s in chunk
+        ]
+        outputs = llm.generate(prompts, params)
+        with out_path.open("a", encoding="utf-8") as f:
+            for (job, _, _), output in zip(chunk, outputs, strict=True):
+                choice = output.outputs[0]
+                prompt_tokens += len(output.prompt_token_ids)
+                output_tokens += len(choice.token_ids)
+                f.write(
+                    json.dumps(
+                        {
+                            "job_id": job["job_id"],
+                            "sheet_id": job["sheet_id"],
+                            "attempt": job["attempt"],
+                            "writer": job.get("writer"),
+                            "text": choice.text,
+                            "finish_reason": choice.finish_reason,
+                            "model": stage["model"],
+                            "revision": model_revision,
+                            "prompt_tokens": len(output.prompt_token_ids),
+                            "output_tokens": len(choice.token_ids),
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+        done_jobs = min(first + size, len(items))
+        print(f"{args.stage}: {done_jobs}/{len(items)}", flush=True)
+    finished = time.time()
     timing = {
         "stage": args.stage,
         "model": stage["model"],
@@ -142,6 +154,7 @@ def main() -> None:
         "vllm": vllm.__version__,
         "attention_backend": args.backend,
         "jobs": len(items),
+        "done": done_jobs,
         "load_seconds": round(loaded - started, 1),
         "generate_seconds": round(finished - loaded, 1),
         "prompt_tokens": prompt_tokens,

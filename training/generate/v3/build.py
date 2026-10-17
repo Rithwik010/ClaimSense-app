@@ -40,6 +40,7 @@ from training.generate.reference import generate_reference
 from training.generate.scenarios_v2 import TEST_ONLY_POLICIES, TRAIN_STYLES, ScenarioBuilderV2
 from training.generate.v3 import noise
 from training.generate.v3.config import OUT_DIR, config, leaks
+from training.generate.v3.coverage import below, by_kind, cell_counts
 from training.generate.v3.dataset import latest, load_sheets, read_jsonl, write_jsonl
 from training.generate.v3.segments import render
 from training.generate.v3.verify import check_note, filled_target, locate, near_duplicates
@@ -124,6 +125,7 @@ def build_record(
         "claim_decision": labels["claim_decision"],
         "complexity": labels["complexity"],
         "tricky": sheet["tricky"],
+        "top_up": sheet.get("top_up") or [],
         "style": sheet["style"],
         "note_words": len(note.split()),
         "lines": len(claim.service_lines),
@@ -149,7 +151,14 @@ def build_record(
 
 
 def _trim(rows: list[tuple[dict, dict]], split: str) -> list[tuple[dict, dict]]:
-    size = config()["sizes"][split]
+    """The split at its size, keeping the writer mix; the training split keeps every top-up
+    record on top of its size (D-V3-6)."""
+    if split == "train":
+        topped = [(r, s) for r, s in rows if r["metadata"].get("top_up")]
+        natural = [(r, s) for r, s in rows if not r["metadata"].get("top_up")]
+        return _trim(natural, "train_natural") + topped
+    size = config()["sizes"]["train" if split == "train_natural" else split]
+    split = "train" if split == "train_natural" else split
     shares = config()["writer_mix"][split]
     wanted = {w: round(size * share) for w, share in shares.items()}
     kept: list[tuple[dict, dict]] = []
@@ -254,9 +263,25 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
     for split, rows in final.items():
         write_jsonl(folder / f"{split}.jsonl", [r for r, _ in rows])
         write_jsonl(folder / f"{split}_inputs.jsonl", [s for _, s in rows])
-    mix = training_mix([r for r, _ in final["train"]], v2_dir)
+    test_notes = {
+        r["metadata"]["record_id"]: s["claim"]["clinical_notes"]
+        for split in ("test_messy", "test_unseen_style")
+        for r, s in final[split]
+    }
+    mix, mix_report = training_mix(
+        [r for r, _ in final["train"]], v2_dir, out_dir / "v2_extra", test_notes
+    )
     write_jsonl(folder / "train_mix.jsonl", mix)
     stats = statistics(out_dir, final, dropped, duplicates, noise_totals)
+    stats["training_mix"] = mix_report
+    floors = config()["top_up"]["floors"]
+    train_counts = cell_counts(sheets[r["metadata"]["sheet_id"]] for r, _ in final["train"])
+    stats["coverage"] = {
+        "floors": floors,
+        "cells": len(train_counts),
+        "cells_under_floor": {f"{k} {n}": c for (k, n), c in below(train_counts, floors).items()},
+        "by_kind": by_kind(train_counts),
+    }
     (folder / "stats.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
     from training.generate.v3.packs import check_packs, handwritten_pack
 
@@ -264,22 +289,46 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
     handwritten_pack(folder, [s for s in sheets.values() if s["writer"] == "H"])
     return {
         "sizes": {s: len(r) for s, r in final.items()},
-        "train_mix": len(mix),
+        "train_mix": mix_report,
+        "cells_under_floor": len(stats["coverage"]["cells_under_floor"]),
         "dropped": dict(dropped),
         "near_duplicates": len(duplicates),
     }
 
 
-def training_mix(v3_train: Sequence[dict], v2_dir: Path) -> list[dict]:
-    """v2 clean train records and v3 messy train records at `training_mix`, shuffled."""
+def training_mix(
+    v3_train: Sequence[dict], v2_dir: Path, extra_dir: Path, test_notes: Mapping[str, str]
+) -> tuple[list[dict], dict[str, Any]]:
+    """v2 clean train records and v3 messy train records at `training_mix`, shuffled: every v2
+    training record, then the extra v2-style ones (D-V3-7) as many as the shares need, without any
+    that is a near-duplicate of a v3 test note."""
     shares = config()["training_mix"]
-    v2 = read_jsonl(v2_dir / "train.jsonl")
     want_v2 = round(len(v3_train) * shares["v2_clean"] / shares["v3_messy"])
+    v2 = read_jsonl(v2_dir / "train.jsonl")
+    extra_path = extra_dir / "train.jsonl"
+    extra = read_jsonl(extra_path) if extra_path.exists() else []
+    inputs = read_jsonl(v2_dir / "train_inputs.jsonl")
+    if extra_path.exists():
+        inputs += read_jsonl(extra_dir / "train_inputs.jsonl")
+    notes = {i["record_id"]: i["claim"]["clinical_notes"] for i in inputs}
+    near = {a for a, _, _ in near_duplicates({"v2": notes, "test": dict(test_notes)})}
+    v2 = [r for r in v2 if r["metadata"]["record_id"] not in near]
+    extra = [r for r in extra if r["metadata"]["record_id"] not in near]
     rng = random.Random(config()["seed"])
     chosen = rng.sample(v2, min(want_v2, len(v2)))
+    chosen += rng.sample(extra, min(want_v2 - len(chosen), len(extra)))
+    extra_ids = {e["metadata"]["record_id"] for e in extra}
     mix = [*chosen, *v3_train]
     rng.shuffle(mix)
-    return mix
+    return mix, {
+        "v3_records": len(v3_train),
+        "v2_records": len(chosen),
+        "v2_from_extra": sum(r["metadata"]["record_id"] in extra_ids for r in chosen),
+        "v2_wanted": want_v2,
+        "v2_near_duplicates_of_v3_tests": len(near),
+        "records": len(mix),
+        "v2_share": round(len(chosen) / max(1, len(mix)), 3),
+    }
 
 
 def statistics(

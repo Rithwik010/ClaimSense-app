@@ -84,13 +84,14 @@ def run_config() -> dict[str, Any]:
         "verifier_system": VERIFIER_SYSTEM,
         "verifier_user": VERIFIER_USER,
         "stages": {
-            "writer_b": {"kind": "write", "writer": "B", "model": llm["writer_b"]["model"]},
-            "writer_c": {"kind": "write", "writer": "C", "model": llm["writer_c"]["model"]},
-            "verifier": {
-                "kind": "verify",
-                "model": llm["verifier"]["model"],
-                "sampling": _sampling("verifier"),
-            },
+            name: {
+                "kind": "verify" if name == "verifier" else "write",
+                **({} if name == "verifier" else {"writer": name[-1].upper()}),
+                "model": llm[name]["model"],
+                "max_model_len": llm[name].get("max_model_len", llm["vllm"]["max_model_len"]),
+                **({"sampling": _sampling(name)} if name == "verifier" else {}),
+            }
+            for name in ("writer_b", "writer_c", "verifier")
         },
     }
 
@@ -127,10 +128,16 @@ def round_jobs(limit: int | None = None, out_dir: Path = OUT_DIR) -> tuple[list[
         )
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     answered = {(v["sheet_id"], v["attempt"]) for v in read_jsonl(out_dir / "verifier.jsonl")}
+    failed = {  # failed the local checks already (run the gate first): rewritten, not verified
+        (g["sheet_id"], g["attempt"])
+        for g in read_jsonl(out_dir / "gate.jsonl")
+        if not g["passed"] and not g["pending"]
+    }
+    skip = answered | failed
     verify: list[dict] = []
     count = 0
     for sheet_id, note in sorted(notes.items()):
-        if (sheet_id, note["attempt"]) in answered:
+        if (sheet_id, note["attempt"]) in skip:
             continue
         if note["writer"] != "A" and note.get("spans") is None and sheet_id in needed:
             continue  # a model note to be rewritten this round
@@ -202,6 +209,7 @@ def notebook(round_no: int) -> dict[str, Any]:
         (
             "code",
             "base = dict(os.environ, VLLM_USE_V1='1' if run['vllm']['use_v1_engine'] else '0')\n"
+            "failed = []\n"
             "for stage in ('writer_b', 'writer_c', 'verifier'):\n"
             "    for backend in run['vllm']['attention_backends']:\n"
             "        env = dict(base)\n"
@@ -214,7 +222,8 @@ def notebook(round_no: int) -> dict[str, Any]:
             "        if done.returncode == 0:\n"
             "            break\n"
             "    else:\n"
-            "        raise SystemExit(f'stage {stage} failed with every attention backend')\n",
+            "        failed.append(stage)  # the next stages still run on what exists\n"
+            "        print('=== stage', stage, 'failed with every backend', flush=True)\n",
         ),
         (
             "code",
@@ -222,7 +231,9 @@ def notebook(round_no: int) -> dict[str, Any]:
             "    path = os.path.join(OUT, name)\n"
             "    print(name, os.path.getsize(path))\n"
             "    if name.startswith('timings'):\n"
-            "        print(open(path).read())\n",
+            "        print(open(path).read())\n"
+            "if failed:\n"
+            "    raise SystemExit(f'failed stages: {failed}')\n",
         ),
     ]
     return {

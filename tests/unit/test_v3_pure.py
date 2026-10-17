@@ -303,3 +303,74 @@ def test_near_duplicates_across_splits_are_found() -> None:
         {"train": {"a": base}, "test": {"b": base + " extra", "c": "something else entirely here"}}
     )
     assert [(a, b) for a, b, _ in found] == [("a", "b")]
+
+
+# --- Visit limits (D-V3-8) and coverage cells (D-V3-6) --------------------------------------------
+
+
+def therapy_claim(days: list[str], member: str = "MBR-1") -> tuple[dict, dict]:
+    claim = {
+        "member_id": member,
+        "service_lines": [
+            {"line_no": i, "date_of_service": day, "procedure_code": "97110"}
+            for i, day in enumerate(days, start=1)
+        ],
+    }
+    rules = {"line_outcomes": [{"line_no": i, "outcome": "PASS"} for i in range(1, len(days) + 1)]}
+    return claim, rules
+
+
+def test_a_line_beyond_the_visit_limit_is_found_as_rule_r21_counts_it() -> None:
+    from datetime import date
+
+    from app.db.curated import load_curated
+    from training.generate.v3.visits import over_limit_lines
+
+    curated = load_curated("v2")
+    plan = "PLN-HMO"  # REHAB_THERAPY: 20 visits a year
+    limit = curated.benefit(plan, "REHAB_THERAPY").visit_limit
+    claim, rules = therapy_claim(["2026-10-05", "2026-10-12", "2026-10-12"])
+    usage = {("MBR-1", "REHAB_THERAPY", date(2026, 1, 1)): limit - 1}
+
+    assert over_limit_lines(claim, rules, {"MBR-1": plan}, usage, curated) == [2, 3]
+    assert over_limit_lines(claim, rules, {"MBR-1": plan}, {}, curated) == []
+    rules["line_outcomes"][0]["outcome"] = "DENY"  # a denied date uses no visit
+    assert over_limit_lines(claim, rules, {"MBR-1": plan}, usage, curated) == []
+    january, _ = therapy_claim(["2027-01-11"])
+    assert over_limit_lines(january, rules, {"MBR-1": plan}, usage, curated) == []
+
+
+def test_a_fact_counts_only_on_a_line_the_model_decides() -> None:
+    from training.generate.v3.coverage import sheet_cells
+
+    sheet = {
+        "inputs": {
+            "context": {
+                "lines": [{"line_no": 1, "criteria": [{"criterion_id": "POL-PAIN-001.c8"}]}]
+            }
+        },
+        "label": {
+            "target": {
+                "lines": [
+                    {
+                        "line_no": 1,
+                        "decision": "DENY",
+                        "criteria": [{"criterion_id": "POL-PAIN-001.c8", "status": "NOT_MET"}],
+                    }
+                ]
+            }
+        },
+        "facts": [
+            {"kind": "criterion", "criterion_id": "POL-PAIN-001.c8", "status": "borderline_below",
+             "lines": [1]},
+            {"kind": "criterion", "criterion_id": "POL-SURG-002.c3", "status": "borderline_above",
+             "lines": [2]},  # a line a rule denies: shown as decided, teaches no label
+        ],
+    }  # fmt: skip
+
+    assert sheet_cells(sheet) == {
+        ("policy_decision", "POL-PAIN-001 DENY"): 1,
+        ("criterion_status", "POL-PAIN-001.c8 NOT_MET"): 1,
+        ("tricky", "POL-PAIN-001 borderline"): 1,
+        ("borderline", "POL-PAIN-001.c8 below"): 1,
+    }

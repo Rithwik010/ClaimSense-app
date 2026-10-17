@@ -251,6 +251,16 @@ Every note must pass:
 7. **No near-duplicates** across the train, validation and test splits (5-word shingles, Jaccard of
    `verification.near_duplicate_jaccard` or more).
 
+The verifier's quotes (D-V3-10): a quote it paraphrased stands for the note sentence it matches
+(word overlap of `verification.fuzzy_quote_overlap` or more), and the evidence is that sentence,
+copied exactly; "null" written as text is no quote; for a missing or absent fact, a quote that cites
+nothing in the note, another documented fact's sentence, or the fact's own hedged or negative
+mention is no finding (the local word-overlap check still runs). A documented fact the verifier
+does not find is looked for in the note itself: its own wording, else one sentence with
+`verification.local_fact_overlap` of its content words, every value and the same polarity (never
+for a contradicted fact). Model notes get "denies" written as
+"reports no" and "pending" as "awaited" before the gate.
+
 A failing note is regenerated, up to `verification.max_regenerations` times. Pass rates are tracked
 per writer. Each split is drawn with `sizes_margin` extra fact sheets, so that sheets still failing
 after every regeneration can be dropped and the split keeps its size; the final sets are trimmed to
@@ -270,7 +280,22 @@ the sizes above.
 
 The v2 clean test (300) stays unchanged.
 
+**Sizes and top-ups (D-V3-6).** The training split is then topped up until every cell
+(`training/generate/v3/coverage.py`) reaches its floor in `top_up.floors`: lines per policy and
+decision, each criterion's label statuses, the tricky facts per policy, and both sides of every
+borderline criterion. Top-up sheets are drawn for the thinnest cell's policy from the scenario types
+likely to add to it, and kept only when they add to a cell still short; the target is the floor plus
+`top_up.cushion`, for notes the gate drops; a cell still short after `top_up.max_attempts_per_cell`
+sheets is reported. Validation and the tests keep the natural distribution.
+
+**Visit limits (D-V3-8).** No claim sends a line beyond its plan's yearly visit limit to the model:
+the same count as rule R21 (`training/generate/v3/visits.py`); such a claim is dropped and another
+drawn.
+
 **Training mix:** v2 clean train to v3 messy train at `training_mix.v2_clean` : `training_mix.v3_messy`.
+v2's 2,000 training records are joined by more v2-style records from the v2 generator and labels
+(D-V3-7): seed `v2_extra.seed`, numbered from `v2_extra.start`, `v2_extra.margin` spare; none
+repeats a v2 training note, none is a near-duplicate of a test record, none goes over a visit limit.
 
 **Statistics:**
 
@@ -296,7 +321,12 @@ The v2 clean test (300) stays unchanged.
   order and records the one that ran. The notebook pins `llm.vllm.pip_pins` next to vLLM (Kaggle's
   image ships a Transformers that vLLM 0.11 cannot use).
 - **Hardware:** the two T4s run with tensor parallel `llm.vllm.tensor_parallel_size`, at
-  `llm.vllm.max_model_len` tokens and `llm.vllm.gpu_memory_utilization` of memory.
+  `llm.vllm.max_model_len` tokens (or a model's own `llm.<model>.max_model_len`, such as
+  `llm.writer_c.max_model_len` for OLMo-2's 4,096) and `llm.vllm.gpu_memory_utilization` of memory.
+- **Saved as it goes:** a stage answers `llm.vllm.chunk_size` prompts at a time and saves them, a
+  rerun skips what is saved, and a failed stage does not stop the next.
+- **Time budgets:** a stage stops taking new chunks after `llm.vllm.stage_hours.<stage>` hours; what
+  it has not done goes to the next round, so a round's GPU time is bounded.
 - **Privacy:** the datasets and notebooks are private, because the records hold CPT codes.
 
 ## Other parameters

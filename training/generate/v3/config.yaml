@@ -9,13 +9,25 @@ policy_set: v2              # the policy set the labels follow (D-POL-2)
 prompt_version: decision_v3 # v2's prompt, unchanged; a decision_v4 would be made for v3 only
 
 # --- Sizes and splits (Phase 5) --------------------------------------------------------------------
-sizes:
-  train: 3000
+sizes:                      # D-V3-6 (17 Oct): train 6,000 and the messy test 600
+  train: 6000
   validation: 300
-  test_messy: 300           # held out; writers A and B
+  test_messy: 600           # held out; writers A and B
   test_unseen_style: 200    # held out; writer C only
   handwritten: 30           # fact sheets for the team to write notes from
 sizes_margin: 0.10          # extra sheets per split, for notes that fail the gate after every retry
+top_up:                     # training split only; validation and tests keep the natural mix (D-V3-6)
+  floors:                   # examples each cell needs in the training set (training/generate/v3/coverage.py)
+    policy_decision: 30     # lines the model decides, per policy and decision
+    criterion_status: 20    # per criterion and label status
+    tricky: 30              # per policy: borderline, contradicted, missing, negated, hedged facts
+    borderline: 30          # per borderline criterion and side of its threshold
+  cushion: 0.10             # aim this far above each floor, for notes the gate drops
+  max_attempts_per_cell: 6000  # sheets tried for one cell before it is reported as not reachable
+v2_extra:                   # more v2-style clean records for the 40/60 training mix (D-V3-7)
+  seed: 20261017            # not v2's own seed, so the records are new
+  start: 50000              # record and claim numbers after v2's own
+  margin: 0.10              # spare records for the ones dropped at the build (near-duplicates)
 test_unseen_policy_share: 0.33  # as v2's test: a third of each test set on the test-only policies
 writer_mix:                 # share of each split's notes per writer
   train: {A: 0.5, B: 0.5}
@@ -128,6 +140,8 @@ verification:
   near_duplicate_jaccard: 0.8  # 5-word shingles, across splits
   max_regenerations: 3
   min_quote_words: 4
+  fuzzy_quote_overlap: 0.8  # a paraphrased quote counts as the note sentence it matches this well
+  local_fact_overlap: 0.7   # share of a documented fact's words one sentence holds, when the verifier misses it
 
 # --- Open-weight models on Kaggle (Phase 3, Phase 4) ------------------------------------------------
 llm:
@@ -145,6 +159,7 @@ llm:
     temperature: 0.8
     top_p: 0.95
     max_tokens: 1600
+    max_model_len: 4096     # OLMo-2's context; prompt plus max_tokens stay under it
   verifier:                 # a family no writer uses
     model: ibm-granite/granite-3.3-8b-instruct
     family: granite
@@ -154,12 +169,17 @@ llm:
   vllm:
     version: "0.11.0"       # Kaggle's image is Python 3.13; vLLM 0.9 needs 3.12 or older
     use_v1_engine: true     # vLLM 0.10 and later have only the V1 engine
-    attention_backends: [auto, TRITON_ATTN, FLEX_ATTENTION]  # tried in order (no FlashAttention on a T4)
+    attention_backends: [TRITON_ATTN, auto, FLEX_ATTENTION]  # tried in order (no FlashAttention on a T4); "auto" picks FlexAttention, which ran out of memory or ran slowly in the pilot
     pip_pins: ["transformers==4.57.1"]  # Kaggle ships Transformers 5, which vLLM 0.11 cannot use
     dtype: half             # T4 has no bfloat16
     tensor_parallel_size: 2 # Kaggle T4 x2
-    max_model_len: 6144
+    max_model_len: 6144     # each model's own `max_model_len` above replaces it
     gpu_memory_utilization: 0.9
+    chunk_size: 512         # prompts per generate call; outputs are saved after each chunk
+    stage_hours:            # each stage stops taking new chunks after this long (model load included)
+      writer_b: 2.0
+      writer_c: 0.4
+      verifier: 2.0
   gpu_hours_estimate:       # T4 x2 session hours, before each run (refreshed from the pilots)
     writer_b: 1.6
     writer_c: 0.5

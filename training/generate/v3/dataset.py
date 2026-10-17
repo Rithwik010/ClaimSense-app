@@ -21,7 +21,9 @@ Everything is written under data/generated/v3/ (git-ignored):
 
 import argparse
 import json
+import math
 import random
+import zlib
 from collections import Counter
 from collections.abc import Iterable, Mapping
 from pathlib import Path
@@ -32,14 +34,16 @@ from training.generate.common import DEFAULT_SEED
 from training.generate.decision_dataset_v2 import exact_retriever, lookups_v2
 from training.generate.reference import generate_reference
 from training.generate.scenarios import ScenarioError
-from training.generate.scenarios_v2 import TEST_ONLY_POLICIES
+from training.generate.scenarios_v2 import TEST_ONLY_POLICIES, reference_dicts
 from training.generate.v3 import noise, writer_a
-from training.generate.v3.config import OUT_DIR, config, leaks
+from training.generate.v3.config import OUT_DIR, borderlines, config, leaks
+from training.generate.v3.coverage import NO_CRITERIA, Cell, cell_counts, policy_of, sheet_cells
 from training.generate.v3.facts import ScenarioBuilderV3
-from training.generate.v3.llm import clean_note, parse_verifier, statements
+from training.generate.v3.llm import clean_note, neutral_words, parse_verifier, statements
 from training.generate.v3.segments import render
 from training.generate.v3.sheets import fact_sheet
 from training.generate.v3.verify import check_note, filled_target
+from training.generate.v3.visits import over_limit_lines, usage_index
 
 SPLITS = ("train", "validation", "test_messy", "test_unseen_style", "handwritten")
 CODES = {
@@ -49,6 +53,7 @@ CODES = {
     "test_unseen_style": "TU",
     "handwritten": "HW",
 }
+TOP_UP_CODE = "TP"  # top-up sheets: training split only (D-V3-6)
 TEST_SPLITS = ("test_messy", "test_unseen_style", "handwritten")
 UNSEEN_SKIP = ("office_visit", "ncs_without_emg", "facet_two_regions", "extended_testing")
 
@@ -103,27 +108,80 @@ def writer_list(split: str, count: int, rng: random.Random) -> list[str]:
     return writers[:count]
 
 
+class SheetMaker:
+    """Builds fact sheets the way every split does, and drops a claim whose line would go beyond
+    its plan's visit limit (D-V3-8)."""
+
+    def __init__(self, seed: int) -> None:
+        cfg = config()
+        self.seed = seed
+        self.reference = generate_reference(DEFAULT_SEED)[0]
+        self.lookups = lookups_v2()
+        self.retriever = exact_retriever()
+        self.curated = load_curated(cfg["policy_set"])
+        self.train_policies = set(self.curated.policies) - TEST_ONLY_POLICIES
+        self.plan_of = {m["member_id"]: m["plan_id"] for m in self.reference.members}
+        self.usage = usage_index(reference_dicts(self.reference.visit_usage))
+        self.visit_drops: Counter[str] = Counter()
+
+    def builder(self, offset: int, policies: set[str], excluded: set[str]) -> ScenarioBuilderV3:
+        return ScenarioBuilderV3(
+            self.seed + offset,
+            ("A", "B"),
+            policies,
+            excluded,
+            self.retriever,
+            self.reference,
+            self.lookups,
+        )
+
+    def sheet(
+        self,
+        b: ScenarioBuilderV3,
+        scenario_type: str,
+        split: str,
+        code: str,
+        number: int,
+        writer: str,
+        unseen: bool = False,
+    ) -> dict[str, Any] | None:
+        """One sheet, or None: a scenario the builder cannot make, or one over a visit limit."""
+        try:
+            scenario = b.build(scenario_type, f"CLM-V3{code}-{number:05d}")
+        except ScenarioError:
+            return None
+        sheet = fact_sheet(
+            scenario,
+            b.draft,
+            self.lookups,
+            sheet_id=f"S3{code}-{number:05d}",
+            split=split,
+            writer=writer,
+            seed=f"{self.seed}-{split}-{code}-{number}",
+            unseen_policy=unseen,
+        )
+        inputs = sheet["inputs"]
+        if over_limit_lines(
+            inputs["claim"], inputs["rules_outcome"], self.plan_of, self.usage, self.curated
+        ):
+            self.visit_drops[split] += 1
+            return None
+        return sheet
+
+
 def build_sheets(
     seed: int,
     out_dir: Path = OUT_DIR,
     limit: int | None = None,
     sizes: Mapping[str, int] | None = None,
-) -> dict[str, int]:
+    top_up: bool = False,
+) -> dict[str, Any]:
     """Every split's fact sheets; `limit`: at most that many per split (a pilot); `sizes`: exact
-    counts for the splits given, and none for the others (scripts/verify/v3_coverage.py)."""
+    counts for the splits given, and none for the others (scripts/verify/v3_coverage.py);
+    `top_up`: then top up the training split until every cell reaches its floor (D-V3-6)."""
     cfg = config()
-    reference = generate_reference(DEFAULT_SEED)[0]
-    lookups = lookups_v2()
-    retriever = exact_retriever()
-    everything = set(load_curated(cfg["policy_set"]).policies)
-    train_policies = everything - TEST_ONLY_POLICIES
+    maker = SheetMaker(seed)
     weights = dict(cfg["scenario_weights"])
-
-    def builder(offset: int, policies: set[str], excluded: set[str]) -> ScenarioBuilderV3:
-        return ScenarioBuilderV3(
-            seed + offset, ("A", "B"), policies, excluded, retriever, reference, lookups
-        )
-
     sheets: list[dict[str, Any]] = []
     counts: dict[str, int] = {}
     for offset, split in enumerate(SPLITS, start=30):
@@ -137,41 +195,179 @@ def build_sheets(
             if not wanted:
                 continue
             if kind == "unseen":
-                b = builder(offset * 10 + 1, set(TEST_ONLY_POLICIES), set())
+                b = maker.builder(offset * 10 + 1, set(TEST_ONLY_POLICIES), set())
                 allowed = {t: w for t, w in weights.items() if t not in UNSEEN_SKIP}
             else:
                 excluded = set() if split in TEST_SPLITS else set(TEST_ONLY_POLICIES)
-                b = builder(offset * 10, train_policies, excluded)
+                b = maker.builder(offset * 10, maker.train_policies, excluded)
                 allowed = dict(weights)
             made, failures = 0, Counter()
             while made < wanted:
                 scenario_type = rng.choices(list(allowed), weights=list(allowed.values()))[0]
-                claim_id = f"CLM-V3{CODES[split]}-{number:05d}"
-                try:
-                    scenario = b.build(scenario_type, claim_id)
-                except ScenarioError:
+                sheet = maker.sheet(
+                    b, scenario_type, split, CODES[split], number, writers[number], kind == "unseen"
+                )
+                if sheet is None:
                     failures[scenario_type] += 1
                     if failures[scenario_type] > 200:
                         allowed.pop(scenario_type, None)
                     continue
-                writer = writers[number]
-                sheets.append(
-                    fact_sheet(
-                        scenario,
-                        b.draft,
-                        lookups,
-                        sheet_id=f"S3{CODES[split]}-{number:05d}",
-                        split=split,
-                        writer=writer,
-                        seed=f"{seed}-{split}-{number}",
-                        unseen_policy=kind == "unseen",
-                    )
-                )
+                sheets.append(sheet)
                 number += 1
                 made += 1
         counts[split] = number
+    report: dict[str, Any] = {"sheets": counts}
+    if top_up:
+        extra, report["top_up"] = top_up_sheets(maker, sheets)
+        sheets += extra
+        counts["train_top_up"] = len(extra)
+    report["visit_limit_drops"] = dict(maker.visit_drops)
     write_jsonl(out_dir / "sheets.jsonl", sheets)
-    return counts
+    (out_dir / "sheets_report.json").write_text(json.dumps(report, indent=2) + "\n")
+    return report
+
+
+# --- Top-ups: the training split until every cell reaches its floor (D-V3-6) ---------------------
+
+DECISION_TYPES = {
+    "APPROVE": ("approve_single", "same_profile_multi"),
+    "DENY": ("deny_criterion", "deny_exclusion"),
+    "PEND": ("pend_missing",),
+}
+STATUS_TYPES = {
+    "MET": ("approve_single", "same_profile_multi", "deny_criterion"),
+    "NOT_MET": ("deny_criterion", "deny_exclusion", "approve_single"),
+    "NOT_DOCUMENTED": ("pend_missing",),
+}
+TRICKY_TYPES = {
+    "missing": ("pend_missing",),
+    "hedged": ("pend_missing",),
+    "negated": ("approve_single", "deny_criterion"),
+    "borderline": ("approve_single", "deny_criterion"),
+}
+SIDE_TYPES = {"above": ("approve_single", "same_profile_multi"), "below": ("deny_criterion",)}
+
+
+def cell_policy(cell: Cell) -> str:
+    name = cell[1]
+    return NO_CRITERIA if name.startswith(NO_CRITERIA) else policy_of(name.split()[0])
+
+
+def cell_types(
+    cell: Cell, weights: Mapping[str, float], seen: Mapping[Cell, Counter[str]]
+) -> dict[str, float]:
+    """The scenario types most likely to add to a cell: the types of the natural training sheets
+    that hold it, by how often; else the types its label points to; else all of them."""
+    if seen.get(cell):
+        return {t: float(n) for t, n in seen[cell].items() if t in weights}
+    kind, name = cell
+    last = name.split()[-1]
+    hints: tuple[str, ...] = ()
+    if kind == "policy_decision":
+        hints = DECISION_TYPES.get(last, ())
+        if name.startswith(NO_CRITERIA):
+            hints = ("office_visit", "office_same_day", "office_plus_procedure")
+    elif kind == "criterion_status":
+        hints = STATUS_TYPES.get(last, ())
+    elif kind == "tricky":
+        hints = TRICKY_TYPES.get(last, ())
+    elif kind == "borderline":
+        hints = SIDE_TYPES.get(last, ())
+    found = {t: weights[t] for t in hints if t in weights}
+    return found or dict(weights)
+
+
+def cell_universe(train: list[Mapping[str, Any]], policies: set[str]) -> set[Cell]:
+    """The cells to fill: every cell the natural training sheets hold, and both sides of every
+    borderline criterion of a training policy (a side may not occur naturally at all)."""
+    found = set(cell_counts(train))
+    for criterion_id, borderline in borderlines().items():
+        if policy_of(criterion_id) not in policies:
+            continue
+        for side in ("above", "below"):
+            if any(getattr(form, side) for form in borderline.forms):
+                found.add(("borderline", f"{criterion_id} {side}"))
+    return found
+
+
+def top_up_sheets(
+    maker: SheetMaker, sheets: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Training sheets for the cells under their floor (plus the cushion), thinnest cell first:
+    sheets of the cell's policy, from the scenario types likely to add to it, kept only when
+    they add to a cell still short. Validation and test splits are not touched."""
+    cfg = config()["top_up"]
+    weights = dict(config()["scenario_weights"])
+    targets = {k: math.ceil(v * (1 + cfg["cushion"])) for k, v in cfg["floors"].items()}
+    train = [s for s in sheets if s["split"] == "train"]
+    counts = cell_counts(train)
+    seen: dict[Cell, Counter[str]] = {}
+    for sheet in train:
+        for cell in sheet_cells(sheet):
+            seen.setdefault(cell, Counter())[sheet["scenario_type"]] += 1
+    universe = cell_universe(train, maker.train_policies)
+    short = {c for c in universe if counts.get(c, 0) < targets[c[0]]}
+    report = {
+        f"{kind} {name}": {
+            "floor": cfg["floors"][kind],
+            "target": targets[kind],
+            "before": counts.get((kind, name), 0),
+            "top_up_sheets": 0,
+            "attempts": 0,
+        }
+        for kind, name in sorted(short)
+    }
+    rng = random.Random(f"{maker.seed}-top-up")
+    builders: dict[str, ScenarioBuilderV3] = {}
+    added: list[dict[str, Any]] = []
+    while short:
+        cell = min(short, key=lambda c: (counts.get(c, 0) / targets[c[0]], c))
+        policy = cell_policy(cell)
+        if policy not in builders:
+            policies = maker.train_policies if policy == NO_CRITERIA else {policy}
+            offset = 500 + zlib.crc32(policy.encode()) % 10000
+            builders[policy] = maker.builder(offset, policies, set(TEST_ONLY_POLICIES))
+        allowed = cell_types(cell, weights, seen)
+        entry = report[f"{cell[0]} {cell[1]}"]
+        failures: Counter[str] = Counter()
+        while cell in short and entry["attempts"] < cfg["max_attempts_per_cell"]:
+            entry["attempts"] += 1
+            scenario_type = rng.choices(list(allowed), weights=list(allowed.values()))[0]
+            writer = "A" if rng.random() < config()["writer_mix"]["train"]["A"] else "B"
+            sheet = maker.sheet(
+                builders[policy], scenario_type, "train", TOP_UP_CODE, len(added), writer
+            )
+            if sheet is None:
+                failures[scenario_type] += 1
+                if failures[scenario_type] > 200 and len(allowed) > 1:
+                    allowed.pop(scenario_type)
+                elif failures[scenario_type] > 200:  # nothing this policy can build: all types
+                    allowed = {t: w for t, w in weights.items() if failures[t] <= 200}
+                    if not allowed:
+                        break
+                continue
+            cells = sheet_cells(sheet)
+            helped = sorted(c for c in cells if c in short)
+            if not helped:
+                continue
+            sheet["top_up"] = [f"{k} {n}" for k, n in helped]
+            added.append(sheet)
+            counts.update(cells)
+            for c in helped:
+                report[f"{c[0]} {c[1]}"]["top_up_sheets"] += 1
+                if counts[c] >= targets[c[0]]:
+                    short.discard(c)
+        short.discard(cell)  # reached, or not reachable within the attempts
+    for key, entry in report.items():
+        kind, name = key.split(" ", 1)
+        entry["after"] = counts.get((kind, name), 0)
+        entry["reached_floor"] = entry["after"] >= entry["floor"]
+    return added, {
+        "sheets": len(added),
+        "cells_short_before": len(report),
+        "cells_under_floor_after": sum(not e["reached_floor"] for e in report.values()),
+        "cells": report,
+    }
 
 
 def load_sheets(out_dir: Path = OUT_DIR) -> dict[str, dict[str, Any]]:
@@ -207,7 +403,8 @@ def needs_note(out_dir: Path = OUT_DIR) -> dict[str, int]:
             found[sheet_id] = 1
             continue
         result = gate.get(sheet_id)
-        if result and result["attempt"] == note["attempt"] and not result["passed"]:
+        failed = result and not result["passed"] and not result.get("pending")
+        if failed and result["attempt"] == note["attempt"]:
             if note["attempt"] < limit:
                 found[sheet_id] = note["attempt"] + 1
     return found
@@ -245,20 +442,32 @@ def verifier_items(sheet: Mapping[str, Any]) -> list[dict[str, Any]]:
 
 
 def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
-    """The notebook's outputs: model notes (writers B and C) and verifier answers."""
+    """The notebook's outputs: model notes (writers B and C) and verifier answers. The jobs are in
+    <round>/dataset/; `kaggle kernels output -p <round>/output` keeps the notebook's own output/
+    folder, so the files are found wherever they landed under <round>/output/. A round is ingested
+    once (<round>/ingested.json)."""
+    marker = round_dir / "ingested.json"
+    if marker.exists():
+        raise SystemExit(f"{round_dir.name} was ingested already: {marker.read_text()}")
     sheets = load_sheets(out_dir)
-    jobs = {j["job_id"]: j for j in read_jsonl(round_dir / "writers.jsonl")}
-    jobs |= {j["job_id"]: j for j in read_jsonl(round_dir / "verify.jsonl")}
-    output = round_dir / "output"
+    jobs = {j["job_id"]: j for j in read_jsonl(round_dir / "dataset" / "writers.jsonl")}
+    jobs |= {j["job_id"]: j for j in read_jsonl(round_dir / "dataset" / "verify.jsonl")}
+
+    def output(name: str) -> Path:
+        found = sorted((round_dir / "output").rglob(name))
+        return found[0] if found else round_dir / "output" / name
+
     notes, answers, broken = [], [], 0
-    for row in read_jsonl(output / "notes_out.jsonl"):
+    for row in read_jsonl(output("notes_out.jsonl")):
         job = jobs[row["job_id"]]
+        text, neutral = neutral_words(clean_note(row["text"]))
         notes.append(
             {
                 "sheet_id": job["sheet_id"],
                 "attempt": job["attempt"],
                 "writer": job["writer"],
-                "note": clean_note(row["text"]),
+                "note": text,
+                "neutral_words": neutral,
                 "spans": None,
                 "noise": {},
                 "model": row.get("model"),
@@ -266,7 +475,7 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
                 "finish_reason": row.get("finish_reason"),
             }
         )
-    for row in read_jsonl(output / "verifier_out.jsonl"):
+    for row in read_jsonl(output("verifier_out.jsonl")):
         job = jobs.get(row["job_id"]) or {}
         sheet_id, attempt = row["sheet_id"], row["attempt"]
         items = verifier_items(sheets[sheet_id])
@@ -285,11 +494,13 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
                 "job": job.get("job_id"),
             }
         )
-    return {
+    found = {
         "notes": append_jsonl(out_dir / "notes.jsonl", notes),
         "verifier": append_jsonl(out_dir / "verifier.jsonl", answers),
         "verifier_unparsed": broken,
     }
+    marker.write_text(json.dumps(found) + "\n")
+    return found
 
 
 # --- Phase 4: the gate ---------------------------------------------------------------------------
@@ -313,6 +524,8 @@ def run_gate(out_dir: Path = OUT_DIR) -> dict[str, Any]:
         if answer is not None and answers is None:
             result.failures.append(f"verifier answer unreadable: {answer.get('error')}")
             result.verifier_pending = False
+        if result.failures:  # a local check failed: the note is rewritten, not sent for verifying
+            result.verifier_pending = False
         if not result.failures and not result.verifier_pending:
             _, problems = filled_target(sheet, note["note"], result.spans)
             result.failures += problems
@@ -329,6 +542,7 @@ def run_gate(out_dir: Path = OUT_DIR) -> dict[str, Any]:
                 "pending": result.verifier_pending,
                 "failures": result.failures,
                 "spans": {k: list(v) for k, v in result.spans.items()},
+                "local_spans": result.local_spans,
             }
         )
     write_jsonl(out_dir / "gate.jsonl", results)
@@ -377,7 +591,10 @@ def main() -> None:
     args = parser.parse_args()
     out = args.out
     if args.command == "sheets":
-        print(json.dumps(build_sheets(args.seed, out, args.limit)))
+        report = build_sheets(args.seed, out, args.limit, top_up=args.limit is None)
+        print(json.dumps({k: v for k, v in report.items() if k != "top_up"}))
+        if "top_up" in report:
+            print(json.dumps({k: v for k, v in report["top_up"].items() if k != "cells"}))
     elif args.command == "write-a":
         print(f"writer A notes written: {write_a(out)}")
     elif args.command == "jobs":

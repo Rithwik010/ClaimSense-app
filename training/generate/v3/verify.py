@@ -47,6 +47,7 @@ class GateResult:
     failures: list[str] = field(default_factory=list)
     spans: dict[str, tuple[int, int]] = field(default_factory=dict)
     verifier_pending: bool = False
+    local_spans: list[str] = field(default_factory=list)  # found by `stated_locally`
 
     @property
     def passed(self) -> bool:
@@ -71,6 +72,79 @@ def locate(note: str, quote: str) -> tuple[int, int] | None:
     pattern = r"\s+".join(re.escape(w) for w in words)
     found = re.search(pattern, note, re.IGNORECASE)
     return (found.start(), found.end()) if found else None
+
+
+def closest_sentence(note: str, quote: str) -> tuple[int, int] | None:
+    """The note sentence the verifier paraphrased: the one whose words (numbers included) overlap
+    the quote's most, when the overlap (Jaccard) is `verification.fuzzy_quote_overlap` or more.
+    The evidence is then that sentence, copied exactly from the note."""
+    wanted = set(TOKEN.findall(quote.lower()))
+    if not wanted:
+        return None
+    best, best_score = None, 0.0
+    for match in SENTENCE.finditer(note):
+        words = set(TOKEN.findall(match.group(0).lower()))
+        score = len(wanted & words) / len(wanted | words) if words else 0.0
+        if score > best_score:
+            best, best_score = match, score
+    if best is None or best_score < config()["verification"]["fuzzy_quote_overlap"]:
+        return None
+    text = best.group(0)
+    start = best.start() + (len(text) - len(text.lstrip()))
+    return start, best.start() + len(text.rstrip())
+
+
+NEGATIVE = re.compile(r"\b(no|not|without|never|none|negative|absent|neither|nor|cannot)\b|n't\b")
+
+
+HEDGED = re.compile(
+    r"\b(may|might|maybe|possibl[ey]|perhaps|unclear|uncertain|unsure|not sure|cannot say|"
+    r"unknown|questionabl[ey]|suspected)\b"
+)
+
+
+def stated_locally(note: str, fact: Mapping[str, Any]) -> tuple[int, int] | None:
+    """A documented fact the verifier did not find, found in the note itself: one of its wordings
+    word for word, else one sentence with `verification.local_fact_overlap` of its content words,
+    every value and the same polarity (a negative in both or in neither). Never for a contradicted
+    fact, whose opposite statement is in the note as well."""
+    if fact["status"] == "contradicted":
+        return None
+    texts = list((fact.get("text") or {}).values())
+    for text in texts:
+        span = locate(note, text)
+        if span:
+            return span
+    threshold = config()["verification"]["local_fact_overlap"]
+    values = fact.get("values") or []
+    best, best_share = None, 0.0
+    for text in texts:
+        wanted = content_words(text)
+        if len(wanted) < 3:
+            continue
+        negative = bool(NEGATIVE.search(text.lower()))
+        for match in SENTENCE.finditer(note):
+            sentence = match.group(0)
+            if bool(NEGATIVE.search(sentence.lower())) != negative:
+                continue
+            if any(v not in sentence for v in values):
+                continue
+            share = len(wanted & content_words(sentence)) / len(wanted)
+            if share > best_share:
+                best, best_share = match, share
+    if best is None or best_share < threshold:
+        return None
+    text = best.group(0)
+    start = best.start() + (len(text) - len(text.lstrip()))
+    return start, best.start() + len(text.rstrip())
+
+
+def _find(note: str, quote: str) -> tuple[int, int] | None:
+    return locate(note, quote) or closest_sentence(note, quote)
+
+
+def _overlaps(a: tuple[int, int], b: tuple[int, int]) -> bool:
+    return a[0] < b[1] and b[0] < a[1]
 
 
 def missing_matches(note: str, forbidden: Sequence[str]) -> list[str]:
@@ -116,10 +190,18 @@ def check_note(
             if known_spans is not None:
                 span = known_spans.get(fid)
             elif verifier is not None and verifier.get(fid):
-                span = locate(note, verifier[fid] or "")
+                span = _find(note, verifier[fid] or "")
+                if span is None and not fid.endswith(":original"):
+                    span = stated_locally(note, fact)  # a quote too far from any sentence
+                    if span is not None:
+                        result.local_spans.append(fid)
                 if span is None:
                     result.failures.append(f"{fid}: the verifier's quote is not in the note")
                     continue
+            elif verifier is not None and not fid.endswith(":original"):
+                span = stated_locally(note, fact)  # the verifier missed it: the note's own text
+                if span is not None:
+                    result.local_spans.append(fid)
             if span is None:
                 if known_spans is not None or verifier is not None:
                     result.failures.append(f"{fid}: documented fact not found")
@@ -157,10 +239,10 @@ def check_note(
             result.failures.append(
                 f"{fact['fact_id']}: {fact['status']} fact appears: {hits[0][:80]!r}"
             )
-        if verifier is not None and verifier.get(fact["fact_id"]):
+        quote = verifier.get(fact["fact_id"]) if verifier is not None else None
+        if quote and _a_finding(note, quote, fact, result.spans):
             result.failures.append(
-                f"{fact['fact_id']}: the verifier found the {fact['status']} fact: "
-                f"{(verifier[fact['fact_id']] or '')[:80]!r}"
+                f"{fact['fact_id']}: the verifier found the {fact['status']} fact: {quote[:80]!r}"
             )
     leaked = leaks(note)
     if leaked:
@@ -168,6 +250,36 @@ def check_note(
     if not result.verifier_pending and not result.failures:
         result.failures += label_problems(sheet, result.spans, facts)
     return result
+
+
+def _a_finding(
+    note: str,
+    quote: str,
+    fact: Mapping[str, Any],
+    spans: Mapping[str, tuple[int, int]],
+) -> bool:
+    """Whether the verifier's quote for a missing or absent fact counts. Not when it cites nothing
+    in the note, nor when it cites a sentence that states another, documented fact, or the fact's
+    own hedged mention or its negative (which state that it is uncertain or absent; the verifier
+    is told so, and still cites them). The local word-overlap check runs on every note anyway."""
+    span = _find(note, quote)
+    if span is None:
+        return False
+    statement = " ".join(fact.get("forbidden") or []) + " " + (fact.get("missing_text") or "")
+    cited = note[span[0] : span[1]].lower()
+    if NEGATIVE.search(cited) and not NEGATIVE.search(statement.lower()):
+        return False  # a negative sentence does not state a positive fact
+    if HEDGED.search(cited) and not HEDGED.search(statement.lower()):
+        return False  # nor does a hedged one
+    if any(_overlaps(span, other) for other in spans.values()):
+        return False
+    for key in ("hedge", "negated"):
+        texts = fact.get(key) or {}
+        for text in texts.values():
+            own = _find(note, text)
+            if own and _overlaps(span, own):
+                return False
+    return True
 
 
 def label_problems(

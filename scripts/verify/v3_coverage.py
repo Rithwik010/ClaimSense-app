@@ -14,6 +14,7 @@
         --v2 ../ClaimSense/data/generated/decision_v2 \\
         --v2-errors ../ClaimSense/data/generated/eval/v2/v2-errors.json \\
         --sizes 3000 4500 6000 9000 12000 [--out data/generated/v3/coverage.json]
+    uv run python -m scripts.verify.v3_coverage --sheets data/generated/v3/sheets.jsonl
 """
 
 import argparse
@@ -26,26 +27,8 @@ from pathlib import Path
 from typing import Any
 
 from training.generate.v3.config import config
+from training.generate.v3.coverage import NO_CRITERIA, below, cell_counts, line_policies, policy_of
 from training.generate.v3.dataset import build_sheets, read_jsonl
-
-STATUSES = ("MET", "NOT_MET", "NOT_DOCUMENTED", "NOT_APPLICABLE")
-DECISIONS = ("APPROVE", "DENY", "PEND")
-NO_CRITERIA = "(no criteria)"
-
-
-def policy_of(criterion_id: str) -> str:
-    return criterion_id.split(".")[0]
-
-
-def line_policies(context: Mapping[str, Any]) -> dict[int, str]:
-    """Each line's policy: the policy of its first retrieved criterion, else no criteria."""
-    return {
-        line["line_no"]: policy_of(line["criteria"][0]["criterion_id"])
-        if line["criteria"]
-        else NO_CRITERIA
-        for line in context["lines"]
-    }
-
 
 # --- 1. v2: training lines against test errors ----------------------------------------------------
 
@@ -95,8 +78,9 @@ def counts(sheets: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
             decisions[(policy, line["decision"])] += 1
             for criterion in line["criteria"]:
                 statuses[(criterion["criterion_id"], criterion["status"])] += 1
-        for fact in sheet["facts"]:
-            if fact["kind"] != "criterion":
+        decided = {line["line_no"] for line in target["lines"]}
+        for fact in sheet["facts"]:  # as training/generate/v3/coverage.py counts them
+            if fact["kind"] != "criterion" or not decided & set(fact.get("lines") or []):
                 continue
             policy = policy_of(fact["criterion_id"])
             status = fact["status"]
@@ -178,18 +162,45 @@ def v3_coverage(
     return found
 
 
+def built_coverage(sheets_path: Path) -> dict[str, Any]:
+    """The built training split (data/generated/v3/sheets.jsonl): cells under the configured
+    floors, natural sheets alone and with the top-ups (D-V3-6)."""
+    floors = config()["top_up"]["floors"]
+    train = [s for s in read_jsonl(sheets_path) if s["split"] == "train"]
+    natural = [s for s in train if not s.get("top_up")]
+    found = {}
+    for name, sheets in (("natural", natural), ("with_top_ups", train)):
+        cells = cell_counts(sheets)
+        short = below(cells, floors)
+        found[name] = {
+            "sheets": len(sheets),
+            "cells": len(cells),
+            "cells_under_floor": {f"{k} {n}": cells[(k, n)] for (k, n) in short},
+        }
+    return found
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--v2", type=Path, required=True, help="the decision_v2 folder")
-    parser.add_argument("--v2-errors", type=Path, required=True, help="v2-errors.json")
+    parser.add_argument("--v2", type=Path, help="the decision_v2 folder")
+    parser.add_argument("--v2-errors", type=Path, help="v2-errors.json")
     parser.add_argument("--sizes", type=int, nargs="+", default=[3000, 4500, 6000, 9000, 12000])
     parser.add_argument("--min-policy-lines", type=int, default=150)
     parser.add_argument("--min-policy-decision", type=int, default=30)
     parser.add_argument("--min-criterion-status", type=int, default=20)
     parser.add_argument("--min-tricky", type=int, default=30)
     parser.add_argument("--keep", type=Path, help="keep the built sheets in this folder")
+    parser.add_argument("--sheets", type=Path, help="report a built sheets.jsonl instead")
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
+    if args.sheets:
+        report = built_coverage(args.sheets)
+        print(json.dumps(report, indent=2))
+        if args.out:
+            args.out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        return
+    if not (args.v2 and args.v2_errors):
+        parser.error("--v2 and --v2-errors are needed for the size study")
     minimum = {
         "policy_lines": args.min_policy_lines,
         "policy_decision": args.min_policy_decision,

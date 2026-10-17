@@ -23,6 +23,10 @@ from training.generate.v3.segments import Segment, word_count
 
 LIST_SECTIONS = {"past_history", "medications", "allergies", "review_of_systems", "assessment"}
 REPORT_DATE = "%m/%d/%Y"
+FILLERS_PER_NOTE = (1, 2, 2, 3, 3, 4)  # generic filler lines drawn for one note
+DETAIL_RATE = 0.6  # chance a history item or medication gets a dated detail
+LONG_NOTE_WORDS = 450  # a style target this long draws on most of every long-note pool
+LONG_NOTE_SHARE = 0.7
 
 
 def _pick(rng: random.Random, value: Sequence[str] | str) -> str:
@@ -36,6 +40,23 @@ def _by_wording(texts: Mapping[str, str], wording: str) -> str:
 def _item(texts: Sequence[str], wording: str) -> str:
     """A two-wording phrase list [plain, shorthand]."""
     return texts[1] if wording == "B" and len(texts) > 1 else texts[0]
+
+
+def _variant(rng: random.Random, item: Mapping[str, Any]) -> Sequence[str]:
+    """One of an item's wordings: its `text` or one of its `variants` (each [plain, shorthand])."""
+    return rng.choice([item["text"], *item.get("variants", [])])
+
+
+def _joined(parts: Sequence[str]) -> str:
+    """Short plan items as one sentence: "A, b and c." """
+    words = [p.rstrip(".") for p in parts]
+    text = words[0] if len(words) == 1 else ", ".join(words[:-1]) + " and " + words[-1]
+    return text[0].upper() + text[1:] + "."
+
+
+def _lower_first(text: str) -> str:
+    """The first letter in lower case, unless the word is an acronym ("MRI of the ...")."""
+    return text if text[1:2].isupper() else text[:1].lower() + text[1:]
 
 
 def _dotted(code: str) -> str:
@@ -178,7 +199,11 @@ class WriterA:
                 self._add("hpi", self._text("hpi", text))
         dis = self.sheet["distractors"]
         for condition in dis["conditions"]:
-            self._add("past_history", self._text("past_history", _item(condition["text"], w)))
+            text = _item(condition["text"], w)
+            if rng.random() < DETAIL_RATE:
+                year = draw_slots(rng, {"year": self.sec["detail_years"]})["year"]
+                text += _pick(rng, self.sec["history_details"][w]).format(year=year)
+            self._add("past_history", self._text("past_history", text))
         if dis.get("past"):
             past = dis["past"]
             self._add(
@@ -186,23 +211,31 @@ class WriterA:
                 self._text("past_history", _item(past["text"], w).format(year=past["year"])),
             )
         for med in dis["medications"]:
-            self._add("medications", self._text("medications", _item(med, w)))
+            text = _item(med, w)
+            if rng.random() < DETAIL_RATE:
+                year = draw_slots(rng, {"year": self.sec["detail_years"]})["year"]
+                text += _pick(rng, self.sec["medication_details"][w]).format(year=year)
+            self._add("medications", self._text("medications", text))
         self._add("allergies", self._text("allergies", _item(dis["allergies"], w)))
         social = dis["social"]
         self._add("social_history", self._text("social_history", _item(social[0], w)))
         self.optional.append(("social_history", self._text("social_history", _item(social[1], w))))
-        ros = list(dis["ros"])
-        rng.shuffle(ros)
-        for i, line in enumerate(ros):
-            segment = self._text("review_of_systems", _item(line, w))
-            if i < 2:
-                self._add("review_of_systems", segment)
-            else:
-                self.optional.append(("review_of_systems", segment))
+        # The negative systems as one sentence of a random few, in random order.
+        shorts = {tuple(r["text"]): r["short"] for r in self.sec["ros"]}
+        ros = [shorts[tuple(line)] for line in dis["ros"] if tuple(line) in shorts]
+        if ros:
+            picked = rng.sample(ros, rng.randint(min(2, len(ros)), min(7, len(ros))))
+            listed = _joined([_item(short, w) for short in picked]).rstrip(".")
+            listed = listed[0].lower() + listed[1:]
+            lead = _pick(rng, self.sec["ros_lead"][w])
+            self._add(
+                "review_of_systems", self._text("review_of_systems", lead.format(items=listed))
+            )
         slots = draw_slots(rng, self.sec["vitals_slots"])
         self.items["exam"].insert(0, self._text("exam", self.sec["vitals"][w].format(**slots)))
         self.items["exam"].insert(1, self._text("exam", _pick(rng, self.sec["general_exam"][w])))
-        for line in self.clinic["exam"]:
+        exam = list(self.clinic["exam"])
+        for line in rng.sample(exam, rng.randint(min(1, len(exam)), len(exam))):
             self.optional.append(("exam", self._text("exam", line)))
         self.optional.append(
             ("results", self._text("results", _pick(rng, self.sec["general_results"][w])))
@@ -212,35 +245,66 @@ class WriterA:
             self._add("assessment", self._text("assessment", f"{words} ({_dotted(dx['code'])})"))
         procedures = self.sheet.get("procedures") or []
         if procedures:
-            listed = "; ".join(p[0].lower() + p[1:] for p in procedures)
+            listed = "; ".join(_lower_first(p) for p in procedures)
             line = f"Procedure planned: {listed}." if w == "A" else f"Proc: {listed}."
             self.items["plan"].insert(0, self._text("plan", line))
+        # A few generic lines per note, so no sentence turns up in most notes: one general plan
+        # line (and maybe a second), a few filler lines with the plan's short items merged into
+        # one sentence, and a sample of each long-note pool.
         plan_pool = list(self.sec["plan_general"][w])
         rng.shuffle(plan_pool)
         self._add("plan", self._text("plan", plan_pool[0]))
-        for line in plan_pool[1:]:
-            self.optional.append(("plan", self._text("plan", line)))
+        if rng.random() < 0.5:
+            self.optional.append(("plan", self._text("plan", plan_pool[1])))
         exclude = set(self.clinic.get("exclude", ()))
-        for item in self.sec["filler"]:
-            if not set(item["topics"]) & exclude:
-                self.optional.append(
-                    (item["section"], self._text(item["section"], _item(item["text"], w)))
-                )
+        fillers = [f for f in self.sec["filler"] if not set(f["topics"]) & exclude]
+        chosen = rng.sample(fillers, min(len(fillers), rng.choice(FILLERS_PER_NOTE)))
+        merged = [f for f in chosen if f.get("short")]
+        for item in chosen:
+            if item.get("short") and len(merged) > 1:
+                continue
+            text = _item(_variant(rng, item), w)
+            self.optional.append((item["section"], self._text(item["section"], text)))
+        if len(merged) > 1:
+            parts = [f["short"] if w == "A" else _item(f["text"], "B") for f in merged]
+            self.optional.append(("plan", self._text("plan", _joined(parts))))
         self.longer: list[tuple[str, Segment]] = []  # after the optional items, for long notes
-        for section, key in (
-            ("exam", "exam_systems"),
-            ("results", "labs"),
-            ("plan", "education"),
-            ("plan", "coordination"),
+        long_note = self.style["target_words"] >= LONG_NOTE_WORDS
+        for section, key, most in (
+            ("exam", "exam_systems", 6),
+            ("results", "labs", 2),
+            ("plan", "education", 2),
+            ("plan", "coordination", 2),
+            ("past_history", "surgical_history", 2),
+            ("past_history", "family_history_items", 2),
         ):
-            for item in self.sec[key]:
-                if set(item["topics"]) & exclude:
-                    continue
+            pool = [item for item in self.sec[key] if not set(item["topics"]) & exclude]
+            if not pool:
+                continue
+            count = (
+                max(1, round(len(pool) * LONG_NOTE_SHARE))
+                if long_note
+                else rng.randint(1, min(most, len(pool)))
+            )
+            for item in rng.sample(pool, count):
                 values = draw_slots(rng, item.get("slots") or {})
                 values["date"] = self._date(rng.randint(10, 120))
+                values["year"] = draw_slots(rng, {"year": self.sec["detail_years"]})["year"]
                 wording = "A" if w == "B" and rng.random() < 0.3 else w  # mixed shorthand
-                text = _item(item["text"], wording).format(**values)
+                text = _item(_variant(rng, item), wording).format(**values)
                 self.longer.append((section, self._text(section, text)))
+        history = self.sec["vitals_history"]
+        if not set(history["topics"]) & exclude:
+            readings = ", ".join(
+                "{bp_sys}/{bp_dia}".format(**draw_slots(rng, self.sec["vitals_slots"]))
+                + f" ({self._date(days)})"
+                for days in sorted(rng.sample(range(30, 400), rng.randint(1, 3)))
+            )
+            self.longer.append(("exam", self._text("exam", history[w].format(readings=readings))))
+        meds = [_item(m, w) for m in dis["medications"]]
+        for med in rng.sample(meds, min(len(meds), rng.randint(0, 2))):
+            text = _pick(rng, self.sec["refills"][w]).format(med=med)
+            self.longer.append(("plan", self._text("plan", text[0].upper() + text[1:])))
         if self.style.get("copy_forward"):
             cf = self.sec["copy_forward"]
             for _ in range(rng.choice((1, 1, 2))):

@@ -187,19 +187,20 @@ social:  # at most one item of each kind per note
   - {kind: living, text: ["Lives with family.", "Lives w/ family."], topics: []}
 
 # Review of systems: negatives only, never "denies". A clinic drops the systems its exclude list names.
+# `short`: what writer A lists in one review-of-systems sentence ("negative for a, b and c").
 ros:
-  - {text: ["Negative for fever, chills and unplanned weight loss.", "Constitutional: no fever/chills/wt loss."], topics: []}
-  - {text: ["No rash or skin changes.", "Skin: no rash."], topics: [skin]}
-  - {text: ["No urinary symptoms.", "GU: negative."], topics: [gu]}
-  - {text: ["No change in vision.", "Eyes: no vision change."], topics: [eye]}
-  - {text: ["No chest pain or palpitations.", "CV: no CP/palps."], topics: [cardiac]}
-  - {text: ["No cough or shortness of breath.", "Resp: no cough/SOB."], topics: [respiratory, cardiac]}
-  - {text: ["No nausea, vomiting or change in bowel habits.", "GI: no N/V or bowel change."], topics: [gi]}
-  - {text: ["No headaches or new weakness.", "Neuro: no HA, no weakness."], topics: [neuro]}
-  - {text: ["No joint swelling.", "MSK: no joint swelling."], topics: [msk_pain, swelling]}
-  - {text: ["No easy bruising or bleeding.", "Heme: no bruising/bleeding."], topics: [anticoag, anemia]}
-  - {text: ["Mood is stable.", "Psych: mood stable."], topics: [psych]}
-  - {text: ["Sleeping well.", "Sleep: no issues."], topics: [sleep, psych]}
+  - {short: ["fever, chills or weight loss", "fever/chills/wt loss"], text: ["Negative for fever, chills and unplanned weight loss.", "Constitutional: no fever/chills/wt loss."], topics: []}
+  - {short: ["rash", "rash"], text: ["No rash or skin changes.", "Skin: no rash."], topics: [skin]}
+  - {short: ["urinary symptoms", "urinary sx"], text: ["No urinary symptoms.", "GU: negative."], topics: [gu]}
+  - {short: ["vision change", "vision change"], text: ["No change in vision.", "Eyes: no vision change."], topics: [eye]}
+  - {short: ["chest pain or palpitations", "CP/palps"], text: ["No chest pain or palpitations.", "CV: no CP/palps."], topics: [cardiac]}
+  - {short: ["cough or shortness of breath", "cough/SOB"], text: ["No cough or shortness of breath.", "Resp: no cough/SOB."], topics: [respiratory, cardiac]}
+  - {short: ["nausea, vomiting or bowel change", "N/V/bowel change"], text: ["No nausea, vomiting or change in bowel habits.", "GI: no N/V or bowel change."], topics: [gi]}
+  - {short: ["headache or new weakness", "HA/weakness"], text: ["No headaches or new weakness.", "Neuro: no HA, no weakness."], topics: [neuro]}
+  - {short: ["joint swelling", "joint swelling"], text: ["No joint swelling.", "MSK: no joint swelling."], topics: [msk_pain, swelling]}
+  - {short: ["easy bruising or bleeding", "bruising/bleeding"], text: ["No easy bruising or bleeding.", "Heme: no bruising/bleeding."], topics: [anticoag, anemia]}
+  - {short: ["low mood", "depressed mood"], text: ["Mood is stable.", "Psych: mood stable."], topics: [psych]}
+  - {short: ["trouble sleeping", "sleep problems"], text: ["Sleeping well.", "Sleep: no issues."], topics: [sleep, psych]}
 
 vitals:
   A: "Blood pressure {bp_sys}/{bp_dia}, pulse {hr}, temperature {temp} F, oxygen saturation {spo2}% on room air."
@@ -207,16 +208,16 @@ vitals:
 vitals_slots: {bp_sys: "112-138", bp_dia: "68-86", hr: "62-88", temp: ["97.8", "98.1", "98.4", "98.6"], spo2: "96-99"}
 
 general_exam:
-  A: ["Alert, oriented and in no acute distress.", "Well-appearing and in no distress."]
-  B: ["A&O x3, NAD.", "WDWN, NAD."]
+  A: ["Alert, oriented and in no acute distress.", "Well-appearing and in no distress.", "Comfortable at rest, conversant and appropriate.", "Awake and alert, sitting comfortably on the exam table.", "Pleasant, cooperative and in no apparent distress.", "Appears stated age; no acute distress."]
+  B: ["A&O x3, NAD.", "WDWN, NAD.", "Comfortable, conversant.", "Alert, seated comfortably.", "Pleasant, cooperative, NAD.", "Appears stated age, NAD."]
 
 general_results:
-  A: ["Recent basic metabolic panel within normal limits.", "No new labs since the last visit."]
-  B: ["BMP WNL.", "No new labs."]
+  A: ["Recent basic metabolic panel within normal limits.", "No new labs since the last visit.", "No laboratory work was due at this visit.", "Most recent blood counts were unremarkable.", "No outstanding orders from the last visit.", "Routine labs from the primary care office were reviewed and are unremarkable."]
+  B: ["BMP WNL.", "No new labs.", "No labs due today.", "Last CBC unremarkable.", "No outstanding orders.", "PCP labs reviewed, unremarkable."]
 
 plan_general:
-  A: ["Continue current medications.", "Risks, benefits and alternatives were discussed, and questions were answered.", "A copy of this note goes to the primary care physician.", "The patient was given written instructions."]
-  B: ["Continue current meds.", "R/B/A discussed, questions answered.", "Copy to PCP.", "Written instructions given."]
+  A: ["Continue current medications.", "Risks, benefits and alternatives were discussed, and questions were answered.", "A copy of this note goes to the primary care physician.", "The patient was given written instructions.", "Keep the current medication doses unchanged for now.", "The options were reviewed with the patient, who wishes to proceed.", "The primary care office will receive a summary of today's visit.", "A printed after-visit summary was provided.", "Home medications are unchanged.", "The plan was reviewed together and the patient voiced understanding."]
+  B: ["Continue current meds.", "R/B/A discussed, questions answered.", "Copy to PCP.", "Written instructions given.", "Meds unchanged.", "Options reviewed, pt wishes to proceed.", "Summary to PCP.", "AVS printed.", "No med changes today.", "Plan reviewed, pt verbalizes understanding."]
 
 # Past episodes that are over: dated, resolved, and unrelated to the visit's criteria. Topics as above.
 past_vs_current:
@@ -230,52 +231,68 @@ past_vs_current:
   - {text: ["Appendix removed in {year}.", "S/p appendectomy {year}."], topics: [gi]}
 past_years: "2008-2021"
 
+# Details writer A may add to a history item or a medication, so two patients' lists differ.
+history_details:
+  A: [" Diagnosed in {year}.", " Present since {year}.", " Followed by primary care since {year}.", " Stable since {year}.", " First noted in {year}."]
+  B: [" Dx {year}.", " Since {year}.", " PCP f/u since {year}.", " Stable since {year}."]
+medication_details:
+  A: [", started in {year}", ", for several years", ", taken since {year}", ", no side effects reported"]
+  B: [" (since {year})", " x yrs", " (started {year})", ", tolerating"]
+ros_lead:
+  A: ["Review of systems is negative for {items}.", "On review of systems, no {items}.", "Negative for {items}.", "The patient reports no {items}."]
+  B: ["ROS neg: {items}.", "ROS: no {items}.", "Neg {items}.", "ROS otherwise neg incl {items}."]
+detail_years: "2005-2023"
+
 copy_forward:
-  marker: ["--- Copied from the visit of {date} ---", "[Carried forward from {date}]", "Prior note ({date}) text:"]
-  A: ["At that visit the patient had no new problems and the medication list was unchanged.", "Interval history at that visit: no hospital stays or emergency visits.", "Vital signs at that visit were stable."]
-  B: ["No new issues at that visit; meds unchanged.", "No ED visits/admissions since.", "VS stable at that visit."]
+  marker: ["--- Copied from the visit of {date} ---", "[Carried forward from {date}]", "Prior note ({date}) text:", "(Text from the {date} note follows.)", "== Prior visit {date}, copied =="]
+  A: ["At that visit the patient had no new problems and the medication list was unchanged.", "Interval history at that visit: no hospital stays or emergency visits.", "Vital signs at that visit were stable.", "The medication list was reviewed at that visit with no changes.", "At that time the patient reported doing about the same.", "No new allergies were reported at that visit.", "That visit was a routine follow-up with no new concerns."]
+  B: ["No new issues at that visit; meds unchanged.", "No ED visits/admissions since.", "VS stable at that visit.", "Med list reviewed then, no changes.", "Pt reported doing about the same.", "NKDA reconfirmed then.", "Routine f/u then, no new concerns."]
 
 openers:
-  full_sentences: ["The patient is a {age}-year-old {sex_word} seen today for {reason}.", "{Pronoun} is a {age}-year-old {sex_word} here for {reason}."]
-  terse_abbreviated: ["{age}yo {sex_short} here for {visit}.", "{age} y/o {sex_short}, {visit}."]
-  dictated: ["Patient is a {age}-year-old {sex_word} who comes in today for {reason}, and {pronoun} states that the main reason for the visit is as below.", "This is a {age}-year-old {sex_word} who presents today for {reason}; history is obtained from the patient."]
-  templated_ehr: ["Patient: {age} y.o. {sex_word}. Visit reason: {reason}.", "Age/Sex: {age}/{sex_short}. Reason for encounter: {reason}."]
+  full_sentences: ["The patient is a {age}-year-old {sex_word} seen today for {reason}.", "{Pronoun} is a {age}-year-old {sex_word} here for {reason}.", "Seen today for {reason}, the patient is a {age}-year-old {sex_word}.", "This {age}-year-old {sex_word} returns to the clinic for {reason}.", "Today's visit is {reason} for a {age}-year-old {sex_word}."]
+  terse_abbreviated: ["{age}yo {sex_short} here for {visit}.", "{age} y/o {sex_short}, {visit}.", "{age}{sex_short}, {visit} today.", "Pt {age}yo {sex_short} - {visit}.", "{visit}: {age} y/o {sex_short}."]
+  dictated: ["Patient is a {age}-year-old {sex_word} who comes in today for {reason}, and {pronoun} states that the main reason for the visit is as below.", "This is a {age}-year-old {sex_word} who presents today for {reason}; history is obtained from the patient.", "The patient is a pleasant {age}-year-old {sex_word} who is seen today for {reason} and who tells me the following.", "We are seeing this {age}-year-old {sex_word} today for {reason}, and the history today is as follows."]
+  templated_ehr: ["Patient: {age} y.o. {sex_word}. Visit reason: {reason}.", "Age/Sex: {age}/{sex_short}. Reason for encounter: {reason}.", "ENCOUNTER: {visit}. PATIENT: {age} y.o. {sex_word}.", "Visit type: {visit} | Age: {age} | Sex: {sex_short}"]
 
 # Neutral lines that make a note longer without adding a fact (writer A adds them, in random
 # order, until the style card's target length). Topics as above; "family_history" is excluded where
 # a family history is a criterion (colonoscopy screening).
 filler:
-  - {section: hpi, text: ["The history was obtained from the patient, who is a reliable historian.", "Hx from pt, reliable historian."], topics: []}
-  - {section: hpi, text: ["The patient came to the visit alone.", "Pt here alone."], topics: []}
-  - {section: hpi, text: ["Outside records were requested and will be reviewed when they arrive.", "Outside records requested."], topics: []}
-  - {section: hpi, text: ["There have been no hospital stays or emergency visits since the last visit.", "No ED visits/admissions since last visit."], topics: []}
-  - {section: hpi, text: ["The patient brought a written list of questions, which were reviewed.", "Pt brought list of questions, reviewed."], topics: []}
-  - {section: past_history, text: ["Family history is noncontributory.", "FHx noncontributory."], topics: [family_history]}
-  - {section: past_history, text: ["Immunizations are up to date per the patient.", "Immunizations UTD per pt."], topics: []}
-  - {section: past_history, text: ["No prior hospital admissions.", "No prior admissions."], topics: []}
-  - {section: social_history, text: ["Walks for exercise a few times a week.", "Walks several x/wk."], topics: [gait, msk_pain]}
-  - {section: exam, text: ["Speech is clear, and the patient answers questions appropriately.", "Speech clear, answers appropriately."], topics: [neuro, psych]}
-  - {section: exam, text: ["Conjunctivae are clear.", "Conj clear."], topics: [eye]}
-  - {section: exam, text: ["Extremities show no clubbing or cyanosis.", "No clubbing/cyanosis."], topics: [vascular, cardiac]}
-  - {section: results, text: ["Outside laboratory results were reviewed and scanned into the chart.", "Outside labs reviewed, scanned."], topics: []}
-  - {section: results, text: ["No new imaging since the last visit.", "No new imaging."], topics: []}
-  - {section: plan, text: ["The patient knows how to reach the clinic with questions.", "Pt knows how to contact clinic."], topics: []}
-  - {section: plan, text: ["Medication reconciliation was completed at this visit.", "Med rec completed."], topics: []}
-  - {section: plan, text: ["The preferred pharmacy was confirmed.", "Pharmacy confirmed."], topics: []}
-  - {section: plan, text: ["Patient portal access was reviewed.", "Portal access reviewed."], topics: []}
-  - {section: plan, text: ["Return precautions were reviewed.", "Return precautions given."], topics: []}
-  - {section: plan, text: ["Questions were answered, and the patient agrees with the plan.", "Questions answered, pt agrees w/ plan."], topics: []}
+  - {section: hpi, text: ["The history was obtained from the patient, who is a reliable historian.", "Hx from pt, reliable historian."], variants: [["History is from the patient, who gives a clear account.", "Hx per pt, clear historian."], ["The patient provides the history and appears reliable.", "Pt provides hx, reliable."]], topics: []}
+  - {section: hpi, text: ["The patient came to the visit alone.", "Pt here alone."], variants: [["Accompanied today by a family member.", "Here w/ family member."], ["Attends the visit with a friend who waits outside.", "Friend in waiting room."]], topics: []}
+  - {section: hpi, text: ["Outside records were requested and will be reviewed when they arrive.", "Outside records requested."], variants: [["Records from the previous clinic have been requested.", "Prior clinic records requested."], ["A records release was signed today for the earlier provider.", "ROI signed for prior provider."]], topics: []}
+  - {section: hpi, text: ["There have been no hospital stays or emergency visits since the last visit.", "No ED visits/admissions since last visit."], variants: [["No emergency room visits since the last appointment.", "No ER visits since last appt."], ["Has not been hospitalized since last seen.", "No hospitalizations since LV."]], topics: []}
+  - {section: hpi, text: ["The patient brought a written list of questions, which were reviewed.", "Pt brought list of questions, reviewed."], variants: [["The patient had several questions written down, and each was addressed.", "Pt's written questions addressed."], ["A family member called ahead with questions, which were answered today.", "Family's questions answered today."]], topics: []}
+  - {section: past_history, text: ["Family history is noncontributory.", "FHx noncontributory."], variants: [["Family history was reviewed and is not relevant to today's visit.", "FHx reviewed, not relevant."]], topics: [family_history]}
+  - {section: past_history, text: ["Immunizations are up to date per the patient.", "Immunizations UTD per pt."], variants: [["Reports receiving this season's influenza vaccine.", "Flu shot this season per pt."], ["Tetanus booster within the last ten years per the patient.", "Td <10 yrs per pt."]], topics: []}
+  - {section: past_history, text: ["No prior hospital admissions.", "No prior admissions."], variants: [["Has never been admitted to a hospital.", "Never admitted."], ["One overnight hospital stay years ago for observation, unrelated.", "Remote obs stay, unrelated."]], topics: []}
+  - {section: social_history, text: ["Walks for exercise a few times a week.", "Walks several x/wk."], variants: [["Gardens and does light housework most days.", "Gardens, light housework."], ["Swims at the community pool on weekends.", "Swims weekends."]], topics: [gait, msk_pain]}
+  - {section: exam, text: ["Speech is clear, and the patient answers questions appropriately.", "Speech clear, answers appropriately."], variants: [["Conversation is fluent and appropriate.", "Speech fluent, appropriate."]], topics: [neuro, psych]}
+  - {section: exam, text: ["Conjunctivae are clear.", "Conj clear."], variants: [["Sclerae anicteric.", "Sclerae anicteric."]], topics: [eye]}
+  - {section: exam, text: ["Extremities show no clubbing or cyanosis.", "No clubbing/cyanosis."], variants: [["Fingers without clubbing.", "No clubbing."]], topics: [vascular, cardiac]}
+  - {section: results, text: ["Outside laboratory results were reviewed and scanned into the chart.", "Outside labs reviewed, scanned."], variants: [["Results sent from the primary care office were reviewed.", "PCP results reviewed."]], topics: []}
+  - {section: results, text: ["No new imaging since the last visit.", "No new imaging."], variants: [["No imaging was ordered since the prior appointment.", "No interval imaging."]], topics: []}
+  - {section: plan, short: "knows how to reach the clinic with questions", text: ["The patient knows how to reach the clinic with questions.", "Pt knows how to contact clinic."], topics: []}
+  - {section: plan, short: "medication reconciliation completed", text: ["Medication reconciliation was completed at this visit.", "Med rec completed."], topics: []}
+  - {section: plan, short: "preferred pharmacy confirmed", text: ["The preferred pharmacy was confirmed.", "Pharmacy confirmed."], topics: []}
+  - {section: plan, short: "patient portal access reviewed", text: ["Patient portal access was reviewed.", "Portal access reviewed."], topics: []}
+  - {section: plan, short: "return precautions reviewed", text: ["Return precautions were reviewed.", "Return precautions given."], topics: []}
+  - {section: plan, short: "questions answered and the plan agreed", text: ["Questions were answered, and the patient agrees with the plan.", "Questions answered, pt agrees w/ plan."], topics: []}
+  - {section: plan, short: "after-visit summary printed", text: ["An after-visit summary was printed for the patient.", "AVS printed."], topics: []}
+  - {section: plan, short: "emergency contact updated", text: ["The emergency contact on file was updated.", "Emergency contact updated."], topics: []}
+  - {section: plan, short: "interpreter not needed", text: ["No interpreter was needed for the visit.", "No interpreter needed."], topics: []}
+  - {section: plan, short: "advance directive discussed", text: ["The advance directive on file was reviewed.", "Advance directive on file reviewed."], topics: []}
 
 # Longer neutral content for long notes (writer A adds it after `filler`, same topic rules).
 exam_systems:
-  - {text: ["Constitutional: well developed, well nourished, in no distress.", "Const: WDWN, NAD."], topics: []}
-  - {text: ["HEENT: normocephalic, atraumatic; oral mucosa moist.", "HEENT: NCAT, MMM."], topics: [eye]}
+  - {text: ["Constitutional: well developed, well nourished, in no distress.", "Const: WDWN, NAD."], variants: [["General: comfortable, conversant, no distress.", "Gen: comfortable, NAD."]], topics: []}
+  - {text: ["HEENT: normocephalic, atraumatic; oral mucosa moist.", "HEENT: NCAT, MMM."], variants: [["Head: atraumatic. Mouth: mucous membranes moist, dentition fair.", "HEENT: AT, MMM, fair dentition."]], topics: [eye]}
   - {text: ["Neck: supple, no lymphadenopathy, no thyromegaly.", "Neck: supple, no LAD/thyromegaly."], topics: [neuro, msk_pain, thyroid]}
-  - {text: ["Cardiovascular: regular rate and rhythm, no murmurs, rubs or gallops.", "CV: RRR, no m/r/g."], topics: [cardiac]}
-  - {text: ["Respiratory: clear to auscultation bilaterally, normal effort.", "Resp: CTAB, nl effort."], topics: [respiratory, cardiac]}
-  - {text: ["Abdomen: soft, nontender, nondistended, normal bowel sounds.", "Abd: soft, NT/ND, +BS."], topics: [gi]}
+  - {text: ["Cardiovascular: regular rate and rhythm, no murmurs, rubs or gallops.", "CV: RRR, no m/r/g."], variants: [["Heart: regular rhythm, normal S1 and S2, no murmur.", "Heart: reg, nl S1/S2, no murmur."]], topics: [cardiac]}
+  - {text: ["Respiratory: clear to auscultation bilaterally, normal effort.", "Resp: CTAB, nl effort."], variants: [["Lungs: clear in all fields, breathing unlabored.", "Lungs clear, unlabored."]], topics: [respiratory, cardiac]}
+  - {text: ["Abdomen: soft, nontender, nondistended, normal bowel sounds.", "Abd: soft, NT/ND, +BS."], variants: [["Abdomen: soft and nontender, no masses felt.", "Abd soft, NT, no masses."]], topics: [gi]}
   - {text: ["Skin: warm and dry, no rash on exposed areas.", "Skin: warm, dry, no rash."], topics: [skin]}
-  - {text: ["Psychiatric: alert, oriented, normal mood and affect.", "Psych: A&O, nl mood/affect."], topics: [psych]}
+  - {text: ["Psychiatric: alert, oriented, normal mood and affect.", "Psych: A&O, nl mood/affect."], variants: [["Mental status: oriented to person, place and time; affect appropriate.", "MS: oriented x3, affect appropriate."]], topics: [psych]}
   - {text: ["Lymphatic: no cervical or supraclavicular nodes.", "Lymph: no cervical/supraclav nodes."], topics: []}
 
 labs:
@@ -283,6 +300,8 @@ labs:
   - {text: ["Lipid panel on {date}: LDL {ldl} mg/dL on the current statin dose.", "Lipids ({date}): LDL {ldl}."], topics: [lipids], slots: {ldl: "72-118"}}
   - {text: ["Basic metabolic panel on {date}: sodium {na}, potassium {k}, creatinine {cr}.", "BMP ({date}): Na {na}, K {k}, Cr {cr}."], topics: [], slots: {na: "136-143", k: ["3.9", "4.1", "4.4"], cr: ["0.8", "0.9", "1.0"]}}
   - {text: ["Vitamin D level on {date} was {vitd} ng/mL on supplements.", "Vit D ({date}): {vitd}."], topics: [vitamin], slots: {vitd: "32-48"}}
+  - {text: ["Liver enzymes on {date}: ALT {alt}, AST {ast}, both in the normal range.", "LFTs ({date}): ALT {alt}, AST {ast}."], topics: [liver], slots: {alt: "14-38", ast: "16-34"}}
+  - {text: ["Blood count on {date}: white count {wbc}, hemoglobin {hgb}, platelets {plt}.", "CBC ({date}): WBC {wbc}, Hgb {hgb}, Plt {plt}."], topics: [anemia, anticoag], slots: {wbc: ["5.2", "6.1", "6.8", "7.4"], hgb: ["13.1", "13.8", "14.2", "14.9"], plt: "190-310"}}
 
 education:
   - {text: ["Today's findings and the next steps were explained in plain language, and the patient repeated the plan back accurately.", "Plan explained, pt teach-back accurate."], topics: []}
@@ -291,9 +310,36 @@ education:
   - {text: ["The patient's questions about scheduling and transportation were answered, and the front desk will help arrange the next appointment.", "Scheduling/transport questions answered; front desk to arrange next appt."], topics: []}
 
 coordination:
-  - {text: ["A copy of this note will be sent to the referring clinician.", "Note to referring clinician."], topics: []}
+  - {text: ["A copy of this note will be sent to the referring clinician.", "Note to referring clinician."], variants: [["The referring office will be sent today's findings.", "Findings faxed to referring office."]], topics: []}
+  - {text: ["Next routine visit is planned in about {weeks} weeks.", "RTC ~{weeks} wks."], topics: [], slots: {weeks: "3-12"}}
   - {text: ["Outside records from the prior clinic were scanned into the chart.", "Outside records scanned."], topics: []}
   - {text: ["The patient's preferred contact method was updated.", "Contact preference updated."], topics: []}
+
+# More long-note content that differs between patients (writer A; topics as above). No item may
+# touch a criterion: no cataract, colon, foot, spine, sleep or vein history here.
+surgical_history:
+  - {text: ["Tonsillectomy as a child.", "T&A as child."], topics: []}
+  - {text: ["Wisdom teeth removed in {year}.", "Wisdom teeth extracted {year}."], topics: []}
+  - {text: ["Inguinal hernia repair in {year}.", "Inguinal hernia repair {year}."], topics: [gi]}
+  - {text: ["Carpal tunnel release in {year}.", "CTR {year}."], topics: [msk_pain, neuro]}
+  - {text: ["Laser surgery for nearsightedness in {year}.", "LASIK {year}."], topics: [eye]}
+  - {text: ["A benign skin lesion was removed from the back in {year}.", "Benign skin lesion excised (back) {year}."], topics: [skin]}
+  - {text: ["Sinus surgery in {year}.", "FESS {year}."], topics: [respiratory, allergy]}
+  - {text: ["Shoulder tendon repair in {year}.", "Shoulder tendon repair {year}."], topics: [msk_pain, injury]}
+family_history_items:
+  - {text: ["Mother with high blood pressure.", "Mother - HTN."], topics: [family_history, hypertension, cardiac]}
+  - {text: ["Father with high cholesterol.", "Father - HLD."], topics: [family_history, lipids]}
+  - {text: ["A sister with asthma.", "Sister - asthma."], topics: [family_history, respiratory, allergy]}
+  - {text: ["Father with an underactive thyroid.", "Father - hypothyroid."], topics: [family_history, thyroid]}
+  - {text: ["Mother with osteoporosis.", "Mother - osteoporosis."], topics: [family_history, msk_pain]}
+  - {text: ["A brother with migraines.", "Brother - migraines."], topics: [family_history, neuro]}
+vitals_history:
+  A: "Blood pressure at earlier visits: {readings}."
+  B: "Prior BPs: {readings}."
+  topics: [hypertension, cardiac]
+refills:
+  A: ["A refill of {med} was sent to the pharmacy.", "{med} was renewed for 90 days.", "No change to {med}; refill provided."]
+  B: ["Refill sent: {med}.", "{med} renewed x90d.", "{med} refilled."]
 
 copy_forward_vitals:
   A: "Vital signs at that visit: blood pressure {bp_sys}/{bp_dia}, pulse {hr}."

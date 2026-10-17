@@ -9,6 +9,7 @@ exact sentence that states it or null. Prompts are built here and run in a priva
 """
 
 import json
+import random
 import re
 from collections.abc import Mapping, Sequence
 from datetime import date
@@ -58,8 +59,11 @@ BANNED = (
 WRITER_SYSTEM = (
     "You are a clinician writing an outpatient clinic note in plain text for a synthetic training "
     "dataset. Everything about the patient is fictional. Write only the note itself: no title "
-    "line about the task, no explanation before or after it, no markdown."
+    "line about the task, no explanation before or after it, no markdown. Write it the way a "
+    "busy clinician writes, in your own words: never copy the wording, labels or numbering of "
+    "the request into the note."
 )
+ROUTINE_ITEMS = 8  # routine lines offered to a model writer for reaching the length
 VERIFIER_SYSTEM = (
     "You compare a clinical note with a numbered list of statements. For each statement, decide "
     "whether the note states that fact, even if the wording differs. If it does, copy the single "
@@ -76,6 +80,11 @@ VERIFIER_USER = (
 
 def _date(value: str) -> str:
     return date.fromisoformat(value).strftime("%m/%d/%Y")
+
+
+def _lower_first(text: str) -> str:
+    """The first letter in lower case, unless the word is an acronym ("MRI of the ...")."""
+    return text if text[1:2].isupper() else text[:1].lower() + text[1:]
 
 
 def _dotted(code: str) -> str:
@@ -104,9 +113,12 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
         lines.append(f"Format: {FORMATS[style['format']]}.")
     else:
         lines.append(f"Author style: {HABITS[style['habit']]}.")
+    words = cfg["note"]["length_words"]
+    target = min(style["target_words"], words["max"])
+    low, high = max(words["min"], round(target * 0.85)), min(words["max"], round(target * 1.15))
     lines.append(
-        f"Length: about {style['target_words']} words; never more than "
-        f"{cfg['note']['length_words']['max']} words."
+        f"Length: between {low} and {high} words (about {target}). A note under {low} words "
+        "cannot be used."
     )
     if sheet.get("lead"):
         lines.append(
@@ -141,8 +153,9 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
             original = fact["original"].get("A") or next(iter(fact["original"].values()))
             lines.append(
                 f"{n}. [History] As text copied forward from an earlier visit, introduced with "
-                f'"Copied from a prior note:", state: {original} Later, in the Assessment, '
-                f'correct it with a sentence that starts "{fact["marker"]}" and states: {sentence}'
+                f'"Copied from a prior note:", state: {original} Then correct it in the '
+                "Assessment section (a later section, never the same paragraph as the copied "
+                f'text) with a sentence that starts "{fact["marker"]}" and states: {sentence}'
             )
             continue
         if report and fact["fact_id"] in timeline:
@@ -158,35 +171,39 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
         lines += ["", "State each of these negatives:"]
         lines += [f"- {x}" for x in negatives]
     dis = sheet["distractors"]
-    lines += ["", "Also include (unrelated to the reason for the visit):"]
+    lines += ["", "Background to work into the note, unrelated to the reason for the visit:"]
     if dis["conditions"]:
-        lines.append(
-            "- Past medical history: " + "; ".join(c["text"][0] for c in dis["conditions"])
-        )
+        lines.append("- conditions: " + "; ".join(c["text"][0] for c in dis["conditions"]))
     if dis.get("past"):
-        lines.append(
-            "- A past episode, over now: " + dis["past"]["text"][0].format(year=dis["past"]["year"])
-        )
+        past = dis["past"]["text"][0].format(year=dis["past"]["year"])
+        lines.append(f"- a resolved problem from the past: {past}")
     if dis["medications"]:
-        lines.append("- Medications: " + "; ".join(m[0] for m in dis["medications"]))
-    lines.append("- Allergies: " + dis["allergies"][0])
-    lines.append("- Social history: " + " ".join(s[0] for s in dis["social"]))
+        lines.append("- current medicines: " + "; ".join(m[0] for m in dis["medications"]))
+    lines.append("- allergies: " + dis["allergies"][0])
+    lines.append("- social: " + " ".join(s[0] for s in dis["social"]))
     if dis["ros"]:
         lines.append(
-            "- Review of systems, negatives only, chosen from: "
-            + " ".join(r[0] for r in dis["ros"])
+            "- review of systems, negatives only, some of: " + " ".join(r[0] for r in dis["ros"])
         )
     lines.append(
-        "- Assessment, listing these diagnoses with their codes: "
+        "- in the Assessment, these diagnoses with their codes: "
         + "; ".join(f"{d['description']} ({_dotted(d['code'])})" for d in sheet["diagnoses"])
     )
     if sheet.get("procedures"):
-        lines.append("- Plan: " + "; ".join(p[0].lower() + p[1:] for p in sheet["procedures"]))
+        lines.append("- in the Plan: " + "; ".join(_lower_first(p) for p in sheet["procedures"]))
     if style.get("copy_forward"):
         lines.append(
-            "- Somewhere in the history, a short block copied forward from an earlier visit, "
-            "marked as copied, with no new clinical facts."
+            "- in the history, a short block copied forward from an earlier visit, marked as "
+            "copied, with no new clinical facts"
         )
+    routine = _routine(sheet)
+    if routine:
+        lines += [
+            "",
+            "To reach the length, you may also use routine lines like these (reworded), and "
+            "nothing else that is new:",
+        ]
+        lines += [f"- {r}" for r in routine]
     absent = _absent_topics(sheet)
     if absent:
         lines += [
@@ -198,6 +215,11 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
         "",
         "Do not add any symptom, finding, test result, treatment, procedure or history that is not "
         "listed above.",
+        "Use only sections that have something in them; never write a section that only says "
+        'there is nothing to report (such as "No relevant admissions").',
+        "Do not copy the wording of this request into the note: no headings such as "
+        '"Background", "conditions:" or "a resolved problem from the past", and no bracketed '
+        "section names or item numbers.",
         f'Never use these words: {BANNED}. Write negatives as "no", "reports no" or '
         '"negative for".',
     ]
@@ -205,6 +227,22 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
         {"role": "system", "content": WRITER_SYSTEM},
         {"role": "user", "content": "\n".join(lines)},
     ]
+
+
+def _routine(sheet: Mapping[str, Any]) -> list[str]:
+    """Routine lines writer A may also use (its filler and long-note pools, without the topics
+    the clinic excludes), a few per sheet: what a model writer may add to reach the length."""
+    sec = phrases("sections")
+    clinic = sec["clinics"].get(sheet["clinic"]["provider_type"]) or {}
+    exclude = set(clinic.get("exclude", ()))
+    pool = [
+        item["text"][0]
+        for key in ("filler", "exam_systems", "education", "coordination")
+        for item in sec[key]
+        if not set(item["topics"]) & exclude and "{" not in item["text"][0]
+    ]
+    rng = random.Random(f"{sheet['seed']}-routine")
+    return rng.sample(pool, min(ROUTINE_ITEMS, len(pool)))
 
 
 def _absent_topics(sheet: Mapping[str, Any]) -> list[str]:
@@ -283,6 +321,28 @@ def verifier_messages(note: str, items: Sequence[Mapping[str, Any]]) -> list[dic
     ]
 
 
+NO_QUOTE = {"", "null", "none", "n/a", "na", "not stated", "not found", "no"}
+OUTCOME_WORDS = (  # model notes only: clinical wordings of banned words, made neutral (D-V3-10)
+    (re.compile(r"\bdenies any\b"), "reports no"),
+    (re.compile(r"\bDenies any\b"), "Reports no"),
+    (re.compile(r"\bdenies\b"), "reports no"),
+    (re.compile(r"\bDenies\b"), "Reports no"),
+    (re.compile(r"\bdenying\b"), "reporting no"),
+    (re.compile(r"\bpending\b"), "awaited"),
+    (re.compile(r"\bPending\b"), "Awaited"),
+)
+
+
+def neutral_words(text: str) -> tuple[str, int]:
+    """A model note with "denies" written as "reports no" and "pending" as "awaited", and how many
+    were changed: the models use them though told not to, and the leakage check refuses them."""
+    changed = 0
+    for pattern, replacement in OUTCOME_WORDS:
+        text, n = pattern.subn(replacement, text)
+        changed += n
+    return text, changed
+
+
 def parse_verifier(text: str) -> dict[int, str | None]:
     """{statement id: quote or None} from the verifier's answer (the first JSON object in it)."""
     start = text.find("{")
@@ -297,7 +357,8 @@ def parse_verifier(text: str) -> dict[int, str | None]:
     for answer in answers:
         if isinstance(answer, dict) and isinstance(answer.get("id"), int):
             quote = answer.get("quote")
-            found[answer["id"]] = quote if isinstance(quote, str) and quote.strip() else None
+            empty = not isinstance(quote, str) or quote.strip().strip(".'\"").lower() in NO_QUOTE
+            found[answer["id"]] = None if empty else quote
     return found
 
 

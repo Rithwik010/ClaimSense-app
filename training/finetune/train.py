@@ -19,6 +19,13 @@ fails, the adapter is already saved: rerun with `--export-from <out>/adapter`.
 The GGUF export writes a 16-bit merge and a 16-bit GGUF before the Q4_K_M file (about 21 GB), more
 than Kaggle's 20 GB output folder holds. It works in `--gguf-work-dir` (default /tmp, Kaggle's
 larger scratch disk) and copies only the final Q4_K_M file into `<out>/gguf`.
+
+Across sessions (model v3, D-V3-9): `--stop-after-hours` (or `--stop-after-steps`) saves a
+checkpoint and stops before Kaggle's session limit; the next session attaches that session's output
+and passes `--resume-from` (a checkpoint folder, or a folder holding checkpoint-* folders: the
+latest is used). The trainer restores the weights, optimizer, scheduler, random state and the place
+in the data, so the step count and the loss carry on. `--memory-probe` runs one forward and
+backward pass on the longest training record first and records the peak GPU memory.
 """
 
 import argparse
@@ -43,9 +50,6 @@ from data import (  # noqa: E402  (a sibling file on Kaggle; training.finetune.d
     turn_markers,
     warmup_steps,
 )
-
-FULL_TRAIN_RECORDS = 2000
-
 
 GGUF_WORK_DIR = Path("/tmp/claimsense-gguf")
 GGUF_SPACE_NEEDED_GB = 22
@@ -75,6 +79,19 @@ def export_gguf(model, tokenizer, out: Path, quantization: str, work: Path) -> N
         shutil.rmtree(leftover, ignore_errors=True)  # the 16-bit merge and intermediate GGUF
 
 
+def latest_checkpoint(path: Path) -> Path:
+    """`path` itself when it is a checkpoint, else its checkpoint-* folder with the most steps."""
+    if (path / "trainer_state.json").exists():
+        return path
+    found = sorted(
+        (p for p in path.rglob("checkpoint-*") if (p / "trainer_state.json").exists()),
+        key=lambda p: int(p.name.split("-")[-1]),
+    )
+    if not found:
+        raise SystemExit(f"no checkpoint in {path}")
+    return found[-1]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--data", type=Path, required=True, help="folder with train/validation")
@@ -95,6 +112,14 @@ def main() -> None:
     parser.add_argument(
         "--base-model", default=CONFIG["base_model"], help="e.g. unsloth/gemma-4-E4B-it"
     )
+    parser.add_argument("--train-split", default="train", help="e.g. train_mix (model v3)")
+    parser.add_argument("--max-steps", type=int, help="a fixed number of steps (timing runs)")
+    parser.add_argument("--save-steps", type=int, help="checkpoint every N steps (default: evals)")
+    parser.add_argument("--logging-steps", type=int, default=10)
+    parser.add_argument("--stop-after-steps", type=int, help="save and stop at this step")
+    parser.add_argument("--stop-after-hours", type=float, help="save and stop after this long")
+    parser.add_argument("--resume-from", type=Path, help="a checkpoint, or a folder holding them")
+    parser.add_argument("--memory-probe", action="store_true")
     args = parser.parse_args()
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0")  # before torch initialises CUDA
     config = {
@@ -115,8 +140,23 @@ def main() -> None:
     from unsloth.chat_templates import get_chat_template, train_on_responses_only
     import torch
     from datasets import Dataset
-    from transformers import EarlyStoppingCallback
+    from transformers import EarlyStoppingCallback, TrainerCallback
     from trl import SFTConfig, SFTTrainer
+
+    started = time.time()
+
+    class StopAndSave(TrainerCallback):
+        """Save and stop at `--stop-after-steps` or after `--stop-after-hours` (a session's end)."""
+
+        def on_step_end(self, _args, state, control, **_kwargs):  # noqa: ANN001, ANN201
+            by_steps = args.stop_after_steps and state.global_step >= args.stop_after_steps
+            by_time = (
+                args.stop_after_hours and time.time() - started >= args.stop_after_hours * 3600
+            )
+            if by_steps or by_time:
+                control.should_save = True
+                control.should_training_stop = True
+            return control
 
     if args.export_from:
         model, tokenizer = FastModel.from_pretrained(
@@ -146,8 +186,10 @@ def main() -> None:
     system_role = supports_system_role(render)
     instruction_part, response_part = turn_markers(render)
 
+    full_records = len(read_jsonl(args.data / f"{args.train_split}.jsonl"))
+
     def texts(split: str) -> list[str]:
-        records = read_jsonl(args.data / f"{split}.jsonl")
+        records = read_jsonl(args.data / f"{args.train_split if split == 'train' else split}.jsonl")
         limit = args.limit if split == "train" else args.eval_limit
         if limit:
             records = records[:limit]
@@ -189,6 +231,23 @@ def main() -> None:
     )
     bf16 = torch.cuda.is_bf16_supported()
     print(f"GPUs visible: {torch.cuda.device_count()}; precision: {'bf16' if bf16 else 'float32'}")
+    probe = None
+    if args.memory_probe:  # the longest record, forward and backward, before training
+        longest = max(train_texts, key=lambda text: token_count(tokenizer, text))
+        batch = tokenizer(text=longest, return_tensors="pt").to(model.device)
+        torch.cuda.reset_peak_memory_stats()
+        loss = model(**batch, labels=batch["input_ids"]).loss
+        loss.backward()
+        model.zero_grad(set_to_none=True)
+        probe = {
+            "tokens": int(batch["input_ids"].shape[1]),
+            "peak_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2),
+            "gpu_total_gb": round(torch.cuda.get_device_properties(0).total_memory / 1e9, 2),
+        }
+        print("memory probe:", json.dumps(probe), flush=True)
+        del batch, loss
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -202,6 +261,7 @@ def main() -> None:
             per_device_eval_batch_size=1,
             gradient_accumulation_steps=config["gradient_accumulation_steps"],
             num_train_epochs=config["num_train_epochs"],
+            max_steps=args.max_steps or -1,
             learning_rate=config["learning_rate"],
             warmup_steps=warmup_steps(len(train_texts), config["num_train_epochs"]),
             weight_decay=config["weight_decay"],
@@ -209,42 +269,59 @@ def main() -> None:
             optim=config["optim"],
             bf16=bf16,
             fp16=False,  # Gemma 4 does not train in fp16; without bf16 (T4) Unsloth uses float32
-            logging_steps=10,
+            logging_steps=args.logging_steps,
             eval_strategy="no" if args.no_eval else "steps",
             eval_steps=None if args.no_eval else args.eval_steps,
             save_strategy="steps",
-            save_steps=args.eval_steps,
-            save_total_limit=2,
+            save_steps=args.save_steps or args.eval_steps,
+            save_total_limit=3,
             load_best_model_at_end=not args.no_eval,
             metric_for_best_model=None if args.no_eval else "eval_loss",
             greater_is_better=False,
             seed=config["seed"],
             report_to="none",
         ),
-        callbacks=[]
-        if args.no_eval
-        else [EarlyStoppingCallback(early_stopping_patience=config["early_stopping_patience"])],
+        callbacks=[StopAndSave()]
+        + (
+            []
+            if args.no_eval
+            else [EarlyStoppingCallback(early_stopping_patience=config["early_stopping_patience"])]
+        ),
     )
     trainer = train_on_responses_only(
         trainer, instruction_part=instruction_part, response_part=response_part
     )
-    started = time.time()
-    result = trainer.train()
-    runtime = time.time() - started
-    steps = max(trainer.state.global_step, 1)
+    resume = latest_checkpoint(args.resume_from) if args.resume_from else None
+    first_step = 0
+    if resume:
+        first_step = json.loads((resume / "trainer_state.json").read_text())["global_step"]
+        print(f"resuming from {resume} at step {first_step}", flush=True)
+    train_started = time.time()
+    result = trainer.train(resume_from_checkpoint=str(resume) if resume else None)
+    runtime = time.time() - train_started
+    steps = max(trainer.state.global_step - first_step, 1)
     evals = sum(1 for entry in trainer.state.log_history if "eval_loss" in entry)
-    full_steps = (
+    full_steps = math.ceil(
         math.ceil(
-            FULL_TRAIN_RECORDS
+            full_records
             / (config["per_device_train_batch_size"] * config["gradient_accumulation_steps"])
         )
-        * CONFIG["num_train_epochs"]
+        * config["num_train_epochs"]
     )
+    finished = trainer.state.global_step >= trainer.state.max_steps
     log = {
         "train_runtime_seconds": round(runtime),
+        "first_step": first_step,
+        "last_step": trainer.state.global_step,
+        "max_steps": trainer.state.max_steps,
+        "finished": finished,
         "seconds_per_step": round(runtime / steps, 1),
         "evaluations": evals,
+        "full_run_records": full_records,
+        "full_run_steps": full_steps,
         "estimated_full_run_hours_without_evals": round(runtime / steps * full_steps / 3600, 1),
+        "peak_gpu_memory_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2),
+        "memory_probe": probe,
         "train_loss": result.training_loss,
         "best_eval_loss": trainer.state.best_metric,
         "best_checkpoint": trainer.state.best_model_checkpoint,
@@ -253,6 +330,9 @@ def main() -> None:
         "precision": "bf16" if bf16 else "float32",
     }
     (out / "training-log.json").write_text(json.dumps(log, indent=2))
+    if not finished:  # a session stopped early: its checkpoint is the result; the next resumes
+        print(json.dumps({k: v for k, v in log.items() if k != "history"}, indent=2))
+        return
     model.save_pretrained(str(out / "adapter"))
     tokenizer.save_pretrained(str(out / "adapter"))
     if not args.no_gguf:
