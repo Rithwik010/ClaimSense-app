@@ -112,6 +112,34 @@ def test_every_rules_v2_reason_code_has_a_carc_mapping() -> None:
     }
 
 
+def test_the_visit_limit_reason_maps_to_pr_119_with_n640() -> None:
+    """D-CARC-3: CARC 119 ("Benefit maximum for this time period or occurrence has been
+    reached.") with RARC N640 ("Exceeds number/frequency approved/allowed within time period."),
+    group PR: the member's benefit maximum is reached."""
+    entry = load_curated().reason_codes["DN_VISIT_LIMIT"]
+
+    found = (entry.outcome, entry.group_code, entry.carc, entry.rarc)
+    assert found == ("DENY", "PR", "119", "N640")
+
+
+def test_only_visit_limited_codes_with_one_candidate_category_pass() -> None:
+    """R21 decides a line's category before the model (D-RULE-10): a code whose candidates include
+    a visit-limited category must have no other."""
+    data = load_curated()
+    scope = dict(data.scope)
+    two = ("REHAB_THERAPY", "PAIN_MANAGEMENT")
+    scope["97110"] = replace(scope["97110"], candidate_categories=two)
+
+    problems = validate_curated(replace(data, scope=scope))
+
+    plan = next(iter(data.plans))
+    assert f"{plan}/97110: a visit-limited category must be the only one" in problems
+    therapy = {c for c, e in data.scope.items() if "REHAB_THERAPY" in e.candidate_categories}
+    assert therapy == {
+        "97110", "97140", "97161", "97162", "97530",
+    }  # fmt: skip
+
+
 # --- R11's modifiers (D-RULE-8) -------------------------------------------------------------------
 
 

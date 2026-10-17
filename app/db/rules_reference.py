@@ -36,6 +36,7 @@ from app.db.models import (
     ProcedureCode,
     Provider,
     ProviderNetwork,
+    VisitUsage,
 )
 from app.rules.reference import (
     AuthorizationRef,
@@ -142,9 +143,23 @@ def plan_refs(curated: CuratedData) -> dict[str, PlanRef]:
                 code for code in curated.scope if curated.auth_required(plan_id, code)
             ),
             excluded_codes=curated.excluded_codes(plan_id),
+            visit_limits={
+                category: benefit.visit_limit
+                for (benefit_plan, category), benefit in curated.benefits.items()
+                if benefit_plan == plan_id and benefit.visit_limit is not None
+            },
         )
         for plan_id, plan in curated.plans.items()
     }
+
+
+def benefit_categories(curated: CuratedData) -> dict[str, tuple[str, ...]]:
+    """R21: each in-scope code's candidate benefit categories (procedure_scope.csv)."""
+    return {code: tuple(entry.candidate_categories) for code, entry in curated.scope.items()}
+
+
+def _period(value: date | str) -> date:
+    return value if isinstance(value, date) else date.fromisoformat(value)
 
 
 def build_reference(
@@ -155,9 +170,11 @@ def build_reference(
     provider_networks: Iterable[Mapping[str, Any]],
     authorizations: Iterable[Mapping[str, Any]] = (),
     existing_claims: Iterable[Mapping[str, Any]] = (),
+    visit_usage: Iterable[Mapping[str, Any]] = (),
 ) -> RulesReference:
     """`existing_claims` holds one dict per claim line on file: claim_id, member_id, billing_npi,
-    date_of_service, procedure_code, status."""
+    date_of_service, procedure_code, status. `visit_usage` holds the rows of the visit_usage table
+    (member_id, period_start, benefit_category, visits_used) for R21."""
     support, roles, diagnosis_sets = rule_refs(curated)
     ptp_modifiers, em = ptp_refs(curated)
     return RulesReference(
@@ -211,6 +228,11 @@ def build_reference(
         ptp_modifiers=ptp_modifiers,
         em_codes=em,
         global_days=codes.global_days,
+        benefit_categories=benefit_categories(curated),
+        visits_used={
+            (v["member_id"], v["benefit_category"], _period(v["period_start"])): v["visits_used"]
+            for v in visit_usage
+        },
     )
 
 
@@ -248,6 +270,13 @@ def plan_refs_from_db(session: Session, curated: CuratedData) -> dict[str, PlanR
             select(Benefit.plan_id, Benefit.benefit_category, Benefit.auth_required)
         )
     }
+    visit_limits: dict[str, dict[str, int]] = defaultdict(dict)
+    for plan_id, category, limit in session.execute(
+        select(Benefit.plan_id, Benefit.benefit_category, Benefit.visit_limit).where(
+            Benefit.visit_limit.is_not(None)
+        )
+    ):
+        visit_limits[plan_id][category] = limit
     return {
         plan.plan_id: PlanRef(
             plan_id=plan.plan_id,
@@ -261,6 +290,7 @@ def plan_refs_from_db(session: Session, curated: CuratedData) -> dict[str, PlanR
                 if auth.get((plan.plan_id, entry.candidate_categories[0]), False)
             ),
             excluded_codes=frozenset(excluded[plan.plan_id]),
+            visit_limits=dict(visit_limits[plan.plan_id]),
         )
         for plan in session.scalars(select(Plan))
     }
@@ -300,8 +330,8 @@ def reference_for_claim(
     member, providers and their network rows, every plan's terms, the member's authorizations
     and claims on file, code-table membership of its codes, NCCI edits for every pair of its
     procedure codes in published order (source_order: the first edit active on a date applies),
-    and MUE limits for its codes. A fiscal year without ICD-10-CM codes loaded is left out, so the
-    rules raise MissingReference for it."""
+    MUE limits for its codes, and the member's stored visit usage (R21). A fiscal year without
+    ICD-10-CM codes loaded is left out, so the rules raise MissingReference for it."""
     curated = curated or load_curated()
     lines, codes, npis = _claim_keys(claim)
     member_id = claim.get("member_id") if isinstance(claim.get("member_id"), str) else None
@@ -419,5 +449,10 @@ def reference_for_claim(
                     ProcedureCode.code.in_(codes), ProcedureCode.global_days.is_not(None)
                 )
             ).all()
+        },
+        benefit_categories=benefit_categories(curated),
+        visits_used={
+            (v.member_id, v.benefit_category, v.period_start): v.visits_used
+            for v in session.scalars(select(VisitUsage).where(VisitUsage.member_id == member_id))
         },
     )

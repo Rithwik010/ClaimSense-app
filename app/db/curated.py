@@ -511,6 +511,14 @@ def validate_curated(data: CuratedData) -> list[str]:
             auth = {data.benefit(plan_id, c).auth_required for c in entry.candidate_categories}
             if len(auth) > 1:
                 problems.append(f"{plan_id}/{code}: candidate categories disagree on auth")
+            limited = [
+                c
+                for c in entry.candidate_categories
+                if data.benefit(plan_id, c).visit_limit is not None
+            ]
+            if limited and len(entry.candidate_categories) > 1:
+                # R21 runs before the model chooses a category (D-RULE-10)
+                problems.append(f"{plan_id}/{code}: a visit-limited category must be the only one")
         if entry.policy_id:
             policy = data.policies.get(entry.policy_id)
             if policy is None:

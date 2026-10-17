@@ -35,6 +35,7 @@ def test_clean_lines_pass_and_each_rule_reports_a_pass() -> None:
         ("R12", True, None),
         ("R13", True, None),
         *((f"R{n}", True, None) for n in range(14, 21)),  # rules v2 (P2.3b)
+        ("R21", True, None),  # the visit limit (D-RULE-10)
     ]
 
 

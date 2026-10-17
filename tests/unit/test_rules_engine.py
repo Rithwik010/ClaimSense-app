@@ -66,7 +66,7 @@ def test_a_clean_claim_passes_with_every_rule_and_one_outcome_per_line() -> None
     assert outcome.claim_outcome is RuleOutcomeValue.PASS
     assert [r.rule_id for r in outcome.rule_results] == [
         "R01", "R02", "R03", "R04", "DUP", "R05", "R06", "R07", "R08", "R09", "R10",
-        "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19", "R20",
+        "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19", "R20", "R21",
     ]  # fmt: skip
     assert [o.outcome for o in outcome.line_outcomes] == ["PASS", "PASS"]
     assert outcome.flags == []

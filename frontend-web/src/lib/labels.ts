@@ -136,6 +136,7 @@ export const REASONS: Record<string, string> = {
   DN_HOME_TEST_PARASOMNIA: "a home sleep test billed for a parasomnia",
   DN_ESI_LEVELS: "more epidural injection levels than the policy allows",
   DN_FACET_LEVELS: "more facet levels than the policy allows",
+  DN_VISIT_LIMIT: "the plan's yearly visit limit for this service is used up",
   DN_NOT_MEDICALLY_NECESSARY: "not medically necessary under the coverage criteria",
   DN_CONDITIONAL_EXCLUSION: "a coverage policy excludes the service in this situation",
   PD_PROVIDER_ENROLLMENT: "the provider's enrollment needs checking",
