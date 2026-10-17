@@ -1,0 +1,176 @@
+# Generator v3 (realistic notes): every parameter SPEC.md names. Synthetic data only.
+#
+# Change a value here, not in code: training/generate/v3/config.py loads this file, and the unit
+# tests check that SPEC.md and this file name the same parameters. Rates are shares (0 to 1).
+
+version: "v3.0"
+seed: 20261016
+policy_set: v2              # the policy set the labels follow (D-POL-2)
+prompt_version: decision_v3 # v2's prompt, unchanged; a decision_v4 would be made for v3 only
+
+# --- Sizes and splits (Phase 5) --------------------------------------------------------------------
+sizes:
+  train: 3000
+  validation: 300
+  test_messy: 300           # held out; writers A and B
+  test_unseen_style: 200    # held out; writer C only
+  handwritten: 30           # fact sheets for the team to write notes from
+sizes_margin: 0.10          # extra sheets per split, for notes that fail the gate after every retry
+test_unseen_policy_share: 0.33  # as v2's test: a third of each test set on the test-only policies
+writer_mix:                 # share of each split's notes per writer
+  train: {A: 0.5, B: 0.5}
+  validation: {A: 0.5, B: 0.5}
+  test_messy: {A: 0.5, B: 0.5}
+  test_unseen_style: {C: 1.0}
+training_mix:               # v2 clean train records : v3 messy train records
+  v2_clean: 0.4
+  v3_messy: 0.6
+
+# Scenario types and weights: v2's (decision_dataset_v2.SCENARIO_WEIGHTS), so the outcome mix
+# matches v2 before the tricky facts are added.
+scenario_weights:
+  approve_single: 16
+  deny_criterion: 9
+  deny_exclusion: 6
+  pend_missing: 11
+  office_visit: 4
+  office_plus_procedure: 5
+  office_same_day: 7
+  same_profile_multi: 6
+  two_policy: 5
+  ncci_bypass: 7
+  rule_denied_line: 6
+  ncs_without_emg: 4
+  facet_two_regions: 3
+  extended_testing: 3
+
+# --- Tricky facts (Phase 1, Phase 2) ---------------------------------------------------------------
+tricky:
+  borderline: 0.45          # a criterion with a configured threshold is stated at the edge
+  contradicted: 0.10        # a criterion stated twice; the second statement is an explicit correction
+  uncertain_for_missing: 0.40  # a missing criterion gets a hedged mention that does not establish it
+  negated_exclusion: 0.35   # an exclusion that does not apply is stated in the negative
+  past_vs_current: 0.45     # the note carries an unrelated past episode (resolved, dated)
+  distractor_conditions: {min: 1, max: 4}
+  distractor_medications: {min: 2, max: 8}
+  copy_forward: 0.30        # the note repeats a block "copied from" an earlier visit
+  correction_markers: ["Correction:", "Addendum:", "Update after chart review:", "Clarification:"]
+
+# --- The note (Phase 1) ----------------------------------------------------------------------------
+note:
+  sections: [chief_complaint, hpi, past_history, medications, allergies, social_history,
+             review_of_systems, exam, results, assessment, plan]
+  section_presence:         # chance a section appears when it holds no fact (a fact forces it)
+    chief_complaint: 0.95
+    hpi: 1.0
+    past_history: 0.85
+    medications: 0.85
+    allergies: 0.80
+    social_history: 0.70
+    review_of_systems: 0.70
+    exam: 0.90
+    results: 0.55
+    assessment: 0.90
+    plan: 1.0
+  length_words:             # whole note, words; the long tail is padded with history and exam detail
+    min: 150
+    target_median: 380
+    long_tail_share: 0.12   # notes drawn from the long tail (550 to max)
+    long_tail_min: 550
+    max: 900
+  embedded_reports:         # reports pasted into the note, so a claim keeps one note
+    imaging_report: 0.7     # chance a fact placed in "results" is written as an imaging report block
+    therapy_summary: 0.7
+    prior_procedure: 0.8
+  dictation_style: 0.25     # run-on dictated sentences ("Patient is a ... who comes in today for ...")
+
+# --- The claim form (Phase 1) ----------------------------------------------------------------------
+claim_form:
+  lines_per_claim: {1: 0.46, 2: 0.32, 3: 0.12, 4: 0.05, 5: 0.03, 6: 0.02}
+  max_lines: 6              # NUCC 1500 manual v13 p.34: six service lines per form
+  max_diagnoses: 12         # CMS Claims Processing Manual ch.26 p.15 (contracts.py: 12)
+  max_pointers_per_line: 4  # NUCC item 24E (contracts.py: 4)
+  max_modifiers: 4          # NUCC p.38; CMS ch.26 p.16 (contracts.py: 4)
+  extra_diagnoses: {0: 0.30, 1: 0.30, 2: 0.20, 3: 0.12, 4: 0.08}
+  extra_pointer_share: 0.5  # an extra diagnosis is pointed to from a line (after the primary)
+  extra_visit_days: [14, 28, 42]  # extra office-visit lines: days before the first service date
+
+# --- Noise (Phase 3), never inside protected spans --------------------------------------------------
+noise:
+  typo_rate: 0.012          # per eligible word: swap, drop or double a letter
+  abbreviation_swap_rate: 0.35  # per eligible phrase in abbreviations.yaml
+  section_shuffle: 0.15     # chance two adjacent non-HPI sections swap places
+  formatting:
+    upper_case_headers: 0.30
+    run_together_sections: 0.15  # sections joined without line breaks
+    double_spaces: 0.10
+    bullets: 0.30           # list sections written as "- item" lines
+    trailing_whitespace: 0.10
+  protected: [fact_spans, numbers, dates, negation_words]
+  negation_words: ["no", not, without, never, none, negative, absent, neither, nor, cannot, "n't"]
+
+# --- Leakage (Phase 4) -----------------------------------------------------------------------------
+leakage:
+  # Outcome words and their variants, criterion and policy IDs. "denies" counts as a form of deny,
+  # so the notes say "reports no", "negative for" or "no" instead.
+  patterns:
+    - '\b(approv\w*|den(y|ies|ied|ial|ials)|pend(s|ed|ing)?|reject\w*)\b'
+    - '\bcover(ed|age)\b'
+    - '\bnon-?covered\b'
+    - '\bmedical(ly)? necess\w*'
+    - '\bPOL-[A-Z]+-\d{3}\b'
+    - '\.c\d+\b'
+    - '(?-i:\b(MET|NOT_MET|NOT_DOCUMENTED|NOT_APPLICABLE)\b)'  # status names, upper case only
+
+# --- Verification gate (Phase 4) -------------------------------------------------------------------
+verification:
+  missing_overlap: 0.6      # share of a missing fact's content words in one sentence that fails it
+  near_duplicate_jaccard: 0.8  # 5-word shingles, across splits
+  max_regenerations: 3
+  min_quote_words: 4
+
+# --- Open-weight models on Kaggle (Phase 3, Phase 4) ------------------------------------------------
+llm:
+  writer_b:
+    model: Qwen/Qwen2.5-7B-Instruct
+    family: qwen
+    licence: Apache-2.0
+    temperature: 0.8
+    top_p: 0.95
+    max_tokens: 1600
+  writer_c:                 # held out: a family neither writer A nor B uses
+    model: allenai/OLMo-2-1124-7B-Instruct
+    family: olmo
+    licence: Apache-2.0
+    temperature: 0.8
+    top_p: 0.95
+    max_tokens: 1600
+  verifier:                 # a family no writer uses
+    model: ibm-granite/granite-3.3-8b-instruct
+    family: granite
+    licence: Apache-2.0
+    temperature: 0.0
+    max_tokens: 1500
+  vllm:
+    version: "0.11.0"       # Kaggle's image is Python 3.13; vLLM 0.9 needs 3.12 or older
+    use_v1_engine: true     # vLLM 0.10 and later have only the V1 engine
+    attention_backends: [auto, TRITON_ATTN, FLEX_ATTENTION]  # tried in order (no FlashAttention on a T4)
+    pip_pins: ["transformers==4.57.1"]  # Kaggle ships Transformers 5, which vLLM 0.11 cannot use
+    dtype: half             # T4 has no bfloat16
+    tensor_parallel_size: 2 # Kaggle T4 x2
+    max_model_len: 6144
+    gpu_memory_utilization: 0.9
+  gpu_hours_estimate:       # T4 x2 session hours, before each run (refreshed from the pilots)
+    writer_b: 1.6
+    writer_c: 0.5
+    verifier: 1.8
+
+# --- Style cards (Phase 3) -------------------------------------------------------------------------
+style_cards:
+  author_habits:
+    terse_abbreviated: 0.30
+    full_sentences: 0.35
+    dictated: 0.15
+    templated_ehr: 0.20
+  length_buckets: {short: 0.30, medium: 0.50, long: 0.20}  # 150-300, 300-550, 550-900 words
+  writer_c_formats: [soap, problem_oriented, narrative_letter]  # writer C only

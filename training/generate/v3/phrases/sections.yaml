@@ -1,0 +1,300 @@
+# Generator v3: the parts of a note that carry no criterion fact. Synthetic, team-written; nothing is
+# copied from sample notes, payer documents or AMA CPT descriptors.
+#
+# Every distractor item carries topics. A clinic lists the topics it never uses as distractors
+# (`exclude`), so a distractor can never state, negate or blur one of that clinic's criterion facts
+# (for example no blood-pressure history in a cardiology note, where "high blood pressure only" is an
+# exclusion, and no pain medicine in a pain clinic note, where failed medication is a criterion).
+# No sentence may contain an outcome word: notes say "reports no", "negative for" or "no", never
+# "denies" (config.yaml leakage).
+
+headers:
+  chief_complaint: ["Chief complaint", "CC", "Reason for visit", "Presenting problem"]
+  hpi: ["History of present illness", "HPI", "History", "Subjective"]
+  past_history: ["Past medical history", "PMH", "Medical history", "Past history"]
+  medications: ["Medications", "Current medications", "Meds", "Medication list"]
+  allergies: ["Allergies", "Drug allergies", "ALLERGIES/INTOLERANCES"]
+  social_history: ["Social history", "SH", "Social"]
+  review_of_systems: ["Review of systems", "ROS", "Systems review"]
+  exam: ["Physical exam", "Exam", "PE", "Examination", "Objective"]
+  results: ["Results", "Data reviewed", "Imaging and reports", "Studies"]
+  assessment: ["Assessment", "Impression", "A/P", "Diagnoses"]
+  plan: ["Plan", "Plan of care", "Recommendations", "Disposition"]
+
+clinics:
+  PAIN_MEDICINE:
+    names: ["Pain Management Clinic", "Interventional Spine Center", "Spine and Pain Associates"]
+    visits: ["Follow-up visit", "Procedure planning visit", "New patient consultation"]
+    exclude: [msk_pain, analgesic, neuro, anticoag, imaging_spine]
+    exam: ["Gait is steady without an assistive device.", "Skin over the spine is intact without rash.", "Patient is able to sit comfortably for the interview."]
+    report_titles: {imaging_report: ["MRI LUMBAR SPINE WITHOUT CONTRAST", "MRI CERVICAL SPINE", "MRI L-SPINE"], therapy_summary: ["CONSERVATIVE CARE SUMMARY", "PT DISCHARGE SUMMARY", "THERAPY LOG"], prior_procedure: ["PRIOR PROCEDURE", "PROCEDURE HISTORY"]}
+    report_findings: ["Vertebral body heights are maintained.", "Alignment is normal.", "The conus ends at a normal level."]
+  CARDIOLOGY:
+    names: ["Heart and Vascular Clinic", "Cardiology Associates", "Cardiology Clinic"]
+    visits: ["Follow-up visit", "Consultation", "Return visit"]
+    exclude: [hypertension, cardiac, respiratory, swelling, anticoag, rate_control]
+    exam: ["Patient is comfortable at rest.", "Skin is warm and dry.", "Abdomen is soft and nontender."]
+    report_titles: {imaging_report: ["TRANSTHORACIC ECHOCARDIOGRAM", "ECHO REPORT"], therapy_summary: ["MEDICATION HISTORY"], prior_procedure: ["PRIOR STUDIES", "PROCEDURE HISTORY"]}
+    report_findings: ["The aortic root is normal in size.", "No pericardial effusion is seen."]
+  SLEEP_MEDICINE:
+    names: ["Sleep Disorders Center", "Sleep Medicine Clinic"]
+    visits: ["Consultation", "Follow-up visit"]
+    exclude: [sleep, respiratory, bmi, cardiac, psych]
+    exam: ["Patient is alert and attentive.", "Skin is warm and dry."]
+    report_titles: {imaging_report: ["SLEEP STUDY REPORT"], therapy_summary: ["TREATMENT HISTORY"], prior_procedure: ["PRIOR SLEEP STUDY", "STUDY HISTORY"]}
+    report_findings: ["Recording quality notes are attached.", "Technician comments reviewed."]
+  NEUROLOGY:
+    names: ["Neurology Clinic", "Neurodiagnostic Lab", "Nerve and Muscle Center"]
+    visits: ["Consultation", "Testing visit", "Follow-up visit"]
+    exclude: [diabetes, neuro, analgesic, msk_pain, injury]
+    exam: ["Cranial nerves are intact.", "Speech is fluent.", "Patient follows commands without difficulty."]
+    report_titles: {imaging_report: ["IMAGING REPORT"], therapy_summary: ["TREATMENT HISTORY"], prior_procedure: ["PRIOR TESTING"]}
+    report_findings: ["Study reviewed with the patient."]
+  ALLERGY_IMMUNOLOGY:
+    names: ["Allergy and Asthma Clinic", "Allergy Associates"]
+    visits: ["Consultation", "Testing visit", "Follow-up visit"]
+    exclude: [allergy, skin, respiratory, topical, latex, eye]
+    exam: ["Patient is in no distress.", "Heart rate is regular.", "Abdomen is soft."]
+    report_titles: {imaging_report: ["TEST RECORD"], therapy_summary: ["TREATMENT HISTORY"], prior_procedure: ["PRIOR TESTING"]}
+    report_findings: ["Controls were read at the usual times."]
+  PODIATRY:
+    names: ["Foot and Ankle Clinic", "Podiatry Associates"]
+    visits: ["Routine visit", "Follow-up visit", "Foot care visit"]
+    exclude: [diabetes, foot, anticoag, vascular, neuro, analgesic, msk_pain, skin]
+    exam: ["Patient walks into the room without help.", "Skin of the legs is intact."]
+    report_titles: {imaging_report: ["FOOT X-RAY"], therapy_summary: ["CARE HISTORY"], prior_procedure: ["PRIOR CARE"]}
+    report_findings: ["No acute bony abnormality is reported."]
+  RADIOLOGY:
+    names: ["Imaging Center", "Radiology Department", "Outpatient Imaging"]
+    visits: ["Imaging order review", "Pre-scan review", "Ordering visit"]
+    exclude: [neuro, eye, analgesic, msk_pain, swelling, gi, cancer, injury]
+    exam: ["Patient is alert and in no distress.", "Skin is warm and dry."]
+    report_titles: {imaging_report: ["PRIOR IMAGING", "MRI BRAIN WITHOUT CONTRAST", "CT HEAD"], therapy_summary: ["TREATMENT HISTORY"], prior_procedure: ["PRIOR STUDIES"]}
+    report_findings: ["Comparison is made with outside images where available."]
+  PHYSICAL_THERAPY:
+    names: ["Outpatient Physical Therapy", "Rehab and Sports Therapy", "PT Clinic"]
+    visits: ["Treatment session", "Progress visit", "Initial evaluation"]
+    exclude: [msk_pain, analgesic, neuro, gait]
+    exam: ["Patient arrives on time and is able to follow instructions.", "Vital signs taken before exercise."]
+    report_titles: {imaging_report: ["IMAGING ON FILE"], therapy_summary: ["PROGRESS SUMMARY", "THERAPY FLOWSHEET SUMMARY"], prior_procedure: ["PRIOR EPISODE OF CARE"]}
+    report_findings: ["Scores entered by the treating therapist."]
+  OPHTHALMOLOGY:
+    names: ["Eye Clinic", "Ophthalmology Associates", "Cataract and Retina Center"]
+    visits: ["Pre-operative visit", "Consultation", "Follow-up visit"]
+    exclude: [eye, diabetes, driving]
+    exam: ["Patient is alert and cooperative.", "External exam is unremarkable apart from the findings below."]
+    report_titles: {imaging_report: ["OCT REPORT", "RETINAL IMAGING"], therapy_summary: ["TREATMENT HISTORY"], prior_procedure: ["PRIOR EYE PROCEDURES"]}
+    report_findings: ["Scan quality is adequate."]
+  PLASTIC_SURGERY:
+    names: ["Oculoplastic Surgery Clinic", "Plastic and Reconstructive Surgery"]
+    visits: ["Consultation", "Pre-operative visit"]
+    exclude: [eye, driving, cosmetic]
+    exam: ["Patient is alert and cooperative.", "Facial sensation is intact."]
+    report_titles: {imaging_report: ["VISUAL FIELD REPORT"], therapy_summary: ["TREATMENT HISTORY"], prior_procedure: ["PRIOR PROCEDURES"]}
+    report_findings: ["Fixation losses were within the usual range."]
+  GASTROENTEROLOGY:
+    names: ["Digestive Health Center", "Gastroenterology Associates", "Endoscopy Unit"]
+    visits: ["Consultation", "Pre-procedure visit", "Procedure visit"]
+    exclude: [gi, anemia, anticoag, cancer, family_history]
+    exam: ["Patient is in no distress.", "Heart rate is regular.", "Lungs are clear to auscultation."]
+    report_titles: {imaging_report: ["CT COLONOGRAPHY", "IMAGING REPORT"], therapy_summary: ["TREATMENT HISTORY"], prior_procedure: ["PRIOR COLONOSCOPY", "ENDOSCOPY HISTORY"]}
+    report_findings: ["Bowel preparation was adequate.", "No extracolonic findings of note."]
+  VASCULAR_SURGERY:
+    names: ["Vein Center", "Vascular Surgery Clinic"]
+    visits: ["Consultation", "Follow-up visit", "Procedure planning visit"]
+    exclude: [vascular, swelling, skin, diabetes, anticoag, cosmetic]
+    exam: ["Patient is alert and in no distress.", "Abdomen is soft."]
+    report_titles: {imaging_report: ["VENOUS DUPLEX ULTRASOUND", "LOWER EXTREMITY VENOUS DUPLEX"], therapy_summary: ["CONSERVATIVE CARE SUMMARY"], prior_procedure: ["PRIOR PROCEDURES"]}
+    report_findings: ["The deep veins are compressible.", "No thrombus is seen in the deep system."]
+  WOUND_CARE:
+    names: ["Wound Healing Center", "Wound Care Clinic"]
+    visits: ["Wound care visit", "Follow-up visit", "New patient visit"]
+    exclude: [diabetes, skin, vascular, foot, anticoag, swelling]
+    exam: ["Patient is alert and in no distress.", "Heart rate is regular."]
+    report_titles: {imaging_report: ["IMAGING REPORT"], therapy_summary: ["WOUND CARE SUMMARY"], prior_procedure: ["PRIOR WOUND CARE", "DEBRIDEMENT LOG"]}
+    report_findings: ["Photographs were taken and saved to the chart."]
+  PSYCHOLOGY:
+    names: ["Neuropsychology Service", "Psychological Testing Clinic"]
+    visits: ["Testing visit", "Intake visit", "Feedback visit"]
+    exclude: [psych, sleep, neuro, memory]
+    exam: ["Patient is cooperative and engaged.", "Speech is normal in rate and volume."]
+    report_titles: {imaging_report: ["PRIOR RECORDS"], therapy_summary: ["TREATMENT HISTORY"], prior_procedure: ["PRIOR TESTING"]}
+    report_findings: ["Records were reviewed before testing."]
+  PRIMARY_CARE:
+    names: ["Family Medicine Clinic", "Primary Care Office", "Internal Medicine Clinic"]
+    visits: ["Office visit", "Follow-up visit", "Acute visit"]
+    exclude: []
+    exam: ["Patient is alert and in no distress.", "Heart rate is regular.", "Abdomen is soft and nontender."]
+    report_titles: {imaging_report: ["IMAGING REPORT"], therapy_summary: ["TREATMENT HISTORY"], prior_procedure: ["PRIOR PROCEDURES"]}
+    report_findings: ["Results were discussed with the patient."]
+
+# Distractors. `code`: an ICD-10-CM FY2027 code (checked against data/raw by the unit tests) that the
+# claim may also list. Topics name what each item could interfere with.
+conditions:
+  - {code: E785, text: ["Hyperlipidemia, on a statin.", "High cholesterol, treated."], topics: [lipids]}
+  - {code: E039, text: ["Hypothyroidism, stable on replacement.", "Hypothyroid, stable."], topics: [thyroid]}
+  - {code: K219, text: ["Reflux, controlled with medicine.", "GERD, controlled."], topics: [gi]}
+  - {code: E559, text: ["Vitamin D deficiency, on supplements.", "Low vitamin D, supplemented."], topics: [vitamin]}
+  - {code: Z87891, text: ["Former smoker, quit years ago.", "Remote tobacco use, quit."], topics: [tobacco]}
+  - {code: I10, text: ["High blood pressure, treated.", "HTN, on meds."], topics: [hypertension, cardiac]}
+  - {code: E119, text: ["Type 2 diabetes without complications.", "DM2, diet and metformin."], topics: [diabetes]}
+  - {code: F419, text: ["Anxiety, managed with counseling.", "Anxiety d/o."], topics: [psych]}
+  - {code: J45909, text: ["Mild asthma, rarely uses an inhaler.", "Asthma, mild intermittent."], topics: [respiratory, allergy]}
+  - {code: K5900, text: ["Occasional constipation.", "Constipation, intermittent."], topics: [gi]}
+  - {code: E669, text: ["Obesity.", "Obesity, working on weight loss."], topics: [bmi]}
+  - {code: M810, text: ["Osteoporosis, on treatment.", "Osteoporosis."], topics: [msk_pain]}
+  - {code: H5213, text: ["Nearsightedness, wears glasses.", "Myopia."], topics: [eye]}
+  - {code: D649, text: ["Mild anemia, followed by primary care.", "Anemia, mild, followed by PCP."], topics: [anemia]}
+
+medications:
+  - {text: ["atorvastatin 20 mg nightly", "atorvastatin 20mg qhs"], topics: [lipids]}
+  - {text: ["levothyroxine 75 mcg daily", "levothyroxine 75mcg qam"], topics: [thyroid]}
+  - {text: ["omeprazole 20 mg daily", "omeprazole 20mg daily"], topics: [gi]}
+  - {text: ["vitamin D3 2000 units daily", "Vit D3 2000 IU daily"], topics: [vitamin]}
+  - {text: ["calcium carbonate 500 mg twice daily", "calcium 500mg BID"], topics: [vitamin]}
+  - {text: ["lisinopril 10 mg daily", "lisinopril 10mg daily"], topics: [hypertension, cardiac]}
+  - {text: ["amlodipine 5 mg daily", "amlodipine 5mg daily"], topics: [hypertension, cardiac, swelling]}
+  - {text: ["metformin 500 mg twice daily", "metformin 500mg BID"], topics: [diabetes]}
+  - {text: ["sertraline 50 mg daily", "sertraline 50mg daily"], topics: [psych]}
+  - {text: ["loratadine 10 mg daily", "loratadine 10mg prn"], topics: [allergy]}
+  - {text: ["albuterol inhaler as needed", "albuterol MDI prn"], topics: [respiratory, allergy]}
+  - {text: ["multivitamin daily", "MVI daily"], topics: [vitamin]}
+  - {text: ["fish oil 1 g daily", "fish oil 1g daily"], topics: [lipids]}
+  - {text: ["melatonin 3 mg at bedtime", "melatonin 3mg qhs"], topics: [sleep]}
+  - {text: ["docusate 100 mg as needed", "docusate 100mg prn"], topics: [gi]}
+  - {text: ["artificial tears as needed", "artificial tears prn"], topics: [eye]}
+  - {text: ["hydrocortisone cream as needed", "HC 1% cream prn"], topics: [skin, topical]}
+
+allergies:
+  - {text: ["No known drug allergies.", "NKDA"], topics: []}
+  - {text: ["Penicillin (rash).", "PCN - rash"], topics: []}
+  - {text: ["Sulfa drugs (hives).", "Sulfa - hives"], topics: []}
+  - {text: ["Codeine (nausea).", "Codeine - nausea"], topics: [analgesic]}
+  - {text: ["Latex (itching).", "Latex - pruritus"], topics: [latex, skin, allergy]}
+  - {text: ["Seasonal pollen.", "Seasonal allergies"], topics: [allergy]}
+
+social:  # at most one item of each kind per note
+  - {kind: habits, text: ["Nonsmoker. Drinks alcohol socially.", "Never smoker; EtOH socially."], topics: []}
+  - {kind: habits, text: ["Former smoker, quit years ago. No alcohol.", "Ex-smoker. No EtOH."], topics: [tobacco]}
+  - {kind: habits, text: ["Drinks two cups of coffee a day and no alcohol.", "Caffeine 2 cups/day; no EtOH."], topics: [sleep]}
+  - {kind: occupation, text: ["Works as a teacher.", "Occupation: teacher."], topics: []}
+  - {kind: occupation, text: ["Works as an accountant.", "Occupation: accountant."], topics: []}
+  - {kind: occupation, text: ["Retired.", "Retired."], topics: []}
+  - {kind: occupation, text: ["Works in an office.", "Desk job."], topics: []}
+  - {kind: occupation, text: ["Works as an electrician.", "Occupation: electrician."], topics: []}
+  - {kind: living, text: ["Lives alone and is independent at home.", "Lives alone, independent."], topics: []}
+  - {kind: living, text: ["Lives with a spouse in a single-story home.", "Lives w/ spouse, 1-story home."], topics: []}
+  - {kind: living, text: ["Lives with family.", "Lives w/ family."], topics: []}
+
+# Review of systems: negatives only, never "denies". A clinic drops the systems its exclude list names.
+ros:
+  - {text: ["Negative for fever, chills and unplanned weight loss.", "Constitutional: no fever/chills/wt loss."], topics: []}
+  - {text: ["No rash or skin changes.", "Skin: no rash."], topics: [skin]}
+  - {text: ["No urinary symptoms.", "GU: negative."], topics: [gu]}
+  - {text: ["No change in vision.", "Eyes: no vision change."], topics: [eye]}
+  - {text: ["No chest pain or palpitations.", "CV: no CP/palps."], topics: [cardiac]}
+  - {text: ["No cough or shortness of breath.", "Resp: no cough/SOB."], topics: [respiratory, cardiac]}
+  - {text: ["No nausea, vomiting or change in bowel habits.", "GI: no N/V or bowel change."], topics: [gi]}
+  - {text: ["No headaches or new weakness.", "Neuro: no HA, no weakness."], topics: [neuro]}
+  - {text: ["No joint swelling.", "MSK: no joint swelling."], topics: [msk_pain, swelling]}
+  - {text: ["No easy bruising or bleeding.", "Heme: no bruising/bleeding."], topics: [anticoag, anemia]}
+  - {text: ["Mood is stable.", "Psych: mood stable."], topics: [psych]}
+  - {text: ["Sleeping well.", "Sleep: no issues."], topics: [sleep, psych]}
+
+vitals:
+  A: "Blood pressure {bp_sys}/{bp_dia}, pulse {hr}, temperature {temp} F, oxygen saturation {spo2}% on room air."
+  B: "BP {bp_sys}/{bp_dia}, HR {hr}, T {temp}F, SpO2 {spo2}% RA."
+vitals_slots: {bp_sys: "112-138", bp_dia: "68-86", hr: "62-88", temp: ["97.8", "98.1", "98.4", "98.6"], spo2: "96-99"}
+
+general_exam:
+  A: ["Alert, oriented and in no acute distress.", "Well-appearing and in no distress."]
+  B: ["A&O x3, NAD.", "WDWN, NAD."]
+
+general_results:
+  A: ["Recent basic metabolic panel within normal limits.", "No new labs since the last visit."]
+  B: ["BMP WNL.", "No new labs."]
+
+plan_general:
+  A: ["Continue current medications.", "Risks, benefits and alternatives were discussed, and questions were answered.", "A copy of this note goes to the primary care physician.", "The patient was given written instructions."]
+  B: ["Continue current meds.", "R/B/A discussed, questions answered.", "Copy to PCP.", "Written instructions given."]
+
+# Past episodes that are over: dated, resolved, and unrelated to the visit's criteria. Topics as above.
+past_vs_current:
+  - {text: ["Treated for a kidney stone in {year}; no problems since.", "Nephrolithiasis {year}, resolved."], topics: [gu]}
+  - {text: ["Had a broken wrist in {year} that healed without problems.", "Wrist fx {year}, healed."], topics: [injury, msk_pain]}
+  - {text: ["Pneumonia in {year}, fully recovered.", "PNA {year}, resolved."], topics: [respiratory]}
+  - {text: ["Gallbladder removed in {year}.", "S/p cholecystectomy {year}."], topics: [gi]}
+  - {text: ["Shingles on the chest in {year}, resolved.", "Zoster (chest) {year}, resolved."], topics: [skin, neuro]}
+  - {text: ["A low back strain in {year} settled with home exercises.", "LBS {year}, resolved w/ HEP."], topics: [msk_pain]}
+  - {text: ["Knee arthroscopy in {year}.", "S/p knee scope {year}."], topics: [msk_pain]}
+  - {text: ["Appendix removed in {year}.", "S/p appendectomy {year}."], topics: [gi]}
+past_years: "2008-2021"
+
+copy_forward:
+  marker: ["--- Copied from the visit of {date} ---", "[Carried forward from {date}]", "Prior note ({date}) text:"]
+  A: ["At that visit the patient had no new problems and the medication list was unchanged.", "Interval history at that visit: no hospital stays or emergency visits.", "Vital signs at that visit were stable."]
+  B: ["No new issues at that visit; meds unchanged.", "No ED visits/admissions since.", "VS stable at that visit."]
+
+openers:
+  full_sentences: ["The patient is a {age}-year-old {sex_word} seen today for {reason}.", "{Pronoun} is a {age}-year-old {sex_word} here for {reason}."]
+  terse_abbreviated: ["{age}yo {sex_short} here for {visit}.", "{age} y/o {sex_short}, {visit}."]
+  dictated: ["Patient is a {age}-year-old {sex_word} who comes in today for {reason}, and {pronoun} states that the main reason for the visit is as below.", "This is a {age}-year-old {sex_word} who presents today for {reason}; history is obtained from the patient."]
+  templated_ehr: ["Patient: {age} y.o. {sex_word}. Visit reason: {reason}.", "Age/Sex: {age}/{sex_short}. Reason for encounter: {reason}."]
+
+# Neutral lines that make a note longer without adding a fact (writer A adds them, in random
+# order, until the style card's target length). Topics as above; "family_history" is excluded where
+# a family history is a criterion (colonoscopy screening).
+filler:
+  - {section: hpi, text: ["The history was obtained from the patient, who is a reliable historian.", "Hx from pt, reliable historian."], topics: []}
+  - {section: hpi, text: ["The patient came to the visit alone.", "Pt here alone."], topics: []}
+  - {section: hpi, text: ["Outside records were requested and will be reviewed when they arrive.", "Outside records requested."], topics: []}
+  - {section: hpi, text: ["There have been no hospital stays or emergency visits since the last visit.", "No ED visits/admissions since last visit."], topics: []}
+  - {section: hpi, text: ["The patient brought a written list of questions, which were reviewed.", "Pt brought list of questions, reviewed."], topics: []}
+  - {section: past_history, text: ["Family history is noncontributory.", "FHx noncontributory."], topics: [family_history]}
+  - {section: past_history, text: ["Immunizations are up to date per the patient.", "Immunizations UTD per pt."], topics: []}
+  - {section: past_history, text: ["No prior hospital admissions.", "No prior admissions."], topics: []}
+  - {section: social_history, text: ["Walks for exercise a few times a week.", "Walks several x/wk."], topics: [gait, msk_pain]}
+  - {section: exam, text: ["Speech is clear, and the patient answers questions appropriately.", "Speech clear, answers appropriately."], topics: [neuro, psych]}
+  - {section: exam, text: ["Conjunctivae are clear.", "Conj clear."], topics: [eye]}
+  - {section: exam, text: ["Extremities show no clubbing or cyanosis.", "No clubbing/cyanosis."], topics: [vascular, cardiac]}
+  - {section: results, text: ["Outside laboratory results were reviewed and scanned into the chart.", "Outside labs reviewed, scanned."], topics: []}
+  - {section: results, text: ["No new imaging since the last visit.", "No new imaging."], topics: []}
+  - {section: plan, text: ["The patient knows how to reach the clinic with questions.", "Pt knows how to contact clinic."], topics: []}
+  - {section: plan, text: ["Medication reconciliation was completed at this visit.", "Med rec completed."], topics: []}
+  - {section: plan, text: ["The preferred pharmacy was confirmed.", "Pharmacy confirmed."], topics: []}
+  - {section: plan, text: ["Patient portal access was reviewed.", "Portal access reviewed."], topics: []}
+  - {section: plan, text: ["Return precautions were reviewed.", "Return precautions given."], topics: []}
+  - {section: plan, text: ["Questions were answered, and the patient agrees with the plan.", "Questions answered, pt agrees w/ plan."], topics: []}
+
+# Longer neutral content for long notes (writer A adds it after `filler`, same topic rules).
+exam_systems:
+  - {text: ["Constitutional: well developed, well nourished, in no distress.", "Const: WDWN, NAD."], topics: []}
+  - {text: ["HEENT: normocephalic, atraumatic; oral mucosa moist.", "HEENT: NCAT, MMM."], topics: [eye]}
+  - {text: ["Neck: supple, no lymphadenopathy, no thyromegaly.", "Neck: supple, no LAD/thyromegaly."], topics: [neuro, msk_pain, thyroid]}
+  - {text: ["Cardiovascular: regular rate and rhythm, no murmurs, rubs or gallops.", "CV: RRR, no m/r/g."], topics: [cardiac]}
+  - {text: ["Respiratory: clear to auscultation bilaterally, normal effort.", "Resp: CTAB, nl effort."], topics: [respiratory, cardiac]}
+  - {text: ["Abdomen: soft, nontender, nondistended, normal bowel sounds.", "Abd: soft, NT/ND, +BS."], topics: [gi]}
+  - {text: ["Skin: warm and dry, no rash on exposed areas.", "Skin: warm, dry, no rash."], topics: [skin]}
+  - {text: ["Psychiatric: alert, oriented, normal mood and affect.", "Psych: A&O, nl mood/affect."], topics: [psych]}
+  - {text: ["Lymphatic: no cervical or supraclavicular nodes.", "Lymph: no cervical/supraclav nodes."], topics: []}
+
+labs:
+  - {text: ["Thyroid-stimulating hormone {tsh} on {date}, within the reference range.", "TSH {tsh} ({date}), WNL."], topics: [thyroid], slots: {tsh: ["1.4", "2.1", "2.8"]}}
+  - {text: ["Lipid panel on {date}: LDL {ldl} mg/dL on the current statin dose.", "Lipids ({date}): LDL {ldl}."], topics: [lipids], slots: {ldl: "72-118"}}
+  - {text: ["Basic metabolic panel on {date}: sodium {na}, potassium {k}, creatinine {cr}.", "BMP ({date}): Na {na}, K {k}, Cr {cr}."], topics: [], slots: {na: "136-143", k: ["3.9", "4.1", "4.4"], cr: ["0.8", "0.9", "1.0"]}}
+  - {text: ["Vitamin D level on {date} was {vitd} ng/mL on supplements.", "Vit D ({date}): {vitd}."], topics: [vitamin], slots: {vitd: "32-48"}}
+
+education:
+  - {text: ["Today's findings and the next steps were explained in plain language, and the patient repeated the plan back accurately.", "Plan explained, pt teach-back accurate."], topics: []}
+  - {text: ["The patient was given written information about the visit, including how to reach the clinic after hours and when to call.", "Written info given incl after-hours contact."], topics: []}
+  - {text: ["Time was spent reviewing the medication list with the patient, confirming doses and the pharmacy on file.", "Med list reviewed w/ pt, doses/pharmacy confirmed."], topics: []}
+  - {text: ["The patient's questions about scheduling and transportation were answered, and the front desk will help arrange the next appointment.", "Scheduling/transport questions answered; front desk to arrange next appt."], topics: []}
+
+coordination:
+  - {text: ["A copy of this note will be sent to the referring clinician.", "Note to referring clinician."], topics: []}
+  - {text: ["Outside records from the prior clinic were scanned into the chart.", "Outside records scanned."], topics: []}
+  - {text: ["The patient's preferred contact method was updated.", "Contact preference updated."], topics: []}
+
+copy_forward_vitals:
+  A: "Vital signs at that visit: blood pressure {bp_sys}/{bp_dia}, pulse {hr}."
+  B: "VS then: BP {bp_sys}/{bp_dia}, HR {hr}."

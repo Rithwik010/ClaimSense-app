@@ -1,0 +1,766 @@
+# Generator v3: more ways to state each criterion fact, where it goes in the note, hedged and negated
+# forms, and the borderline cases. Synthetic text, team-written for ClaimSense; nothing is copied from
+# payer documents, sample notes or AMA CPT descriptors. Read with the v2 sentences in
+# ../../templates/clinical_notes_v2.yaml (writer A draws from both).
+#
+# Per criterion (short ID under its policy):
+#   placement: the section the fact goes in (hpi, exam, results, assessment, plan, history), and
+#              optionally `report`: the embedded report it is written in (imaging_report,
+#              therapy_summary, prior_procedure).
+#   met / not_met / situation: extra sentences, wording A (plain) or B (shorthand); same slots and the
+#              same meaning as the v2 sentences of that state.
+#   uncertain: a hedged mention for a criterion that is missing: it never establishes the criterion
+#              (ICD-10-CM Official Guidelines FY2027, Section IV.H: an uncertain diagnosis is not
+#              coded as confirmed in the outpatient setting), so the status stays NOT_DOCUMENTED.
+#   negated:   for an exclusion that does not apply: says the excluded situation is not present, so
+#              the status stays NOT_APPLICABLE.
+#   replace:   states whose v2 sentences are not used (too broad next to another policy on the same
+#              claim, for example "no vision complaints" beside a cataract on an eye-clinic claim).
+#
+# Borderline (bottom): criteria whose policy text states a number. Each case fixes slot values; the
+# status is computed from the `checks` (all must hold for `rule: all`, one for `rule: any`), each a
+# comparison of a slot value with the policy threshold, never written by hand. Thresholds not used
+# are listed in SPEC.md with the reason.
+#
+# Leakage: no sentence may contain an outcome word (config.yaml leakage), checked by the unit tests.
+
+policies:
+  POL-BH-001:
+    c2:
+      placement: {section: hpi}
+      not_met:
+        A: ["Testing is wanted only as a general screen; no concern about memory, thinking or mood has been raised."]
+        B: ["Screening-only request; no cognitive/mood concern raised."]
+      negated:
+        A: ["The testing will be given in person by the psychologist, not as self-scored questionnaires."]
+        B: ["Testing administered in person, not self-scored forms."]
+    c3:
+      placement: {section: hpi}
+      not_met:
+        A: ["The repeat testing is a scheduled yearly check of a stable condition, and no change in care is planned."]
+        B: ["Scheduled annual retest, condition stable, no mgmt change planned."]
+      negated:
+        A: ["The repeat testing is not a scheduled routine check."]
+        B: ["Not a routine scheduled retest."]
+    c4:
+      placement: {section: hpi}
+      met:
+        A: ["Over the past {months} months the family has noticed growing forgetfulness, and testing is needed to separate early dementia from depression before treatment is chosen."]
+        B: ["Progressive memory loss x{months} mo; testing to distinguish dementia vs depression and direct tx."]
+      not_met:
+        A: ["The cause of the memory problem is already established, and testing would not alter the plan."]
+        B: ["Etiology established; testing won't alter plan."]
+      uncertain:
+        A: ["The family wonders whether the patient has become more forgetful lately; this has not been looked into."]
+        B: ["?memory change per family, not evaluated."]
+
+  POL-CAR-001:
+    c4:
+      placement: {section: exam}
+      met:
+        A: ["Over the last month {symptom} has developed, and on exam there is {finding}."]
+        B: ["New {symptom}; exam w/ {finding}."]
+      not_met:
+        A: ["There are no heart symptoms and no known heart disease; the echocardiogram is a routine check."]
+        B: ["No cardiac sx/hx; echo as routine check."]
+      uncertain:
+        A: ["Heart disease has been raised as a possibility but nothing on history or exam points to it yet."]
+        B: ["?cardiac etiology, nothing on hx/exam yet."]
+    c5:
+      placement: {section: assessment}
+      not_met:
+        A: ["The only problem is high blood pressure; the heart exam is normal and there are no heart symptoms."]
+        B: ["Isolated HTN; cardiac exam nl, no cardiac sx."]
+      negated:
+        A: ["The study is not being done for blood pressure alone."]
+        B: ["Not for isolated HTN."]
+    c6:
+      placement: {section: results, report: imaging_report}
+      situation:
+        A: ["A prior echocardiogram was performed {months_short} months ago."]
+        B: ["Last echo {months_short} mo ago."]
+      met:
+        A: ["The last echocardiogram {months_short} months ago was normal, but breathing became much worse over the past week."]
+        B: ["Echo {months_short} mo ago nl; acute decline in dyspnea this wk."]
+      not_met:
+        A: ["The previous echocardiogram {months_short} months ago was normal and nothing has changed since."]
+        B: ["Prior echo {months_short} mo nl; no interval change."]
+      uncertain:
+        A: ["It is unclear whether anything has changed since the last echocardiogram {months_short} months ago."]
+        B: ["?interval change since echo {months_short} mo ago."]
+    c7:
+      placement: {section: hpi}
+      met:
+        A: ["Chest pressure keeps coming back with exertion after a treadmill test last month that was inconclusive."]
+        B: ["Exertional chest pressure recurs; ETT last mo inconclusive."]
+      not_met:
+        A: ["The stress echocardiogram is requested as a screen; there is no chest pain or shortness of breath."]
+        B: ["Screening stress echo; no CP or SOB."]
+      uncertain:
+        A: ["The patient is unsure whether the chest discomfort is related to exertion, and no prior test results are available."]
+        B: ["Unclear if CP exertional; no prior testing available."]
+
+  POL-CAR-002:
+    c4:
+      placement: {section: hpi}
+      met:
+        A: ["Over the past few weeks there have been repeated spells of {symptom}."]
+        B: ["Recurrent {symptom} over past several wks."]
+      not_met:
+        A: ["The rhythm monitor is wanted for a routine pre-sports check; there are no palpitations, dizziness or fainting."]
+        B: ["Monitor for sports clearance only; no palpitations/dizziness/syncope."]
+    c5:
+      placement: {section: hpi}
+      met:
+        A: ["Several days of continuous recording are needed to see whether the antiarrhythmic medicine has stopped the silent episodes."]
+        B: ["Extended recording to assess antiarrhythmic response, silent episodes."]
+      not_met:
+        A: ["Episodes occur about once every {days} days, too seldom for a two-day recording."]
+        B: ["Episodes ~q{days}d, too rare for 48h recording."]
+      uncertain:
+        A: ["A change in rhythm medicine may be considered later."]
+        B: ["?future antiarrhythmic change."]
+    c6:
+      placement: {section: hpi}
+      met:
+        A: ["Short spells of {symptom} come roughly once every {days} days."]
+        B: ["{symptom} ~q{days}d."]
+      not_met:
+        A: ["The rhythm monitor is wanted for a routine pre-sports check; there are no palpitations, dizziness or fainting."]
+        B: ["Monitor for sports clearance only; no palpitations/dizziness/syncope."]
+
+  POL-DX-001:
+    c1:
+      placement: {section: hpi}
+      met:
+        A: ["The sleep evaluation found loud snoring, pauses in breathing seen by the bed partner and daytime sleepiness, with an Epworth score of {ess}."]
+        B: ["Sleep eval: snoring, witnessed apneas, EDS; Epworth {ess}."]
+      not_met:
+        A: ["The patient sleeps well, does not snore and is not sleepy in the day; the study is at the patient's request."]
+      uncertain:
+        A: ["The patient may snore at times, per a roommate; no sleep evaluation has been done."]
+        B: ["?snoring per roommate; no sleep eval done."]
+    c4:
+      placement: {section: past_history}
+      not_met:
+        A: ["The patient has moderate COPD on home oxygen and heart failure, and a home sleep study is requested."]
+      negated:
+        A: ["There is no lung disease, heart failure or other condition that would make a home study unreliable."]
+        B: ["No significant cardiopulm comorbidity."]
+    c5:
+      placement: {section: exam}
+      met:
+        A: ["Loud snoring, witnessed pauses in breathing, a body mass index of {bmi} and a crowded airway make moderate to severe sleep apnea very likely."]
+      not_met:
+        A: ["There is only mild snoring with no breathing pauses or sleepiness, so moderate to severe sleep apnea is unlikely."]
+      uncertain:
+        A: ["Sleep apnea is possible but the history is incomplete."]
+        B: ["?OSA, hx incomplete."]
+    c6:
+      placement: {section: results, report: prior_procedure}
+      situation:
+        A: ["A sleep study was done {months} months ago."]
+      met:
+        A: ["The diagnostic study last month showed moderate sleep apnea, and a CPAP titration study is needed."]
+        A2: ["The earlier home test was technically inadequate because a sensor failed, so it has to be repeated."]
+      not_met:
+        A: ["The earlier study was adequate and complete, and the patient is doing well on CPAP."]
+
+  POL-DX-002:
+    c2:
+      placement: {section: hpi}
+      not_met:
+        A: ["The arm pain started after a fall {days} days ago, and the wrist is swollen."]
+      negated:
+        A: ["There was no recent injury to the arm or wrist."]
+        B: ["No recent trauma to arm/wrist."]
+    c3:
+      placement: {section: hpi}
+      not_met:
+        A: ["This is a routine yearly recheck of the diabetic nerve damage, and the symptoms have not changed."]
+        B: ["Annual recheck DM neuropathy, sx stable."]
+      negated:
+        A: ["This testing is not a routine yearly recheck; the symptoms are new."]
+        B: ["Not routine annual f/u; sx new."]
+    c4:
+      placement: {section: exam}
+      met:
+        A: ["Night-time numbness of the thumb, index and middle fingers, a positive Phalen test and a positive Tinel sign at the wrist make carpal tunnel syndrome very likely."]
+        B: ["Nocturnal paresthesias digits 1-3, Phalen+ and Tinel+ at wrist; CTS highly likely."]
+      not_met:
+        A: ["The symptoms match the known diabetic nerve damage, and carpal tunnel syndrome is not suspected."]
+      uncertain:
+        A: ["Carpal tunnel syndrome is a possibility to consider; the exam findings are not recorded."]
+        B: ["?CTS, exam not documented."]
+    c5:
+      placement: {section: hpi}
+      met:
+        A: ["{complaint} has gone on for {months} months, and the exam points to a nerve problem."]
+        B: ["{complaint_b} for {months} mo; exam c/w nerve lesion."]
+      not_met:
+        A: ["The order only says to rule out neuropathy, and no symptoms or exam findings are written down."]
+      uncertain:
+        A: ["Neuropathy is to be ruled out; no symptoms or exam findings are described."]
+
+  POL-DX-003:
+    c4:
+      placement: {section: hpi}
+      met:
+        A: ["Every {season} the patient gets sneezing, itchy eyes and a stuffy nose that are worse outdoors."]
+        B: ["Sneezing/itchy eyes/congestion every {season}, worse outdoors."]
+      not_met:
+        A: ["The runny nose is present all year with no trigger or seasonal pattern, and there is no history of allergies."]
+      uncertain:
+        A: ["The patient thinks some symptoms might be allergic but cannot link them to any exposure."]
+        B: ["Pt unsure if sx allergic, no exposure link."]
+    c5:
+      placement: {section: plan}
+      not_met:
+        A: ["Intradermal tests are planned to look for a peanut allergy after hives from peanut butter."]
+      negated:
+        A: ["No intradermal testing for food or drug allergy is planned."]
+        B: ["No ID testing for food/drug allergy."]
+    c6:
+      placement: {section: exam}
+      met:
+        A: ["The itchy rash appears only where the skin touches {substance}, which suggests allergic contact dermatitis."]
+        B: ["Pruritic rash limited to contact w/ {substance}; c/f ACD."]
+      not_met:
+        A: ["The rash covers the whole body, began during a viral illness and follows no contact pattern."]
+      uncertain:
+        A: ["Contact allergy is a thought, but the rash pattern has not been described."]
+    c7:
+      placement: {section: plan}
+      met:
+        A: ["Each of the {units} allergens was picked from the patient's exposures at home and at work."]
+        B: ["{units} allergens chosen from home/work exposures."]
+      not_met:
+        A: ["A standard panel was run without tying the tests to the patient's history."]
+      uncertain:
+        A: ["The allergen list will be finalized later."]
+
+  POL-FOOT-001:
+    c1:
+      placement: {section: exam}
+      met:
+        A: ["On monofilament testing the patient cannot feel {sites} of 5 sites on the {side} foot."]
+        B: ["SWM: {sites}/5 sites insensate {side} foot."]
+      not_met:
+        A: ["The patient feels the monofilament at every site on both feet."]
+        B: ["SWM sensation intact all sites bilat."]
+      uncertain:
+        A: ["Sensation in the feet may be reduced; monofilament testing was not done today."]
+        B: ["?decreased sensation feet; SWM not done."]
+    c2:
+      placement: {section: hpi}
+      met:
+        A: ["Because the patient takes {anticoagulant}, even a small nick during nail trimming could bleed heavily."]
+        B: ["{anticoagulant} use; high bleeding risk w/ nail trimming."]
+      not_met:
+        A: ["The patient takes {anticoagulant}, but nothing in the chart shows a risk from careful home nail care."]
+    c4:
+      placement: {section: exam}
+      met:
+        A: ["Pedal pulses cannot be felt on either foot because of diabetes, and the patient's physician actively manages the diabetes."]
+        B: ["Nonpalpable DP/PT bilat 2/2 DM; DM actively managed by PCP."]
+      not_met:
+        A: ["The patient has diabetes, but foot pulses and sensation are normal."]
+      uncertain:
+        A: ["Circulation in the feet may be reduced; pulses were not checked today."]
+    c5:
+      placement: {section: exam}
+      met:
+        A: ["The thick, fungal toenails press on the nail beds, and walking is painful."]
+        B: ["Thickened mycotic nails x{nails}, painful w/ ambulation."]
+      not_met:
+        A: ["The toenails are thick and fungal but cause no pain, no trouble walking and no infection."]
+    c6:
+      placement: {section: hpi}
+      not_met:
+        A: ["No condition makes home nail care risky; the visit is for routine trimming."]
+      negated:
+        A: ["This is not a routine trim for a healthy foot."]
+        B: ["Not routine trimming."]
+
+  POL-IMG-001:
+    c1:
+      placement: {section: hpi}
+      met:
+        A: ["The order is for {symptom}, and the working diagnosis on the order matches what was found today."]
+        B: ["Order indication {symptom}; working dx matches exam."]
+      not_met:
+        A: ["There are no symptoms today; the scan is wanted only for reassurance."]
+      uncertain:
+        A: ["The reason for the scan is not written on the order."]
+    c2:
+      placement: {section: exam}
+      met:
+        A: ["The headaches have gone on for {weeks} weeks despite {medicine}, and the exam shows {deficit}."]
+        B: ["HA x{weeks} wk despite {medicine}; exam: {deficit}."]
+      not_met:
+        A: ["The headaches are the patient's usual migraines, they respond to {medicine}, and the neurological exam is normal."]
+      uncertain:
+        A: ["The headaches might be changing, but the patient cannot describe how."]
+        B: ["?change in HA pattern, unable to characterize."]
+    c4:
+      placement: {section: assessment}
+      not_met:
+        A: ["Brain imaging is wanted to stage a newly found prostate cancer, and there are no neurological symptoms."]
+      negated:
+        A: ["The scan is not being done to stage a cancer."]
+        B: ["Not for cancer staging."]
+    c5:
+      placement: {section: results, report: imaging_report}
+      met:
+        A: ["The non-contrast study {days} days ago showed a {lesion}, and contrast is needed to characterize it."]
+        B: ["Non-con study {days}d ago: {lesion}; contrast to characterize."]
+      not_met:
+        A: ["A contrast MRI of the brain was already done for this illness {weeks} weeks ago, and nothing has changed since."]
+      uncertain:
+        A: ["Contrast may be helpful; the reason is not stated."]
+
+  POL-IMG-002:
+    c3:
+      placement: {section: results, report: therapy_summary}
+      met:
+        A: ["Heel pain has continued after {weeks} weeks of stretching, orthotics and anti-inflammatory medicine, and the diagnosis is still uncertain."]
+      not_met:
+        A: ["This is the first visit for heel pain, and the ultrasound is for the initial diagnosis."]
+      uncertain:
+        A: ["Some treatment for the heel may have been tried before; the details are not available."]
+    c4:
+      placement: {section: plan}
+      situation:
+        A: ["Ultrasound of both limbs is requested."]
+      met:
+        A: ["There are masses on exam in both limbs, and both are symptomatic, so both are scanned."]
+      not_met:
+        A: ["The other limb is to be scanned only for comparison."]
+    c5:
+      placement: {section: exam}
+      not_met:
+        A: ["An obvious superficial abscess is seen on exam, and the ultrasound is for routine management."]
+      negated:
+        A: ["There is no obvious abscess on exam."]
+        B: ["No clinically obvious abscess."]
+    c6:
+      placement: {section: exam}
+      met:
+        A: ["The ultrasound is to evaluate a {size} cm soft-tissue mass near the {joint}."]
+        A2: ["The ultrasound is to tell a {joint} effusion from a cyst."]
+      not_met:
+        A: ["No mass, effusion, tendon or joint problem is noted; the ultrasound is a general screen."]
+
+  POL-PAIN-001:
+    c1:
+      placement: {section: results, report: imaging_report}
+      met:
+        A: ["The MRI shows a {level} disc herniation compressing the {side} {root} nerve root, which matches the exam findings."]
+        B: ["MRI {level}: HNP w/ {side} {root} root compression, concordant w/ exam."]
+      not_met:
+        A: ["The imaging shows only mild disc wear without any nerve root compression to explain the symptoms."]
+      uncertain:
+        A: ["A pinched nerve is possible, but no imaging has been done."]
+        B: ["?radiculopathy, no imaging yet."]
+    c6:
+      placement: {section: exam}
+      met:
+        A: ["The patient rates the pain {pain}/10 and the {scale} disability score is {odi}%, with walking and work limited."]
+        B: ["NRS {pain}/10; {scale} {odi}%; walking/work limited."]
+      not_met:
+        A: ["The pain is {low}/10 and daily activities are not limited."]
+      uncertain:
+        A: ["The pain seems significant, but no pain or function score was recorded."]
+    c7:
+      placement: {section: plan}
+      met:
+        A: ["A single-level injection under fluoroscopic guidance with contrast is planned."]
+        B: ["Plan: single-level ESI, fluoro w/ contrast."]
+      not_met:
+        A: ["Four levels in the same region are to be injected in one session."]
+    c8:
+      placement: {section: results, report: prior_procedure}
+      situation:
+        A: ["This is a repeat injection at the same level as before."]
+        B: ["Repeat ESI at same level."]
+      met:
+        A: ["The previous injection {months} months ago brought {pct}% pain relief lasting about {months} months, measured on the same scale as the baseline."]
+        B: ["Prior ESI {months} mo ago: {pct}% relief, lasted ~{months} mo, same scale as baseline."]
+      not_met:
+        A: ["The previous injection {weeks_short} weeks ago gave only about 20% relief, and the same approach and level are planned again without a reason."]
+      uncertain:
+        A: ["The patient thinks the last injection helped somewhat but cannot say how much or for how long."]
+        B: ["Unclear response to prior ESI, pt unable to quantify."]
+    c9:
+      placement: {section: hpi}
+      not_met:
+        A: ["The pain stays in the middle of the low back and does not spread into the legs."]
+        B: ["Axial LBP only; no radiation to legs."]
+      negated:
+        A: ["The pain is not confined to the back; it radiates into the leg."]
+        B: ["Pain not axial-only; radiates to leg."]
+    c10:
+      placement: {section: hpi, report: therapy_summary}
+      met:
+        A: ["The pain has lasted {weeks} weeks, with no relief from {therapy} and anti-inflammatory medicine."]
+        B: ["Pain x{weeks} wks, failed {therapy} + NSAIDs."]
+      not_met:
+        A: ["The pain began {days} days ago, and no treatment has been tried yet."]
+      uncertain:
+        A: ["Some conservative care may have been tried before; the details are not available."]
+        B: ["Prior conservative tx unclear, records unavailable."]
+
+  POL-PAIN-002:
+    c1:
+      placement: {section: exam}
+      met:
+        A: ["The pain sits mainly in the {region}, is {pain}/10, worsens with bending backward and twisting, and the disability score is {odi}%."]
+      not_met:
+        A: ["The {region} pain is mild at {low}/10 and does not limit daily activities."]
+      uncertain:
+        A: ["The pain is described as bothersome, but no severity or disability score is recorded."]
+    c3:
+      placement: {section: results, report: imaging_report}
+      met:
+        A: ["There is no pain or numbness into the limbs, and imaging shows no fracture, tumor or infection."]
+        B: ["No radicular sx; imaging neg for fx, tumor, infection."]
+      not_met:
+        A: ["Pain shoots down the {side} leg below the knee with numbness, and the nerve-root compression has not been treated."]
+      uncertain:
+        A: ["Other causes of the pain have not been fully looked into yet."]
+    c5:
+      placement: {section: plan}
+      met:
+        A: ["The diagnostic block is done with the plan to proceed to radiofrequency ablation at that level if it helps."]
+        B: ["Diagnostic MBB w/ intent for RFA same level if positive."]
+      not_met:
+        A: ["A confirming block at the same level is scheduled only {days} days after the first, with no reason given for the short gap."]
+      uncertain:
+        A: ["Next steps after the block are still being discussed."]
+    c6:
+      placement: {section: hpi, report: therapy_summary}
+      met:
+        A: ["The pain has gone on for {months} months despite physical therapy and medication."]
+        B: ["Pain x{months} mo, failed PT and meds."]
+      not_met:
+        A: ["The pain started {weeks_short} weeks ago, and no therapy has been tried."]
+      uncertain:
+        A: ["The patient has had back trouble on and off, without clear dates or treatment history."]
+
+  POL-REHAB-001:
+    c4:
+      placement: {section: plan}
+      met:
+        A: ["The written plan of care sets the goal to {goal} and schedules therapeutic exercise {freq} times a week for {weeks} weeks."]
+        B: ["POC: goal {goal}; ther ex {freq}x/wk x{weeks} wks."]
+      not_met:
+        A: ["Treatment goes on without a written plan of care."]
+      uncertain:
+        A: ["A plan of care is being worked on."]
+    c5:
+      placement: {section: plan}
+      met:
+        A: ["The plan of care was signed and certified by the referring physician."]
+        B: ["POC signed/certified by referring MD."]
+      not_met:
+        A: ["No physician has signed the plan of care."]
+      uncertain:
+        A: ["The plan of care was sent to the physician."]
+    c6:
+      placement: {section: plan}
+      met:
+        A: ["The sessions include strengthening and balance training that the therapist progresses based on the patient's response."]
+        B: ["Skilled ther ex/balance training progressed by PT per response."]
+      not_met:
+        A: ["The program is simple walking and stretching that the patient can do alone at home."]
+      uncertain:
+        A: ["The exercises to be done are not yet decided."]
+    c7:
+      placement: {section: results, report: therapy_summary}
+      met:
+        A: ["On the {scale} the patient went from {a} to {b} over {weeks} weeks, and further gains are expected."]
+        B: ["{scale}: {a} to {b} over {weeks} wks; expect further gains."]
+      not_met:
+        A: ["Function has stayed the same for {weeks} weeks, and no further improvement is expected."]
+      uncertain:
+        A: ["Progress is hard to judge; no measures were repeated."]
+
+  POL-SURG-001:
+    c1:
+      placement: {section: exam}
+      met:
+        A: ["Glare and blur in the {side} eye make night driving and reading difficult, best-corrected vision is 20/{va} with new glasses, and no other eye disease explains it."]
+        B: ["{side} eye glare/blur; BCVA 20/{va} w/ updated Rx; difficulty driving at night and reading; no other pathology."]
+      not_met:
+        A: ["Vision is 20/25 with glasses, and the patient drives and reads without difficulty."]
+      uncertain:
+        A: ["The patient feels vision is a little worse, but the best-corrected vision was not measured today."]
+    c2:
+      placement: {section: exam}
+      not_met:
+        A: ["The lens is slightly cloudy on exam, but the patient has no complaints about vision."]
+      negated:
+        A: ["The patient does have vision complaints from the cataract."]
+        B: ["Visually symptomatic."]
+    c3:
+      placement: {section: exam}
+      met:
+        A: ["Because the cataract blocks the view of the retina, the diabetic retinopathy in the {side} eye cannot be monitored or treated."]
+      not_met:
+        A: ["The retina can be seen clearly through the lens, and retinopathy treatment is going on without difficulty."]
+      uncertain:
+        A: ["The view of the retina may be getting worse."]
+    c4:
+      placement: {section: plan}
+      met:
+        A: ["Vitrectomy is planned for the {side} eye, which is very likely to speed up cataract growth."]
+      not_met:
+        A: ["No other eye surgery or treatment is planned or ongoing."]
+      uncertain:
+        A: ["Retinal surgery may be needed in the future."]
+
+  POL-SURG-002:
+    c3:
+      placement: {section: results, report: prior_procedure}
+      met:
+        A: ["Both the patient's mother and brother had colon cancer, and the last colonoscopy was {years} years ago."]
+        B: ["FHx CRC mother + brother; last colonoscopy {years}y ago."]
+      not_met:
+        A: ["There is a family history of colon cancer, but the last colonoscopy was only {months_short} months ago."]
+      uncertain:
+        A: ["A relative may have had some kind of bowel cancer; the date of the last colonoscopy is not known."]
+    c4:
+      placement: {section: hpi}
+      met:
+        A: ["The colonoscopy is to look for the cause of {finding}."]
+        B: ["Colonoscopy indication: {finding}."]
+      not_met:
+        A: ["There is mild abdominal discomfort without bleeding, anemia, abnormal imaging or another finding that needs a colonoscopy."]
+      uncertain:
+        A: ["Bowel habits may have changed a little; no further details are recorded."]
+    c5:
+      placement: {section: results, report: prior_procedure}
+      met:
+        A: ["A large adenomatous polyp was taken out {years} years ago, and the follow-up colonoscopy is now due."]
+        B: ["Large adenoma removed {years}y ago; surveillance due now."]
+      not_met:
+        A: ["The ulcerative colitis has stayed limited to the rectum and sigmoid colon for {years} years."]
+      uncertain:
+        A: ["The patient recalls having a polyp at some point but has no records."]
+    c6:
+      placement: {section: hpi}
+      not_met:
+        A: ["The patient has long-standing stable irritable bowel syndrome with unchanged symptoms and asks for a colonoscopy."]
+      negated:
+        A: ["The symptoms are new and not explained by a known stable condition."]
+        B: ["Sx new, not attributable to known stable condition."]
+    c7:
+      placement: {section: results, report: imaging_report}
+      met:
+        A: ["CT colonography showed a {size} mm polyp, and snare removal is planned."]
+        B: ["CTC: {size} mm polyp; plan snare polypectomy."]
+      not_met:
+        A: ["No polyp, bleeding lesion or other lesion needing treatment has been found."]
+      uncertain:
+        A: ["A polyp may have been seen on earlier imaging; the report is not available."]
+
+  POL-SURG-003:
+    c1:
+      placement: {section: results, report: imaging_report}
+      met:
+        A: ["Varicose veins of the {side} great saphenous vein cause aching, swelling and heaviness, and duplex ultrasound shows reflux."]
+      not_met:
+        A: ["The veins are only small branches, and duplex ultrasound shows no great or small saphenous reflux."]
+      uncertain:
+        A: ["Venous reflux is possible; no duplex ultrasound has been done."]
+    c2:
+      placement: {section: hpi}
+      not_met:
+        A: ["Compression stockings have never been tried, and the patient wants the procedure now."]
+      negated:
+        A: ["The veins are symptomatic and conservative measures have been tried."]
+    c3:
+      placement: {section: exam}
+      not_met:
+        A: ["There are small red and blue spider veins on both thighs, and the concern is cosmetic."]
+      negated:
+        A: ["These are not spider veins alone."]
+    c4:
+      placement: {section: hpi, report: therapy_summary}
+      met:
+        A: ["Symptoms continue after 3 months of compression, leg elevation and exercise, and the aching limits walking."]
+      not_met:
+        A: ["The concern is mild and cosmetic only, with no pain, swelling, ulcer or bleeding."]
+      uncertain:
+        A: ["The patient may have worn compression stockings for a while; the dates are unclear."]
+
+  POL-SURG-004:
+    c5:
+      placement: {section: exam}
+      met:
+        A: ["Extra upper eyelid skin hangs onto the lashes of both eyes."]
+        A2: ["The {side} upper lid droops down over the pupil."]
+      not_met:
+        A: ["The eyelids are in a normal position on exam."]
+      uncertain:
+        A: ["The lids may be a little heavy; the position was not measured."]
+    c6:
+      placement: {section: hpi}
+      replace: [not_met]
+      met:
+        A: ["The patient says the lids block the upper part of vision, so reading and driving are hard."]
+        B: ["Pt reports lids obstruct superior vision; difficulty reading, driving."]
+      not_met:
+        A: ["The patient reports that the eyelids cause no trouble with seeing.", "The eyelids do not get in the way of the patient's vision, by the patient's report."]
+        B: ["Pt reports no visual obstruction from lids.", "Lids not affecting vision per pt."]
+      uncertain:
+        A: ["The patient is not sure whether the lids affect vision."]
+    c7:
+      placement: {section: results}
+      met:
+        A: ["With the lids taped up, the upper visual field improves by {deg} degrees on testing."]
+        B: ["VF taped vs untaped: {deg} deg superior gain."]
+      not_met:
+        A: ["The visual fields are full, with only {small} degrees of upper loss."]
+      uncertain:
+        A: ["Visual field testing is to be scheduled."]
+    c8:
+      placement: {section: hpi}
+      not_met:
+        A: ["The patient wants the surgery to look less tired."]
+      negated:
+        A: ["The request is not for appearance."]
+        B: ["Not cosmetic."]
+
+  POL-WOUND-001:
+    c1:
+      placement: {section: plan}
+      met:
+        A: ["Dead tissue was removed from the {size} cm ulcer on the {site} down to the fat layer, with the patient seen one on one."]
+        B: ["Sharp debridement of {size} cm {site} ulcer to subcut tissue, 1:1."]
+      not_met:
+        A: ["Only the dressing was changed; no dead tissue was removed."]
+      uncertain:
+        A: ["The wound was looked at; what was done is not described."]
+    c2:
+      placement: {section: plan}
+      met:
+        A: ["The care plan addresses off-loading, infection control and blood-sugar control so that the wound can close."]
+        B: ["Plan: offloading, infection control, glycemic control; goal closure."]
+      not_met:
+        A: ["No plan addresses off-loading, infection or blood-sugar control."]
+      uncertain:
+        A: ["A care plan will be discussed at the next visit."]
+    c4:
+      placement: {section: results, report: prior_procedure}
+      situation:
+        A: ["Wound care has gone on for {many} weeks."]
+      met:
+        A: ["This is the {nth} debridement; the ulcer has gotten smaller each week, and the treatment plan was reviewed and changed last week."]
+      not_met:
+        A: ["Weekly debridement has continued for {many} weeks with no improvement and no review of the treatment plan."]
+      uncertain:
+        A: ["The wound may be a bit smaller; it was not measured."]
+
+# --- Borderline cases --------------------------------------------------------------------------------
+# For each case: the sentence (by wording) and the slot values. `checks`: slot, comparator, threshold
+# (with `unit` days for dates written as "{slot}" rendered from the visit date, see SPEC.md). The status
+# is MET when the rule holds, otherwise NOT_MET; above = MET, below = NOT_MET.
+borderline:
+  POL-PAIN-001.c10:
+    source: "LCD L33906 v75 cov-014: pain duration of at least four (4) weeks"
+    rule: all
+    checks: [{slot: duration_days, op: ">=", value: 28}]
+    with_not_met: []
+    forms:
+      - A: "The pain has lasted {weeks} weeks, with no relief from {therapy} and anti-inflammatory medicine."
+        B: "Pain x{weeks} wks, failed {therapy} + NSAIDs."
+        derive: {duration_days: "weeks*7"}
+        above: [{weeks: 4}, {weeks: 5}]
+        below: [{weeks: 3}]
+      - A: "The pain began on {onset_date} and has not improved with {therapy} and anti-inflammatory medicine."
+        B: "Onset {onset_date}; no improvement w/ {therapy} + NSAIDs."
+        date_slot: onset_date
+        derive: {duration_days: "onset_date_days"}
+        above: [{onset_date_days: 28}, {onset_date_days: 31}]
+        below: [{onset_date_days: 24}, {onset_date_days: 26}]
+  POL-PAIN-002.c6:
+    source: "LCD L33930 (policy text POL-PAIN-002.c6): pain lasting at least 3 months"
+    rule: all
+    checks: [{slot: duration_months, op: ">=", value: 3}]
+    with_not_met: []
+    forms:
+      - A: "The pain has gone on for {months} months despite physical therapy and medication."
+        B: "Pain x{months} mo, failed PT and meds."
+        derive: {duration_months: "months"}
+        above: [{months: 3}]
+        below: [{months: 2}]
+  POL-PAIN-001.c8:
+    source: "LCD L33906 v75 cov-019: at least 50% improvement in pain for at least three (3) months"
+    rule: all
+    checks: [{slot: pct, op: ">=", value: 50}, {slot: lasted, op: ">=", value: 3}]
+    with_not_met: []
+    forms:
+      - A: "The previous injection {ago} months ago brought {pct}% pain relief lasting about {lasted} months, measured on the same scale as the baseline."
+        B: "Prior ESI {ago} mo ago: {pct}% relief x~{lasted} mo, same scale as baseline."
+        derive: {}
+        above: [{ago: 4, pct: 50, lasted: 3}, {ago: 5, pct: 55, lasted: 3}]
+        below_suffix:
+          A: " The same approach and level are planned again."
+          B: " Same approach/level planned."
+        below: [{ago: 4, pct: 45, lasted: 3}, {ago: 4, pct: 65, lasted: 2}]
+  POL-FOOT-001.c1:
+    source: "Policy text POL-FOOT-001.c1 (LCD and Benefit Policy Manual ch.15 §290): no feeling at 2 or more of 5 sites"
+    rule: all
+    checks: [{slot: sites, op: ">=", value: 2}]
+    with_not_met: []
+    forms:
+      - A: "On monofilament testing the patient cannot feel {sites} of 5 sites on the {side} foot."
+        B: "SWM: {sites}/5 sites insensate {side} foot."
+        derive: {}
+        above: [{sites: 2}]
+        below: [{sites: 1}]
+  POL-SURG-004.c7:
+    source: "Policy text POL-SURG-004.c7: at least 12 degrees or 30 percent"
+    rule: any
+    checks: [{slot: deg, op: ">=", value: 12}, {slot: pct, op: ">=", value: 30}]
+    with_not_met: []
+    forms:
+      - A: "With the lids taped up, the upper visual field improves by {deg} degrees ({pct} percent) on testing."
+        B: "VF taped vs untaped: {deg} deg ({pct}%) superior gain."
+        derive: {}
+        above: [{deg: 12, pct: 24}, {deg: 10, pct: 30}]
+        below: [{deg: 11, pct: 25}, {deg: 10, pct: 22}]
+  POL-SURG-002.c3:
+    source: "Policy text POL-SURG-002.c3: high risk, continued screening every 24 months"
+    rule: all
+    checks: [{slot: since_months, op: ">=", value: 24}]
+    with_not_met: []
+    forms:
+      - A: "Both the patient's mother and brother had colon cancer, and the last colonoscopy was {since_months} months ago."
+        B: "FHx CRC mother + brother; last colonoscopy {since_months} mo ago."
+        derive: {}
+        above: [{since_months: 24}, {since_months: 25}]
+        below: [{since_months: 22}, {since_months: 23}]
+  POL-IMG-001.c2:
+    source: "Policy text POL-IMG-001.c2: a headache lasting more than two weeks that has not responded to treatment"
+    rule: all
+    checks: [{slot: days, op: ">", value: 14}]
+    with_not_met: []
+    forms:
+      - A: "The headaches have continued for {days} days without relief from {medicine}, and the neurological exam is otherwise normal with no change in pattern."
+        B: "HA x{days}d despite {medicine}; neuro exam nl, pattern unchanged."
+        derive: {}
+        above: [{days: 15}, {days: 16}]
+        below: [{days: 13}, {days: 14}]
+  POL-SURG-003.c4:
+    source: "Policy text POL-SURG-003.c4: a failed 3-month trial of conservative therapy"
+    rule: all
+    checks: [{slot: trial_weeks, op: ">=", value: 13}]
+    with_not_met: [POL-SURG-003.c2]  # under 3 months, the c2 exclusion's situation is present too
+    forms:
+      - A: "Aching that limits walking continues after {trial_weeks} weeks of compression stockings, leg elevation and exercise."
+        B: "Aching limiting ambulation after {trial_weeks} wks compression/elevation/exercise."
+        derive: {}
+        above: [{trial_weeks: 13}, {trial_weeks: 14}]
+        below: [{trial_weeks: 10}, {trial_weeks: 11}]
