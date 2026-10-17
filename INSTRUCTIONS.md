@@ -433,7 +433,9 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 ### 8.8 Human decision review (`app/review/`)
 
 - Queue contains every claim in `AWAITING_REVIEW`, sortable by tier.
-- Actions: **ACCEPT**, or **OVERRIDE** individual line decisions with a **required** reason.
+- Actions: **ACCEPT**, or **OVERRIDE** individual line decisions with a **required** reason. A
+  DENY or PEND override also names a reason code from the allowed list, which becomes the line's
+  reason code; the provider sees that reason and its codes, never the free-text reason (D-REV-9).
 - Reviewers **cannot enter amounts**. After an override, the calculator re-runs on the new line
   decisions.
 - On finalization: status → `FINAL_*`, accumulators updated for approved lines, audit event written.

@@ -149,6 +149,31 @@ export function reason(code: string | null | undefined): string {
   return REASONS[code] ? `${REASONS[code]} (${code})` : code;
 }
 
+/** The reason codes a reviewer gives a Deny or Pend override (D-REV-9; the API's list,
+ *  app/review/actions.py OVERRIDE_REASONS). The provider sees the reason and its codes. */
+export const OVERRIDE_REASONS: Record<"DENY" | "PEND", string[]> = {
+  DENY: [
+    "DN_NOT_MEDICALLY_NECESSARY",
+    "DN_CONDITIONAL_EXCLUSION",
+    "DN_NCCI_BUNDLED",
+    "DN_MUE_EXCEEDED",
+    "DN_EXCLUDED",
+    "DN_MULTIPLE_BLOCKS",
+    "DN_DX_NOT_SUPPORTED",
+    "DN_HOME_TEST_PARASOMNIA",
+    "DN_ESI_LEVELS",
+    "DN_FACET_LEVELS",
+    "DN_VISIT_LIMIT",
+  ],
+  PEND: ["PD_MISSING_DOCUMENTATION", "PD_PROVIDER_ENROLLMENT"],
+};
+
+/** A reason code's label for a choice list: "Documentation is missing (PD_MISSING_DOCUMENTATION)". */
+export function reasonOption(code: string): string {
+  const text = REASONS[code] ?? code;
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)} (${code})`;
+}
+
 export const LOW_CONFIDENCE = 0.85; // EXTRACTION_CONFIDENCE_MIN
 
 /** The review queue's flags (app/workflow/review.py queue_flags): facts the record holds. */

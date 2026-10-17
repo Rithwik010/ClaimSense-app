@@ -13,30 +13,51 @@ const LINE: LineState = {
   candidates: ["PHYSICAL_THERAPY", "CHIROPRACTIC"],
   decision: "DENY",
   category: "PHYSICAL_THERAPY",
+  reasonCode: "DN_NOT_MEDICALLY_NECESSARY",
   reason: "",
 };
 
 function Harness({ start }: { start: LineState }) {
   const [line, setLine] = useState(start);
-  return <OverrideForm line={line} error={check([line]).errors[1]} onChange={setLine} />;
+  const checked = check([line]);
+  return <OverrideForm line={line} error={checked.errors[1]} field={checked.fields[1]} onChange={setLine} />;
 }
 
 describe("override form", () => {
-  it("labels every input and asks for a reason", async () => {
+  it("labels every input and asks for a note", async () => {
     const user = userEvent.setup();
     render(<Harness start={LINE} />);
 
     expect(screen.getByLabelText("New decision for line 1")).toBeInTheDocument();
     expect(screen.queryByLabelText("Benefit category")).not.toBeInTheDocument(); // not approved
-    expect(screen.getByText("Give a reason for changing line 1.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Reason (required)")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("Reason (required)")).toHaveTextContent(
+      "Not medically necessary under the coverage criteria (DN_NOT_MEDICALLY_NECESSARY)",
+    );
+    expect(screen.getByText("Write a note for changing line 1.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Note (required)")).toHaveAttribute("aria-invalid", "true");
 
-    await user.type(screen.getByLabelText("Reason (required)"), "Not medically necessary.");
-    expect(screen.queryByText("Give a reason for changing line 1.")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Note (required)"), "Not medically necessary.");
+    expect(screen.queryByText("Write a note for changing line 1.")).not.toBeInTheDocument();
+  });
+
+  it("asks for a reason code first on a line changed to deny or pend", () => {
+    render(<Harness start={{ ...LINE, reasonCode: null, reason: "Repeat test this month." }} />);
+
+    expect(screen.getByText("Choose a reason for line 1.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Reason (required)")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("Note (required)")).toHaveAttribute("aria-invalid", "false");
+  });
+
+  it("shows no reason choice for an approved line", () => {
+    render(<Harness start={{ ...LINE, decision: "APPROVE", reasonCode: null, reason: "Covered." }} />);
+
+    expect(screen.queryByLabelText("Reason (required)")).not.toBeInTheDocument();
   });
 
   it("asks for the benefit category only on an approved line with several", () => {
-    render(<Harness start={{ ...LINE, decision: "APPROVE", category: null, reason: "Billed by a chiropractor." }} />);
+    render(
+      <Harness start={{ ...LINE, decision: "APPROVE", category: null, reasonCode: null, reason: "Billed by a chiropractor." }} />,
+    );
 
     expect(screen.getByLabelText("Benefit category")).toBeInTheDocument();
     expect(screen.getByText("Choose a benefit category for line 1.")).toBeInTheDocument();

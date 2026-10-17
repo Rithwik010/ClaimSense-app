@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { DecisionRecord } from "../api/types";
-import { check, initialLines, needsCategory, type LineState } from "./form";
+import { check, initialLines, needsCategory, needsReasonCode, withDecision, type LineState } from "./form";
 
 function record(): DecisionRecord {
   return {
@@ -44,22 +44,41 @@ describe("review form", () => {
     const lines = initialLines(record());
 
     expect(lines.map((l) => [l.lineNo, l.editable])).toEqual([[1, true], [2, true], [3, false]]);
-    expect(check(lines)).toEqual({ changed: [], overrides: [], errors: {} });
+    expect(check(lines)).toEqual({ changed: [], overrides: [], errors: {}, fields: {} });
   });
 
-  it("needs a reason for every changed line", () => {
+  it("needs a reason code for a line changed to deny or pend, then a note", () => {
     const lines = edit(initialLines(record()), 2, { decision: "DENY" });
 
-    expect(check(lines).errors).toEqual({ 2: "Give a reason for changing line 2." });
-    const fixed = check(edit(lines, 2, { reason: "  No change since last MRI.  " }));
+    expect(check(lines).errors).toEqual({ 2: "Choose a reason for line 2." });
+    expect(check(lines).fields).toEqual({ 2: "reasonCode" });
+    const coded = edit(lines, 2, { reasonCode: "DN_NOT_MEDICALLY_NECESSARY" });
+    expect(check(coded).errors).toEqual({ 2: "Write a note for changing line 2." });
+    expect(check(coded).fields).toEqual({ 2: "reason" });
+    const fixed = check(edit(coded, 2, { reason: "  No change since last MRI.  " }));
     expect(fixed.errors).toEqual({});
-    expect(fixed.overrides).toEqual([{ line_no: 2, decision: "DENY", reason: "No change since last MRI." }]);
+    expect(fixed.overrides).toEqual([
+      { line_no: 2, decision: "DENY", reason: "No change since last MRI.", reason_code: "DN_NOT_MEDICALLY_NECESSARY" },
+    ]);
   });
 
-  it("treats a blank reason as missing", () => {
+  it("asks for a reason code on deny and pend only, and drops one the new decision does not allow", () => {
+    const line = initialLines(record())[0] as LineState;
+
+    expect(needsReasonCode({ ...line, decision: "DENY" })).toBe(true);
+    expect(needsReasonCode({ ...line, decision: "PEND" })).toBe(true);
+    expect(needsReasonCode(line)).toBe(false); // approve
+    const denied = { ...withDecision(line, "DENY"), reasonCode: "DN_VISIT_LIMIT" };
+    expect(withDecision(denied, "PEND").reasonCode).toBeNull();
+    expect(withDecision(denied, "APPROVE").reasonCode).toBeNull();
+    const pended = { ...withDecision(line, "PEND"), reasonCode: "PD_MISSING_DOCUMENTATION" };
+    expect(withDecision(pended, "PEND").reasonCode).toBe("PD_MISSING_DOCUMENTATION");
+  });
+
+  it("treats a blank note as missing", () => {
     const lines = edit(initialLines(record()), 2, { decision: "APPROVE", reason: "   " });
 
-    expect(check(lines).errors[2]).toBe("Give a reason for changing line 2.");
+    expect(check(lines).errors[2]).toBe("Write a note for changing line 2.");
   });
 
   it("asks for a category only on an approved line with several candidates", () => {
@@ -81,9 +100,15 @@ describe("review form", () => {
   });
 
   it("sends no category for a line moved away from approve", () => {
-    const lines = edit(initialLines(record()), 1, { decision: "PEND", reason: "Need notes." });
+    const lines = edit(initialLines(record()), 1, {
+      decision: "PEND",
+      reasonCode: "PD_MISSING_DOCUMENTATION",
+      reason: "Need notes.",
+    });
 
-    expect(check(lines).overrides).toEqual([{ line_no: 1, decision: "PEND", reason: "Need notes." }]);
+    expect(check(lines).overrides).toEqual([
+      { line_no: 1, decision: "PEND", reason: "Need notes.", reason_code: "PD_MISSING_DOCUMENTATION" },
+    ]);
   });
 });
 

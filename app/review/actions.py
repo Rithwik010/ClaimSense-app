@@ -5,9 +5,12 @@ ReviewAction to the final line decisions and final status. Pure functions; the w
 - ACCEPT keeps every line decision as it is, with its source and reason codes.
 - OVERRIDE changes the decision, the benefit category, or both, of lines the model or the output
   validation decided; rule outcomes (R11-R13 line denials) are automatic and never overridden
-  (D-REV-2). An overridden line gets source REVIEWER and no reason codes; every other line keeps
-  its own. An APPROVE line's category is the reviewer's, else the line's current (model) one, else
-  the line's only candidate category in the record's context (D-REV-4).
+  (D-REV-2). An overridden line gets source REVIEWER; every other line keeps its own reason codes.
+  An APPROVE line's category is the reviewer's, else the line's current (model) one, else the
+  line's only candidate category in the record's context (D-REV-4).
+- A DENY or PEND override names its reason code, one of OVERRIDE_REASONS, which becomes the line's
+  reason code (its CARC/RARC and plain reason follow from it); an APPROVE override names none and
+  the line has no reason code (D-REV-9). The reviewer's free-text reason stays in the audit trail.
 - The final status follows the claim-decision rule of §8.5: any PEND -> FINAL_PENDED, all DENY ->
   FINAL_DENIED, all APPROVE -> FINAL_APPROVED, APPROVE and DENY -> FINAL_PARTIAL.
 - Approved lines count toward the stored accumulators at finalization, FINAL_PENDED included
@@ -40,6 +43,28 @@ FINAL_STATUS = {
 }
 
 
+# D-REV-9: the reason codes a reviewer may give. DENY: the line-level denial codes with approved
+# CARC/RARC mappings (the model's, then the rules' in rule order, R11 to R21); the claim-level rule
+# reasons (R05 to R10) are not line reasons. PEND: the pend reasons (no CARC, D-CARC-1);
+# MODEL_OUTPUT_INVALID is an internal marker, not a reason.
+OVERRIDE_REASONS: dict[LineDecision, tuple[str, ...]] = {
+    LineDecision.DENY: (
+        "DN_NOT_MEDICALLY_NECESSARY",
+        "DN_CONDITIONAL_EXCLUSION",
+        "DN_NCCI_BUNDLED",
+        "DN_MUE_EXCEEDED",
+        "DN_EXCLUDED",
+        "DN_MULTIPLE_BLOCKS",
+        "DN_DX_NOT_SUPPORTED",
+        "DN_HOME_TEST_PARASOMNIA",
+        "DN_ESI_LEVELS",
+        "DN_FACET_LEVELS",
+        "DN_VISIT_LIMIT",
+    ),
+    LineDecision.PEND: ("PD_MISSING_DOCUMENTATION", "PD_PROVIDER_ENROLLMENT"),
+}
+
+
 class ReviewRefused(ValueError):
     """The review cannot be applied as given (HTTP 422); the claim stays AWAITING_REVIEW."""
 
@@ -68,6 +93,16 @@ def _overridden(
                 f"line {n}: {override.benefit_category} is not one of the line's candidate "
                 f"categories ({', '.join(candidates) or 'none'})"
             )
+    allowed = OVERRIDE_REASONS.get(override.decision, ())
+    if override.reason_code is not None and not allowed:
+        raise ReviewRefused(f"line {n}: a reason code goes with a DENY or PEND decision only")
+    if allowed and override.reason_code is None:
+        raise ReviewRefused(f"line {n}: a {override.decision.value} override needs a reason code")
+    if allowed and override.reason_code not in allowed:
+        raise ReviewRefused(
+            f"line {n}: {override.reason_code} is not a reason for a {override.decision.value} "
+            f"override ({', '.join(allowed)})"
+        )
     category = line.benefit_category
     if override.decision is LineDecision.APPROVE:
         category = override.benefit_category or line.benefit_category
@@ -85,7 +120,7 @@ def _overridden(
         decision=override.decision,
         benefit_category=category,
         source="REVIEWER",
-        reason_codes=[],
+        reason_codes=[override.reason_code] if override.reason_code else [],
     )
 
 
@@ -115,14 +150,15 @@ def review_decisions(record: DecisionRecord, action: ReviewAction) -> list[Final
 def changes(
     record: DecisionRecord, action: ReviewAction, decisions: list[FinalLineDecision]
 ) -> list[dict[str, object]]:
-    """Every overridden line before and after, with the reviewer's reason (for the audit trail;
-    never for the logs, the reason may hold clinical detail)."""
+    """Every overridden line before and after, with the reviewer's reason and reason code (for the
+    audit trail; never for the logs or the provider, the reason may hold clinical detail)."""
     before = {line.line_no: line for line in record.line_decisions}
     after = {line.line_no: line for line in decisions}
     return [
         {
             "line_no": override.line_no,
             "reason": override.reason,
+            "reason_code": override.reason_code,
             "before": before[override.line_no].model_dump(mode="json", exclude={"line_no"}),
             "after": after[override.line_no].model_dump(mode="json", exclude={"line_no"}),
         }

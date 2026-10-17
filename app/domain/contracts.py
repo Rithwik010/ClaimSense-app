@@ -391,6 +391,9 @@ class LineOverride(Contract):
     # D-REV-4 (approved change, 2026-10-08): the benefit category for an APPROVE override, one of
     # the line's candidate categories; checked by app/review/actions.py.
     benefit_category: BenefitCategory | None = None
+    # D-REV-9 (approved change, 2026-10-17): the internal reason code of a DENY or PEND override,
+    # one of the allowed override reasons; checked by app/review/actions.py.
+    reason_code: NonBlank | None = None
 
 
 class ReviewAction(Contract):

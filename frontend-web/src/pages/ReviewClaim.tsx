@@ -1,6 +1,7 @@
 // Review claim (§8.8; the demo's main screen, DESIGN.md): the stage strip, the service lines with
 // their criteria and quotes, and the clinical note. "Override line" opens a side sheet with the
-// new decision, a required reason and, only when needed, the benefit category. One primary action:
+// new decision, a required reason code for Deny or Pend (D-REV-9; the provider sees it), only when
+// needed the benefit category, and a required note for the audit trail. One primary action:
 // "Accept recommendation", or "Finalize claim" once a line is overridden; both are confirmed.
 // Reviewers never enter amounts: the calculator recomputes them.
 
@@ -27,31 +28,51 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
-import { answerErrors, DECISION, TIER } from "@/lib/labels";
+import { answerErrors, DECISION, reasonOption, TIER } from "@/lib/labels";
 import { useUser } from "@/lib/auth";
-import { check, initialLines, isChanged, needsCategory, type LineState } from "@/review/form";
+import {
+  check,
+  initialLines,
+  isChanged,
+  needsCategory,
+  needsReasonCode,
+  reasonCodes,
+  withDecision,
+  type FormField,
+  type LineState,
+} from "@/review/form";
 import { ChangedAmounts } from "./ClaimDetail";
 
 const DECISIONS: LineDecision[] = ["APPROVE", "PEND", "DENY"];
 
-/** The override form inside the side sheet; `error` is shown once the reviewer tries to save. */
+/** The override form inside the side sheet; `error` is shown under its `field` once the reviewer
+ *  tries to save. */
 export function OverrideForm({
   line,
   error,
+  field = "reason",
   onChange,
 }: {
   line: LineState;
   error?: string;
+  field?: FormField;
   onChange: (next: LineState) => void;
 }) {
   const id = `override-${line.lineNo}`;
+  const errorOn = (name: FormField) => (error && field === name ? error : undefined);
+  const errorText = (name: FormField) =>
+    errorOn(name) && (
+      <p id={`${id}-${name}-error`} className="text-[13px] font-semibold text-deny">
+        {errorOn(name)}
+      </p>
+    );
   return (
     <div className="grid gap-5 px-6">
       <div className="grid gap-1.5">
         <label htmlFor={`${id}-decision`} className="font-semibold">
           New decision for line {line.lineNo}
         </label>
-        <Select value={line.decision} onValueChange={(value) => onChange({ ...line, decision: value as LineDecision })}>
+        <Select value={line.decision} onValueChange={(value) => onChange(withDecision(line, value as LineDecision))}>
           <SelectTrigger id={`${id}-decision`} className="w-full">
             <SelectValue />
           </SelectTrigger>
@@ -70,7 +91,12 @@ export function OverrideForm({
             Benefit category
           </label>
           <Select value={line.category ?? ""} onValueChange={(value) => onChange({ ...line, category: value || null })}>
-            <SelectTrigger id={`${id}-category`} className="w-full">
+            <SelectTrigger
+              id={`${id}-category`}
+              className="w-full"
+              aria-invalid={Boolean(errorOn("category"))}
+              aria-describedby={errorOn("category") ? `${id}-category-error` : undefined}
+            >
               <SelectValue placeholder="Choose a category" />
             </SelectTrigger>
             <SelectContent>
@@ -81,26 +107,54 @@ export function OverrideForm({
               ))}
             </SelectContent>
           </Select>
+          {errorText("category")}
+        </div>
+      )}
+      {needsReasonCode(line) && (
+        <div className="grid gap-1.5">
+          <label htmlFor={`${id}-code`} className="font-semibold">
+            Reason (required)
+          </label>
+          <Select value={line.reasonCode ?? ""} onValueChange={(value) => onChange({ ...line, reasonCode: value || null })}>
+            <SelectTrigger
+              id={`${id}-code`}
+              className="w-full"
+              aria-invalid={Boolean(errorOn("reasonCode"))}
+              aria-describedby={errorOn("reasonCode") ? `${id}-reasonCode-error` : `${id}-code-hint`}
+            >
+              <SelectValue placeholder="Choose a reason" />
+            </SelectTrigger>
+            <SelectContent>
+              {reasonCodes(line.decision).map((code) => (
+                <SelectItem key={code} value={code}>
+                  {reasonOption(code)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p id={`${id}-code-hint`} className="text-[13px] text-ink-muted">
+            The provider sees this reason with its adjustment codes.
+          </p>
+          {errorText("reasonCode")}
         </div>
       )}
       <div className="grid gap-1.5">
         <label htmlFor={`${id}-reason`} className="font-semibold">
-          Reason (required)
+          Note (required)
         </label>
         <Textarea
           id={`${id}-reason`}
           rows={4}
           value={line.reason}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
+          aria-invalid={Boolean(errorOn("reason"))}
+          aria-describedby={errorOn("reason") ? `${id}-reason-error` : `${id}-reason-hint`}
           placeholder="What in the note or the policy supports this decision"
           onChange={(event) => onChange({ ...line, reason: event.target.value })}
         />
-        {error && (
-          <p id={`${id}-error`} className="text-[13px] font-semibold text-deny">
-            {error}
-          </p>
-        )}
+        <p id={`${id}-reason-hint`} className="text-[13px] text-ink-muted">
+          Kept in the audit trail for reviewers; the provider never sees it.
+        </p>
+        {errorText("reason")}
       </div>
     </div>
   );
@@ -165,11 +219,13 @@ function Review({
   const checked = check(lines);
   const overridden = checked.changed.length;
   const byLine = new Map(lines.map((l) => [l.lineNo, l]));
+  const draftCheck = editing ? check([editing]) : undefined;
   const draftError = editing
     ? isChanged(editing)
-      ? check([editing]).errors[editing.lineNo]
+      ? draftCheck?.errors[editing.lineNo]
       : "Choose a different decision or category to override the line."
     : undefined;
+  const draftField: FormField | undefined = editing ? draftCheck?.fields[editing.lineNo] : undefined;
 
   const lineActions = (line: FinalLineDecision) => {
     const state = byLine.get(line.line_no);
@@ -193,7 +249,7 @@ function Review({
               setLines((all) =>
                 all.map((l) =>
                   l.lineNo === state.lineNo
-                    ? { ...l, decision: l.original.decision, category: l.original.category, reason: "" }
+                    ? { ...l, decision: l.original.decision, category: l.original.category, reasonCode: null, reason: "" }
                     : l,
                 ),
               );
@@ -254,11 +310,16 @@ function Review({
               <SheetHeader className="px-6 pt-6">
                 <SheetTitle className="text-[18px] font-semibold">Override line {editing.lineNo}</SheetTitle>
                 <SheetDescription className="text-ink-muted">
-                  Recommended: {DECISION[editing.original.decision].label.toLowerCase()}. The reason is kept in the
-                  audit trail.
+                  Recommended: {DECISION[editing.original.decision].label.toLowerCase()}. The provider sees the
+                  reason; the note stays in the audit trail.
                 </SheetDescription>
               </SheetHeader>
-              <OverrideForm line={editing} error={showError ? draftError : undefined} onChange={setEditing} />
+              <OverrideForm
+                line={editing}
+                error={showError ? draftError : undefined}
+                field={draftField}
+                onChange={setEditing}
+              />
               <SheetFooter className="flex-row gap-3 px-6 pb-6">
                 <Button
                   onClick={() => {

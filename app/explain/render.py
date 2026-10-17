@@ -261,6 +261,7 @@ def view(
                         "line_no": o.line_no,
                         "decision": DECISION_LABELS[o.decision],
                         "reason": o.reason,
+                        "reason_code": reason(o.reason_code) if o.reason_code else "",
                         "benefit_category": o.benefit_category,
                     }
                     for o in review.line_overrides

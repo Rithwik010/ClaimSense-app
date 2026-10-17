@@ -263,10 +263,19 @@ def _coinsurance_bps(session: Session, record: DecisionRecord) -> int | None:
     return plan.oon_coinsurance_bps
 
 
+def without_review(record: DecisionRecord) -> DecisionRecord:
+    """The record as a provider sees it (D-REV-9): without the review, so never the reviewer's ID,
+    comment or free-text reasons. A reviewer's DENY or PEND line keeps its reason code, which gives
+    its plain reason and CARC/RARC."""
+    return record.model_copy(update={"review": None})
+
+
 def _provider_view(session: Session, row: Claim, settings: Settings) -> ProviderClaimView:
     claim_status = ClaimStatus(row.status)
     final = claim_status in FINAL_STATUSES
     record = latest_record(session, row.claim_id) if final else None
+    if record is not None:
+        record = without_review(record)
     outcome = claim_outcome(claim_status, record)
     return ProviderClaimView(
         claim_id=row.claim_id,
@@ -700,7 +709,8 @@ def get_explanation(
     fmt: Annotated[Literal["html", "text"], Query(alias="format")] = "html",
 ) -> HTMLResponse | PlainTextResponse:
     """The explanation of the claim's latest decision record: an HTML fragment or plain text. A
-    provider gets it for their own claim once it is final (409 while it is in review)."""
+    provider gets it for their own claim once it is final (409 while it is in review), without the
+    review section (D-REV-9: never the reviewer's free-text reasons)."""
     row = _own_claim(session, claim_id, user)
     if user.role is Role.PROVIDER and ClaimStatus(row.status) not in FINAL_STATUSES:
         raise HTTPException(
@@ -709,6 +719,8 @@ def get_explanation(
     record = latest_record(session, claim_id)
     if record is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"claim {claim_id} has no decision yet")
+    if user.role is Role.PROVIDER:
+        record = without_review(record)
     body = render(record, fmt, procedure_codes(row.intake))
     return HTMLResponse(body) if fmt == "html" else PlainTextResponse(body)
 
