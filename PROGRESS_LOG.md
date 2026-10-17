@@ -506,6 +506,12 @@ Kaggle copy for anything model-related.
   - **Checks.** Local, with data/raw: pytest 2,698 passed, 1 skipped (live model); ruff, format and import contracts pass. Web: lint, typecheck, 113 unit tests and build pass. Playwright 53/53 on a fresh database: the member spec checks axe (no serious or critical issue) and the 390, 768 and 1440 px layouts. CI run 39458922076 passed (Python 2,334 passed, 66 skipped; web 113).
 
 - 2026-10-27 22:10 | Claude | p9.3 merge | Member pages (D-MEM-1 to D-MEM-3) rebased onto main (with v3) and merged. Checks: local pytest 2,797 passed, 1 skipped; web 115; `make offline-check` OK (e2e 250, privacy 30); `make model-check` OK (claimsense-decision:v3); Playwright 53/53; CI run 40528438246 passed (2,418 passed, 81 skipped). Existing tests: additions only. **Next:** p7, p9.1, docs/project-info; then the docs pass.
+- 2026-10-17 11:11 | Manideep3183 | Visit limit rule | **R21 on branch `p7-visit-limit-review-codes` (worktree `../claimsense-rules`, from `main`; not merged; `4f94957`).** D-RULE-10, D-CARC-3.
+  - **Rule:** one visit per date of service in a visit-limited category (today REHAB_THERAPY, 20-30 a year); visits used in the benefit year first, then the claim's dates in order; a line on a date beyond the limit is denied `DN_VISIT_LIMIT` before the model; a date whose lines another rule denies uses no visit; a low-confidence date or code gives REJECT (H5). `RULES_VERSION` 2.2.0.
+  - **Codes:** group PR, CARC 119 with RARC N640 (official X12 lists of 2026-10-11); plain reason "the plan's yearly visit limit for this service is used up".
+  - **Impact** (`scripts/verify/visit_limit_impact.py`): 0 of 2,600 v1 and 0 of 2,600 v2 dataset claims change, 0 of 120 v3 pilot sheets; the nine demo claims keep their rule outcomes; no golden value changes.
+  - **README:** prototype limits added (physician review of denials; specialty, authorization number and units, referral on file; frequency limits and follow-up periods; decision deadlines; corrected and voided claims; separate reports).
+  - **Tests (local, data/raw, no Postgres):** Python 1,849 passed, 525 skipped (database tests: the demo stack is down and was not started); web 58 passed.
 
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
