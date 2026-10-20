@@ -824,11 +824,17 @@ def _year_to_date(session: Session, claim_id: str, plan: Plan | None) -> YearToD
 
 
 @router.get("/{claim_id}/eob")
-def get_eob(claim_id: str, session: SessionDep, settings: SettingsDep, user: AnyUser) -> PatientEob:
+def get_eob(claim_id: str, session: SessionDep, user: AnyUser) -> PatientEob:
     """The patient's explanation of benefits of a decided claim (D-EOB-1): finalized by a
     reviewer, or denied by the rules. 409 for any other claim: in review, rejected (returned
     without processing) or on hold by the rules. A provider's own claims only."""
-    row = _own_claim(session, claim_id, user)
+    return claim_eob(session, _own_claim(session, claim_id, user))
+
+
+def claim_eob(session: Session, row: Claim) -> PatientEob:
+    """The EOB of a claim the caller may open (also the member's own, D-MEM-2); 409 when the
+    plan has not decided it."""
+    claim_id = row.claim_id
     claim_status = ClaimStatus(row.status)
     record = latest_record(session, claim_id)
     if claim_status not in EOB_STATUSES or record is None:

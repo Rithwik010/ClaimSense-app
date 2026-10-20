@@ -1,7 +1,9 @@
-"""Request dependencies. Tests override `get_engine`, `get_decision_model` and `get_retriever`.
-Every endpoint but login, logout and /health needs a logged-in user of the right role (D-AUTH-1)."""
+"""Request dependencies. Tests override `get_engine`, `get_decision_model`, `get_retriever` and
+`get_today`. Every endpoint but login, logout and /health needs a logged-in user of the right role
+(D-AUTH-1)."""
 
 from collections.abc import Callable, Iterator
+from datetime import date
 from functools import lru_cache
 from typing import Annotated
 
@@ -46,6 +48,11 @@ def get_retriever() -> Retriever:
         top_k=settings.rag_top_k,
         min_score=settings.rag_min_score,
     )
+
+
+def get_today() -> date:
+    """Today on the API's clock: it picks the member's current benefit year (D7, D-MEM-3)."""
+    return date.today()
 
 
 def _token(request: Request) -> str | None:
@@ -105,4 +112,9 @@ ProviderUser = Annotated[AuthUser, Depends(require(Role.PROVIDER))]
 ReviewerUser = Annotated[AuthUser, Depends(require(Role.REVIEWER))]
 StaffUser = Annotated[AuthUser, Depends(require(Role.REVIEWER, Role.ADMIN))]
 AdminUser = Annotated[AuthUser, Depends(require(Role.ADMIN))]
+# The claims endpoints' users: a provider gets their own view, anyone else the staff view, so a
+# member is never admitted here (403); a member has their own routes (app/api/member.py, D-MEM-2).
 AnyUser = Annotated[AuthUser, Depends(require(Role.PROVIDER, Role.REVIEWER, Role.ADMIN))]
+member_only = require(Role.MEMBER)  # also the member router's own guard (one check per request)
+MemberUser = Annotated[AuthUser, Depends(member_only)]
+LoggedInUser = Annotated[AuthUser, Depends(require(*Role))]  # any role: who is logged in

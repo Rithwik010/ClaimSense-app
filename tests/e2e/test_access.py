@@ -1,6 +1,8 @@
 """D-AUTH-1: logins and who may do what. Every endpoint for every role (allowed, or 403), not
 logged in (401), a provider opening another provider's claim (404), what a provider sees before
-and after a claim is final, the session cookie, and expired, tampered or stale tokens (401)."""
+and after a claim is final, the session cookie, and expired, tampered or stale tokens (401). The
+member role (D-MEM-1) is in the matrix: its own routes only, every other route 403 (what a member
+sees is in test_member.py)."""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -21,6 +23,7 @@ from tests.e2e.support import (
     TEST_PASSWORD,
     TEST_SECRET,
     StubModel,
+    add_member_user,
     bearer,
     process_case,
 )
@@ -77,14 +80,22 @@ def endpoints() -> list[tuple[str, str, dict[str, Any], set[str]]]:
             {"reviewer"},
         ),
         ("POST", f"/v1/claims/{CLAIM}/review", {"json": wrong_claim}, {"reviewer"}),
-        ("GET", "/v1/auth/me", {}, everyone),
+        ("GET", "/v1/auth/me", {}, everyone | {"member"}),
+        # D-MEM-1: the member's own routes, members only; `everyone` above never has a member.
+        ("GET", "/v1/member/claims", {}, {"member"}),
+        ("GET", f"/v1/member/claims/{CLAIM}", {}, {"member"}),
+        ("GET", f"/v1/member/claims/{CLAIM}/eob", {}, {"member"}),
+        ("GET", "/v1/member/benefits", {}, {"member"}),
+        ("GET", "/v1/member/profile", {}, {"member"}),
     ]
 
 
-def test_every_endpoint_for_every_role(api, load_case_reference) -> None:  # noqa: ANN001
+def test_every_endpoint_for_every_role(api, load_case_reference, engine) -> None:  # noqa: ANN001
     client = process_case(api, load_case_reference, "E2E-14")
+    member = E2E_CASES["E2E-14"]["given"]["claim"]["member_id"]  # the claim's patient
+    who = WHO | {"member": add_member_user(engine, member)}
     for method, path, kwargs, allowed in endpoints():
-        for role, headers in WHO.items():
+        for role, headers in who.items():
             response = client.request(method, path, headers=headers, **kwargs)
             if role in allowed:
                 assert response.status_code not in (401, 403), (method, path, role, response.text)

@@ -425,12 +425,14 @@ class ClaimDocument(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
-USER_ROLES = ("provider", "reviewer", "admin")
+USER_ROLES = ("provider", "reviewer", "admin", "member")
 
 
 class User(Base):
     """A person who logs in (D-AUTH-1). The role decides what they may do; a provider user also
-    has the provider ID (an NPI from the demo data) their claims are filed under."""
+    has the provider ID (an NPI from the demo data) their claims are filed under, and a member user
+    (a patient, D-MEM-1, migration 0011) the member ID whose claims, benefits and profile they see.
+    No other role has either."""
 
     __tablename__ = "users"
     __table_args__ = (
@@ -439,6 +441,9 @@ class User(Base):
             "(role = 'provider') = (provider_id IS NOT NULL)", name="provider_id_for_providers"
         ),
         CheckConstraint("provider_id ~ '^[0-9]{10}$'", name="provider_id_ten_digits"),
+        CheckConstraint(
+            "(role = 'member') = (member_id IS NOT NULL)", name="member_id_for_members"
+        ),
     )
 
     username: Mapped[str] = mapped_column(String(64), primary_key=True)  # the review actor
@@ -446,6 +451,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(Text)  # Argon2 (pwdlib)
     role: Mapped[str] = mapped_column(String(16))
     provider_id: Mapped[str | None] = mapped_column(String(10))
+    # A member user's member ID: a member on file (the reference data), never one made up here.
+    member_id: Mapped[str | None] = mapped_column(ForeignKey("members.member_id"))
     active: Mapped[bool] = mapped_column(Boolean, server_default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

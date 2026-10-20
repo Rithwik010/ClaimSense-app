@@ -1,4 +1,6 @@
-"""Users in the database (D-AUTH-1): authentication, the logged-in user, and the demo seed."""
+"""Users in the database (D-AUTH-1): authentication, the logged-in user, and the demo seed. A
+provider user has the provider ID their claims are filed under; a member user (D-MEM-1) the
+member ID of the patient they are."""
 
 from dataclasses import dataclass
 
@@ -15,10 +17,11 @@ class AuthUser:
     display_name: str
     role: Role
     provider_id: str | None
+    member_id: str | None = None
 
 
 def _user(row: User) -> AuthUser:
-    return AuthUser(row.username, row.display_name, Role(row.role), row.provider_id)
+    return AuthUser(row.username, row.display_name, Role(row.role), row.provider_id, row.member_id)
 
 
 def authenticate(session: Session, username: str, password: str) -> AuthUser | None:
@@ -42,12 +45,14 @@ def put_user(
     role: Role,
     password: str,
     provider_id: str | None = None,
+    member_id: str | None = None,
 ) -> None:
     """Create or update a user, active, with a new password hash (the caller commits)."""
     row = session.get(User, username) or User(username=username)
     row.display_name = display_name
     row.role = role.value
     row.provider_id = provider_id
+    row.member_id = member_id
     row.password_hash = hash_password(password)
     row.active = True
     session.add(row)

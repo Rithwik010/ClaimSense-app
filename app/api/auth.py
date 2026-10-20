@@ -1,14 +1,15 @@
 """Login, logout and the logged-in user (D-AUTH-1). Login and logout are public; the session is a
 signed token in an httpOnly, SameSite=Strict cookie that expires after 8 hours. Logout deletes the
-cookie (a copied token stays valid until it expires: prototype)."""
+cookie (a copied token stays valid until it expires: prototype). A member user (D-MEM-1) is told
+their member ID too; the other roles' answers are as before."""
 
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy.orm import Session
 
-from app.api.deps import AnyUser, get_session
+from app.api.deps import LoggedInUser, get_session
 from app.auth.tokens import COOKIE, SESSION_HOURS, create_token
 from app.auth.users import AuthUser, authenticate
 from app.core.logging import get_logger
@@ -28,6 +29,8 @@ class UserView(BaseModel):
     display_name: str
     role: str
     provider_id: str | None
+    # A member user's member ID; left out for every other role.
+    member_id: str | None = Field(default=None, exclude_if=lambda v: v is None)
 
 
 def _view(user: AuthUser) -> UserView:
@@ -36,6 +39,7 @@ def _view(user: AuthUser) -> UserView:
         display_name=user.display_name,
         role=user.role.value,
         provider_id=user.provider_id,
+        member_id=user.member_id,
     )
 
 
@@ -79,5 +83,5 @@ def logout(response: Response) -> None:
 
 
 @router.get("/me")
-def me(user: AnyUser) -> UserView:
+def me(user: LoggedInUser) -> UserView:
     return _view(user)

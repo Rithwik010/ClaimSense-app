@@ -16,6 +16,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from app.calculator.money import apply_bps
+from app.calculator.remaining import remaining_cents
 from app.domain.contracts import (
     AmountTotals,
     CostBreakdown,
@@ -182,8 +183,11 @@ def calculate(
         if other_coverage
         else {}
     )
-    oop_remaining = max(terms.oop_max_cents - accumulators.oop_met_cents, 0)
-    deductible_remaining = max(terms.deductible_cents - accumulators.deductible_met_cents, 0)
+    # The same remaining amounts the member's benefits page shows (app/calculator/remaining.py).
+    oop_remaining = remaining_cents(terms.oop_max_cents, accumulators.oop_met_cents)
+    deductible_remaining = remaining_cents(
+        terms.deductible_cents, accumulators.deductible_met_cents
+    )
     oop_added = deductible_added = 0
     results = []
     for line in lines:
