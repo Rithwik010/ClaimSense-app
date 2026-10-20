@@ -457,7 +457,7 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
         found = sorted((round_dir / "output").rglob(name))
         return found[0] if found else round_dir / "output" / name
 
-    notes, answers, broken = [], [], 0
+    notes, answers, looks, broken = [], [], [], 0
     for row in read_jsonl(output("notes_out.jsonl")):
         job = jobs[row["job_id"]]
         text, neutral = neutral_words(clean_note(row["text"]))
@@ -478,6 +478,25 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
     for row in read_jsonl(output("verifier_out.jsonl")):
         job = jobs.get(row["job_id"]) or {}
         sheet_id, attempt = row["sheet_id"], row["attempt"]
+        if row["job_id"].startswith("look-"):  # one missing or absent fact, asked alone
+            try:
+                quote = parse_verifier(row["text"]).get(1)
+            except ValueError as exc:
+                broken += 1
+                quote, error = None, str(exc)
+            else:
+                error = None
+            looks.append(
+                {
+                    "sheet_id": sheet_id,
+                    "attempt": attempt,
+                    "fact_id": row["job_id"].rsplit(":", 1)[1],
+                    "quote": quote,
+                    "error": error,
+                    "model": row.get("model"),
+                }
+            )
+            continue
         items = verifier_items(sheets[sheet_id])
         try:
             parsed = parse_verifier(row["text"])
@@ -497,6 +516,7 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
     found = {
         "notes": append_jsonl(out_dir / "notes.jsonl", notes),
         "verifier": append_jsonl(out_dir / "verifier.jsonl", answers),
+        "second_looks": append_jsonl(out_dir / "second_look.jsonl", looks),
         "verifier_unparsed": broken,
     }
     marker.write_text(json.dumps(found) + "\n")
@@ -510,6 +530,10 @@ def run_gate(out_dir: Path = OUT_DIR) -> dict[str, Any]:
     sheets = load_sheets(out_dir)
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     verifier = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
+    looks: dict[tuple[str, int], dict[str, str | None]] = {}
+    for row in read_jsonl(out_dir / "second_look.jsonl"):
+        if row.get("error") is None:  # an unreadable second look is asked again
+            looks.setdefault((row["sheet_id"], row["attempt"]), {})[row["fact_id"]] = row["quote"]
     results = []
     tallies: dict[str, Counter[str]] = {}
     reasons: Counter[str] = Counter()
@@ -520,16 +544,18 @@ def run_gate(out_dir: Path = OUT_DIR) -> dict[str, Any]:
         if answer is not None:
             answers = answer.get("answers")
         known = {k: tuple(v) for k, v in note["spans"].items()} if note.get("spans") else None
-        result = check_note(sheet, note["note"], known, answers)
+        result = check_note(
+            sheet, note["note"], known, answers, looks.get((sheet_id, note["attempt"]))
+        )
         if answer is not None and answers is None:
             result.failures.append(f"verifier answer unreadable: {answer.get('error')}")
             result.verifier_pending = False
         if result.failures:  # a local check failed: the note is rewritten, not sent for verifying
             result.verifier_pending = False
-        if not result.failures and not result.verifier_pending:
+        if not result.failures and not result.verifier_pending and not result.looks:
             _, problems = filled_target(sheet, note["note"], result.spans)
             result.failures += problems
-        status = "pending" if result.verifier_pending else ("passed" if result.passed else "failed")
+        status = "pending" if result.pending else ("passed" if result.passed else "failed")
         tallies.setdefault(f"{sheet['writer']} attempt {note['attempt']}", Counter())[status] += 1
         for failure in result.failures:
             reasons[_reason_kind(failure)] += 1
@@ -539,8 +565,9 @@ def run_gate(out_dir: Path = OUT_DIR) -> dict[str, Any]:
                 "attempt": note["attempt"],
                 "writer": sheet["writer"],
                 "passed": result.passed,
-                "pending": result.verifier_pending,
+                "pending": result.pending,
                 "failures": result.failures,
+                "looks": result.looks,
                 "spans": {k: list(v) for k, v in result.spans.items()},
                 "local_spans": result.local_spans,
             }

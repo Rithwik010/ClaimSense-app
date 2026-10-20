@@ -1,0 +1,246 @@
+"""The v3 gate's matching (training/generate/v3/verify.py; the gate fix of 20 Oct, D-V3-12).
+
+- quote to fact: a verifier quote that states another fact is replaced by the note's own sentence
+  for this one, or fails the note; a terse quote of the right fact counts; a fact split over
+  adjacent sentences, written with short forms or with a spelled-out number is found; a
+  contradiction only word for word; a value counts only as a number of its own;
+- the claim's own wording: naming the requested procedure is no leak, while a sentence that states
+  the missing fact beyond it still fails the note, and a diagnosis line is not waved through;
+- the second look: a leak finding counts only when the verifier, asked about that fact alone,
+  finds it again; the fact's own negative mention is no leak, but its flip is.
+
+Synthetic sentences only.
+"""
+
+import pytest
+
+from training.generate.v3 import verify
+from training.generate.v3.verify import (
+    check_note,
+    claim_words,
+    expand,
+    has_value,
+    missing_matches,
+    stated_locally,
+    words,
+)
+
+EYELIDS = "The patient says the eyelids block the upper vision, making reading and driving hard."
+TAPED = "With the lids taped up, the upper visual field improves by 12 degrees on testing."
+CARE_PLAN = (
+    "The care plan covers off-loading, infection control and blood-sugar management to help the "
+    "wound close."
+)
+PROCEDURE = "Removal of dead tissue from a wound down to the fat layer, first 20 square cm or less"
+
+
+@pytest.fixture(autouse=True)
+def _no_label_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The label recomputation (check 4) needs a whole fact sheet; these tests are about matching.
+    monkeypatch.setattr(verify, "label_problems", lambda *args: [])
+
+
+def documented(fid: str, text: str, values: list[str] | None = None, **extra: object) -> dict:
+    return {
+        "fact_id": fid,
+        "kind": "criterion",
+        "status": "documented",
+        "label_status": "MET",
+        "text": {"A": text},
+        "values": values or [],
+        **extra,
+    }
+
+
+def sheet(*facts: dict, procedures: list[str] | None = None, diagnoses: list[str] | None = None):
+    return {
+        "sheet_id": "S-TEST",
+        "writer": "B",
+        "facts": list(facts),
+        "procedures": procedures or [],
+        "diagnoses": [{"code": "X", "description": d} for d in diagnoses or []],
+    }
+
+
+def wound_missing() -> dict:
+    return {
+        "fact_id": "F2",
+        "kind": "criterion",
+        "status": "missing",
+        "label_status": "NOT_DOCUMENTED",
+        "missing_text": "What was removed from the wound, how deep, and the wound size",
+        "forbidden": [
+            "Dead tissue was removed from the {size} cm ulcer on the {site} down to the fat "
+            "layer, with the patient seen one on one.",
+            "Only the dressing was changed; no dead tissue was removed.",
+        ],
+    }
+
+
+# --- quote to fact -------------------------------------------------------------------------------
+
+
+def test_a_quote_that_states_another_fact_gives_way_to_the_notes_own_sentence() -> None:
+    note = f"HPI: {EYELIDS}\nRESULTS: {TAPED}"
+    facts = sheet(documented("F1", EYELIDS), documented("F2", TAPED, ["12"]))
+    result = check_note(facts, note, None, {"F1": TAPED, "F2": TAPED})
+    assert result.failures == []
+    assert note[slice(*result.spans["F1"])] == EYELIDS
+    assert result.local_spans == ["F1"]
+
+
+def test_a_mixed_up_quote_fails_the_note_when_the_fact_is_not_there() -> None:
+    note = f"HPI: Reading is fine.\nRESULTS: {TAPED}"
+    facts = sheet(documented("F1", EYELIDS), documented("F2", TAPED, ["12"]))
+    result = check_note(facts, note, None, {"F1": TAPED, "F2": TAPED})
+    assert "F1: the quote does not state the fact" in result.failures
+
+
+def test_a_terse_quote_of_the_right_fact_counts() -> None:
+    note = "Plan: Off-loading, infection control, blood sugar mgmt. Return in 1 week."
+    result = check_note(
+        sheet(documented("F1", CARE_PLAN)),
+        note,
+        None,
+        {"F1": "Off-loading, infection control, blood sugar mgmt."},
+    )
+    assert result.failures == []
+    assert result.local_spans == []
+
+
+def test_a_fact_split_over_adjacent_sentences_or_written_short_is_found() -> None:
+    fact = documented(
+        "F1",
+        "Memory problems have grown over 19 months, and the results will guide treatment.",
+        ["19"],
+    )
+    note = "Memory problems for 19 mos, grew; results will guide tx. Exam unremarkable."
+    span = stated_locally(note, fact)
+    assert span is not None
+    assert note[slice(*span)] == "Memory problems for 19 mos, grew; results will guide tx."
+    assert {"month", "treatment"} <= words("Memory problems for 19 mos; guide tx")
+    assert expand("Pt c/o LBP, failed PT") == (
+        "patient complains of low back pain, failed physical therapy"
+    )
+
+
+def test_a_spelled_out_number_is_the_value() -> None:
+    fact = documented(
+        "F1", "Forgetfulness has worsened over 9 months, and testing will help.", ["9"]
+    )
+    note = "Forgetfulness has worsened over the past nine months, and testing will help."
+    assert stated_locally(note, fact) is not None
+
+
+def test_a_value_counts_only_as_a_number_of_its_own() -> None:
+    weeks = ["The pain has lasted 5 weeks."]
+    assert has_value("pain x5wks", "5", weeks)
+    assert has_value("pain for 5 weeks", "5", weeks)
+    assert not has_value("MRI C5-C6 disc", "5", weeks)  # a spinal level, not the 5 weeks
+    assert not has_value("Oswestry 44%", "4", ["The first injection 4 months ago."])
+    assert not has_value("pain 5/10", "5", weeks)
+    assert has_value("MRI C5-C6 disc", "5", ["MRI C5-C6: disc herniation."])  # the fact's own form
+    assert has_value("SWM: 2/5 sites insensate", "2", ["SWM: 2/5 sites insensate left foot."])
+    assert has_value("pain 7/10", "7/10")
+
+
+def test_a_contradiction_is_found_only_word_for_word() -> None:
+    fact = {
+        **documented("F1", "Symptoms have lasted 8 weeks despite physical therapy.", ["8"]),
+        "status": "contradicted",
+        "original": {"A": "The pain began 6 days ago, and no treatment has been tried."},
+    }
+    exact = "Update: Symptoms have lasted 8 weeks despite physical therapy."
+    assert stated_locally(exact, fact) is not None
+    assert stated_locally("Symptoms lasted 8 weeks despite PT.", fact) is None
+    copied = "Copied: The pain began 6 days ago, and no treatment has been tried."
+    assert stated_locally(copied, fact, original=True) is not None
+
+
+# --- the claim's own wording ---------------------------------------------------------------------
+
+
+def test_naming_the_requested_procedure_is_no_leak() -> None:
+    facts = sheet(wound_missing(), procedures=[PROCEDURE])
+    note = (
+        "The plan involves removal of dead tissue from the wound down to the fat layer, with the "
+        "first 20 square cm or less to be treated."
+    )
+    assert missing_matches(note, wound_missing()["forbidden"], claim_words(facts)) == []
+    result = check_note(facts, note, None, {"F2": note})
+    assert result.failures == []
+    assert result.looks == []  # mostly the procedure's own words: not even a second look
+
+
+def test_stating_the_missing_fact_beyond_the_procedure_wording_still_fails() -> None:
+    facts = sheet(wound_missing(), procedures=[PROCEDURE])
+    note = (
+        "Dead tissue was removed from the 4 cm ulcer on the left foot down to the fat layer, "
+        "with the patient seen one on one."
+    )
+    result = check_note(facts, note, None, {"F2": None})
+    assert any("missing fact appears" in f for f in result.failures)
+
+
+def test_a_diagnosis_line_is_not_waved_through() -> None:
+    heart = {
+        "fact_id": "F1",
+        "kind": "criterion",
+        "status": "missing",
+        "label_status": "NOT_DOCUMENTED",
+        "missing_text": "Heart symptoms or a known heart condition that call for an echocardiogram",
+        "forbidden": ["Shortness of breath on stairs and leg swelling suggest heart failure."],
+    }
+    facts = sheet(heart, diagnoses=["Chronic systolic (congestive) heart failure"])
+    note = "A/P: Chronic systolic (congestive) heart failure (I50.22)."
+    result = check_note(facts, note, None, {"F1": note})
+    assert result.looks == ["F1"]  # the verifier is asked again: a diagnosis can document it
+
+
+# --- the second look -----------------------------------------------------------------------------
+
+
+def score_missing() -> dict:
+    return {
+        "fact_id": "F1",
+        "kind": "criterion",
+        "status": "missing",
+        "label_status": "NOT_DOCUMENTED",
+        "missing_text": "A pain score recorded before treatment",
+        "forbidden": ["The patient rates pain {pain}/10 on a numeric scale today."],
+    }
+
+
+def test_a_leak_finding_counts_only_when_the_second_look_finds_it_again() -> None:
+    note = "Exam: tender lumbar paraspinals. Pain is 7 of 10 today."
+    cited = "Pain is 7 of 10 today."  # too few of the wording's words for the local check
+    first = check_note(sheet(score_missing()), note, None, {"F1": cited})
+    assert first.looks == ["F1"] and first.pending and not first.passed
+    again = check_note(sheet(score_missing()), note, None, {"F1": cited}, {"F1": cited})
+    assert any("found the missing fact twice" in f for f in again.failures)
+    cleared = check_note(sheet(score_missing()), note, None, {"F1": cited}, {"F1": None})
+    assert cleared.passed
+
+
+def test_a_quote_about_something_else_is_no_finding() -> None:
+    note = "Exam: tender lumbar paraspinals. Gait is steady."
+    result = check_note(sheet(score_missing()), note, None, {"F1": "Gait is steady."})
+    assert result.passed and result.looks == []
+
+
+def test_the_exclusions_own_negative_mention_is_no_leak_but_its_flip_is() -> None:
+    cataract = {
+        "fact_id": "F2",
+        "kind": "criterion",
+        "status": "absent",
+        "label_status": "NOT_APPLICABLE",
+        "role": "exclusion",
+        "forbidden": [
+            "The lens is slightly cloudy on exam, but the patient has no vision complaints."
+        ],
+        "negated": {"A": "The patient does have vision complaints from the cataract."},
+    }
+    own = "The patient does have vision complaints from the cataract."
+    assert check_note(sheet(cataract), own, None, {"F2": own}).passed
+    flipped = "The patient does not have vision complaints from the cataract."
+    assert check_note(sheet(cataract), flipped, None, {"F2": flipped}).looks == ["F2"]

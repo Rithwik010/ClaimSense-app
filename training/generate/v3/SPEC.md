@@ -251,15 +251,32 @@ Every note must pass:
 7. **No near-duplicates** across the train, validation and test splits (5-word shingles, Jaccard of
    `verification.near_duplicate_jaccard` or more).
 
-The verifier's quotes (D-V3-10): a quote it paraphrased stands for the note sentence it matches
-(word overlap of `verification.fuzzy_quote_overlap` or more), and the evidence is that sentence,
-copied exactly; "null" written as text is no quote; for a missing or absent fact, a quote that cites
-nothing in the note, another documented fact's sentence, or the fact's own hedged or negative
-mention is no finding (the local word-overlap check still runs). A documented fact the verifier
-does not find is looked for in the note itself: its own wording, else one sentence with
-`verification.local_fact_overlap` of its content words, every value and the same polarity (never
-for a contradicted fact). Model notes get "denies" written as
-"reports no" and "pending" as "awaited" before the gate.
+The verifier's quotes (D-V3-10, D-V3-12). Words are compared with the writers' short forms
+written out (phrases/abbreviations.yaml), hyphenated and slashed words split and a plural "s"
+dropped. A value counts only as a number of its own (not the 4 of 44% or the 5 of C5, unless the
+fact's own wording writes it so), or spelled out.
+
+- A quote the verifier paraphrased stands for the note passage it matches (word overlap of
+  `verification.fuzzy_quote_overlap` or more), and the evidence is that passage, copied exactly;
+  "null" written as text is no quote.
+- A documented fact's quote must be about it: `verification.quote_overlap` of its words, and not
+  another stated fact's sentence (one holding `verification.rival_overlap` of that fact's words
+  and fitting it by `verification.rival_margin` more); the verifier sometimes gives one fact's
+  quote to the next. A fact the verifier missed, or quoted wrongly, is looked for in the note
+  itself: its own wording, else the sentence, or the fewest adjacent sentences on one line (up to
+  three), with `verification.local_fact_overlap` of its words, every value and the same polarity.
+  A contradicted fact and its copied statement only word for word.
+- For a missing or absent fact, the verifier's quote is no finding when it cites nothing in the
+  note, another documented fact's sentence, the fact's own hedged or negative mention (with the
+  same polarity: a flipped negation is a leak), a hedge while no wording is hedged, for an
+  exclusion the opposite polarity to every wording, a passage `verification.procedure_share` made
+  of the claim's own procedure wording (naming the requested procedure documents nothing), or a
+  passage with less than `verification.finding_overlap` of every wording's words. Any other
+  finding gets a second look: the verifier is asked about that fact alone (in the same Kaggle
+  session for the notes it verifies there), and the finding counts only when it finds it again.
+  The local word-overlap check leaves the claim's procedure wording out the same way.
+
+Model notes get "denies" written as "reports no" and "pending" as "awaited" before the gate.
 
 A failing note is regenerated, up to `verification.max_regenerations` times. Pass rates are tracked
 per writer. Each split is drawn with `sizes_margin` extra fact sheets, so that sheets still failing

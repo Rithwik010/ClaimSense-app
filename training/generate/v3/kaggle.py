@@ -123,16 +123,21 @@ def round_jobs(limit: int | None = None, out_dir: Path = OUT_DIR) -> tuple[list[
                 "messages": writer_messages(sheet),
                 "sampling": _sampling(name),
                 "statements": [
-                    {"id": s["id"], "statement": s["statement"]} for s in statements(sheet)
+                    {
+                        "id": s["id"],
+                        "statement": s["statement"],
+                        "fact_id": s["fact_id"],
+                        "expect": s["expect"],
+                    }
+                    for s in statements(sheet)
                 ],
             }
         )
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     answered = {(v["sheet_id"], v["attempt"]) for v in read_jsonl(out_dir / "verifier.jsonl")}
+    gate = read_jsonl(out_dir / "gate.jsonl")
     failed = {  # failed the local checks already (run the gate first): rewritten, not verified
-        (g["sheet_id"], g["attempt"])
-        for g in read_jsonl(out_dir / "gate.jsonl")
-        if not g["passed"] and not g["pending"]
+        (g["sheet_id"], g["attempt"]) for g in gate if not g["passed"] and not g["pending"]
     }
     skip = answered | failed
     verify: list[dict] = []
@@ -156,7 +161,31 @@ def round_jobs(limit: int | None = None, out_dir: Path = OUT_DIR) -> tuple[list[
                 "messages": verifier_messages(note["note"], items),
             }
         )
+        absent = [item["fact_id"] for item in items if item["expect"] == "absent"]
+        verify += second_looks(sheets[sheet_id], note, absent)
+    for row in gate:  # earlier notes whose leak finding waits for the second look
+        note = notes.get(row["sheet_id"])
+        if row.get("looks") and note and note["attempt"] == row["attempt"]:
+            verify += second_looks(sheets[row["sheet_id"]], note, row["looks"])
     return writers, verify
+
+
+def second_looks(sheet: dict, note: dict, fact_ids: list[str]) -> list[dict]:
+    """The verifier asked again about each of these missing or absent facts alone (verify.py
+    `check_note`: a leak finding counts only when this answer finds it too)."""
+    items = {item["fact_id"]: item for item in statements(sheet)}
+    return [
+        {
+            "job_id": f"look-{sheet['sheet_id']}#{note['attempt']}:{fid}",
+            "sheet_id": sheet["sheet_id"],
+            "attempt": note["attempt"],
+            "writer": note["writer"],
+            "seed": 0,
+            "messages": verifier_messages(note["note"], [{**items[fid], "id": 1}]),
+        }
+        for fid in fact_ids
+        if fid in items
+    ]
 
 
 def estimate_hours(writers: list[dict], verify: list[dict]) -> dict[str, float]:
@@ -175,9 +204,10 @@ def estimate_hours(writers: list[dict], verify: list[dict]) -> dict[str, float]:
                 LOAD_SECONDS + prompt / PROMPT_TOKENS_PER_SECOND + output / OUTPUT_TOKENS_PER_SECOND
             ) / 3600
     model_notes = len(writers)
-    jobs = len(verify) + model_notes
+    looks = sum(s["expect"] == "absent" for j in writers for s in j["statements"])
+    jobs = len(verify) + model_notes + looks
     if jobs:
-        prompt = sum(tokens(j["messages"]) for j in verify) + model_notes * 1800
+        prompt = sum(tokens(j["messages"]) for j in verify) + (model_notes + looks) * 1800
         found["verifier"] = (
             LOAD_SECONDS + prompt / PROMPT_TOKENS_PER_SECOND + jobs * 350 / OUTPUT_TOKENS_PER_SECOND
         ) / 3600
@@ -309,6 +339,9 @@ def prepare_round(round_no: int, limit: int | None = None, out_dir: Path = OUT_D
         "folder": str(folder),
         "writer_jobs": {w: sum(j["writer"] == w for j in writers) for w in ("B", "C")},
         "verifier_jobs": len(verify) + len(writers),
+        "second_looks_in_session": sum(
+            s["expect"] == "absent" for j in writers for s in j["statements"]
+        ),
         "gpu_hours_estimate": estimate_hours(writers, verify),
         "upload_check": "passed",
     }

@@ -143,7 +143,10 @@ verification:
   fuzzy_quote_overlap: 0.8  # a paraphrased quote counts as the note sentence it matches this well
   local_fact_overlap: 0.6   # share of a documented fact's words a passage holds, when the verifier misses it
   quote_overlap: 0.2        # share of a documented fact's words the verifier's quote must hold, else the note's own text is used
-  finding_overlap: 0.25     # share of a missing fact's words (and of its non-claim words) a verifier finding must hold
+  rival_overlap: 0.6        # a quote holding this share of another stated fact's words ...
+  rival_margin: 0.4         # ... and fitting it this much better is that fact's quote, not this one's
+  finding_overlap: 0.15     # a verifier finding for a missing fact must hold this share of one of its wordings' words
+  procedure_share: 0.6      # a passage this much made of the claim's procedure wording documents nothing
 
 # --- Open-weight models on Kaggle (Phase 3, Phase 4) ------------------------------------------------
 llm:

@@ -5,8 +5,9 @@
 A stage loads one open-weight model with vLLM and answers its jobs in one batch:
 
 - writer_b, writer_c: `writers.jsonl` jobs of that writer (chat messages) -> notes_out.jsonl;
-- verifier: `verify.jsonl` jobs (writer A notes, messages ready) and every note the writers wrote in
-  this session (messages built from run.json's verifier template and the job's statements)
+- verifier: `verify.jsonl` jobs (writer A notes and second looks, messages ready) and every note the
+  writers wrote in this session (messages built from run.json's verifier template and the job's
+  statements), each missing or absent fact of those also asked alone (a second look, `look-` jobs)
   -> verifier_out.jsonl.
 
 Each stage is its own process, so the GPUs are free again when it exits. It records the model's
@@ -75,6 +76,11 @@ def main() -> None:
             items.append(
                 ({**job, "job_id": f"verify-{row['job_id']}"}, messages, stage["sampling"])
             )
+            for statement in job["statements"]:  # each missing or absent fact asked alone too
+                if statement.get("expect") == "absent":
+                    alone = verifier_messages(run, row["text"], [{**statement, "id": 1}])
+                    look = {**job, "job_id": f"look-{row['job_id']}:{statement['fact_id']}"}
+                    items.append((look, alone, stage["sampling"]))
         out_path = args.out / "verifier_out.jsonl"
     done = {row["job_id"] for row in read_jsonl(out_path)}  # a rerun skips what is saved
     items = [item for item in items if item[0]["job_id"] not in done]

@@ -85,10 +85,31 @@ def words(text: str) -> set[str]:
     return found
 
 
-def has_value(text: str, value: str) -> bool:
-    """Whether a passage holds a fact's value: as written, or a whole number spelled out."""
-    if value in text:
-        return True
+def _number_contexts(value: str, text: str) -> set[str]:
+    """What stands right before and after each whole-number occurrence of `value` in a text: a
+    capital letter or . , / before it (C5, 1.5), or . , / and a digit after it (2/5)."""
+    found = set()
+    for match in re.finditer(rf"(?<!\d){value}(?!\d)", text):
+        before = text[match.start() - 1] if match.start() else ""
+        after = text[match.end() : match.end() + 2]
+        if before.isupper() or (before and before in ".,/"):
+            found.add("before " + before)
+        if len(after) == 2 and after[0] in ".,/" and after[1].isdigit():
+            found.add("after " + after[0])
+    return found
+
+
+def has_value(text: str, value: str, wordings: Iterable[str] = ()) -> bool:
+    """Whether a passage holds a fact's value. A whole number must stand as a number of its own:
+    not inside a longer number, a score, a date or a decimal (4 in 44% or 4/10), or a spinal level
+    (5 in C5), unless the fact's own wordings write it that way (C5-C6, 2/5 sites); it may be
+    spelled out. Any other value (7/10, a date) as written."""
+    if not value.isdigit():
+        return value in text
+    allowed = set().union(*(_number_contexts(value, w) for w in wordings))
+    for match in re.finditer(rf"(?<!\d){value}(?!\d)", text):
+        if _number_contexts(value, text[max(0, match.start() - 1) : match.end() + 2]) <= allowed:
+            return True
     word = NUMBER_WORDS.get(value)
     return word is not None and re.search(rf"\b{word}\b", text, re.IGNORECASE) is not None
 
@@ -125,10 +146,16 @@ class GateResult:
     spans: dict[str, tuple[int, int]] = field(default_factory=dict)
     verifier_pending: bool = False
     local_spans: list[str] = field(default_factory=list)  # found by `stated_locally`
+    looks: list[str] = field(default_factory=list)  # leak findings awaiting the second look
+
+    @property
+    def pending(self) -> bool:
+        """Waiting for the verifier, or for its second look at a leak finding."""
+        return not self.failures and (self.verifier_pending or bool(self.looks))
 
     @property
     def passed(self) -> bool:
-        return not self.failures and not self.verifier_pending
+        return not self.failures and not self.verifier_pending and not self.looks
 
 
 def content_words(text: str) -> set[str]:
@@ -225,7 +252,7 @@ def stated_locally(note: str, fact: Mapping[str, Any], original: bool = False) -
                 passage = note[span[0] : span[1]]
                 if _negative(passage) != negative:
                     continue
-                if not all(has_value(passage, v) for v in values):
+                if not all(has_value(passage, v, texts) for v in values):
                     continue
                 found = share(text, passage)
                 if found > best_share:
@@ -235,22 +262,42 @@ def stated_locally(note: str, fact: Mapping[str, Any], original: bool = False) -
     return None
 
 
-def _about(note: str, span: Span, fact: Mapping[str, Any], original: bool) -> bool:
+def _about(
+    note: str,
+    span: Span,
+    fact: Mapping[str, Any],
+    original: bool,
+    rivals: Sequence[str] = (),
+) -> bool:
     """Whether a passage is about a documented fact: it holds `verification.quote_overlap` of one
-    wording's content words (a verifier sometimes gives one fact's quote to the next)."""
+    wording's content words, and it is not another fact's statement (a verifier sometimes gives
+    one fact's quote to the next): no wording of the note's other stated facts (`rivals`) has
+    `verification.rival_overlap` of its words in it and fits it by `verification.rival_margin`
+    more."""
     passage = note[span[0] : span[1]]
     texts = (fact.get("original" if original else "text") or {}).values()
-    threshold = config()["verification"]["quote_overlap"]
-    return any(share(text, passage) >= threshold for text in texts)
+    cfg = config()["verification"]
+    own = max((share(text, passage) for text in texts), default=0.0)
+    if own < cfg["quote_overlap"]:
+        return False
+    rival = max((share(text, passage) for text in rivals), default=0.0)
+    return not (rival >= cfg["rival_overlap"] and rival >= own + cfg["rival_margin"])
 
 
-def _states(note: str, span: Span, fact: Mapping[str, Any], original: bool) -> bool:
+def _states(
+    note: str,
+    span: Span,
+    fact: Mapping[str, Any],
+    original: bool,
+    rivals: Sequence[str] = (),
+) -> bool:
     """Whether the passage the verifier quoted for a documented fact states it: about the fact,
     with every value."""
     passage = note[span[0] : span[1]]
-    if not original and not all(has_value(passage, v) for v in fact.get("values") or []):
+    texts = list((fact.get("text") or {}).values())
+    if not original and not all(has_value(passage, v, texts) for v in fact.get("values") or []):
         return False
-    return _about(note, span, fact, original)
+    return _about(note, span, fact, original, rivals)
 
 
 def _find(note: str, quote: str) -> Span | None:
@@ -262,15 +309,10 @@ def _overlaps(a: Span, b: Span) -> bool:
 
 
 def claim_words(sheet: Mapping[str, Any]) -> frozenset[str]:
-    """The content words of the claim's own procedure and diagnosis descriptions, which a note
-    names anyway: they never make a sentence state a missing fact."""
-    text = " ".join(
-        [
-            *(sheet.get("procedures") or []),
-            *(d["description"] for d in sheet.get("diagnoses") or []),
-        ]
-    )
-    return frozenset(words(text))
+    """The content words of the claim's own procedure descriptions, which a note names anyway (the
+    plan): naming what is requested never documents why. Diagnoses are not left out: a diagnosis
+    can document a condition a criterion asks for."""
+    return frozenset(words(" ".join(sheet.get("procedures") or [])))
 
 
 def missing_matches(
@@ -281,8 +323,8 @@ def missing_matches(
 ) -> list[str]:
     """Note sentences that state a missing fact: they hold `verification.missing_overlap` of one of
     its wordings' content words, and as much of the words that are not the claim's own procedure
-    or diagnosis wording. A wording made only of those words is skipped; sentences in `own` (the
-    fact's own hedged or negative mention) are left out."""
+    wording. A wording made only of those words is skipped; sentences in `own` (the fact's own
+    hedged or negative mention) are left out."""
     threshold = config()["verification"]["missing_overlap"]
     own = list(own)
     found = []
@@ -330,14 +372,27 @@ def check_note(
     note: str,
     known_spans: Mapping[str, tuple[int, int]] | None,
     verifier: Mapping[str, str | None] | None,
+    second_look: Mapping[str, str | None] | None = None,
 ) -> GateResult:
     """Checks 1 to 5 for one note. `known_spans`: writer A's fact spans (None for a model note,
     whose spans come from the verifier's quotes); `verifier`: {fact_id: quote or None} for the
-    verifier's statements (llm.statements), None while it has not run."""
+    verifier's statements (llm.statements), None while it has not run; `second_look`:
+    {fact_id: quote or None}, the verifier asked again about one missing or absent fact alone,
+    when its first answer found it (`result.looks` lists the findings still waiting for it)."""
     cfg = config()["verification"]
     result = GateResult(sheet_id=sheet["sheet_id"], writer=sheet["writer"])
     result.verifier_pending = verifier is None
     facts = {f["fact_id"]: f for f in sheet["facts"]}
+    statements: dict[str, list[str]] = {}  # every stated fact's wordings, by id
+    for fact in sheet["facts"]:
+        if _stated(fact):
+            statements[fact["fact_id"]] = list(fact["text"].values())
+            if fact["status"] == "contradicted":
+                statements[f"{fact['fact_id']}:original"] = list(fact["original"].values())
+
+    def rivals(fid: str) -> list[str]:
+        return [text for other, texts in statements.items() if other != fid for text in texts]
+
     for fact in sheet["facts"]:
         if not _stated(fact):
             continue
@@ -352,7 +407,7 @@ def check_note(
             elif verifier is not None:
                 quoted = verifier.get(fid)
                 span = _find(note, quoted) if quoted else None
-                if span is None or not _states(note, span, fact, original):
+                if span is None or not _states(note, span, fact, original, rivals(fid)):
                     # missed, a quote too far from any sentence, or one that states another fact
                     local = stated_locally(note, fact, original)
                     if local is not None:
@@ -367,14 +422,15 @@ def check_note(
                 continue
             quote = note[span[0] : span[1]]
             if not original:
-                missing = [v for v in fact.get("values") or [] if not has_value(quote, v)]
+                texts = list(fact["text"].values())
+                missing = [v for v in fact.get("values") or [] if not has_value(quote, v, texts)]
                 if missing:
                     result.failures.append(f"{fid}: quote lacks the values {missing}")
                 if len(quote.split()) < cfg["min_quote_words"]:
                     result.failures.append(
                         f"{fid}: quote shorter than {cfg['min_quote_words']} words"
                     )
-            if known_spans is None and not _about(note, span, fact, original):
+            if known_spans is None and not _about(note, span, fact, original, rivals(fid)):
                 result.failures.append(f"{fid}: the quote does not state the fact")
             result.spans[fid] = span
         if fact["status"] == "contradicted":
@@ -402,16 +458,25 @@ def check_note(
             result.failures.append(
                 f"{fact['fact_id']}: {fact['status']} fact appears: {hits[0][:80]!r}"
             )
-        quote = verifier.get(fact["fact_id"]) if verifier is not None else None
-        if quote and _a_finding(note, quote, fact, result.spans, claim, mentions):
+        fid = fact["fact_id"]
+        quote = verifier.get(fid) if verifier is not None else None
+        if not (quote and _a_finding(note, quote, fact, result.spans, claim, mentions)):
+            continue
+        if second_look is None or fid not in second_look:
+            result.looks.append(fid)  # asked again, about this fact alone, before it counts
+            continue
+        again = second_look[fid]
+        if again and _a_finding(note, again, fact, result.spans, claim, mentions):
             result.failures.append(
-                f"{fact['fact_id']}: the verifier found the {fact['status']} fact: {quote[:80]!r}"
+                f"{fid}: the verifier found the {fact['status']} fact twice: {again[:80]!r}"
             )
     leaked = leaks(note)
     if leaked:
         result.failures.append(f"leakage: {sorted(set(leaked))}")
     if not result.verifier_pending and not result.failures:
         result.failures += label_problems(sheet, result.spans, facts)
+    if result.failures:
+        result.looks = []  # the note is rewritten anyway
     return result
 
 
@@ -423,34 +488,32 @@ def _a_finding(
     claim: frozenset[str] = frozenset(),
     mentions: Sequence[Span] = (),
 ) -> bool:
-    """Whether the verifier's quote for a missing or absent fact counts. Not when it cites nothing
-    in the note, a passage that states another, documented fact, or the fact's own hedged or
+    """Whether the verifier's quote for a missing or absent fact counts. It does unless the passage
+    it cites is not in the note; states another, documented fact; is the fact's own hedged or
     negative mention (the verifier is told these say it is uncertain or absent, and still cites
-    them). Otherwise it counts when the passage is about the fact: it holds
-    `verification.finding_overlap` of one wording's content words, both of all of them and of
-    those that are not the claim's own procedure or diagnosis wording, with the wording's polarity
-    and, when hedged, a hedged wording (the topic of a missing fact, "the note documents ...",
-    takes either polarity). The local word-overlap check runs on every note anyway."""
+    them); is hedged while no wording of the fact is; for an exclusion, has the opposite polarity
+    to every wording of it; is mostly the claim's own procedure wording (`verification.
+    procedure_share` of its words: naming the requested procedure documents nothing); or shares
+    less than `verification.finding_overlap` of the words of every wording and of the missing
+    fact's topic (a passage about something else). The local word-overlap check runs anyway."""
     span = _find(note, quote)
     if span is None:
         return False
     if any(_overlaps(span, other) for other in [*spans.values(), *mentions]):
         return False
     cited = note[span[0] : span[1]]
-    threshold = config()["verification"]["finding_overlap"]
-    wordings = [(text, True) for text in fact.get("forbidden") or []]
-    if fact.get("missing_text"):
-        wordings.append((fact["missing_text"], False))
-    for text, polar in wordings:
-        if polar and _negative(cited) != _negative(text):
-            continue
-        if _hedged(cited) and not _hedged(text):
-            continue
-        if not words(text) - claim:
-            continue
-        if share(text, cited) >= threshold and share(text, cited, claim) >= threshold:
-            return True
-    return False
+    cfg = config()["verification"]
+    forbidden = list(fact.get("forbidden") or [])
+    texts = forbidden + ([fact["missing_text"]] if fact.get("missing_text") else [])
+    if _hedged(cited) and not any(_hedged(text) for text in texts):
+        return False
+    if fact["status"] == "absent" and forbidden:
+        if all(_negative(cited) != _negative(text) for text in forbidden):
+            return False
+    found = words(cited)
+    if found and len(found & claim) / len(found) >= cfg["procedure_share"]:
+        return False
+    return any(share(text, cited) >= cfg["finding_overlap"] for text in texts)
 
 
 def label_problems(

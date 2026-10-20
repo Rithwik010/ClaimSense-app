@@ -254,12 +254,9 @@ NOTE = "HPI: Pain x6 weeks despite PT, no better. Exam: tender lumbar paraspinal
 
 
 def test_the_verifier_finding_a_missing_fact_fails_the_note() -> None:
-    result = check_note(
-        minimal_sheet(),
-        NOTE,
-        None,
-        {"F1": "Pain x6 weeks despite PT, no better.", "F2": "Exam: tender lumbar paraspinals."},
-    )
+    note = NOTE + " Pain is 7 of 10 today."
+    answers = {"F1": "Pain x6 weeks despite PT, no better.", "F2": "Pain is 7 of 10 today."}
+    result = check_note(minimal_sheet(), note, None, answers, {"F2": "Pain is 7 of 10 today."})
     assert any("verifier found the missing fact" in f for f in result.failures)
 
 
