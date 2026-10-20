@@ -92,6 +92,7 @@ def main() -> None:
         dtype=settings["dtype"],
         tensor_parallel_size=settings["tensor_parallel_size"],
         max_model_len=stage.get("max_model_len", settings["max_model_len"]),
+        max_num_seqs=stage.get("max_num_seqs", 256),
         gpu_memory_utilization=settings["gpu_memory_utilization"],
         seed=0,
     )

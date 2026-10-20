@@ -89,6 +89,7 @@ def run_config() -> dict[str, Any]:
                 **({} if name == "verifier" else {"writer": name[-1].upper()}),
                 "model": llm[name]["model"],
                 "max_model_len": llm[name].get("max_model_len", llm["vllm"]["max_model_len"]),
+                "max_num_seqs": llm[name].get("max_num_seqs", 256),
                 **({"sampling": _sampling(name)} if name == "verifier" else {}),
             }
             for name in ("writer_b", "writer_c", "verifier")

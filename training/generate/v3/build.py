@@ -276,10 +276,15 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
     stats["training_mix"] = mix_report
     floors = config()["top_up"]["floors"]
     train_counts = cell_counts(sheets[r["metadata"]["sheet_id"]] for r, _ in final["train"])
+    universe = cell_counts(s for s in sheets.values() if s["split"] == "train")
+    for cell in universe:  # a cell the sheets hold but no final record does counts as zero
+        train_counts.setdefault(cell, 0)
     stats["coverage"] = {
         "floors": floors,
         "cells": len(train_counts),
-        "cells_under_floor": {f"{k} {n}": c for (k, n), c in below(train_counts, floors).items()},
+        "cells_under_floor": {
+            f"{k} {n}": train_counts[(k, n)] for (k, n) in below(train_counts, floors)
+        },
         "by_kind": by_kind(train_counts),
     }
     (folder / "stats.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")

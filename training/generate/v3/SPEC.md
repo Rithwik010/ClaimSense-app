@@ -322,7 +322,8 @@ repeats a v2 training note, none is a near-duplicate of a test record, none goes
   image ships a Transformers that vLLM 0.11 cannot use).
 - **Hardware:** the two T4s run with tensor parallel `llm.vllm.tensor_parallel_size`, at
   `llm.vllm.max_model_len` tokens (or a model's own `llm.<model>.max_model_len`, such as
-  `llm.writer_c.max_model_len` for OLMo-2's 4,096) and `llm.vllm.gpu_memory_utilization` of memory.
+  `llm.writer_c.max_model_len` for OLMo-2's 4,096) and `llm.vllm.gpu_memory_utilization` of memory;
+  a model may run fewer sequences at once (`llm.writer_c.max_num_seqs`).
 - **Saved as it goes:** a stage answers `llm.vllm.chunk_size` prompts at a time and saves them, a
   rerun skips what is saved, and a failed stage does not stop the next.
 - **Time budgets:** a stage stops taking new chunks after `llm.vllm.stage_hours.<stage>` hours; what

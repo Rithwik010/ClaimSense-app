@@ -141,7 +141,9 @@ verification:
   max_regenerations: 3
   min_quote_words: 4
   fuzzy_quote_overlap: 0.8  # a paraphrased quote counts as the note sentence it matches this well
-  local_fact_overlap: 0.7   # share of a documented fact's words one sentence holds, when the verifier misses it
+  local_fact_overlap: 0.6   # share of a documented fact's words a passage holds, when the verifier misses it
+  quote_overlap: 0.2        # share of a documented fact's words the verifier's quote must hold, else the note's own text is used
+  finding_overlap: 0.25     # share of a missing fact's words (and of its non-claim words) a verifier finding must hold
 
 # --- Open-weight models on Kaggle (Phase 3, Phase 4) ------------------------------------------------
 llm:
@@ -160,6 +162,7 @@ llm:
     top_p: 0.95
     max_tokens: 1600
     max_model_len: 4096     # OLMo-2's context; prompt plus max_tokens stay under it
+    max_num_seqs: 64        # its large vocabulary ran out of T4 memory at vLLM's default 256
   verifier:                 # a family no writer uses
     model: ibm-granite/granite-3.3-8b-instruct
     family: granite
@@ -175,11 +178,11 @@ llm:
     tensor_parallel_size: 2 # Kaggle T4 x2
     max_model_len: 6144     # each model's own `max_model_len` above replaces it
     gpu_memory_utilization: 0.9
-    chunk_size: 512         # prompts per generate call; outputs are saved after each chunk
-    stage_hours:            # each stage stops taking new chunks after this long (model load included)
-      writer_b: 2.0
-      writer_c: 0.4
-      verifier: 2.0
+    chunk_size: 256         # prompts per generate call; outputs are saved after each chunk
+    stage_hours:            # each stage stops taking new chunks after this long (model load included); round 3's
+      writer_b: 0.6
+      writer_c: 0.15
+      verifier: 0.75
   gpu_hours_estimate:       # T4 x2 session hours, before each run (refreshed from the pilots)
     writer_b: 1.6
     writer_c: 0.5

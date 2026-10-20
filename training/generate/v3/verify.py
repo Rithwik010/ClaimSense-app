@@ -14,8 +14,9 @@
 """
 
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from functools import cache
 from typing import Any
 
 from app.domain.contracts import (
@@ -28,7 +29,7 @@ from app.domain.contracts import (
 from app.ml.derive import implied_decision
 from app.ml.evidence import evidence_guard
 from app.ml.validate import validate_output
-from training.generate.v3.config import config, leaks
+from training.generate.v3.config import config, leaks, phrases
 from training.generate.v3.facts import PLACEHOLDER
 
 STOPWORDS = frozenset(
@@ -38,6 +39,82 @@ STOPWORDS = frozenset(
 )
 SENTENCE = re.compile(r"[^.;\n]+[.;]?")
 TOKEN = re.compile(r"[a-z0-9]+(?:[-/][a-z0-9]+)*")
+NUMBER_WORDS = dict(  # a whole-number value may be spelled out; "one" is left out ("one on one")
+    zip(
+        [str(n) for n in range(2, 21)] + ["30", "40", "50", "60", "90"],
+        "two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen "
+        "sixteen seventeen eighteen nineteen twenty thirty forty fifty sixty ninety".split(),
+        strict=True,
+    )
+)
+Span = tuple[int, int]
+
+
+@cache
+def _short_forms() -> tuple[tuple[re.Pattern[str], str], ...]:
+    """The writers' short forms (phrases/abbreviations.yaml) with their long forms. A short form
+    with a capital (PT, R) matches as written and comes first, so "PT" is physical therapy before
+    "pt" (any case) is patient; symbols (+, &, ~) are left alone."""
+    found = []
+    for long, short in phrases("abbreviations")["pairs"]:
+        if not re.search(r"[A-Za-z]", short) or (len(short) < 2 and not short.isupper()):
+            continue
+        flags = 0 if short != short.lower() else re.IGNORECASE
+        found.append((re.compile(rf"(?<![\w/]){re.escape(short)}(?![\w/])", flags), long))
+    found.sort(key=lambda pair: (bool(pair[0].flags & re.IGNORECASE), -len(pair[0].pattern)))
+    return tuple(found)
+
+
+def expand(text: str) -> str:
+    """The text with each short form written out, for comparing words (never for quoting)."""
+    for pattern, long in _short_forms():
+        text = pattern.sub(long, text)
+    return text
+
+
+def words(text: str) -> set[str]:
+    """The words two wordings are compared by: short forms written out, hyphenated and slashed
+    words split, no stopwords or bare numbers, and a plural "s" dropped ("blood-sugar mgmt" and
+    "blood sugar management" share blood and sugar)."""
+    text = re.sub(r"\{[^}]+\}", " ", expand(text).lower())
+    found = set()
+    for token in re.findall(r"[a-z0-9]+", text):
+        if token in STOPWORDS or token.isdigit():
+            continue
+        found.add(token[:-1] if len(token) > 3 and token[-1] == "s" and token[-2] != "s" else token)
+    return found
+
+
+def has_value(text: str, value: str) -> bool:
+    """Whether a passage holds a fact's value: as written, or a whole number spelled out."""
+    if value in text:
+        return True
+    word = NUMBER_WORDS.get(value)
+    return word is not None and re.search(rf"\b{word}\b", text, re.IGNORECASE) is not None
+
+
+def sentences(note: str) -> list[Span]:
+    """The note's sentences, as spans without the surrounding whitespace."""
+    found = []
+    for match in SENTENCE.finditer(note):
+        text = match.group(0)
+        if text.strip():
+            start = match.start() + len(text) - len(text.lstrip())
+            found.append((start, match.start() + len(text.rstrip())))
+    return found
+
+
+def sentence_windows(note: str, spans: Sequence[Span], size: int) -> list[Span]:
+    """`size` adjacent sentences on the same line, as one span: a fact a writer split in two, or
+    cut into pieces with semicolons."""
+    return [
+        (spans[i][0], spans[i + size - 1][1])
+        for i in range(len(spans) - size + 1)
+        if all(
+            "\n" not in note[a[1] : b[0]]
+            for a, b in zip(spans[i : i + size - 1], spans[i + 1 : i + size], strict=True)
+        )
+    ]
 
 
 @dataclass
@@ -74,24 +151,24 @@ def locate(note: str, quote: str) -> tuple[int, int] | None:
     return (found.start(), found.end()) if found else None
 
 
-def closest_sentence(note: str, quote: str) -> tuple[int, int] | None:
-    """The note sentence the verifier paraphrased: the one whose words (numbers included) overlap
-    the quote's most, when the overlap (Jaccard) is `verification.fuzzy_quote_overlap` or more.
-    The evidence is then that sentence, copied exactly from the note."""
+def closest_sentence(note: str, quote: str) -> Span | None:
+    """The note passage the verifier paraphrased: the sentence (or two adjacent sentences on one
+    line) whose words, numbers included, overlap the quote's most, when the overlap (Jaccard) is
+    `verification.fuzzy_quote_overlap` or more. The evidence is then that passage, copied exactly
+    from the note."""
     wanted = set(TOKEN.findall(quote.lower()))
     if not wanted:
         return None
+    single = sentences(note)
     best, best_score = None, 0.0
-    for match in SENTENCE.finditer(note):
-        words = set(TOKEN.findall(match.group(0).lower()))
+    for span in single + sentence_windows(note, single, 2):
+        words = set(TOKEN.findall(note[span[0] : span[1]].lower()))
         score = len(wanted & words) / len(wanted | words) if words else 0.0
         if score > best_score:
-            best, best_score = match, score
+            best, best_score = span, score
     if best is None or best_score < config()["verification"]["fuzzy_quote_overlap"]:
         return None
-    text = best.group(0)
-    start = best.start() + (len(text) - len(text.lstrip()))
-    return start, best.start() + len(text.rstrip())
+    return best
 
 
 NEGATIVE = re.compile(r"\b(no|not|without|never|none|negative|absent|neither|nor|cannot)\b|n't\b")
@@ -103,62 +180,144 @@ HEDGED = re.compile(
 )
 
 
-def stated_locally(note: str, fact: Mapping[str, Any]) -> tuple[int, int] | None:
-    """A documented fact the verifier did not find, found in the note itself: one of its wordings
-    word for word, else one sentence with `verification.local_fact_overlap` of its content words,
-    every value and the same polarity (a negative in both or in neither). Never for a contradicted
-    fact, whose opposite statement is in the note as well."""
-    if fact["status"] == "contradicted":
-        return None
-    texts = list((fact.get("text") or {}).values())
+def _negative(text: str) -> bool:
+    return bool(NEGATIVE.search(expand(text).lower()))
+
+
+def _hedged(text: str) -> bool:
+    return bool(HEDGED.search(text.lower()))
+
+
+def share(wording: str, passage: str, drop: frozenset[str] = frozenset()) -> float:
+    """The share of a wording's content words (short forms written out, `drop` left out) that a
+    passage holds; 0 when the wording has none left."""
+    wanted = words(wording) - drop
+    if not wanted:
+        return 0.0
+    return len(wanted & words(passage)) / len(wanted)
+
+
+def stated_locally(note: str, fact: Mapping[str, Any], original: bool = False) -> Span | None:
+    """A documented fact (`original`: a contradiction's copied statement) found in the note itself,
+    when the verifier missed it or quoted a passage that does not state it: one of its wordings word
+    for word; else the sentence, or the fewest adjacent sentences on one line (up to three), with
+    `verification.local_fact_overlap` of its content words (short forms read as their long forms),
+    every value (a whole number may be spelled out) and the same polarity (a negative in both or in
+    neither). A contradicted fact and its copied statement only word for word: the opposite
+    statement is in the note as well."""
+    texts = list((fact.get("original" if original else "text") or {}).values())
     for text in texts:
         span = locate(note, text)
         if span:
             return span
+    if fact["status"] == "contradicted":
+        return None
     threshold = config()["verification"]["local_fact_overlap"]
     values = fact.get("values") or []
-    best, best_share = None, 0.0
-    for text in texts:
-        wanted = content_words(text)
-        if len(wanted) < 3:
-            continue
-        negative = bool(NEGATIVE.search(text.lower()))
-        for match in SENTENCE.finditer(note):
-            sentence = match.group(0)
-            if bool(NEGATIVE.search(sentence.lower())) != negative:
+    single = sentences(note)
+    for spans in (single, *(sentence_windows(note, single, n) for n in (2, 3))):
+        best, best_share = None, 0.0
+        for text in texts:
+            if len(words(text)) < 3:
                 continue
-            if any(v not in sentence for v in values):
-                continue
-            share = len(wanted & content_words(sentence)) / len(wanted)
-            if share > best_share:
-                best, best_share = match, share
-    if best is None or best_share < threshold:
-        return None
-    text = best.group(0)
-    start = best.start() + (len(text) - len(text.lstrip()))
-    return start, best.start() + len(text.rstrip())
+            negative = _negative(text)
+            for span in spans:
+                passage = note[span[0] : span[1]]
+                if _negative(passage) != negative:
+                    continue
+                if not all(has_value(passage, v) for v in values):
+                    continue
+                found = share(text, passage)
+                if found > best_share:
+                    best, best_share = span, found
+        if best is not None and best_share >= threshold:
+            return best
+    return None
 
 
-def _find(note: str, quote: str) -> tuple[int, int] | None:
+def _about(note: str, span: Span, fact: Mapping[str, Any], original: bool) -> bool:
+    """Whether a passage is about a documented fact: it holds `verification.quote_overlap` of one
+    wording's content words (a verifier sometimes gives one fact's quote to the next)."""
+    passage = note[span[0] : span[1]]
+    texts = (fact.get("original" if original else "text") or {}).values()
+    threshold = config()["verification"]["quote_overlap"]
+    return any(share(text, passage) >= threshold for text in texts)
+
+
+def _states(note: str, span: Span, fact: Mapping[str, Any], original: bool) -> bool:
+    """Whether the passage the verifier quoted for a documented fact states it: about the fact,
+    with every value."""
+    passage = note[span[0] : span[1]]
+    if not original and not all(has_value(passage, v) for v in fact.get("values") or []):
+        return False
+    return _about(note, span, fact, original)
+
+
+def _find(note: str, quote: str) -> Span | None:
     return locate(note, quote) or closest_sentence(note, quote)
 
 
-def _overlaps(a: tuple[int, int], b: tuple[int, int]) -> bool:
+def _overlaps(a: Span, b: Span) -> bool:
     return a[0] < b[1] and b[0] < a[1]
 
 
-def missing_matches(note: str, forbidden: Sequence[str]) -> list[str]:
-    """Note sentences that hold most of a missing fact's content words."""
+def claim_words(sheet: Mapping[str, Any]) -> frozenset[str]:
+    """The content words of the claim's own procedure and diagnosis descriptions, which a note
+    names anyway: they never make a sentence state a missing fact."""
+    text = " ".join(
+        [
+            *(sheet.get("procedures") or []),
+            *(d["description"] for d in sheet.get("diagnoses") or []),
+        ]
+    )
+    return frozenset(words(text))
+
+
+def missing_matches(
+    note: str,
+    forbidden: Sequence[str],
+    claim: frozenset[str] = frozenset(),
+    own: Iterable[Span] = (),
+) -> list[str]:
+    """Note sentences that state a missing fact: they hold `verification.missing_overlap` of one of
+    its wordings' content words, and as much of the words that are not the claim's own procedure
+    or diagnosis wording. A wording made only of those words is skipped; sentences in `own` (the
+    fact's own hedged or negative mention) are left out."""
     threshold = config()["verification"]["missing_overlap"]
+    own = list(own)
     found = []
-    sentences = [m.group(0) for m in SENTENCE.finditer(note)]
+    spans = [s for s in sentences(note) if not any(_overlaps(s, o) for o in own)]
     for template in forbidden:
-        wanted = content_words(template)
-        if len(wanted) < 3:
+        if len(words(template)) < 3 or not words(template) - claim:
             continue
-        for sentence in sentences:
-            if len(wanted & content_words(sentence)) / len(wanted) >= threshold:
-                found.append(sentence.strip())
+        for start, end in spans:
+            sentence = note[start:end]
+            if share(template, sentence) >= threshold and share(template, sentence, claim) >= (
+                threshold
+            ):
+                found.append(sentence)
+    return found
+
+
+def own_mentions(note: str, fact: Mapping[str, Any]) -> list[Span]:
+    """A missing or absent fact's own hedged or negative mention in the note: its wording, else
+    the sentence with `verification.local_fact_overlap` of its content words and the same
+    polarity."""
+    threshold = config()["verification"]["local_fact_overlap"]
+    found = []
+    for key in ("hedge", "negated"):
+        for text in (fact.get(key) or {}).values():
+            span = locate(note, text)
+            if span is None and len(words(text)) >= 3:
+                scored = [
+                    (share(text, note[s[0] : s[1]]), s)
+                    for s in sentences(note)
+                    if _negative(note[s[0] : s[1]]) == _negative(text)
+                ]
+                best = max(scored, default=(0.0, None))
+                span = best[1] if best[0] >= threshold else None
+            if span is not None:
+                found.append(span)
     return found
 
 
@@ -186,35 +345,37 @@ def check_note(
             [f"{fact['fact_id']}:original"] if fact["status"] == "contradicted" else []
         )
         for fid in ids:
+            original = fid.endswith(":original")
             span = None
             if known_spans is not None:
                 span = known_spans.get(fid)
-            elif verifier is not None and verifier.get(fid):
-                span = _find(note, verifier[fid] or "")
-                if span is None and not fid.endswith(":original"):
-                    span = stated_locally(note, fact)  # a quote too far from any sentence
-                    if span is not None:
+            elif verifier is not None:
+                quoted = verifier.get(fid)
+                span = _find(note, quoted) if quoted else None
+                if span is None or not _states(note, span, fact, original):
+                    # missed, a quote too far from any sentence, or one that states another fact
+                    local = stated_locally(note, fact, original)
+                    if local is not None:
+                        span = local
                         result.local_spans.append(fid)
-                if span is None:
-                    result.failures.append(f"{fid}: the verifier's quote is not in the note")
-                    continue
-            elif verifier is not None and not fid.endswith(":original"):
-                span = stated_locally(note, fact)  # the verifier missed it: the note's own text
-                if span is not None:
-                    result.local_spans.append(fid)
+                    elif quoted and span is None:
+                        result.failures.append(f"{fid}: the verifier's quote is not in the note")
+                        continue
             if span is None:
                 if known_spans is not None or verifier is not None:
                     result.failures.append(f"{fid}: documented fact not found")
                 continue
             quote = note[span[0] : span[1]]
-            if not fid.endswith(":original"):
-                missing = [v for v in fact.get("values") or [] if v not in quote]
+            if not original:
+                missing = [v for v in fact.get("values") or [] if not has_value(quote, v)]
                 if missing:
                     result.failures.append(f"{fid}: quote lacks the values {missing}")
                 if len(quote.split()) < cfg["min_quote_words"]:
                     result.failures.append(
                         f"{fid}: quote shorter than {cfg['min_quote_words']} words"
                     )
+            if known_spans is None and not _about(note, span, fact, original):
+                result.failures.append(f"{fid}: the quote does not state the fact")
             result.spans[fid] = span
         if fact["status"] == "contradicted":
             first = result.spans.get(f"{fact['fact_id']}:original")
@@ -223,6 +384,7 @@ def check_note(
                 result.failures.append(
                     f"{fact['fact_id']}: the correction comes before the copied statement"
                 )
+    claim = claim_words(sheet)
     for fact in sheet["facts"]:
         checked = fact["status"] == "missing" or (
             fact["status"] == "absent" and fact.get("role") == "exclusion"
@@ -230,9 +392,10 @@ def check_note(
         if not checked:
             continue
         own = [note[s[0] : s[1]] for s in result.spans.values()]
+        mentions = own_mentions(note, fact)
         hits = [
             h
-            for h in missing_matches(note, fact.get("forbidden") or [])
+            for h in missing_matches(note, fact.get("forbidden") or [], claim, mentions)
             if not any(h in o or o in h for o in own)
         ]
         if hits:
@@ -240,7 +403,7 @@ def check_note(
                 f"{fact['fact_id']}: {fact['status']} fact appears: {hits[0][:80]!r}"
             )
         quote = verifier.get(fact["fact_id"]) if verifier is not None else None
-        if quote and _a_finding(note, quote, fact, result.spans):
+        if quote and _a_finding(note, quote, fact, result.spans, claim, mentions):
             result.failures.append(
                 f"{fact['fact_id']}: the verifier found the {fact['status']} fact: {quote[:80]!r}"
             )
@@ -256,30 +419,38 @@ def _a_finding(
     note: str,
     quote: str,
     fact: Mapping[str, Any],
-    spans: Mapping[str, tuple[int, int]],
+    spans: Mapping[str, Span],
+    claim: frozenset[str] = frozenset(),
+    mentions: Sequence[Span] = (),
 ) -> bool:
     """Whether the verifier's quote for a missing or absent fact counts. Not when it cites nothing
-    in the note, nor when it cites a sentence that states another, documented fact, or the fact's
-    own hedged mention or its negative (which state that it is uncertain or absent; the verifier
-    is told so, and still cites them). The local word-overlap check runs on every note anyway."""
+    in the note, a passage that states another, documented fact, or the fact's own hedged or
+    negative mention (the verifier is told these say it is uncertain or absent, and still cites
+    them). Otherwise it counts when the passage is about the fact: it holds
+    `verification.finding_overlap` of one wording's content words, both of all of them and of
+    those that are not the claim's own procedure or diagnosis wording, with the wording's polarity
+    and, when hedged, a hedged wording (the topic of a missing fact, "the note documents ...",
+    takes either polarity). The local word-overlap check runs on every note anyway."""
     span = _find(note, quote)
     if span is None:
         return False
-    statement = " ".join(fact.get("forbidden") or []) + " " + (fact.get("missing_text") or "")
-    cited = note[span[0] : span[1]].lower()
-    if NEGATIVE.search(cited) and not NEGATIVE.search(statement.lower()):
-        return False  # a negative sentence does not state a positive fact
-    if HEDGED.search(cited) and not HEDGED.search(statement.lower()):
-        return False  # nor does a hedged one
-    if any(_overlaps(span, other) for other in spans.values()):
+    if any(_overlaps(span, other) for other in [*spans.values(), *mentions]):
         return False
-    for key in ("hedge", "negated"):
-        texts = fact.get(key) or {}
-        for text in texts.values():
-            own = _find(note, text)
-            if own and _overlaps(span, own):
-                return False
-    return True
+    cited = note[span[0] : span[1]]
+    threshold = config()["verification"]["finding_overlap"]
+    wordings = [(text, True) for text in fact.get("forbidden") or []]
+    if fact.get("missing_text"):
+        wordings.append((fact["missing_text"], False))
+    for text, polar in wordings:
+        if polar and _negative(cited) != _negative(text):
+            continue
+        if _hedged(cited) and not _hedged(text):
+            continue
+        if not words(text) - claim:
+            continue
+        if share(text, cited) >= threshold and share(text, cited, claim) >= threshold:
+            return True
+    return False
 
 
 def label_problems(
