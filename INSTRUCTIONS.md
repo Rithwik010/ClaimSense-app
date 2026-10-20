@@ -486,9 +486,13 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 | GET | `/v1/claims/{id}/form` | A claim read from our form, box by box as printed, with confidences and corrections (D-FIX-1) |
 | POST | `/v1/claims/{id}/corrections` | Correct boxes of a form claim not processed yet; audited as `FIELD_CORRECTED` (D-FIX-1); the provider's own claim |
 | GET | `/v1/claims/{id}/eob` | The patient's explanation of benefits of a decided claim (D-EOB-1) |
+| GET | `/v1/member/claims`, `/v1/member/claims/{id}` | A member's own claims: "being processed" until final, then the outcome and totals (D-MEM-2); member role |
+| GET | `/v1/member/claims/{id}/eob` | The member's decided claim's EOB, the provider's one (D-EOB-1, D-MEM-2); member role |
+| GET | `/v1/member/benefits`, `/v1/member/profile` | The member's benefit year as stored, and their name, member ID, plan and coverage (D-MEM-3); member role |
 
-Authentication: username and password logins with roles (`provider`, `reviewer`, `admin`), a
-session cookie and role checks on every endpoint; replaces the prototype role header (D-AUTH-1).
+Authentication: username and password logins with roles (`provider`, `reviewer`, `admin`,
+`member`), a session cookie and role checks on every endpoint; replaces the prototype role header
+(D-AUTH-1, D-MEM-1).
 Prototype only; documented as such.
 
 ### 8.11 Frontend (`frontend-web/`, React; D-UI-1, D-UI-2)

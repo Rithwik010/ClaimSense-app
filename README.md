@@ -77,6 +77,15 @@ app talks only to the API.
   `make model-check` (the demo model is the one evaluated), `make web-check`, `make results`
   (regenerates [docs/results.md](docs/results.md)).
 
+## Roles
+
+Everyone logs in with a username and password (prototype). A **provider** files and processes
+claims and sees only the claims they filed, with the decision once it is final. A **reviewer**
+reviews every model recommendation. An **admin** reads everything and changes nothing. A
+**member** (a patient) sees only the claims in which they are the patient, each decided claim's
+explanation of benefits, their benefits this year and their profile, and cannot act on anything
+(D-AUTH-1, D-MEM-1).
+
 ## Where things are
 
 | Path | What |
