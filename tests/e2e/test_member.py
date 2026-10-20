@@ -10,8 +10,9 @@
 - On every golden end-to-end case (v1 and v2), before processing, after it and after review,
   nothing a member is sent holds clinical notes, model output, criteria, rule IDs, internal reason
   codes, reviewer IDs or reasons, or field confidences (asserted on the JSON).
-- Benefits: the stored accumulators and visit usage of the current benefit year against the plan's
-  limits, with the calculator's remaining amounts, before and after a finalization; profile: name,
+- Benefits: the stored accumulators and visit usage of the current benefit year next to the
+  plan's limits, as stored (nothing added or subtracted), before and after a finalization; another
+  benefit year has nothing met; profile: name,
   member ID, plan and coverage dates only.
 """
 
@@ -25,7 +26,6 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_today
 from app.api.main import app
-from app.calculator.remaining import remaining_cents, visits_left
 from app.db.curated import load_curated
 from app.db.models import Accumulator, Benefit, Member, Plan, VisitUsage
 from app.domain.contracts import ClaimStatus, DecisionRecord
@@ -301,19 +301,17 @@ def check_benefits(benefits: dict[str, Any], facts: dict[str, Any]) -> None:
     for shown in benefits["networks"]:
         deductible, oop_max = limits[shown["network"]]
         met = facts["met"].get(shown["network"], (0, 0))
-        assert shown["deductible"] == {
-            "limit_cents": deductible,
-            "met_cents": met[0],
-            "remaining_cents": remaining_cents(deductible, met[0]),
-        }
-        assert shown["out_of_pocket"] == {
-            "limit_cents": oop_max,
-            "met_cents": met[1],
-            "remaining_cents": remaining_cents(oop_max, met[1]),
+        assert shown == {  # the plan's limits and the stored amounts, as they are
+            "network": shown["network"],
+            "period_start": benefits["benefit_year_start"],
+            "deductible_met_cents": met[0],
+            "deductible_cents": deductible,
+            "oop_met_cents": met[1],
+            "oop_max_cents": oop_max,
         }
 
 
-def test_benefits_are_the_stored_amounts_with_the_calculators_remaining(
+def test_benefits_are_the_stored_amounts_next_to_the_plans_limits(
     api, load_case_reference, engine
 ) -> None:  # noqa: ANN001
     """E2E-22 (HMO, in network only): deductible 200.00 and out-of-pocket 300.00 met as stored, no
@@ -339,12 +337,7 @@ def test_benefits_are_the_stored_amounts_with_the_calculators_remaining(
     )
     assert facts["rehab_limit"] == 20  # PLN-HMO REHAB_THERAPY: 20 visits a year (benefits.yaml)
     assert before["visits"] == [
-        {
-            "benefit_category": "REHAB_THERAPY",
-            "visit_limit": 20,
-            "visits_used": 0,
-            "visits_left": 20,
-        }
+        {"benefit_category": "REHAB_THERAPY", "visit_limit": 20, "visits_used": 0}
     ]
     assert member_unsafe(before, E2E_CASES["E2E-22"]) == []
 
@@ -366,8 +359,9 @@ def test_benefits_are_the_stored_amounts_with_the_calculators_remaining(
     )
     used = finalized["visit_usage"]["REHAB_THERAPY"]["after"]
     assert used == facts["rehab_visits"] == 1
-    assert after["visits"][0]["visits_used"] == used
-    assert after["visits"][0]["visits_left"] == visits_left(20, used) == 19
+    assert after["visits"] == [
+        {"benefit_category": "REHAB_THERAPY", "visit_limit": 20, "visits_used": used}
+    ]
 
 
 def test_out_of_network_terms_are_shown_when_the_plan_covers_them(
@@ -383,14 +377,14 @@ def test_out_of_network_terms_are_shown_when_the_plan_covers_them(
     facts = stored(engine, "MBR-000321")
     check_benefits(benefits, facts)
     assert [n["network"] for n in benefits["networks"]] == ["IN_NETWORK", "OUT_OF_NETWORK"]
-    assert benefits["networks"][0]["deductible"]["met_cents"] == 0
+    assert benefits["networks"][0]["deductible_met_cents"] == 0
 
     app.dependency_overrides[get_today] = lambda: date(2027, 1, 4)  # a new benefit year
     next_year = client.get("/v1/member/benefits", headers=member).json()
     assert next_year["benefit_year_start"] == "2027-01-01"
     for network in next_year["networks"]:
-        assert network["deductible"]["met_cents"] == network["out_of_pocket"]["met_cents"] == 0
-        assert network["deductible"]["remaining_cents"] == network["deductible"]["limit_cents"]
+        assert network["deductible_met_cents"] == network["oop_met_cents"] == 0
+        assert network["period_start"] == "2027-01-01"
 
 
 def test_the_profile_is_name_member_id_plan_and_coverage_dates(

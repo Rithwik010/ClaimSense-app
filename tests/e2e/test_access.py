@@ -1,8 +1,6 @@
 """D-AUTH-1: logins and who may do what. Every endpoint for every role (allowed, or 403), not
 logged in (401), a provider opening another provider's claim (404), what a provider sees before
-and after a claim is final, the session cookie, and expired, tampered or stale tokens (401). The
-member role (D-MEM-1) is in the matrix: its own routes only, every other route 403 (what a member
-sees is in test_member.py)."""
+and after a claim is final, the session cookie, and expired, tampered or stale tokens (401)."""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -23,7 +21,6 @@ from tests.e2e.support import (
     TEST_PASSWORD,
     TEST_SECRET,
     StubModel,
-    add_member_user,
     bearer,
     process_case,
 )
@@ -80,22 +77,14 @@ def endpoints() -> list[tuple[str, str, dict[str, Any], set[str]]]:
             {"reviewer"},
         ),
         ("POST", f"/v1/claims/{CLAIM}/review", {"json": wrong_claim}, {"reviewer"}),
-        ("GET", "/v1/auth/me", {}, everyone | {"member"}),
-        # D-MEM-1: the member's own routes, members only; `everyone` above never has a member.
-        ("GET", "/v1/member/claims", {}, {"member"}),
-        ("GET", f"/v1/member/claims/{CLAIM}", {}, {"member"}),
-        ("GET", f"/v1/member/claims/{CLAIM}/eob", {}, {"member"}),
-        ("GET", "/v1/member/benefits", {}, {"member"}),
-        ("GET", "/v1/member/profile", {}, {"member"}),
+        ("GET", "/v1/auth/me", {}, everyone),
     ]
 
 
-def test_every_endpoint_for_every_role(api, load_case_reference, engine) -> None:  # noqa: ANN001
+def test_every_endpoint_for_every_role(api, load_case_reference) -> None:  # noqa: ANN001
     client = process_case(api, load_case_reference, "E2E-14")
-    member = E2E_CASES["E2E-14"]["given"]["claim"]["member_id"]  # the claim's patient
-    who = WHO | {"member": add_member_user(engine, member)}
     for method, path, kwargs, allowed in endpoints():
-        for role, headers in who.items():
+        for role, headers in WHO.items():
             response = client.request(method, path, headers=headers, **kwargs)
             if role in allowed:
                 assert response.status_code not in (401, 403), (method, path, role, response.text)
@@ -268,3 +257,40 @@ def test_a_deactivated_user_is_logged_out(api, engine: Engine) -> None:  # noqa:
     assert client.get("/v1/auth/me", headers=bearer("reviewer-1")).status_code == 401
     login = {"username": "reviewer-1", "password": TEST_PASSWORD}
     assert client.post("/v1/auth/login", json=login, headers=NO_SESSION).status_code == 401
+
+
+# --- The member role (D-MEM-1) -------------------------------------------------------------------
+# Kept as separate tests so the matrix above stays as it is: a member is 403 on every endpoint in
+# it but /v1/auth/me, and the member's own routes are for members only (what a member sees there is
+# in test_member.py).
+
+
+def member_endpoints() -> list[tuple[str, str]]:
+    return [
+        ("GET", "/v1/member/claims"),
+        ("GET", f"/v1/member/claims/{CLAIM}"),
+        ("GET", f"/v1/member/claims/{CLAIM}/eob"),
+        ("GET", "/v1/member/benefits"),
+        ("GET", "/v1/member/profile"),
+    ]
+
+
+def test_a_member_is_refused_every_endpoint_but_their_own(api, load_case_reference, engine) -> None:  # noqa: ANN001
+    from tests.e2e.support import add_member_user
+
+    client = process_case(api, load_case_reference, "E2E-14")
+    member = add_member_user(engine, E2E_CASES["E2E-14"]["given"]["claim"]["member_id"])
+    for method, path, kwargs, _allowed in endpoints():
+        response = client.request(method, path, headers=member, **kwargs)
+        expected = 200 if path == "/v1/auth/me" else 403  # a member files, reads or acts on none
+        assert response.status_code == expected, (method, path, response.text)
+
+    for method, path in member_endpoints():
+        response = client.request(method, path, headers=member)
+        assert response.status_code not in (401, 403), (method, path, response.text)
+        for role, headers in WHO.items():
+            response = client.request(method, path, headers=headers)
+            assert response.status_code == 403, (method, path, role, response.text)
+        response = client.request(method, path, headers=NO_SESSION)
+        assert response.status_code == 401, (method, path, "not logged in")
+        assert response.headers["www-authenticate"] == "Bearer"

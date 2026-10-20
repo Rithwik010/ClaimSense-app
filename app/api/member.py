@@ -8,7 +8,7 @@ a member). Another member's claim is 404, the same answer as a claim that does n
 only: nothing here files, processes, corrects or reviews a claim. A claim shows its outcome once it
 is final, and until then only "Your claim is being processed". Built from the decision record, the
 stored accumulators and visit usage and the plan (app/explain/member.py); amounts are the
-calculator's (H1).
+calculator's or stored ones, shown as they are (H1).
 """
 
 from datetime import date
@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from app.api.claims import claim_eob
 from app.api.deps import MemberUser, get_session, get_today, member_only
 from app.auth.users import AuthUser
+from app.calculator.engine import Accumulators, NetworkTerms
 from app.db import lookups
 from app.db.models import Claim, Member, Provider
 from app.domain.contracts import ClaimStatus, Network
@@ -105,21 +106,27 @@ def get_eob(claim_id: str, session: SessionDep, user: MemberUser) -> PatientEob:
 def get_benefits(
     session: SessionDep, user: MemberUser, today: Annotated[date, Depends(get_today)]
 ) -> MemberBenefits:
-    """The member's deductible and out-of-pocket maximum for each network the plan covers (met
-    as stored, the remaining amount from the calculator) and the visits used and left of each
-    visit-limited benefit, for the current benefit year (1 January to 31 December, D7)."""
+    """The member's current benefit year (1 January to 31 December, D7): for each network the
+    plan covers, its deductible and out-of-pocket maximum and what is met of each as stored, and
+    the visits used of each visit-limited benefit. Read as the pipeline reads them for the
+    calculator (the plan's terms, lookups.get_accumulator, lookups.get_visits_used); nothing is
+    added or subtracted (D-MEM-3)."""
     member = _member(session, user)
     plan = lookups.get_plan(session, member.plan_id)
     year_start = lookups.benefit_year_start(today)
-    limits = {Network.IN_NETWORK.value: (plan.inn_deductible_cents, plan.inn_oop_max_cents)}
-    oon = (plan.oon_deductible_cents, plan.oon_oop_max_cents)
-    if plan.oon_covered and oon[0] is not None and oon[1] is not None:
-        limits[Network.OUT_OF_NETWORK.value] = (oon[0], oon[1])
-    met = {}
-    for network in limits:
-        stored = lookups.get_accumulator(session, member.member_id, year_start, network)
-        if stored is not None:
-            met[network] = (stored.deductible_met_cents, stored.oop_met_cents)
+    terms = {
+        Network.IN_NETWORK.value: NetworkTerms(
+            plan.inn_deductible_cents, plan.inn_coinsurance_bps, plan.inn_oop_max_cents
+        )
+    }
+    oon = (plan.oon_deductible_cents, plan.oon_coinsurance_bps, plan.oon_oop_max_cents)
+    if plan.oon_covered and oon[0] is not None and oon[1] is not None and oon[2] is not None:
+        terms[Network.OUT_OF_NETWORK.value] = NetworkTerms(oon[0], oon[1], oon[2])
+    stored = {}
+    for network in terms:
+        row = lookups.get_accumulator(session, member.member_id, year_start, network)
+        if row is not None:
+            stored[network] = Accumulators(row.deductible_met_cents, row.oop_met_cents)
     benefits = lookups.get_benefits(session, plan.plan_id)
     return member_benefits(
         member_id=member.member_id,
@@ -128,8 +135,8 @@ def get_benefits(
         plan_type=plan.plan_type,
         year_start=year_start,
         as_of=today,
-        limits=limits,
-        met=met,
+        terms=terms,
+        stored=stored,
         visit_limits={
             category: benefit.visit_limit
             for category, benefit in benefits.items()
