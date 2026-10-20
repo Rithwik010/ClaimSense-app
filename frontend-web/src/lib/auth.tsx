@@ -1,6 +1,7 @@
 // The logged-in user (D-AUTH-1). The session is an httpOnly cookie the API sets at login, so the
 // app never sees the token: it asks /v1/auth/me who is logged in. Each role has its own pages and
-// home; any 401 from the API ends the session and shows the login page.
+// home; any 401 from the API ends the session and shows the login page. A member (a patient,
+// D-MEM-1) has only their own pages, under /member.
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,9 +11,11 @@ import {
   FileUp,
   Files,
   History,
+  IdCard,
   Inbox,
   LayoutDashboard,
   Scale,
+  ShieldPlus,
   type LucideIcon,
 } from "lucide-react";
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
@@ -24,6 +27,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   provider: "Provider",
   reviewer: "Reviewer",
   admin: "Admin",
+  member: "Member",
 };
 
 interface Page {
@@ -44,9 +48,17 @@ export const PAGES: Page[] = [
   { to: "/metrics", label: "Model metrics", icon: BarChart3, roles: ["admin"] },
   { to: "/audit", label: "Audit lookup", icon: History, roles: ["admin"] },
   { to: "/system", label: "System status", icon: Activity, roles: ["admin"] },
+  { to: "/member/claims", label: "My claims", icon: Inbox, roles: ["member"] },
+  { to: "/member/benefits", label: "My benefits", icon: ShieldPlus, roles: ["member"] },
+  { to: "/member/profile", label: "Profile", icon: IdCard, roles: ["member"] },
 ];
 
-const HOMES: Record<Role, string> = { provider: "/my-claims", reviewer: "/queue", admin: "/overview" };
+const HOMES: Record<Role, string> = {
+  provider: "/my-claims",
+  reviewer: "/queue",
+  admin: "/overview",
+  member: "/member/claims",
+};
 
 export function homeFor(role: Role): string {
   return HOMES[role];

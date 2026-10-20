@@ -14,14 +14,16 @@ export type ClaimStatus =
 export type LineDecision = "APPROVE" | "DENY" | "PEND";
 export type ReviewTier = "QUICK" | "STANDARD" | "FULL";
 export type SourceFormat = "JSON" | "DIGITAL_PDF" | "SCANNED";
-export type Role = "provider" | "reviewer" | "admin";
+export type Role = "provider" | "reviewer" | "admin" | "member";
 
-/** The logged-in user (GET /v1/auth/me, D-AUTH-1). */
+/** The logged-in user (GET /v1/auth/me, D-AUTH-1). A member (a patient, D-MEM-1) also has their
+ * member ID; the API leaves it out for the other roles. */
 export interface User {
   username: string;
   display_name: string;
   role: Role;
   provider_id: string | null;
+  member_id?: string | null;
 }
 export type Claim = Record<string, unknown>;
 
@@ -541,4 +543,53 @@ export interface PatientEob {
   year_to_date: YearToDate | null;
   notes: string[];
   codes: string[];
+}
+
+// --- The member's own pages (D-MEM-1, D-MEM-2, D-MEM-3): GET /v1/member/... ----------------------
+
+/** One of the member's claims: "being processed" (PROCESSING) until final, then its outcome. */
+export interface MemberClaim {
+  claim_id: string;
+  received: string;
+  service_date: string | null;
+  provider_name: string | null;
+  final: boolean;
+  outcome: Outcome | "PROCESSING";
+  heading: string;
+  message: string;
+  /** GET /v1/member/claims/{id}/eob has the claim's patient EOB (D-EOB-1). */
+  eob: boolean;
+  /** Final claims with a calculation only: the record's totals. */
+  billed_cents: number | null;
+  plan_pays_cents: number | null;
+  patient_pays_cents: number | null;
+}
+
+export interface VisitBenefit {
+  benefit_category: string;
+  visit_limit: number;
+  visits_used: number;
+}
+
+/** The member's benefit year so far: each network's limits and what is met, as stored. */
+export interface MemberBenefits {
+  member_id: string;
+  plan_id: string;
+  plan_name: string;
+  plan_type: string;
+  benefit_year_start: string;
+  benefit_year_end: string;
+  as_of: string;
+  networks: YearToDate[];
+  visits: VisitBenefit[];
+}
+
+export interface MemberProfile {
+  member_id: string;
+  name: string;
+  plan_id: string;
+  plan_name: string;
+  plan_type: string;
+  coverage_start: string;
+  coverage_end: string | null;
 }

@@ -18,6 +18,13 @@ export function basisPoints(bps: number | null | undefined): string {
   return `${(bps - rest) / 100}${fraction}%`;
 }
 
+/** A calendar date as the forms print it: "2026-10-06" -> "10/06/2026" (anything else as it is). */
+export function dateOnly(value: string | null | undefined): string {
+  if (!value) return "—";
+  const [y, m, d] = value.split("-");
+  return y && m && d ? `${m}/${d}/${y}` : value;
+}
+
 export function percent(share: number): string {
   return `${(share * 100).toFixed(1)}%`;
 }

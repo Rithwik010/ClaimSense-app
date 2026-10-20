@@ -17,6 +17,9 @@ import type {
   Health,
   IntakeResult,
   LineOverride,
+  MemberBenefits,
+  MemberClaim,
+  MemberProfile,
   Overview,
   PatientEob,
   Plan,
@@ -292,4 +295,35 @@ export function usePatientEob(claimId: string) {
     queryKey: ["eob", claimId],
     queryFn: () => request<PatientEob>(`/v1/claims/${encodeURIComponent(claimId)}/eob`),
   });
+}
+
+// --- A member's own pages (D-MEM-1): only the /v1/member routes, which answer members only ------
+
+/** The member's claims (those in which they are the patient). */
+export function useMemberClaims() {
+  return useQuery({ queryKey: ["member", "claims"], queryFn: () => request<MemberClaim[]>("/v1/member/claims") });
+}
+
+export function useMemberClaim(claimId: string) {
+  return useQuery({
+    queryKey: ["member", "claim", claimId],
+    queryFn: () => request<MemberClaim>(`/v1/member/claims/${encodeURIComponent(claimId)}`),
+  });
+}
+
+/** The patient EOB of the member's decided claim: the one its provider gets (D-EOB-1). */
+export function useMemberEob(claimId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["member", "eob", claimId],
+    queryFn: () => request<PatientEob>(`/v1/member/claims/${encodeURIComponent(claimId)}/eob`),
+    enabled,
+  });
+}
+
+export function useMemberBenefits() {
+  return useQuery({ queryKey: ["member", "benefits"], queryFn: () => request<MemberBenefits>("/v1/member/benefits") });
+}
+
+export function useMemberProfile() {
+  return useQuery({ queryKey: ["member", "profile"], queryFn: () => request<MemberProfile>("/v1/member/profile") });
 }
