@@ -13,8 +13,10 @@ For each, the metrics the team asked for:
 - DENY precision: of the lines the model denies, the share the label denies;
 - wrong approvals: lines the label pends or denies that the model approves (count and share);
 
-and errors broken down by tricky-fact type, note length and lines per claim (v3 sets; the clean
-v2 set has no tricky facts). Writes data/generated/eval/v3study/<model>-<set>.json.
+every metric also for the claims on a policy seen in training and on a test-only policy, beside the
+total (so a set's style effect shows apart from its new-policy effect); and errors broken down by
+tricky-fact type, note length and lines per claim (v3 sets; the clean v2 set has no tricky facts).
+Writes data/generated/eval/v3study/<model>-<set>.json.
 
     uv run python -m scripts.verify.v3_eval_report [--only v2-test_messy]
 """
@@ -25,6 +27,7 @@ from typing import Any
 
 from training.evaluate.kaggle_eval import SETS, STUDY_DIR, read_jsonl
 from training.evaluate.model import score_record, summarize
+from training.generate.scenarios_v2 import TEST_ONLY_POLICIES
 from training.generate.v3.config import OUT_DIR as V3_DIR
 from training.generate.v3.dataset import TRICKY_OF, load_sheets
 
@@ -78,6 +81,30 @@ def breakdowns(
     }
 
 
+def test_only(meta: dict[str, Any]) -> bool:
+    """Whether a record's claim is on a policy never seen in training (v3: its sheet's flag;
+    v2: a test-only policy among its policies)."""
+    if "unseen_policy" in meta:
+        return bool(meta["unseen_policy"])
+    return bool(set(meta.get("policy_ids") or []) & set(TEST_ONLY_POLICIES))
+
+
+def metrics(rows: list[dict[str, Any]], metas: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    if not rows:
+        return {"records": 0}
+    summary = summarize(rows, metas)
+    decisions = summary["decisions"]
+    return {
+        "records": len(rows),
+        "valid_output_rate": summary["valid_output_rate"],
+        "macro_f1": decisions.get("macro_f1"),
+        "per_class_f1": {k: v["f1"] for k, v in (decisions.get("per_class") or {}).items()},
+        "criterion_accuracy": summary["criterion_status_accuracy"],
+        "retried": sum((r.get("attempts") or 1) > 1 for r in rows),
+        **line_stats(rows),
+    }
+
+
 def report(model: str, set_name: str) -> dict[str, Any]:
     folder, split = SETS[set_name]
     records = {r["metadata"]["record_id"]: r for r in read_jsonl(folder / f"{split}.jsonl")}
@@ -101,16 +128,17 @@ def report(model: str, set_name: str) -> dict[str, Any]:
 
     for guard in (True, False):
         rows = scored_with(guard)
-        summary = summarize(rows, metas)
-        decisions = summary["decisions"]
+        seen = [r for r in rows if not test_only(metas[r["record_id"]])]
+        unseen = [r for r in rows if test_only(metas[r["record_id"]])]
         found["guard_on" if guard else "guard_off"] = {
-            "valid_output_rate": summary["valid_output_rate"],
-            "macro_f1": decisions.get("macro_f1"),
-            "per_class_f1": {k: v["f1"] for k, v in (decisions.get("per_class") or {}).items()},
-            "criterion_accuracy": summary["criterion_status_accuracy"],
-            "retried": sum((r.get("attempts") or 1) > 1 for r in rows),
-            **line_stats(rows),
-            "confusion": decisions.get("confusion_matrix"),
+            **metrics(rows, metas),
+            "confusion": summarize(rows, metas)["decisions"].get("confusion_matrix"),
+            # the team's addition of 23 Oct: style and new-policy effects apart
+            "by_policy": {
+                "total": metrics(rows, metas),
+                "policy seen in training": metrics(seen, metas),
+                "test-only policy": metrics(unseen, metas),
+            },
             "breakdowns": breakdowns(rows, metas),
         }
     return found
