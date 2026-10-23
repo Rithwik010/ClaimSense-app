@@ -23,11 +23,12 @@ import json
 import random
 from collections import Counter
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from training.generate.v3.config import OUT_DIR
-from training.generate.v3.dataset import latest, load_sheets, read_jsonl, second_look_answers
-from training.generate.v3.verify import GateResult, check_note, filled_target, share
+from training.generate.v3.dataset import gate_rows, latest, load_sheets, read_jsonl
+from training.generate.v3.verify import share
 
 # The hand check of 19 Oct: the failed notes the team judged really wrong (the others failed on
 # the verifier, the gate's matching or the claim's own wording).
@@ -36,26 +37,6 @@ REALLY_WRONG = frozenset(
     "S3TU-00036 S3TU-00120 S3TU-00109 S3TU-00096 S3TU-00081 S3TU-00043".split()
 )
 SEED = 20261020
-
-
-def gate_now(
-    sheet: dict[str, Any],
-    note: dict[str, Any],
-    answer: dict | None,
-    looks: dict[str, str | None] | None = None,
-) -> GateResult:
-    """The fixed gate on one note, as `dataset.run_gate` runs it."""
-    answers = answer.get("answers") if answer else None
-    known = {k: tuple(v) for k, v in note["spans"].items()} if note.get("spans") else None
-    result = check_note(sheet, note["note"], known, answers, looks)
-    if answer is not None and answers is None:
-        result.failures.append(f"verifier answer unreadable: {answer.get('error')}")
-        result.verifier_pending = False
-    if result.failures:
-        result.verifier_pending = False
-    if not result.failures and not result.verifier_pending and not result.looks:
-        result.failures += filled_target(sheet, note["note"], result.spans)[1]
-    return result
 
 
 def status(passed: bool, pending: bool) -> str:
@@ -71,7 +52,7 @@ def describe(
     sheet: dict[str, Any],
     note: dict[str, Any],
     old: dict[str, Any],
-    new: GateResult,
+    new: SimpleNamespace,
     answer: dict | None,
 ) -> list[str]:
     text = note["note"]
@@ -101,16 +82,19 @@ def describe(
     return lines
 
 
-def gate_change(out_dir: Path = OUT_DIR, before_file: str = "gate_r3_before_fix.jsonl") -> dict:
+def gate_change(
+    out_dir: Path = OUT_DIR, before_file: str = "gate_r3_before_fix.jsonl", seed: int = SEED
+) -> dict:
     sheets = load_sheets(out_dir)
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     verifier = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
     before = {g["sheet_id"]: g for g in read_jsonl(out_dir / before_file)}
-    looks = second_look_answers(out_dir, sheets)
-    after: dict[str, GateResult] = {}
-    for sheet_id, note in notes.items():
-        key = (sheet_id, note["attempt"])
-        after[sheet_id] = gate_now(sheets[sheet_id], note, verifier.get(key), looks.get(key))
+    after = {  # the gate as run_gate runs it (dataset.gate_rows), in memory
+        row["sheet_id"]: SimpleNamespace(
+            **{**row, "spans": {k: tuple(v) for k, v in row["spans"].items()}}
+        )
+        for row in gate_rows(out_dir)[0]
+    }
     report: dict[str, Any] = {}
 
     flips: Counter[str] = Counter()
@@ -143,7 +127,7 @@ def gate_change(out_dir: Path = OUT_DIR, before_file: str = "gate_r3_before_fix.
         "really_wrong_now_passing": [s for s in REALLY_WRONG if rows[s] == "passed"],
     }
 
-    rng = random.Random(SEED)
+    rng = random.Random(seed)
     samples = {
         "passed_to_failed": rng.sample(sorted(moved["passed_to_failed"]), 20),
         "failed_to_passed": rng.sample(sorted(moved["failed_to_passed"]), 40),
@@ -162,7 +146,7 @@ def gate_change(out_dir: Path = OUT_DIR, before_file: str = "gate_r3_before_fix.
             )
     (out_dir / "hand_check_gate_fix.md").write_text("\n".join(lines), encoding="utf-8")
     report["3_hand_check_samples"] = {
-        "seed": SEED,
+        "seed": seed,
         "passed_to_failed": {
             "of": len(moved["passed_to_failed"]),
             **{"ids": samples["passed_to_failed"]},
@@ -220,8 +204,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--data", type=Path, default=OUT_DIR)
     parser.add_argument("--before", default="gate_r3_before_fix.jsonl")
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--seed", type=int, default=SEED, help="a new seed draws a fresh sample")
     args = parser.parse_args(argv)
-    report = gate_change(args.data, args.before)
+    report = gate_change(args.data, args.before, args.seed)
     shown = {k: v for k, v in report.items() if k != "4_evidence_quotes"}
     shown["4_evidence_quotes"] = {
         k: v for k, v in report["4_evidence_quotes"].items() if k != "changed"

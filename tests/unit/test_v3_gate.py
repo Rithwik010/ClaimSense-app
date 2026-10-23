@@ -183,6 +183,7 @@ def test_stating_the_missing_fact_beyond_the_procedure_wording_still_fails() -> 
     assert any("missing fact appears" in f for f in result.failures)
 
 
+@pytest.mark.usefixtures("looks_on")
 def test_a_diagnosis_line_is_not_waved_through() -> None:
     heart = {
         "fact_id": "F1",
@@ -212,6 +213,19 @@ def score_missing() -> dict:
     }
 
 
+@pytest.fixture
+def looks_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(verify, "second_look_on", lambda: True)
+
+
+def test_a_leak_finding_counts_at_once_with_the_second_look_off(monkeypatch) -> None:
+    monkeypatch.setattr(verify, "second_look_on", lambda: False)
+    note = "Exam: tender lumbar paraspinals. Pain is 7 of 10 today."
+    result = check_note(sheet(score_missing()), note, None, {"F1": "Pain is 7 of 10 today."})
+    assert result.looks == [] and any("found the missing fact" in f for f in result.failures)
+
+
+@pytest.mark.usefixtures("looks_on")
 def test_a_leak_finding_counts_only_when_the_second_look_finds_it_again() -> None:
     note = "Exam: tender lumbar paraspinals. Pain is 7 of 10 today."
     cited = "Pain is 7 of 10 today."  # too few of the wording's words for the local check
@@ -229,6 +243,7 @@ def test_a_quote_about_something_else_is_no_finding() -> None:
     assert result.passed and result.looks == []
 
 
+@pytest.mark.usefixtures("looks_on")
 def test_the_exclusions_own_negative_mention_is_no_leak_but_its_flip_is() -> None:
     cataract = {
         "fact_id": "F2",

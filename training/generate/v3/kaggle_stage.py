@@ -138,7 +138,8 @@ def main() -> None:
         out_path = args.out / "verifier_out.jsonl"
     done = {row["job_id"] for row in read_jsonl(out_path)}  # a rerun skips what is saved
     items = [item for item in items if item[0]["job_id"] not in done]
-    if stage["kind"] == "verify":
+    looks_on = run.get("second_looks", True)
+    if stage["kind"] == "verify" and looks_on:
         verified = [r for r in read_jsonl(out_path) if r["job_id"].startswith("verify-")]
         pending_looks = [
             i
@@ -215,7 +216,7 @@ def main() -> None:
             print(f"{args.stage}: {totals['done']}/{totals['jobs']}", flush=True)
 
     generate(items)
-    if stage["kind"] == "verify":  # the second looks at what this pass (or an earlier try) found
+    if stage["kind"] == "verify" and looks_on:  # the second looks at what this pass found
         done = {row["job_id"] for row in read_jsonl(out_path)}
         verified = [r for r in read_jsonl(out_path) if r["job_id"].startswith("verify-")]
         looks = second_looks(run, stage["sampling"], verified, jobs)

@@ -251,7 +251,7 @@ Every note must pass:
 7. **No near-duplicates** across the train, validation and test splits (5-word shingles, Jaccard of
    `verification.near_duplicate_jaccard` or more).
 
-The verifier's quotes (D-V3-10, D-V3-12). Words are compared with the writers' short forms
+The verifier's quotes (D-V3-10, D-V3-11, D-V3-12). Words are compared with the writers' short forms
 written out (phrases/abbreviations.yaml), hyphenated and slashed words split and a plural "s"
 dropped. A value counts only as a number of its own (not the 4 of 44% or the 5 of C5, unless the
 fact's own wording writes it so), or spelled out.
@@ -279,6 +279,8 @@ fact's own wording writes it so), or spelled out.
   a diagnosis only when the statement asks for that condition). For an exclusion, the verifier
   is asked about that fact alone. (Asked about a fact alone, 23 Oct, the verifier found something
   in 155 of 155 cases, the same quote in 108: for a missing fact it is no second opinion.)
+  `verification.second_look` switches the second look on; it is off since 23 Oct (D-V3-14: the
+  judge failed the team's bars), and every finding the rules above keep counts at once.
   The local word-overlap check leaves the claim's procedure wording out the same way.
 - A MET fact with two or more parts (its A wording split at ";", ", and", ", but" and " and the ")
   needs every part supported by its quote: `verification.part_overlap` of the part's words, or all

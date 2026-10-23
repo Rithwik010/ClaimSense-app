@@ -147,6 +147,7 @@ verification:
   rival_margin: 0.4         # ... and fitting it this much better is that fact's quote, not this one's
   finding_overlap: 0.15     # a verifier finding for a missing fact must hold this share of one of its wordings' words
   procedure_share: 0.6      # a passage this much made of the claim's procedure wording documents nothing
+  second_look: false        # D-V3-14: a leak finding counts at once (true: it waits for the second look of D-V3-12)
   part_overlap: 0.33        # each part of a two-part MET fact must hold this share of its words in the quote (or its numbers)
 
 # --- Open-weight models on Kaggle (Phase 3, Phase 4) ------------------------------------------------

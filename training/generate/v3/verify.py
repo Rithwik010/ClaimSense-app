@@ -589,6 +589,11 @@ def check_note(
         quote = verifier.get(fid) if verifier is not None else None
         if not (quote and _a_finding(note, quote, fact, result.spans, claim, mentions)):
             continue
+        if not second_look_on():  # D-V3-14: every finding the rules above keep counts
+            result.failures.append(
+                f"{fid}: the verifier found the {fact['status']} fact: {quote[:80]!r}"
+            )
+            continue
         if second_look is None or fid not in second_look:
             result.looks.append(fid)  # asked again, about this fact alone, before it counts
             continue
@@ -604,6 +609,12 @@ def check_note(
     if result.failures:
         result.looks = []  # the note is rewritten anyway
     return result
+
+
+def second_look_on() -> bool:
+    """`verification.second_look`: whether a leak finding waits for a second look (D-V3-12) or
+    counts at once (D-V3-14, the team's fallback of 23 Oct)."""
+    return bool(config()["verification"].get("second_look", True))
 
 
 def _a_finding(

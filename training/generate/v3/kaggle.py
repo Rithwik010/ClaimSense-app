@@ -89,6 +89,7 @@ def run_config() -> dict[str, Any]:
         "verifier_user": VERIFIER_USER,
         "judge_system": JUDGE_SYSTEM,
         "judge_user": JUDGE_USER,
+        "second_looks": bool(config()["verification"].get("second_look", True)),
         "stages": {
             name: {
                 "kind": "verify" if name == "verifier" else "write",
