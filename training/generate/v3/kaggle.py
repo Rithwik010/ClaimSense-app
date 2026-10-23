@@ -111,6 +111,7 @@ def round_jobs(
     looks_only: bool = False,
     rejudge: bool = False,
     only: tuple[str, ...] = (),
+    new_only: bool = False,
 ) -> tuple[list[dict], list[dict]]:
     """Writer jobs (B and C sheets that need a note) and verifier jobs (writer A notes whose
     latest attempt has no verifier answer yet, and the second looks the gate waits for). `limit`:
@@ -134,6 +135,8 @@ def round_jobs(
         sheet = sheets[sheet_id]
         writer = sheet["writer"]
         if writer not in ("B", "C", "D") or (only and writer not in only):
+            continue
+        if new_only and attempt != 1:  # sheets never written: no rewrites of earlier notes
             continue
         if limit is not None and per_writer.get(writer, 0) >= limit:
             continue
@@ -340,6 +343,7 @@ def prepare_round(
     looks_only: bool = False,
     rejudge: bool = False,
     only: tuple[str, ...] = (),
+    new_only: bool = False,
 ) -> dict:
     folder = out_dir / "kaggle" / f"round{round_no}"
     dataset, kernel = folder / "dataset", folder / "kernel"
@@ -347,7 +351,7 @@ def prepare_round(
         if path.exists():
             shutil.rmtree(path)
         path.mkdir(parents=True)
-    writers, verify = round_jobs(limit, out_dir, looks_only, rejudge, only)
+    writers, verify = round_jobs(limit, out_dir, looks_only, rejudge, only, new_only)
     write_jsonl(dataset / "writers.jsonl", writers)
     write_jsonl(dataset / "verify.jsonl", verify)
     (dataset / "run.json").write_text(json.dumps(run_config(), indent=2), encoding="utf-8")

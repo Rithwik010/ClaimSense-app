@@ -310,6 +310,7 @@ def top_up_sheets(
     offset_base: int = 500,
     weight: float = 1.0,
     start: Counter[Cell] | None = None,
+    first: int = 0,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Training sheets for the cells under their floor (plus the cushion), thinnest cell first:
     sheets of the cell's policy, from the scenario types likely to add to it, kept only when
@@ -318,7 +319,8 @@ def top_up_sheets(
     the gate); `writer`: every new sheet's writer (default: the training mix); `code`, `tag` and
     `offset_base` keep a later top-up's sheets and scenarios apart from an earlier one's;
     `weight`: what a new sheet adds to its cells (a note expected to pass the gate at that rate);
-    `start`: the counts to begin from instead (round 4: notes waiting for a rewrite count too)."""
+    `start`: the counts to begin from instead (round 4: notes waiting for a rewrite count too);
+    `first`: the number of the first new sheet (after the sheets of the same code)."""
     cfg = config()["top_up"]
     weights = dict(config()["scenario_weights"])
     targets = {k: math.ceil(v * (1 + cfg["cushion"])) for k, v in cfg["floors"].items()}
@@ -358,7 +360,8 @@ def top_up_sheets(
             scenario_type = rng.choices(list(allowed), weights=list(allowed.values()))[0]
             mix = config()["writer_mix"]["train"]["A"]
             chosen = writer or ("A" if rng.random() < mix else "B")
-            sheet = maker.sheet(builders[policy], scenario_type, "train", code, len(added), chosen)
+            number = first + len(added)
+            sheet = maker.sheet(builders[policy], scenario_type, "train", code, number, chosen)
             if sheet is None:
                 failures[scenario_type] += 1
                 if failures[scenario_type] > 200 and len(allowed) > 1:
@@ -400,6 +403,52 @@ TRICKY_OF = {  # the tricky-fact types of the team's ±10% rule (19 Oct), per sh
     "contradiction": lambda s: "contradiction" in s["tricky"],
     "borderline": lambda s: "borderline" in s["tricky"],
 }
+
+
+def top_up_cells(
+    out_dir: Path, cells: Mapping[str, float], tag: str, offset_base: int
+) -> dict[str, Any]:
+    """Writer B training sheets for only these coverage cells (`"<kind> <name>": the share of
+    their notes expected to pass the gate`), counted from the final training set, up to each
+    floor plus the cushion (the team's check of 23 Oct: close a cell the build leaves short with
+    targeted writer B rewrites). Appended to sheets.jsonl after the TARGETED_CODE sheets."""
+
+    by_id = load_sheets(out_dir)
+    final = read_jsonl(out_dir / "final" / "train.jsonl")
+    counts = cell_counts(by_id[r["metadata"]["sheet_id"]] for r in final)
+    maker = SheetMaker(config()["seed"])
+    sheets = list(by_id.values())
+    first = sum(sid.startswith(f"S3{TARGETED_CODE}-") for sid in by_id)
+    added: list[dict[str, Any]] = []
+    report: dict[str, Any] = {}
+    for name, rate in cells.items():
+        kind, cell_name = name.split(" ", 1)
+        train = [x for x in sheets if x["split"] == "train"]
+        every = set(cell_counts(sheets)) | cell_universe(train, maker.train_policies)
+        start: Counter[Cell] = Counter({c: 10**6 for c in every})  # only `name` is short
+        start[(kind, cell_name)] = counts.get((kind, cell_name), 0)
+        made, cell_report = top_up_sheets(
+            maker,
+            sheets,
+            None,
+            TARGETED_CODE,
+            "B",
+            f"{tag}-{name}",
+            offset_base,
+            rate,
+            start,
+            first + len(added),
+        )
+        added += made
+        report[name] = {
+            "in_final": counts.get((kind, cell_name), 0),
+            "sheets": len(made),
+            "expected_after": cell_report["cells"].get(name, {}).get("after"),
+        }
+    with (out_dir / "sheets.jsonl").open("a", encoding="utf-8") as f:
+        for sheet in added:
+            f.write(json.dumps(sheet, ensure_ascii=False) + "\n")
+    return {"sheets_added": len(added), "cells": report}
 
 
 def passing_training(out_dir: Path = OUT_DIR) -> list[dict[str, Any]]:
@@ -880,12 +929,17 @@ def main() -> None:
         "--rejudge", action="store_true", help="with --looks-only: every judge's answer again"
     )
     jobs.add_argument("--writers", nargs="*", default=[], help="only these writers' jobs (D)")
+    jobs.add_argument("--new-only", action="store_true", help="only sheets never written")
     take = sub.add_parser("ingest")
     take.add_argument("--round", required=True)
     sub.add_parser("gate")
     sub.add_parser("targeted", help="round 4: writer B sheets for the cells and tricky types short")
     sub.add_parser("fix-leads", help="the lead-line rule on the sheets drawn (D-V3-14)")
     sub.add_parser("human-style", help="the LLM-written human-style test set's sheets (D-V3-15)")
+    cells = sub.add_parser("top-up-cells", help="writer B sheets for cells the build left short")
+    cells.add_argument("--cell", nargs=2, action="append", metavar=("CELL", "PASS_RATE"))
+    cells.add_argument("--tag", required=True)
+    cells.add_argument("--offset", type=int, required=True)
     sub.add_parser("build")
     args = parser.parse_args()
     out = args.out
@@ -906,6 +960,7 @@ def main() -> None:
             looks_only=args.looks_only,
             rejudge=args.rejudge,
             only=tuple(args.writers),
+            new_only=args.new_only,
         )
         print(json.dumps(report, indent=2))
     elif args.command == "ingest":
@@ -918,6 +973,9 @@ def main() -> None:
         print(json.dumps(fix_leads(out), indent=2))
     elif args.command == "human-style":
         print(json.dumps(human_style_sheets(out), indent=2))
+    elif args.command == "top-up-cells":
+        wanted = {c: float(r) for c, r in args.cell}
+        print(json.dumps(top_up_cells(out, wanted, args.tag, args.offset), indent=2))
     elif args.command == "build":
         from training.generate.v3.build import build
 
