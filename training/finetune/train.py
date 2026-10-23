@@ -146,7 +146,10 @@ def main() -> None:
     started = time.time()
 
     class StopAndSave(TrainerCallback):
-        """Save and stop at `--stop-after-steps` or after `--stop-after-hours` (a session's end)."""
+        """Save and stop at `--stop-after-steps` or after `--stop-after-hours` (a session's end);
+        `paused` tells a session's end from the end of training (last step or early stopping)."""
+
+        paused = False
 
         def on_step_end(self, _args, state, control, **_kwargs):  # noqa: ANN001, ANN201
             by_steps = args.stop_after_steps and state.global_step >= args.stop_after_steps
@@ -156,6 +159,7 @@ def main() -> None:
             if by_steps or by_time:
                 control.should_save = True
                 control.should_training_stop = True
+                self.paused = True
             return control
 
     if args.export_from:
@@ -281,7 +285,7 @@ def main() -> None:
             seed=config["seed"],
             report_to="none",
         ),
-        callbacks=[StopAndSave()]
+        callbacks=[stopper := StopAndSave()]
         + (
             []
             if args.no_eval
@@ -293,6 +297,14 @@ def main() -> None:
     )
     resume = latest_checkpoint(args.resume_from) if args.resume_from else None
     first_step = 0
+    if resume and resume.parent.resolve() != (out / "checkpoints").resolve():
+        # an earlier session's checkpoints into this run's folder (the same path in both
+        # sessions), so its best checkpoint is still there when the best one is loaded at the end
+        (out / "checkpoints").mkdir(parents=True, exist_ok=True)
+        for earlier in resume.parent.glob("checkpoint-*"):
+            if not (out / "checkpoints" / earlier.name).exists():
+                shutil.copytree(earlier, out / "checkpoints" / earlier.name)
+        resume = out / "checkpoints" / resume.name
     if resume:
         first_step = json.loads((resume / "trainer_state.json").read_text())["global_step"]
         print(f"resuming from {resume} at step {first_step}", flush=True)
@@ -308,7 +320,7 @@ def main() -> None:
         )
         * config["num_train_epochs"]
     )
-    finished = trainer.state.global_step >= trainer.state.max_steps
+    finished = not stopper.paused  # the last step, or early stopping on the validation loss
     log = {
         "train_runtime_seconds": round(runtime),
         "first_step": first_step,
@@ -333,8 +345,17 @@ def main() -> None:
     if not finished:  # a session stopped early: its checkpoint is the result; the next resumes
         print(json.dumps({k: v for k, v in log.items() if k != "history"}, indent=2))
         return
-    model.save_pretrained(str(out / "adapter"))
+    model.save_pretrained(str(out / "adapter"))  # the lowest validation loss (loaded at the end)
     tokenizer.save_pretrained(str(out / "adapter"))
+    final = latest_checkpoint(out / "checkpoints")  # the last step trained: the final model
+    shutil.copytree(
+        final,
+        out / "adapter-final",
+        ignore=shutil.ignore_patterns("optimizer.pt", "scheduler.pt", "rng_state*.pth"),
+        dirs_exist_ok=True,
+    )
+    log["final_checkpoint"] = final.name
+    (out / "training-log.json").write_text(json.dumps(log, indent=2))
     if not args.no_gguf:
         export_gguf(model, tokenizer, out, config["gguf_quantization"], args.gguf_work_dir)
     print(json.dumps({k: v for k, v in log.items() if k != "history"}, indent=2))

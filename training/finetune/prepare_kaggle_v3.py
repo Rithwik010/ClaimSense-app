@@ -12,8 +12,10 @@ Kernel folders (`uvx kaggle kernels push -p <folder>`):
   steps 21 to 25. Its losses must repeat the timing run's steps 21 to 25: the resume check.
 - `kernel-v3-full-1` and `kernel-v3-full-2`: the full run in two sessions. The first stops itself
   after `SESSION_HOURS` (a checkpoint every `SAVE_STEPS` steps as well); the second attaches the
-  first's output, resumes from its latest checkpoint and finishes, with the GGUF export. Pushed only
-  after the team says "train".
+  first's output, resumes from its latest checkpoint and finishes, with two GGUF exports: the
+  checkpoint with the lowest validation loss (`adapter`, `gguf/`) and the final one
+  (`adapter-final`, `final/gguf/`). Every evaluation uses the first `EVAL_LIMIT` validation
+  records (D-V3-13).
 
     uv run python -m training.finetune.prepare_kaggle_v3 --max-seq-length 4096
 """
@@ -32,7 +34,10 @@ USER = "manideep3183"
 SLUG = "claimsense-decision-v3"
 SESSION_HOURS = 5.75  # each full-run session stays well under Kaggle's 12-hour session limit
 SAVE_STEPS = 125
-TIMING = "--max-steps 25 --save-steps 20 --eval-steps 20 --eval-limit 20 --logging-steps 1"
+EVAL_LIMIT = 150  # the fixed validation subset (its first 150 records) of every evaluation
+TIMING = (
+    f"--max-steps 25 --save-steps 20 --eval-steps 20 --eval-limit {EVAL_LIMIT} --logging-steps 1"
+)
 KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, resume from)
     "kernel-v3-timing": (
         "claimsense-finetune-v3-timing",
@@ -51,14 +56,15 @@ KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, 
     "kernel-v3-full-1": (
         "claimsense-finetune-v3-full-1",
         "/kaggle/working/claimsense-v3",
-        f"--epochs 1 --save-steps {SAVE_STEPS} --stop-after-hours {SESSION_HOURS} --no-gguf",
+        f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT} "
+        f"--stop-after-hours {SESSION_HOURS} --no-gguf",
         None,
         None,
     ),
     "kernel-v3-full-2": (
         "claimsense-finetune-v3-full-2",
         "/kaggle/working/claimsense-v3",
-        f"--epochs 1 --save-steps {SAVE_STEPS}",
+        f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT}",
         "claimsense-finetune-v3-full-1",
         "latest",
     ),
@@ -94,6 +100,18 @@ def notebook(title: str, out: str, extra: str, source: str | None, resume: str |
             "code",
             "!python {TRAIN} --data {DATA} --out {OUT} --train-split train_mix "
             "--max-seq-length {MAX_SEQ} " + extra + " {RESUME}",
+        ),
+        *(
+            [
+                (
+                    "code",
+                    "# the final checkpoint's GGUF too (stage 5 compares it with the best one)\n"
+                    "!python {TRAIN} --export-from {OUT}/adapter-final --out {OUT}/final "
+                    "--data {DATA} --max-seq-length {MAX_SEQ}",
+                )
+            ]
+            if title.endswith("full-2")
+            else []
         ),
         (
             "code",
