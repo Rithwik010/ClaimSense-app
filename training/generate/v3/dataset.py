@@ -54,6 +54,7 @@ from training.generate.v3.verify import check_note, filled_target
 from training.generate.v3.visits import over_limit_lines, usage_index
 
 SPLITS = ("train", "validation", "test_messy", "test_unseen_style", "handwritten")
+HUMAN_STYLE = "test_human_style"  # D-V3-15: the LLM-written human-style test set (writer D)
 CODES = {
     "train": "TR",
     "validation": "VA",
@@ -63,7 +64,7 @@ CODES = {
 }
 TOP_UP_CODE = "TP"  # top-up sheets: training split only (D-V3-6)
 TARGETED_CODE = "TQ"  # round 4: writer B sheets for the cells and tricky types still short
-TEST_SPLITS = ("test_messy", "test_unseen_style", "handwritten")
+TEST_SPLITS = ("test_messy", "test_unseen_style", "handwritten", HUMAN_STYLE)
 UNSEEN_SKIP = ("office_visit", "ncs_without_emg", "facet_two_regions", "extended_testing")
 
 
@@ -478,6 +479,61 @@ def targeted_sheets(
     return report
 
 
+def human_style_sheets(out_dir: Path = OUT_DIR) -> dict[str, Any]:
+    """The LLM-written human-style test set's fact sheets (D-V3-15): the 30 hand-written briefs
+    (S3HW-00000 to -00029) and 70 more drawn the same way, from the held-out pool (test splits:
+    every policy, a third on the test-only ones), with their own seeds; all in `HUMAN_STYLE`,
+    written by writer D, test only. A note's target length is drawn from
+    `llm.writer_d.target_words`. sheets.jsonl is kept as sheets_before_human_style.jsonl."""
+    cfg = config()
+    total = cfg["sizes"][HUMAN_STYLE]
+    rows = read_jsonl(out_dir / "sheets.jsonl")
+    if any(s["split"] == HUMAN_STYLE for s in rows):
+        raise SystemExit(f"{HUMAN_STYLE} sheets exist already")
+    words = cfg["llm"]["writer_d"]["target_words"]
+
+    def as_human(sheet: dict[str, Any]) -> dict[str, Any]:
+        rng = random.Random(f"{sheet['seed']}-writer-d")
+        sheet["split"], sheet["writer"] = HUMAN_STYLE, "D"
+        sheet["style"] = {**sheet["style"], "target_words": rng.randint(words["min"], words["max"])}
+        return sheet
+
+    briefs = [as_human(s) for s in rows if s["writer"] == "H"]
+    maker = SheetMaker(cfg["seed"])
+    weights = dict(cfg["scenario_weights"])
+    wanted = total - len(briefs)
+    unseen = round(wanted * cfg["test_unseen_policy_share"])
+    rng = random.Random(f"{cfg['seed']}-v3-{HUMAN_STYLE}")
+    added: list[dict[str, Any]] = []
+    for kind, count in (("unseen", unseen), ("seen", wanted - unseen)):
+        if kind == "unseen":
+            b = maker.builder(346, set(TEST_ONLY_POLICIES), set())
+            allowed = {t: w for t, w in weights.items() if t not in UNSEEN_SKIP}
+        else:
+            b = maker.builder(345, maker.train_policies, set())
+            allowed = dict(weights)
+        made, failures = 0, Counter()
+        while made < count:
+            scenario_type = rng.choices(list(allowed), weights=list(allowed.values()))[0]
+            number = len(briefs) + len(added)
+            sheet = maker.sheet(b, scenario_type, HUMAN_STYLE, "HW", number, "D", kind == "unseen")
+            if sheet is None:
+                failures[scenario_type] += 1
+                if failures[scenario_type] > 200:
+                    allowed.pop(scenario_type, None)
+                continue
+            added.append(as_human(sheet))
+            made += 1
+    shutil.copy(out_dir / "sheets.jsonl", out_dir / "sheets_before_human_style.jsonl")
+    write_jsonl(out_dir / "sheets.jsonl", rows + added)
+    return {
+        "briefs": len(briefs),
+        "added": len(added),
+        "unseen_policy": sum(s.get("unseen_policy", False) for s in briefs + added),
+        "policies": dict(Counter(p for s in briefs + added for p in s["policy_ids"]).most_common()),
+    }
+
+
 def fix_leads(out_dir: Path = OUT_DIR) -> dict[str, Any]:
     """The lead-line rule on the sheets already drawn (D-V3-14, phrases/leads.yaml): each sheet
     whose lead states part of a criterion it marks missing gets the neutral lead, and its note so
@@ -823,11 +879,13 @@ def main() -> None:
     jobs.add_argument(
         "--rejudge", action="store_true", help="with --looks-only: every judge's answer again"
     )
+    jobs.add_argument("--writers", nargs="*", default=[], help="only these writers' jobs (D)")
     take = sub.add_parser("ingest")
     take.add_argument("--round", required=True)
     sub.add_parser("gate")
     sub.add_parser("targeted", help="round 4: writer B sheets for the cells and tricky types short")
     sub.add_parser("fix-leads", help="the lead-line rule on the sheets drawn (D-V3-14)")
+    sub.add_parser("human-style", help="the LLM-written human-style test set's sheets (D-V3-15)")
     sub.add_parser("build")
     args = parser.parse_args()
     out = args.out
@@ -842,7 +900,12 @@ def main() -> None:
         from training.generate.v3.kaggle import prepare_round
 
         report = prepare_round(
-            args.round, args.limit, out, looks_only=args.looks_only, rejudge=args.rejudge
+            args.round,
+            args.limit,
+            out,
+            looks_only=args.looks_only,
+            rejudge=args.rejudge,
+            only=tuple(args.writers),
         )
         print(json.dumps(report, indent=2))
     elif args.command == "ingest":
@@ -853,6 +916,8 @@ def main() -> None:
         print(json.dumps(targeted_sheets(out), indent=2))
     elif args.command == "fix-leads":
         print(json.dumps(fix_leads(out), indent=2))
+    elif args.command == "human-style":
+        print(json.dumps(human_style_sheets(out), indent=2))
     elif args.command == "build":
         from training.generate.v3.build import build
 

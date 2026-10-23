@@ -19,7 +19,7 @@ from collections import Counter
 from training.generate.v3.config import OUT_DIR, phrases
 from training.generate.v3.dataset import latest, load_sheets, read_jsonl
 
-SPLITS = ("train", "validation", "test_messy", "test_unseen_style")
+SPLITS = ("train", "validation", "test_messy", "test_unseen_style", "test_human_style")
 
 
 def lead_check() -> dict:

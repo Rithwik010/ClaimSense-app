@@ -45,7 +45,7 @@ from training.generate.v3.dataset import TRICKY_OF, latest, load_sheets, read_js
 from training.generate.v3.segments import render
 from training.generate.v3.verify import check_note, filled_target, locate, near_duplicates
 
-FINAL_SPLITS = ("train", "validation", "test_messy", "test_unseen_style")
+FINAL_SPLITS = ("train", "validation", "test_messy", "test_unseen_style", "test_human_style")
 V2_DIR = GENERATED_DIR / "decision_v2"  # the v2 clean data (read only)
 DATASET_VERSION = "decision-dataset-v3"
 
@@ -274,7 +274,7 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
         note = note_row["note"]
         spans = {k: tuple(v) for k, v in result["spans"].items()}
         report = dict(note_row.get("noise") or {})
-        if sheet["writer"] == "B":
+        if sheet["writer"] in ("B", "D"):  # writer D: its occasional misspellings too (D-V3-15)
             try:
                 note, spans, report = _noised_model_note(
                     sheet, note, spans, f"{sheet['seed']}-b{note_row['attempt']}-noise"

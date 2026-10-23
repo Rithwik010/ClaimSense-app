@@ -451,3 +451,34 @@ def test_the_training_trim_keeps_top_ups_writers_and_tricky_shares(monkeypatch) 
     assert sum(r[0]["metadata"]["writer"] == "A" for r in kept) == 5
     share = sum(sheets[i]["tricky"] == ["borderline"] for i in ids) / 10
     assert share <= 0.3  # 10 of the 20 rows had one: the cuts take those first
+
+
+def test_writer_d_gets_one_user_message_in_the_physicians_own_words() -> None:
+    from training.generate.v3.llm import HUMAN_STYLE, writer_messages
+
+    sheet = {
+        "writer": "D",
+        "seed": "s",
+        "clinic": {"name": "Valley Pain Clinic", "visit": "Follow-up", "provider_type": "X"},
+        "visit_date": "2026-11-02",
+        "patient": {"age": 61, "sex_words": ["woman"]},
+        "style": {"habit": "full_sentences", "target_words": 150},
+        "lead": {"A": "The patient is referred for imaging."},
+        "office_visits": [],
+        "timeline": [],
+        "facts": [documented("F1", "The pain has lasted 6 weeks despite physical therapy.", ["6"])],
+        "distractors": {
+            "conditions": [],
+            "medications": [],
+            "allergies": ["No known drug allergies."],
+            "social": [["Lives alone."]],
+            "ros": [],
+        },
+        "diagnoses": [{"code": "M545", "description": "Low back pain"}],
+        "procedures": [],
+    }
+    messages = writer_messages(sheet)
+    assert [m["role"] for m in messages] == ["user"]
+    text = messages[0]["content"]
+    assert HUMAN_STYLE in text and "1. The pain has lasted 6 weeks" in text
+    assert "[History" not in text and "routine lines" not in text

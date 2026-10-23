@@ -15,6 +15,7 @@ sizes:                      # D-V3-6 (17 Oct): train 6,000 and the messy test 60
   test_messy: 600           # held out; writers A and B
   test_unseen_style: 200    # held out; writer C only
   handwritten: 30           # fact sheets for the team to write notes from
+  test_human_style: 100     # D-V3-15: the LLM-written human-style test set (the 30 briefs and 70 more)
 sizes_margin: 0.10          # extra sheets per split, for notes that fail the gate after every retry
 top_up:                     # training split only; validation and tests keep the natural mix (D-V3-6)
   floors:                   # examples each cell needs in the training set (training/generate/v3/coverage.py)
@@ -34,6 +35,7 @@ writer_mix:                 # share of each split's notes per writer
   validation: {A: 0.5, B: 0.5}
   test_messy: {A: 0.5, B: 0.5}
   test_unseen_style: {C: 1.0}
+  test_human_style: {D: 1.0}
 training_mix:               # v2 clean train records : v3 messy train records
   v2_clean: 0.4
   v3_messy: 0.6
@@ -168,6 +170,17 @@ llm:
     max_tokens: 1600
     max_model_len: 4096     # OLMo-2's context; prompt plus max_tokens stay under it
     max_num_seqs: 64        # its large vocabulary ran out of T4 memory at vLLM's default 256
+  writer_d:                 # D-V3-15: the LLM-written human-style test set; a family no other v3 model uses
+    model: mistralai/Mistral-7B-Instruct-v0.3
+    revision: c170c708c41dac9275d15a8fff4eca08d52bab71  # Hugging Face, 23 Oct
+    family: mistral
+    licence: Apache-2.0
+    temperature: 0.8
+    top_p: 0.95
+    max_tokens: 900
+    max_model_len: 6144
+    max_num_seqs: 64
+    target_words: {min: 110, max: 240}  # the physician's own words: terse
   verifier:                 # a family no writer uses
     model: ibm-granite/granite-3.3-8b-instruct
     family: granite

@@ -39,6 +39,12 @@ HABITS = {
     "templated_ehr": "an EHR template with upper-case section headers, short labeled fields and "
     "lists",
 }
+HUMAN_STYLE = (  # writer D only (D-V3-15): the physician's own words
+    "the physician's own words, written fast between patients: very terse, heavy use of the "
+    "physician's own abbreviations and shorthand, sentence fragments rather than sentences, and "
+    "sections in an order of your choosing (for example the plan first, or no headings at all); "
+    "not a template, not full prose"
+)
 FORMATS = {  # writer C only
     "soap": "SOAP format with S, O, A and P sections",
     "problem_oriented": "a problem-oriented note: a brief history and exam, then a numbered "
@@ -111,9 +117,11 @@ def _report_title(sheet: Mapping[str, Any], kind: str) -> str:
 
 
 def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
-    """The chat messages for writer B or C."""
+    """The chat messages for writer B, C or D (writer D: one user message, the physician's own
+    words, the facts in an order of its choosing; D-V3-15)."""
     cfg = config()
     style = sheet["style"]
+    human = sheet["writer"] == "D"
     patient = sheet["patient"]
     lines = [
         "Write the clinic note for this visit.",
@@ -122,12 +130,16 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
         f"{_date(sheet['visit_date'])}.",
         f"Patient: {patient['age']}-year-old {patient['sex_words'][0]}.",
     ]
-    if sheet["writer"] == "C" and style.get("format"):
+    if human:
+        lines.append(f"Author style: {HUMAN_STYLE}.")
+    elif sheet["writer"] == "C" and style.get("format"):
         lines.append(f"Format: {FORMATS[style['format']]}.")
     else:
         lines.append(f"Author style: {HABITS[style['habit']]}.")
-    words = cfg["note"]["length_words"]
+    words = cfg["llm"]["writer_d"]["target_words"] if human else cfg["note"]["length_words"]
     target = min(style["target_words"], words["max"])
+    if human:
+        target = max(words["min"], target)
     low, high = max(words["min"], round(target * 0.85)), min(words["max"], round(target * 1.15))
     lines.append(
         f"Length: between {low} and {high} words (about {target}). A note under {low} words "
@@ -144,7 +156,10 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
     lines += [
         "",
         "The note must state each of these facts in a sentence of its own, keeping every number "
-        "and date exactly as written (you may reword everything else):",
+        "and date exactly as written (you may reword everything else):"
+        if not human
+        else "The note must state each of these facts in a fragment or line of its own, keeping "
+        "every number and date exactly as written (abbreviate and reword everything else):",
     ]
     timeline = {e.get("fact_id"): e for e in sheet["timeline"]}
     n = 0
@@ -176,7 +191,7 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
             where = "Results, as " + REPORTS[report].format(
                 title=_report_title(sheet, report), date=_date(event["date"]), event=event["event"]
             )
-        lines.append(f"{n}. [{where}] {sentence}")
+        lines.append(f"{n}. {sentence}" if human else f"{n}. [{where}] {sentence}")
     if hedges:
         lines += ["", "Mention each of these only as a hedged, unconfirmed possibility:"]
         lines += [f"- {h}" for h in hedges]
@@ -209,7 +224,7 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
             "- in the history, a short block copied forward from an earlier visit, marked as "
             "copied, with no new clinical facts"
         )
-    routine = _routine(sheet)
+    routine = [] if human else _routine(sheet)
     if routine:
         lines += [
             "",
@@ -236,6 +251,8 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
         f'Never use these words: {BANNED}. Write negatives as "no", "reports no" or '
         '"negative for".',
     ]
+    if human:  # Mistral's chat template takes no system message
+        return [{"role": "user", "content": WRITER_SYSTEM + "\n\n" + "\n".join(lines)}]
     return [
         {"role": "system", "content": WRITER_SYSTEM},
         {"role": "user", "content": "\n".join(lines)},

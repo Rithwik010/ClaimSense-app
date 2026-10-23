@@ -159,6 +159,7 @@ def main() -> None:
     started = time.time()
     llm = LLM(
         model=stage["model"],
+        revision=stage.get("revision"),
         dtype=settings["dtype"],
         tensor_parallel_size=settings["tensor_parallel_size"],
         max_model_len=stage.get("max_model_len", settings["max_model_len"]),

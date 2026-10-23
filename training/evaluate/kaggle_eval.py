@@ -63,7 +63,7 @@ SETS = {  # name -> (folder, split)
     "clean": (GENERATED_DIR / "decision_v2", "test"),
     "test_messy": (V3_DIR / "final", "test_messy"),
     "test_unseen_style": (V3_DIR / "final", "test_unseen_style"),
-    "handwritten": (V3_DIR / "final", "handwritten"),
+    "human_style": (V3_DIR / "final", "test_human_style"),  # LLM-written human-style test set
 }
 STUDY_DIR = GENERATED_DIR / "eval" / "v3study"
 PIP = [

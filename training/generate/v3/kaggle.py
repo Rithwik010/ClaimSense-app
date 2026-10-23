@@ -97,9 +97,10 @@ def run_config() -> dict[str, Any]:
                 "model": llm[name]["model"],
                 "max_model_len": llm[name].get("max_model_len", llm["vllm"]["max_model_len"]),
                 "max_num_seqs": llm[name].get("max_num_seqs", 256),
+                **({"revision": llm[name]["revision"]} if llm[name].get("revision") else {}),
                 **({"sampling": _sampling(name)} if name == "verifier" else {}),
             }
-            for name in ("writer_b", "writer_c", "verifier")
+            for name in ("writer_b", "writer_c", "writer_d", "verifier")
         },
     }
 
@@ -109,6 +110,7 @@ def round_jobs(
     out_dir: Path = OUT_DIR,
     looks_only: bool = False,
     rejudge: bool = False,
+    only: tuple[str, ...] = (),
 ) -> tuple[list[dict], list[dict]]:
     """Writer jobs (B and C sheets that need a note) and verifier jobs (writer A notes whose
     latest attempt has no verifier answer yet, and the second looks the gate waits for). `limit`:
@@ -131,12 +133,12 @@ def round_jobs(
     for sheet_id, attempt in sorted(needed.items()):
         sheet = sheets[sheet_id]
         writer = sheet["writer"]
-        if writer not in ("B", "C"):
+        if writer not in ("B", "C", "D") or (only and writer not in only):
             continue
         if limit is not None and per_writer.get(writer, 0) >= limit:
             continue
         per_writer[writer] = per_writer.get(writer, 0) + 1
-        name = "writer_b" if writer == "B" else "writer_c"
+        name = f"writer_{writer.lower()}"
         writers.append(
             {
                 "job_id": f"{sheet_id}#{attempt}",
@@ -167,7 +169,7 @@ def round_jobs(
     verify: list[dict] = []
     count = 0
     for sheet_id, note in sorted(notes.items()):
-        if (sheet_id, note["attempt"]) in skip:
+        if (sheet_id, note["attempt"]) in skip or (only and note["writer"] not in only):
             continue
         if note["writer"] != "A" and note.get("spans") is None and sheet_id in needed:
             continue  # a model note to be rewritten this round
@@ -235,7 +237,7 @@ def estimate_hours(writers: list[dict], verify: list[dict]) -> dict[str, float]:
         return sum(len(m["content"]) for m in messages) / CHARS_PER_TOKEN
 
     found: dict[str, float] = {}
-    for writer in ("B", "C"):
+    for writer in ("B", "C", "D"):
         jobs = [j for j in writers if j["writer"] == writer]
         if jobs:
             prompt = sum(tokens(j["messages"]) for j in jobs)
@@ -286,7 +288,7 @@ def notebook(round_no: int | str) -> dict[str, Any]:
             "code",
             "base = dict(os.environ, VLLM_USE_V1='1' if run['vllm']['use_v1_engine'] else '0')\n"
             "failed = []\n"
-            "for stage in ('writer_b', 'writer_c', 'verifier'):\n"
+            "for stage in ('writer_b', 'writer_c', 'writer_d', 'verifier'):\n"
             "    for backend in run['vllm']['attention_backends']:\n"
             "        env = dict(base)\n"
             "        if backend != 'auto':\n"
@@ -337,6 +339,7 @@ def prepare_round(
     out_dir: Path = OUT_DIR,
     looks_only: bool = False,
     rejudge: bool = False,
+    only: tuple[str, ...] = (),
 ) -> dict:
     folder = out_dir / "kaggle" / f"round{round_no}"
     dataset, kernel = folder / "dataset", folder / "kernel"
@@ -344,7 +347,7 @@ def prepare_round(
         if path.exists():
             shutil.rmtree(path)
         path.mkdir(parents=True)
-    writers, verify = round_jobs(limit, out_dir, looks_only, rejudge)
+    writers, verify = round_jobs(limit, out_dir, looks_only, rejudge, only)
     write_jsonl(dataset / "writers.jsonl", writers)
     write_jsonl(dataset / "verify.jsonl", verify)
     (dataset / "run.json").write_text(json.dumps(run_config(), indent=2), encoding="utf-8")
@@ -388,7 +391,7 @@ def prepare_round(
         raise SystemExit("upload check failed:\n" + "\n".join(problems[:40]))
     return {
         "folder": str(folder),
-        "writer_jobs": {w: sum(j["writer"] == w for j in writers) for w in ("B", "C")},
+        "writer_jobs": {w: sum(j["writer"] == w for j in writers) for w in ("B", "C", "D")},
         "verifier_jobs": len(verify) + len(writers),
         "second_looks_in_session": sum(
             s["expect"] == "absent" for j in writers for s in j["statements"]
