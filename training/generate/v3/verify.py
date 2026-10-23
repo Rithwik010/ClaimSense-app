@@ -14,8 +14,10 @@
 """
 
 import re
+from calendar import monthrange
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from functools import cache
 from typing import Any
 
@@ -92,23 +94,85 @@ def _number_contexts(value: str, text: str) -> set[str]:
     for match in re.finditer(rf"(?<!\d){value}(?!\d)", text):
         before = text[match.start() - 1] if match.start() else ""
         after = text[match.end() : match.end() + 2]
-        if before.isupper() or (before and before in ".,/"):
+        per = before == "/" and text[match.start() - 2 : match.start() - 1] in (
+            "x",
+            "X",
+        )  # 1x/5 days
+        if before.isupper() or (before and before in ".,/" and not per):
             found.add("before " + before)
         if len(after) == 2 and after[0] in ".,/" and after[1].isdigit():
             found.add("after " + after[0])
     return found
 
 
-def has_value(text: str, value: str, wordings: Iterable[str] = ()) -> bool:
+AGO = re.compile(r"\b(\d+) (day|week|month)s? ago\b")
+MONTHS = (
+    "January February March April May June July August September October November December".split()
+)
+
+
+def date_forms(day: date) -> set[str]:
+    """The ways a note writes a date: 07/04/2026, 7/4/2026, 7/4/26, 2026-07-04, July 4, 2026."""
+    m, d, y, name = day.month, day.day, day.year, MONTHS[day.month - 1]
+    return {
+        f"{m:02d}/{d:02d}/{y}",
+        f"{m}/{d}/{y}",
+        f"{m:02d}/{d:02d}/{y % 100:02d}",
+        f"{m}/{d}/{y % 100:02d}",
+        day.isoformat(),
+        f"{name} {d}, {y}",
+        f"{name[:3]} {d}, {y}",
+    }
+
+
+def _before(day: date, count: int, unit: str) -> date:
+    if unit == "day":
+        return day - timedelta(days=count)
+    if unit == "week":
+        return day - timedelta(weeks=count)
+    months = day.year * 12 + day.month - 1 - count
+    year, month = divmod(months, 12)
+    return date(year, month + 1, min(day.day, monthrange(year, month + 1)[1]))
+
+
+def ago_dates(sheet: Mapping[str, Any], fact: Mapping[str, Any]) -> dict[str, set[str]]:
+    """Each value a fact's wordings give as a time before the visit ("4 months ago"), with the
+    dates that state it too: the fact's own timeline date (the date its writer was given), or the
+    visit date less that time."""
+    visit = sheet.get("visit_date")
+    own = {
+        date.fromisoformat(t["date"])
+        for t in sheet.get("timeline") or []
+        if t.get("fact_id") == fact["fact_id"]
+    }
+    found: dict[str, set[str]] = {}
+    for text in (fact.get("text") or {}).values():
+        for match in AGO.finditer(text):
+            days = set(own)
+            if visit:
+                days.add(_before(date.fromisoformat(visit), int(match.group(1)), match.group(2)))
+            found.setdefault(match.group(1), set()).update(f for d in days for f in date_forms(d))
+    return found
+
+
+def has_value(
+    text: str,
+    value: str,
+    wordings: Iterable[str] = (),
+    dates: Mapping[str, set[str]] | None = None,
+) -> bool:
     """Whether a passage holds a fact's value. A whole number must stand as a number of its own:
     not inside a longer number, a score, a date or a decimal (4 in 44% or 4/10), or a spinal level
     (5 in C5), unless the fact's own wordings write it that way (C5-C6, 2/5 sites); it may be
-    spelled out. Any other value (7/10, a date) as written."""
+    spelled out, and a time before the visit ("4 months ago") may be written as its date (`dates`,
+    from `ago_dates`). Any other value (7/10, a date) as written."""
+    if dates and any(form in text for form in dates.get(value, ())):
+        return True
     if not value.isdigit():
         return value in text
     allowed = set().union(*(_number_contexts(value, w) for w in wordings))
     for match in re.finditer(rf"(?<!\d){value}(?!\d)", text):
-        if _number_contexts(value, text[max(0, match.start() - 1) : match.end() + 2]) <= allowed:
+        if _number_contexts(value, text[max(0, match.start() - 2) : match.end() + 2]) <= allowed:
             return True
     word = NUMBER_WORDS.get(value)
     return word is not None and re.search(rf"\b{word}\b", text, re.IGNORECASE) is not None
@@ -224,7 +288,12 @@ def share(wording: str, passage: str, drop: frozenset[str] = frozenset()) -> flo
     return len(wanted & words(passage)) / len(wanted)
 
 
-def stated_locally(note: str, fact: Mapping[str, Any], original: bool = False) -> Span | None:
+def stated_locally(
+    note: str,
+    fact: Mapping[str, Any],
+    original: bool = False,
+    dates: Mapping[str, set[str]] | None = None,
+) -> Span | None:
     """A documented fact (`original`: a contradiction's copied statement) found in the note itself,
     when the verifier missed it or quoted a passage that does not state it: one of its wordings word
     for word; else the sentence, or the fewest adjacent sentences on one line (up to three), with
@@ -252,7 +321,7 @@ def stated_locally(note: str, fact: Mapping[str, Any], original: bool = False) -
                 passage = note[span[0] : span[1]]
                 if _negative(passage) != negative:
                     continue
-                if not all(has_value(passage, v, texts) for v in values):
+                if not all(has_value(passage, v, texts, dates) for v in values):
                     continue
                 found = share(text, passage)
                 if found > best_share:
@@ -268,17 +337,21 @@ def _about(
     fact: Mapping[str, Any],
     original: bool,
     rivals: Sequence[str] = (),
+    dates: Mapping[str, set[str]] | None = None,
 ) -> bool:
     """Whether a passage is about a documented fact: it holds `verification.quote_overlap` of one
     wording's content words, and it is not another fact's statement (a verifier sometimes gives
     one fact's quote to the next): no wording of the note's other stated facts (`rivals`) has
     `verification.rival_overlap` of its words in it and fits it by `verification.rival_margin`
-    more."""
+    more. A passage with all of a fact's values, two or more, is about it as well ("Pain 8/10, NDI
+    57%")."""
     passage = note[span[0] : span[1]]
     texts = (fact.get("original" if original else "text") or {}).values()
     cfg = config()["verification"]
     own = max((share(text, passage) for text in texts), default=0.0)
-    if own < cfg["quote_overlap"]:
+    values = [] if original else fact.get("values") or []
+    valued = len(values) >= 2 and all(has_value(passage, v, texts, dates) for v in values)
+    if own < cfg["quote_overlap"] and not valued:
         return False
     rival = max((share(text, passage) for text in rivals), default=0.0)
     return not (rival >= cfg["rival_overlap"] and rival >= own + cfg["rival_margin"])
@@ -290,14 +363,17 @@ def _states(
     fact: Mapping[str, Any],
     original: bool,
     rivals: Sequence[str] = (),
+    dates: Mapping[str, set[str]] | None = None,
 ) -> bool:
     """Whether the passage the verifier quoted for a documented fact states it: about the fact,
     with every value."""
     passage = note[span[0] : span[1]]
     texts = list((fact.get("text") or {}).values())
-    if not original and not all(has_value(passage, v, texts) for v in fact.get("values") or []):
+    if not original and not all(
+        has_value(passage, v, texts, dates) for v in fact.get("values") or []
+    ):
         return False
-    return _about(note, span, fact, original, rivals)
+    return _about(note, span, fact, original, rivals, dates)
 
 
 def _find(note: str, quote: str) -> Span | None:
@@ -396,6 +472,7 @@ def check_note(
     for fact in sheet["facts"]:
         if not _stated(fact):
             continue
+        dates = ago_dates(sheet, fact)
         ids = [fact["fact_id"]] + (
             [f"{fact['fact_id']}:original"] if fact["status"] == "contradicted" else []
         )
@@ -407,9 +484,9 @@ def check_note(
             elif verifier is not None:
                 quoted = verifier.get(fid)
                 span = _find(note, quoted) if quoted else None
-                if span is None or not _states(note, span, fact, original, rivals(fid)):
+                if span is None or not _states(note, span, fact, original, rivals(fid), dates):
                     # missed, a quote too far from any sentence, or one that states another fact
-                    local = stated_locally(note, fact, original)
+                    local = stated_locally(note, fact, original, dates)
                     if local is not None:
                         span = local
                         result.local_spans.append(fid)
@@ -423,14 +500,16 @@ def check_note(
             quote = note[span[0] : span[1]]
             if not original:
                 texts = list(fact["text"].values())
-                missing = [v for v in fact.get("values") or [] if not has_value(quote, v, texts)]
+                missing = [
+                    v for v in fact.get("values") or [] if not has_value(quote, v, texts, dates)
+                ]
                 if missing:
                     result.failures.append(f"{fid}: quote lacks the values {missing}")
                 if len(quote.split()) < cfg["min_quote_words"]:
                     result.failures.append(
                         f"{fid}: quote shorter than {cfg['min_quote_words']} words"
                     )
-            if known_spans is None and not _about(note, span, fact, original, rivals(fid)):
+            if known_spans is None and not _about(note, span, fact, original, rivals(fid), dates):
                 result.failures.append(f"{fid}: the quote does not state the fact")
             result.spans[fid] = span
         if fact["status"] == "contradicted":

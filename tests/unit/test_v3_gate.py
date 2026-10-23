@@ -16,6 +16,7 @@ import pytest
 
 from training.generate.v3 import verify
 from training.generate.v3.verify import (
+    ago_dates,
     check_note,
     claim_words,
     expand,
@@ -244,3 +245,28 @@ def test_the_exclusions_own_negative_mention_is_no_leak_but_its_flip_is() -> Non
     assert check_note(sheet(cataract), own, None, {"F2": own}).passed
     flipped = "The patient does not have vision complaints from the cataract."
     assert check_note(sheet(cataract), flipped, None, {"F2": flipped}).looks == ["F2"]
+
+
+def test_a_time_before_the_visit_may_be_written_as_its_date() -> None:
+    fact = documented("F4", "The previous injection 4 months ago brought 45% relief.", ["4", "45"])
+    facts = {**sheet(fact), "visit_date": "2026-11-01", "timeline": []}
+    dates = ago_dates(facts, fact)
+    wording = fact["text"].values()
+    assert has_value("injection on 07/01/2026 gave 45% relief", "4", wording, dates)
+    assert has_value("injection July 1, 2026", "4", wording, dates)
+    assert not has_value("injection on 06/01/2026 gave 45% relief", "4", wording, dates)
+    assert not has_value("Oswestry 44%", "4", wording, dates)
+    given = {**facts, "timeline": [{"date": "2026-07-04", "fact_id": "F4"}]}  # the writer's date
+    assert has_value("injection 7/4/26", "4", wording, ago_dates(given, fact))
+    assert has_value("palpitations 1x/5 days", "5", ["once every 5 days"])  # x/ is "per"
+
+
+def test_a_quote_with_all_the_facts_values_is_about_it() -> None:
+    fact = documented(
+        "F2",
+        "Pain is 8/10, and the Neck Disability Index score is 57%, limiting work.",
+        ["8/10", "57"],
+    )
+    note = "MRI reviewed. Pain 8/10, NDI 57%. Plan injection."
+    result = check_note(sheet(fact), note, None, {"F2": "Pain 8/10, NDI 57%."})
+    assert result.failures == []
