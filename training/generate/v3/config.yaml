@@ -172,6 +172,7 @@ llm:
     licence: Apache-2.0
     temperature: 0.0
     max_tokens: 1500
+    max_num_seqs: 64        # 23 Oct: the sampler warm-up with 256 ran out of T4 memory
   vllm:
     version: "0.11.0"       # Kaggle's image is Python 3.13; vLLM 0.9 needs 3.12 or older
     use_v1_engine: true     # vLLM 0.10 and later have only the V1 engine
