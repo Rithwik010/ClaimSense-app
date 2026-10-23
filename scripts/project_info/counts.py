@@ -2,6 +2,7 @@
 
 Read only; every input is a file the project already wrote:
 
+- reason codes: the committed CARC/RARC map (`data/curated/reason_code_map.csv`);
 - policies: policy sets v1 and v2 from `data/curated/coverage_policies/` (`load_curated`):
   policies, criteria, criteria by type, test-only policies;
 - decision datasets v1 and v2: records, model lines, line and claim decisions per split (the
@@ -20,6 +21,7 @@ Output (git-ignored): `data/generated/project_info/counts.json`.
 """
 
 import argparse
+import csv
 import json
 from collections import Counter, defaultdict
 from datetime import UTC, datetime
@@ -58,6 +60,19 @@ def policies() -> dict[str, Any]:
             "splits": dict(Counter(p.split for p in data.policies.values())),
         }
     return out
+
+
+def reason_codes() -> dict[str, Any]:
+    """The committed CARC/RARC map (`data/curated/reason_code_map.csv`) of this checkout."""
+    with (ROOT / "data" / "curated" / "reason_code_map.csv").open(encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    return {
+        "internal_codes": len(rows),
+        "by_outcome": dict(Counter(r["outcome"] for r in rows)),
+        "by_group_code": dict(Counter(r["group_code"] for r in rows)),
+        "with_carc": sum(1 for r in rows if r["carc"]),
+        "with_rarc": sum(1 for r in rows if r["rarc"]),
+    }
 
 
 def decision_dataset(folder: Path) -> dict[str, Any]:
@@ -117,6 +132,7 @@ def v3(folder: Path) -> dict[str, Any]:
         "sheets_by_split": dict(sheets),
         "gate_file_time": mtime("gate.jsonl"),
         "gate_by_split_and_writer": {k: dict(v) for k, v in sorted(gate.items())},
+        "gate_totals": dict(sum(gate.values(), Counter())),
         "gate_attempts": dict(sorted(attempts.items())),
         "gate_change_file_time": mtime("gate_change.json"),
         "gate_change_after_by_writer": {k: dict(v) for k, v in sorted(after.items())},
@@ -146,6 +162,7 @@ def ocr(path: Path) -> dict[str, Any]:
         "fields": len(fields),
         "field_accuracy": round(1 - len(wrong) / len(fields), 4),
         "wrong": len(wrong),
+        "wrong_below_threshold": len(wrong) - len(high_wrong),
         "wrong_at_or_above_threshold": len(high_wrong),
         "high_confidence_wrong_share_of_fields": round(len(high_wrong) / len(fields), 4),
         "high_confidence_wrong_share_of_wrong": round(len(high_wrong) / len(wrong), 4),
@@ -163,6 +180,7 @@ def main() -> None:
     report = {
         "measured_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "policies": policies(),
+        "reason_code_map": reason_codes(),
         "decision_v1": decision_dataset(args.main_data / "decision"),
         "decision_v2": decision_dataset(args.main_data / "decision_v2"),
         "v3": v3(args.v3_data),
