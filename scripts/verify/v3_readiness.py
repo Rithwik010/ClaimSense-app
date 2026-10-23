@@ -106,19 +106,19 @@ def gate_bars(out_dir: Path) -> dict[str, Any]:
 
 
 def timing(out_dir: Path) -> dict[str, Any]:
-    log = TIMING_DIR / "training-log.json"
-    if not log.exists():
-        return {"ok": None, "missing": str(log)}
-    data = json.loads(log.read_text())
+    summary = TIMING_DIR / "summary.json"  # scripts/verify/v3_timing.py
+    if not summary.exists():
+        return {"ok": None, "missing": str(summary)}
+    data = json.loads(summary.read_text())
+    longest, limit = data.get("longest_record_tokens"), data.get("max_seq_length")
     projected = data.get("projected_full_run_hours")
-    longest = data.get("longest_record_tokens")
-    limit = data.get("max_seq_length")
     return {
-        "longest_record_tokens": longest,
-        "max_seq_length": limit,
-        "peak_memory_gb": data.get("peak_memory_gb"),
+        **{k: data.get(k) for k in ("longest_record_tokens", "max_seq_length", "peak_memory_gb")},
+        "gpu_total_gb": data.get("gpu_total_gb"),
         "projected_full_run_hours": projected,
+        "resume_matches": data.get("resume_matches"),
         "tokens_ok": longest is not None and limit is not None and longest <= limit,
+        "memory_ok": bool(data.get("fits_t4_memory")),
         "time_ok": projected is not None and projected <= 14,
     }
 
