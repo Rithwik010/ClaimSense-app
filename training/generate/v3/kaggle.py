@@ -40,6 +40,7 @@ from typing import Any
 
 from training.generate.v3.config import HERE, OUT_DIR, config
 from training.generate.v3.dataset import (
+    gate_rows,
     latest,
     load_sheets,
     needs_note,
@@ -97,10 +98,21 @@ def run_config() -> dict[str, Any]:
     }
 
 
-def round_jobs(limit: int | None = None, out_dir: Path = OUT_DIR) -> tuple[list[dict], list[dict]]:
+def round_jobs(
+    limit: int | None = None, out_dir: Path = OUT_DIR, looks_only: bool = False
+) -> tuple[list[dict], list[dict]]:
     """Writer jobs (B and C sheets that need a note) and verifier jobs (writer A notes whose
-    latest attempt has no verifier answer yet). `limit`: at most that many per writer (a pilot)."""
+    latest attempt has no verifier answer yet, and the second looks the gate waits for). `limit`:
+    at most that many per writer (a pilot). `looks_only`: only the second looks, from the gate run
+    in memory (before its official rerun writes gate.jsonl)."""
     sheets = load_sheets(out_dir)
+    if looks_only:
+        notes = latest(read_jsonl(out_dir / "notes.jsonl"))
+        looks = []
+        for row in gate_rows(out_dir)[0]:
+            if row["looks"]:
+                looks += second_looks(sheets[row["sheet_id"]], notes[row["sheet_id"]], row["looks"])
+        return [], looks
     needed = needs_note(out_dir)
     writers: list[dict] = []
     per_writer: dict[str, int] = {}
@@ -215,7 +227,7 @@ def estimate_hours(writers: list[dict], verify: list[dict]) -> dict[str, float]:
     return {k: round(v, 2) for k, v in found.items()}
 
 
-def notebook(round_no: int) -> dict[str, Any]:
+def notebook(round_no: int | str) -> dict[str, Any]:
     cells = [
         (
             "markdown",
@@ -286,14 +298,19 @@ def notebook(round_no: int) -> dict[str, Any]:
     }
 
 
-def prepare_round(round_no: int, limit: int | None = None, out_dir: Path = OUT_DIR) -> dict:
+def prepare_round(
+    round_no: int | str,
+    limit: int | None = None,
+    out_dir: Path = OUT_DIR,
+    looks_only: bool = False,
+) -> dict:
     folder = out_dir / "kaggle" / f"round{round_no}"
     dataset, kernel = folder / "dataset", folder / "kernel"
     for path in (dataset, kernel):
         if path.exists():
             shutil.rmtree(path)
         path.mkdir(parents=True)
-    writers, verify = round_jobs(limit, out_dir)
+    writers, verify = round_jobs(limit, out_dir, looks_only)
     write_jsonl(dataset / "writers.jsonl", writers)
     write_jsonl(dataset / "verify.jsonl", verify)
     (dataset / "run.json").write_text(json.dumps(run_config(), indent=2), encoding="utf-8")

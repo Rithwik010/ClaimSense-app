@@ -527,6 +527,21 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
 
 
 def run_gate(out_dir: Path = OUT_DIR) -> dict[str, Any]:
+    """The gate on every sheet's latest note, written to gate.jsonl (`gate_rows`)."""
+    results, tallies, reasons = gate_rows(out_dir)
+    write_jsonl(out_dir / "gate.jsonl", results)
+    return {
+        "by_writer_attempt": {k: dict(v) for k, v in sorted(tallies.items())},
+        "reasons": dict(reasons),
+    }
+
+
+def gate_rows(
+    out_dir: Path = OUT_DIR,
+) -> tuple[list[dict[str, Any]], dict[str, Counter[str]], Counter[str]]:
+    """The gate (verify.py) on every sheet's latest note, with the verifier's answers and second
+    looks so far; nothing is written. Rows, then statuses by writer and attempt, then failure
+    kinds."""
     sheets = load_sheets(out_dir)
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     verifier = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
@@ -572,11 +587,7 @@ def run_gate(out_dir: Path = OUT_DIR) -> dict[str, Any]:
                 "local_spans": result.local_spans,
             }
         )
-    write_jsonl(out_dir / "gate.jsonl", results)
-    return {
-        "by_writer_attempt": {k: dict(v) for k, v in sorted(tallies.items())},
-        "reasons": dict(reasons),
-    }
+    return results, tallies, reasons
 
 
 def _reason_kind(failure: str) -> str:
@@ -609,10 +620,15 @@ def main() -> None:
     sheets.add_argument("--limit", type=int, help="pilot: at most N sheets per split")
     sub.add_parser("write-a")
     jobs = sub.add_parser("jobs")
-    jobs.add_argument("--round", type=int, required=True)
+    jobs.add_argument("--round", required=True, help="round label: 4, 3b, ...")
     jobs.add_argument("--limit", type=int, help="pilot: at most N jobs per writer")
+    jobs.add_argument(
+        "--looks-only",
+        action="store_true",
+        help="only the second looks the gate is waiting for (from the gate run in memory)",
+    )
     take = sub.add_parser("ingest")
-    take.add_argument("--round", type=int, required=True)
+    take.add_argument("--round", required=True)
     sub.add_parser("gate")
     sub.add_parser("build")
     args = parser.parse_args()
@@ -627,7 +643,8 @@ def main() -> None:
     elif args.command == "jobs":
         from training.generate.v3.kaggle import prepare_round
 
-        print(json.dumps(prepare_round(args.round, limit=args.limit, out_dir=out), indent=2))
+        report = prepare_round(args.round, args.limit, out, looks_only=args.looks_only)
+        print(json.dumps(report, indent=2))
     elif args.command == "ingest":
         print(json.dumps(ingest(out / "kaggle" / f"round{args.round}", out)))
     elif args.command == "gate":

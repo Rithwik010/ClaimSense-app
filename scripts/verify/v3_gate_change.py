@@ -106,11 +106,14 @@ def gate_change(out_dir: Path = OUT_DIR, before_file: str = "gate_r3_before_fix.
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     verifier = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
     before = {g["sheet_id"]: g for g in read_jsonl(out_dir / before_file)}
+    looks: dict[tuple[str, int], dict[str, str | None]] = {}
+    for row in read_jsonl(out_dir / "second_look.jsonl"):
+        if row.get("error") is None:
+            looks.setdefault((row["sheet_id"], row["attempt"]), {})[row["fact_id"]] = row["quote"]
     after: dict[str, GateResult] = {}
     for sheet_id, note in notes.items():
-        after[sheet_id] = gate_now(
-            sheets[sheet_id], note, verifier.get((sheet_id, note["attempt"]))
-        )
+        key = (sheet_id, note["attempt"])
+        after[sheet_id] = gate_now(sheets[sheet_id], note, verifier.get(key), looks.get(key))
     report: dict[str, Any] = {}
 
     flips: Counter[str] = Counter()
