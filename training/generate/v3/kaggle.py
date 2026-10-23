@@ -149,7 +149,7 @@ def round_jobs(
                 "attempt": attempt,
                 "writer": writer,
                 "seed": zlib.crc32(f"{sheet['seed']}#{attempt}".encode()) % (2**31),
-                "messages": writer_messages(sheet),
+                "messages": writer_messages(sheet, attempt),
                 "sampling": _sampling(name),
                 "statements": [
                     {

@@ -116,9 +116,13 @@ def _report_title(sheet: Mapping[str, Any], kind: str) -> str:
     return titles[0]
 
 
-def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
+RETRY_D = "State every listed fact explicitly, even in shorthand."  # the team's wording, 23 Oct
+
+
+def writer_messages(sheet: Mapping[str, Any], attempt: int = 1) -> list[dict[str, str]]:
     """The chat messages for writer B, C or D (writer D: one user message, the physician's own
-    words, the facts in an order of its choosing; D-V3-15)."""
+    words, the facts in an order of its choosing; D-V3-15; on a retry it adds `RETRY_D` and
+    nothing else)."""
     cfg = config()
     style = sheet["style"]
     human = sheet["writer"] == "D"
@@ -161,6 +165,8 @@ def writer_messages(sheet: Mapping[str, Any]) -> list[dict[str, str]]:
         else "The note must state each of these facts in a fragment or line of its own, keeping "
         "every number and date exactly as written (abbreviate and reword everything else):",
     ]
+    if human and attempt > 1:
+        lines.insert(len(lines) - 1, RETRY_D)
     timeline = {e.get("fact_id"): e for e in sheet["timeline"]}
     n = 0
     hedges, negatives = [], []
