@@ -30,6 +30,7 @@ must equal v2's, so both are decoded the same way.
 
 import argparse
 import json
+import re
 import shutil
 from pathlib import Path
 from typing import Any
@@ -92,7 +93,7 @@ def model_entry(key: str, ollama_url: str = "http://127.0.0.1:11434") -> dict[st
     base = httpx.post(f"{ollama_url}/api/show", json={"model": BASE}, timeout=30).json()[
         "modelfile"
     ]
-    text = build(Path("__GGUF__"), base)
+    text = re.sub(r"^FROM .*$", "FROM __GGUF__", build(Path("__GGUF__"), base), flags=re.M)
     pinned = evaluated(spec["name"]) or evaluated(MODELS["v2"]["name"])
     if pinned is None:
         raise SystemExit("v2's evaluated settings are missing")
@@ -251,7 +252,10 @@ def prepare(
             shutil.rmtree(path)
         path.mkdir(parents=True)
     copy_code(dataset)
-    entries = {key: model_entry(key) for key in models}
+    from app.core.settings import get_settings
+
+    url = get_settings().ollama_url  # the laptop's Ollama, for the base model's Modelfile
+    entries = {key: model_entry(key, url) for key in models}
     written = {s: write_set(s, dataset) for s in sets}
     skipped = [s for s, sizes in written.items() if not sizes]
     jobs = []
