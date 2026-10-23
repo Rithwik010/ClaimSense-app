@@ -23,7 +23,9 @@ Output tokens, two estimates:
   reasoning may be longer or shorter; this only shows the scale.
 
 The SLM's prompt is also counted with o200k_base, so the ratio compares like with like; Ollama's
-Gemma counts (section 7.3) include Gemma's chat-template tokens and use another tokenizer.
+Gemma counts (section 7.3) include Gemma's chat-template tokens and use another tokenizer. The
+SLM's measured tokens include its retries (one in 30 clean claims, three in 30 messy ones); the LLM
+estimate assumes one call per claim, so its Gemma ratio uses the SLM's first attempt.
 
     uv run --with tiktoken python -m scripts.project_info.llm_prompt_tokens --set clean \
         --dataset ../ClaimSense/data/generated/decision_v2 --split test \
@@ -155,6 +157,7 @@ def main() -> None:
                 "model_lines": m["model_lines"],
                 "slm_input_gemma": m["input_tokens"],
                 "slm_output_gemma": m["output_tokens"],
+                "slm_input_gemma_first_attempt": m["first_input_tokens"],
                 "slm_input_o200k": parts["system"] + parts["user"],
                 "slm_output_o200k": json_out,
                 "llm_input_o200k": llm_in,
@@ -162,7 +165,7 @@ def main() -> None:
                 "llm_output_no_reasoning_o200k": json_out,
                 "llm_output_with_reasoning_o200k": json_out + reasoning,
                 "input_ratio_o200k": round(llm_in / (parts["system"] + parts["user"]), 2),
-                "input_ratio_vs_gemma": round(llm_in / m["input_tokens"], 2),
+                "input_ratio_vs_gemma_first_attempt": round(llm_in / m["first_input_tokens"], 2),
             }
         )
 
@@ -191,7 +194,8 @@ def main() -> None:
                 "llm_output_no_reasoning_o200k",
                 "llm_output_with_reasoning_o200k",
                 "input_ratio_o200k",
-                "input_ratio_vs_gemma",
+                "slm_input_gemma_first_attempt",
+                "input_ratio_vs_gemma_first_attempt",
             )
         },
         "per_1000_claims": {
