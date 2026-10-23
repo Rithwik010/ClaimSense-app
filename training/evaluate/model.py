@@ -134,14 +134,17 @@ def ablated_user_message(inputs: dict[str, Any], lookups: Any) -> str:
     )
 
 
-def score_record(record: dict[str, Any], inputs: dict[str, Any], text: str) -> dict[str, Any]:
+def score_record(
+    record: dict[str, Any], inputs: dict[str, Any], text: str, guard: bool = True
+) -> dict[str, Any]:
     """Compare one answer with the record's target, the way the pipeline would use it (decisions
-    derived from the statuses, D-DEC-1)."""
+    derived from the statuses, D-DEC-1). `guard=False` scores the answer without the evidence
+    guard (D-EVID-1), as model v2 was evaluated before the guard."""
     rules = RulesOutcome.model_validate(inputs["rules_outcome"])
     context = ContextPackage.model_validate(inputs["context"])
     target = json.loads(record["messages"][-1]["content"])
     result = validate_output(text, rules, context)
-    checked, _ = evidence_guard(result, inputs["claim"]["clinical_notes"])  # D-EVID-1
+    checked = evidence_guard(result, inputs["claim"]["clinical_notes"])[0] if guard else result
     effective = {
         d.line_no: d.decision.value
         for d in final_line_decisions(rules, checked, context)
