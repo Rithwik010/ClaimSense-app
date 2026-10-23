@@ -1,6 +1,6 @@
 # ClaimSense: project information and progress
 
-**As of: Friday 23 October 2026, 13:00 IST.** Written on branch `docs/project-info`, which starts
+**As of: Friday 23 October 2026, 17:40 IST.** Written on branch `docs/project-info`, which starts
 from `main` at `bd3242b` (11 Oct). This is a working information and progress document, **not the
 final report**.
 
@@ -499,14 +499,16 @@ patterns (D-V3-4).
 6. the targets are valid under the schema and the evidence guard;
 7. no near-duplicates across splits (5-word shingles, Jaccard).
 
-**Gate fixes** (committed on the branch: `0bb6bad`, `6cafe77`, `54ef779`, `6d77abc`; SPEC.md cites
-D-V3-12, which is not yet in the branch's DECISIONS.md):
+**Gate fixes** (committed on the branch up to `378da53`, 23 Oct 12:30 IST: `0bb6bad`, `6cafe77`,
+`54ef779`, `6d77abc`, `378da53`; SPEC.md and the hand check cite D-V3-12, which is not yet in the
+branch's DECISIONS.md):
 
 - a quote must be about its fact (quote-to-fact matching);
 - a value counts only as a number of its own, or the matching date;
 - the leak checks ignore the claim's own procedure wording;
-- a leak finding on a missing fact counts only when a "second look" finds it again (the verifier,
-  or since `6d77abc` a judge, asked about that fact alone).
+- a leak finding gets a "second look": the verifier (or, for a missing fact, a judge) is asked
+  about that one fact alone. Since `378da53`, **a leak finding stands unless the second look finds
+  nothing**.
 
 **Fact sheets per split** (`sheets.jsonl`; sizes include the 10% margin of D-V3-6):
 
@@ -540,25 +542,54 @@ both sides of the borderline POL-SURG-002.c3, which v2's labelling never decides
 | **Total** | **6,844** | **1,165** | **0** |
 
 Latest attempt of the 8,009 rows: 1st 6,554; 2nd 1,364; 3rd 14; 4th 77. Script:
-`scripts/project_info/counts.py` (`gate_by_split_and_writer`, `gate_totals`). The 30 hand-written sheets have no gate row (the team writes
-those notes).
+`scripts/project_info/counts.py` (`gate_by_split_and_writer`, `gate_totals`). The 30 hand-written
+sheets have no gate row (the team writes those notes). **This is still the latest official gate
+result: the official rerun with the fixed gate has not been done.**
 
 **The fix's effect, before the official rerun.** The gate-change report
-`claimsense-v3/data/generated/v3/gate_change.json` (file time 23 Oct, 12:08:01 IST) re-checks the
-same notes with the fixed gate:
+`claimsense-v3/data/generated/v3/gate_change.json` (file time 23 Oct, 12:28:53 IST, the final fix
+settings) re-checks the same notes with the fixed gate:
 
 | Writer | Passed | Failed | Waiting for a second look |
 |---|---|---|---|
-| A | 3,784 | 73 | 37 |
-| B | 3,488 | 407 | 0 |
-| C | 152 | 68 | 0 |
+| A | 3,806 | 51 | 37 |
+| B | 3,518 | 377 | 0 |
+| C | 159 | 61 | 0 |
 
-- **The official gate rerun is pending.** The second-look Kaggle job (155 checks, round 3b) has
-  finished; the official rerun, round 4, the build, the timing run, the go/no-go, training and
-  evaluation are still to come.
-- This section will be updated with the official per-split table when the main session sends it.
-- In the gate-change report's hand check: all 12 notes judged "really wrong" still fail, and 19 of
-  28 judged good now pass.
+Script: `scripts/project_info/counts.py` (`gate_change_after_by_writer`). This is a preview by
+writer, not the official per-split table.
+
+**Second looks and the judge** (`claimsense-v3/data/generated/v3/second_look.jsonl`, counted by
+`scripts/project_info/counts.py`):
+
+| Kaggle job | Checks | Result |
+|---|---|---|
+| Round 3b: second looks at documented-fact findings (verifier) | 155 | all 155 repeated the first quote (main session, 23 Oct 17:15 IST) |
+| Round 3c: the judge on missing-fact findings (cited passage alone, yes or no) | 111 | 18 yes, 93 no |
+
+This document could not reproduce "all 155 repeated" from the files: an exact comparison of each
+second-look quote with the verifier's answer for the same sheet, attempt and fact in
+`verifier.jsonl` (whitespace ignored) finds 108 of 155 identical. The two counts may use different
+bases (for example, the finding passage after quote matching rather than the raw answer); they were
+not reconciled.
+
+**The gate's bars and where v3 stops** (`claimsense-v3/data/generated/v3/gate_change.json`;
+`training/generate/v3/hand_checks/gate_fix.json` on `v3-realistic-data`, `378da53`):
+
+| Bar | Result | Source |
+|---|---|---|
+| Notes judged "really wrong" in the 19 Oct hand check still fail | 12 of 12 | `gate_change.json` |
+| Notes judged good in the 19 Oct hand check now pass | 25 of 28 | `gate_change.json` |
+| Newly passing notes that are correct (strict hand check of a sample of 40 out of 679) | **37 of 40** | `gate_fix.json` (counted by `counts.py`) |
+| The bar for that sample | 38 of 40 | main session, 23 Oct 17:15 IST (not in a committed file) |
+
+- **37 is below the bar of 38, so v3 is stopped at stage 1, step 3, waiting for the team's
+  decision.**
+- The official gate rerun has **not** been done. Round 4, the build, the timing run, the go/no-go,
+  training and evaluation all wait behind it.
+- Kaggle GPU used this week: 7.58 h of 30 (`uvx kaggle quota`, read by the main session at 17:05
+  IST on 23 Oct).
+- This section will be updated with the official per-split table when it exists.
 
 **Kaggle rounds so far** (`kaggle/round*/ingested.json`):
 
@@ -568,6 +599,7 @@ same notes with the fixed gate:
 | 2 | 4,069 | 7,168 | - | 1 |
 | 3 | 1,043 | 2,030 | - | 4 |
 | 3b | 0 | 0 | 155 | 0 |
+| 3c | 0 | 0 | 111 (judge) | 0 |
 
 **GPU time per stage, rounds 2 and 3** (`kaggle/round2/output/output/timings_*.json`,
 `kaggle/round3/output/output/timings_*.json`):
@@ -1133,7 +1165,7 @@ CI runs on `main` pushes and, for branches, by manual dispatch (`.github/workflo
 | p9.2-deploy-kit (`e0798c6`) | WIP, no report | - | - | - | none | not run |
 | p9.3-member-dashboard (`0fafb7a`) | 2,698 passed, 1 skipped | 113 | 53 of 53, with axe and 390 / 768 / 1440 px layouts | not reported | 39458922076 on `f25f699` | passed: 2,334 passed, 66 skipped; web 113 |
 | p9.4-reports-test-pack (`c59f95d`) | WIP, no report | - | - | - | none | not run |
-| v3-realistic-data (`6d77abc`) | not reported (the branch adds v3 unit tests, such as `tests/unit/test_v3_gate.py`) | - | - | - | none | not run |
+| v3-realistic-data (`378da53`) | not reported (the branch adds v3 unit tests, such as `tests/unit/test_v3_gate.py`) | - | - | - | none | not run |
 | docs/project-info (this branch) | not run: only `scripts/project_info/` and this document are added | - | - | - | none | not run; the pre-commit ruff and import-linter checks passed |
 
 Golden suites on main (`docs/results.md`, 11 Oct): rules golden tests 270 passed, calculator 113,
@@ -1176,7 +1208,7 @@ flowchart LR
     P84 --> P93["p9.3 member dashboard<br/>0fafb7a, done, not merged"]
     P84 --> P94["p9.4 reports and test pack<br/>c59f95d, WIP"]
     MAIN --> P7["p7 visit limit + review codes<br/>42566a7, done, not merged"]
-    MAIN --> V3["v3-realistic-data<br/>6d77abc, in progress"]
+    MAIN --> V3["v3-realistic-data<br/>378da53, stopped for a team decision"]
     MAIN --> DOC["docs/project-info<br/>this document"]
 ```
 
@@ -1194,8 +1226,8 @@ main.
 | Deployment kit | `p9.2-deploy-kit`, `e0798c6` (20 Oct) | in progress: 1 WIP commit | Production compose, Caddy, Dockerfile, deploy, smoke and speed scripts | Finish, write DEPLOY.md and the D-DEPLOY decisions, test it |
 | Member dashboard | `p9.3-member-dashboard`, `0fafb7a` (20 Oct) | **done and reported**, not merged | Member role and read-only member API and pages (D-MEM-1 to D-MEM-3); 2,698 local tests, Playwright 53/53 with axe, CI 39458922076 passed | The team's review of D-MEM-1 to D-MEM-3; rebase onto main once p7 and p8 land |
 | Reports and test pack | `p9.4-reports-test-pack`, `c59f95d` (20 Oct) | in progress: 13 of 20 test-pack claims committed | Test-pack claims and build scripts | The remaining claims and the answer key |
-| v3 realistic data | `v3-realistic-data`, `6d77abc` (23 Oct, 12:13) | in progress | Spec, fact sheets, writers A/B/C, verifier, gate, rounds 1-3, gate fix, second looks (155) | Official gate rerun, round 4, build, timing run, go/no-go, training, evaluation |
-| Project information | `docs/project-info` | this document | This file and `scripts/project_info/` | Update section 5.4 with the official v3 gate table |
+| v3 realistic data | `v3-realistic-data`, `378da53` (23 Oct, 12:30) | in progress, **stopped at stage 1, step 3 for the team's decision**: the strict hand check found 37 of 40 newly passing notes correct, against a bar of 38 | Spec, fact sheets, writers A/B/C, verifier, gate, rounds 1-3, gate fix, second looks (155) and judge (111) | The team's decision on the gate; then the official gate rerun, round 4, build, timing run, go/no-go, training, evaluation |
+| Project information | `docs/project-info` | this document | This file and `scripts/project_info/` | Update section 5.4 when the official v3 gate table exists |
 
 **Roadmap (INSTRUCTIONS.md §11, from PROGRESS_LOG.md, 11 Oct):**
 
@@ -1236,7 +1268,8 @@ main.
 
 **Planned or in progress:**
 
-- **v3 data and model.** Finish the gate rerun and round 4, build the datasets, run the timing run
+- **v3 data and model.** The team decides on the gate (37 of 40 against a bar of 38, section 5.4).
+  Then finish the official gate rerun and round 4, build the datasets, run the timing run
   and the go/no-go, train v3 on Kaggle (one epoch, two sessions), and evaluate it on the v2 clean
   test, the v3 messy test and the unseen-style test. It replaces v2 only through the switch gates
   of section 6.5.
@@ -1293,7 +1326,7 @@ Key IDs only, one line each. Full text in DECISIONS.md (main) or on the named br
 | D-SEC-1, D-SEC-2 | Access matrix from the route table; foreign documents refused | branch p9.1 |
 | D-MEM-1 to D-MEM-3 | Member logins, member views, benefits as stored (pending the team's review) | branch p9.3 |
 | D-V3-1 to D-V3-10 | v3: separate worktree, spec, fact sheets, writers and verifier, gate, sizes, training mix, visit limits, training plan, writer fixes | branch v3-realistic-data |
-| D-V3-11, D-V3-12 | Cited in v3's SPEC.md (gate quote matching); not yet in the branch's DECISIONS.md | branch v3-realistic-data |
+| D-V3-11, D-V3-12 | Cited in v3's SPEC.md and hand check (the gate fix); not yet in the branch's DECISIONS.md | branch v3-realistic-data |
 | D-DEPLOY-1 to D-DEPLOY-5 | Cited in the p9.2 files; not yet in DECISIONS.md | branch p9.2 (WIP) |
 
 ---
@@ -1313,7 +1346,7 @@ demo's Docker project and database were not touched.
 | LLM cost estimate (7.4) | `llm_cost.py` | `uv run python -m scripts.project_info.llm_cost` |
 | Reference data rows and Qdrant points (5.1) | `table_counts.py` | after the stack below is seeded |
 | End to end and per stage (7.2) | `e2e_timing.py` | `uv run python -m scripts.project_info.e2e_timing --api http://127.0.0.1:8105 --log data/generated/project_info/api-docs.log --rounds 3` |
-| Policies, datasets, v3 gate, OCR split, reason-code counts (3.4, 5, 7.5) | `counts.py` | `uv run python -m scripts.project_info.counts --main-data ../ClaimSense/data/generated --v3-data ../claimsense-v3/data/generated/v3` |
+| Policies, datasets, v3 gate, second looks, hand check, OCR split, reason-code counts (3.4, 5, 7.5) | `counts.py` | `uv run python -m scripts.project_info.counts --main-data ../ClaimSense/data/generated --v3-data ../claimsense-v3/data/generated/v3 --v3-hand-check ../claimsense-v3/training/generate/v3/hand_checks/gate_fix.json` |
 
 **The measurement stack** (`scripts/project_info/compose.docs.yml`, project `claimsense-docs`):
 
