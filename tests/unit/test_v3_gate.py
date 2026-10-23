@@ -399,3 +399,38 @@ def test_a_lead_never_states_a_criterion_the_sheet_marks_missing() -> None:
     new, replaced = safe_lead(lead, missing)
     assert replaced and "symptom" not in new["A"] and "palpitation" not in new["B"].lower()
     assert safe_lead(lead, documented_too) == (lead, False)
+
+
+def test_the_training_trim_keeps_top_ups_writers_and_tricky_shares(monkeypatch) -> None:
+    from training.generate.v3 import build
+
+    monkeypatch.setattr(
+        build,
+        "config",
+        lambda: {"sizes": {"train": 10}, "writer_mix": {"train": {"A": 0.5, "B": 0.5}}},
+    )
+
+    def sheet_of(i: int, borderline: bool, top_up: bool = False) -> dict:
+        return {
+            "sheet_id": f"S{i}",
+            "split": "train",
+            "tricky": ["borderline"] if borderline else [],
+            "distractors": {},
+            **({"top_up": ["cell"]} if top_up else {}),
+        }
+
+    # drawn: 1 in 4 natural sheets has a borderline fact; the passing rows hold more of them
+    sheets = {f"S{i}": sheet_of(i, i % 4 == 0) for i in range(40)}
+    rows = [
+        ({"metadata": {"sheet_id": f"S{i}", "writer": "AB"[i % 2]}}, {})
+        for i in range(40)
+        if i % 4 == 0 or i < 12
+    ]
+    sheets["S99"] = sheet_of(99, False, top_up=True)
+    rows.append(({"metadata": {"sheet_id": "S99", "writer": "B", "top_up": ["cell"]}}, {}))
+    kept = build._balanced_train(rows, sheets)
+    ids = [r[0]["metadata"]["sheet_id"] for r in kept]
+    assert len(kept) == 10 and "S99" in ids
+    assert sum(r[0]["metadata"]["writer"] == "A" for r in kept) == 5
+    share = sum(sheets[i]["tricky"] == ["borderline"] for i in ids) / 10
+    assert share <= 0.3  # 10 of the 20 rows had one: the cuts take those first

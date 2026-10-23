@@ -41,7 +41,7 @@ from training.generate.scenarios_v2 import TEST_ONLY_POLICIES, TRAIN_STYLES, Sce
 from training.generate.v3 import noise
 from training.generate.v3.config import OUT_DIR, config, leaks
 from training.generate.v3.coverage import below, by_kind, cell_counts
-from training.generate.v3.dataset import latest, load_sheets, read_jsonl, write_jsonl
+from training.generate.v3.dataset import TRICKY_OF, latest, load_sheets, read_jsonl, write_jsonl
 from training.generate.v3.segments import render
 from training.generate.v3.verify import check_note, filled_target, locate, near_duplicates
 
@@ -150,15 +150,64 @@ def build_record(
     return record, sidecar
 
 
+def _balanced_train(
+    rows: list[tuple[dict, dict]], sheets: Mapping[str, Mapping[str, Any]]
+) -> list[tuple[dict, dict]]:
+    """The training split at `sizes.train` records in all (D-V3-13): every top-up kept, each
+    writer at its `writer_mix` share overall, and the natural records cut one at a time, each cut
+    the one that brings the tricky-fact types' shares closest to the shares the natural training
+    sheets were drawn with (the ±10% rule of 19 Oct)."""
+    size = config()["sizes"]["train"]
+    shares = config()["writer_mix"]["train"]
+    natural_drawn = [s for s in sheets.values() if s["split"] == "train" and not s.get("top_up")]
+    asked = {
+        name: sum(map(has, natural_drawn)) / len(natural_drawn) for name, has in TRICKY_OF.items()
+    }
+    names = sorted(TRICKY_OF)
+
+    def kinds(row: tuple[dict, dict]) -> tuple[bool, ...]:
+        sheet = sheets[row[0]["metadata"]["sheet_id"]]
+        return tuple(TRICKY_OF[n](sheet) for n in names)
+
+    topped = [r for r in rows if r[0]["metadata"].get("top_up")]
+    natural = [r for r in rows if not r[0]["metadata"].get("top_up")]
+    kept = topped + natural
+    if len(kept) <= size:
+        return kept
+    counts = [sum(kinds(r)[i] for r in kept) for i in range(len(names))]
+    writers = Counter(r[0]["metadata"]["writer"] for r in kept)
+    wanted = {w: round(size * share) for w, share in shares.items()}
+    groups: dict[tuple[str, tuple[bool, ...]], list[tuple[dict, dict]]] = {}
+    for row in reversed(natural):  # cut from the end of each group: the last records drawn
+        groups.setdefault((row[0]["metadata"]["writer"], kinds(row)), []).append(row)
+    total = len(kept)
+    while total > size:
+        excess = {w: writers[w] - wanted.get(w, 0) for w in writers}
+        writer = max(excess, key=lambda w: (excess[w], w))
+
+        def worst(vector: tuple[bool, ...], left: int = total - 1) -> float:
+            return max(
+                abs((counts[i] - vector[i]) / left / asked[n] - 1)
+                for i, n in enumerate(names)
+                if asked[n]
+            )
+
+        options = [k for k, v in groups.items() if v and k[0] == writer]
+        if not options:  # this writer has no natural record left: cut from the other
+            options = [k for k, v in groups.items() if v]
+        key = min(options, key=lambda k: (worst(k[1]), k))
+        groups[key].pop()
+        for i in range(len(names)):
+            counts[i] -= key[1][i]
+        writers[key[0]] -= 1
+        total -= 1
+    left = {id(r) for v in groups.values() for r in v}
+    return topped + [r for r in natural if id(r) in left]
+
+
 def _trim(rows: list[tuple[dict, dict]], split: str) -> list[tuple[dict, dict]]:
-    """The split at its size, keeping the writer mix; the training split keeps every top-up
-    record on top of its size (D-V3-6)."""
-    if split == "train":
-        topped = [(r, s) for r, s in rows if r["metadata"].get("top_up")]
-        natural = [(r, s) for r, s in rows if not r["metadata"].get("top_up")]
-        return _trim(natural, "train_natural") + topped
-    size = config()["sizes"]["train" if split == "train_natural" else split]
-    split = "train" if split == "train_natural" else split
+    """The split at its size, keeping the writer mix (the training split: `_balanced_train`)."""
+    size = config()["sizes"][split]
     shares = config()["writer_mix"][split]
     wanted = {w: round(size * share) for w, share in shares.items()}
     kept: list[tuple[dict, dict]] = []
@@ -258,7 +307,7 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
     final = {}
     for split, rows in by_split.items():
         rows = [(r, s) for r, s in rows if r["metadata"]["record_id"] not in drop_ids]
-        final[split] = _trim(rows, split)
+        final[split] = _balanced_train(rows, sheets) if split == "train" else _trim(rows, split)
     folder = out_dir / "final"
     for split, rows in final.items():
         write_jsonl(folder / f"{split}.jsonl", [r for r, _ in rows])
