@@ -402,12 +402,28 @@ def test_a_lead_never_states_a_criterion_the_sheet_marks_missing() -> None:
 
 
 def test_the_training_trim_keeps_top_ups_writers_and_tricky_shares(monkeypatch) -> None:
+    from collections import Counter
+
     from training.generate.v3 import build
 
     monkeypatch.setattr(
         build,
         "config",
-        lambda: {"sizes": {"train": 10}, "writer_mix": {"train": {"A": 0.5, "B": 0.5}}},
+        lambda: {
+            "sizes": {"train": 10},
+            "writer_mix": {"train": {"A": 0.5, "B": 0.5}},
+            "top_up": {"floors": {"tricky": 3}},
+        },
+    )
+    # one coverage cell, held by the rows of sheets S0 to S3 only: its floor is 3
+    cell = ("tricky", "POL-X borderline")
+
+    def cells_of(sheet: dict) -> Counter:
+        return Counter({cell: 1} if sheet["sheet_id"] in ("S0", "S1", "S2", "S3") else {})
+
+    monkeypatch.setattr(build, "sheet_cells", cells_of)
+    monkeypatch.setattr(
+        build, "cell_counts", lambda sheets: sum((cells_of(s) for s in sheets), Counter())
     )
 
     def sheet_of(i: int, borderline: bool, top_up: bool = False) -> dict:
@@ -428,9 +444,10 @@ def test_the_training_trim_keeps_top_ups_writers_and_tricky_shares(monkeypatch) 
     ]
     sheets["S99"] = sheet_of(99, False, top_up=True)
     rows.append(({"metadata": {"sheet_id": "S99", "writer": "B", "top_up": ["cell"]}}, {}))
-    kept = build._balanced_train(rows, sheets)
+    kept, report = build._balanced_train(rows, sheets)
     ids = [r[0]["metadata"]["sheet_id"] for r in kept]
-    assert len(kept) == 10 and "S99" in ids
+    assert len(kept) == 10 and "S99" in ids and report["cut"] == 10
+    assert sum(i in ids for i in ("S0", "S1", "S2", "S3")) >= 3  # the cell stays at its floor
     assert sum(r[0]["metadata"]["writer"] == "A" for r in kept) == 5
     share = sum(sheets[i]["tricky"] == ["borderline"] for i in ids) / 10
     assert share <= 0.3  # 10 of the 20 rows had one: the cuts take those first

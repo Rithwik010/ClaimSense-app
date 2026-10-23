@@ -40,7 +40,7 @@ from training.generate.reference import generate_reference
 from training.generate.scenarios_v2 import TEST_ONLY_POLICIES, TRAIN_STYLES, ScenarioBuilderV2
 from training.generate.v3 import noise
 from training.generate.v3.config import OUT_DIR, config, leaks
-from training.generate.v3.coverage import below, by_kind, cell_counts
+from training.generate.v3.coverage import below, by_kind, cell_counts, sheet_cells
 from training.generate.v3.dataset import TRICKY_OF, latest, load_sheets, read_jsonl, write_jsonl
 from training.generate.v3.segments import render
 from training.generate.v3.verify import check_note, filled_target, locate, near_duplicates
@@ -152,38 +152,51 @@ def build_record(
 
 def _balanced_train(
     rows: list[tuple[dict, dict]], sheets: Mapping[str, Mapping[str, Any]]
-) -> list[tuple[dict, dict]]:
+) -> tuple[list[tuple[dict, dict]], dict[str, Any]]:
     """The training split at `sizes.train` records in all (D-V3-13): every top-up kept, each
     writer at its `writer_mix` share overall, and the natural records cut one at a time, each cut
     the one that brings the tricky-fact types' shares closest to the shares the natural training
-    sheets were drawn with (the ±10% rule of 19 Oct)."""
+    sheets were drawn with (the ±10% rule of 19 Oct), never one that would take a coverage cell
+    under its floor. When no record can be cut without that, the split stays larger (reported)."""
     size = config()["sizes"]["train"]
     shares = config()["writer_mix"]["train"]
+    floors = config()["top_up"]["floors"]
     natural_drawn = [s for s in sheets.values() if s["split"] == "train" and not s.get("top_up")]
     asked = {
         name: sum(map(has, natural_drawn)) / len(natural_drawn) for name, has in TRICKY_OF.items()
     }
     names = sorted(TRICKY_OF)
 
+    def sheet(row: tuple[dict, dict]) -> Mapping[str, Any]:
+        return sheets[row[0]["metadata"]["sheet_id"]]
+
     def kinds(row: tuple[dict, dict]) -> tuple[bool, ...]:
-        sheet = sheets[row[0]["metadata"]["sheet_id"]]
-        return tuple(TRICKY_OF[n](sheet) for n in names)
+        return tuple(TRICKY_OF[n](sheet(row)) for n in names)
 
     topped = [r for r in rows if r[0]["metadata"].get("top_up")]
     natural = [r for r in rows if not r[0]["metadata"].get("top_up")]
     kept = topped + natural
+    report: dict[str, Any] = {"records_before": len(kept), "size": size, "cut": 0}
     if len(kept) <= size:
-        return kept
+        return kept, report
     counts = [sum(kinds(r)[i] for r in kept) for i in range(len(names))]
+    cells = cell_counts(sheet(r) for r in kept)
     writers = Counter(r[0]["metadata"]["writer"] for r in kept)
     wanted = {w: round(size * share) for w, share in shares.items()}
     groups: dict[tuple[str, tuple[bool, ...]], list[tuple[dict, dict]]] = {}
     for row in reversed(natural):  # cut from the end of each group: the last records drawn
         groups.setdefault((row[0]["metadata"]["writer"], kinds(row)), []).append(row)
+
+    def cuttable(row: tuple[dict, dict]) -> bool:
+        return all(
+            cells[c] - n >= floors[c[0]]
+            for c, n in sheet_cells(sheet(row)).items()
+            if c[0] in floors
+        )
+
     total = len(kept)
     while total > size:
         excess = {w: writers[w] - wanted.get(w, 0) for w in writers}
-        writer = max(excess, key=lambda w: (excess[w], w))
 
         def worst(vector: tuple[bool, ...], left: int = total - 1) -> float:
             return max(
@@ -192,17 +205,29 @@ def _balanced_train(
                 if asked[n]
             )
 
-        options = [k for k, v in groups.items() if v and k[0] == writer]
-        if not options:  # this writer has no natural record left: cut from the other
-            options = [k for k, v in groups.items() if v]
-        key = min(options, key=lambda k: (worst(k[1]), k))
-        groups[key].pop()
+        order = sorted(
+            (k for k, v in groups.items() if v),
+            key=lambda k: (-excess.get(k[0], 0), worst(k[1]), k),
+        )
+        chosen = None
+        for key in order:
+            chosen = next((r for r in reversed(groups[key]) if cuttable(r)), None)
+            if chosen is not None:
+                groups[key].remove(chosen)
+                break
+        if chosen is None:  # every record left holds a cell at its floor: stop here
+            report["stopped_at_floors"] = True
+            break
         for i in range(len(names)):
             counts[i] -= key[1][i]
+        cells.subtract(sheet_cells(sheet(chosen)))
         writers[key[0]] -= 1
         total -= 1
+        report["cut"] += 1
     left = {id(r) for v in groups.values() for r in v}
-    return topped + [r for r in natural if id(r) in left]
+    report["records_after"] = total
+    report["writers"] = dict(writers)
+    return topped + [r for r in natural if id(r) in left], report
 
 
 def _trim(rows: list[tuple[dict, dict]], split: str) -> list[tuple[dict, dict]]:
@@ -307,7 +332,10 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
     final = {}
     for split, rows in by_split.items():
         rows = [(r, s) for r, s in rows if r["metadata"]["record_id"] not in drop_ids]
-        final[split] = _balanced_train(rows, sheets) if split == "train" else _trim(rows, split)
+        if split == "train":
+            final[split], trim_report = _balanced_train(rows, sheets)
+        else:
+            final[split] = _trim(rows, split)
     folder = out_dir / "final"
     for split, rows in final.items():
         write_jsonl(folder / f"{split}.jsonl", [r for r, _ in rows])
@@ -323,6 +351,7 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
     write_jsonl(folder / "train_mix.jsonl", mix)
     stats = statistics(out_dir, final, dropped, duplicates, noise_totals)
     stats["training_mix"] = mix_report
+    stats["training_trim"] = trim_report
     floors = config()["top_up"]["floors"]
     train_counts = cell_counts(sheets[r["metadata"]["sheet_id"]] for r, _ in final["train"])
     universe = cell_counts(s for s in sheets.values() if s["split"] == "train")
@@ -345,6 +374,7 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
         "sizes": {s: len(r) for s, r in final.items()},
         "train_mix": mix_report,
         "cells_under_floor": len(stats["coverage"]["cells_under_floor"]),
+        "training_trim": trim_report,
         "dropped": dict(dropped),
         "near_duplicates": len(duplicates),
     }
