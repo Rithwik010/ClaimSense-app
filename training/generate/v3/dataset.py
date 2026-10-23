@@ -54,6 +54,7 @@ CODES = {
     "handwritten": "HW",
 }
 TOP_UP_CODE = "TP"  # top-up sheets: training split only (D-V3-6)
+TARGETED_CODE = "TQ"  # round 4: writer B sheets for the cells and tricky types still short
 TEST_SPLITS = ("test_messy", "test_unseen_style", "handwritten")
 UNSEEN_SKIP = ("office_visit", "ncs_without_emg", "facet_two_regions", "extended_testing")
 
@@ -291,16 +292,27 @@ def cell_universe(train: list[Mapping[str, Any]], policies: set[str]) -> set[Cel
 
 
 def top_up_sheets(
-    maker: SheetMaker, sheets: list[dict[str, Any]]
+    maker: SheetMaker,
+    sheets: list[dict[str, Any]],
+    counted: list[dict[str, Any]] | None = None,
+    code: str = TOP_UP_CODE,
+    writer: str | None = None,
+    tag: str = "top-up",
+    offset_base: int = 500,
+    weight: float = 1.0,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Training sheets for the cells under their floor (plus the cushion), thinnest cell first:
     sheets of the cell's policy, from the scenario types likely to add to it, kept only when
-    they add to a cell still short. Validation and test splits are not touched."""
+    they add to a cell still short. Validation and test splits are not touched. `counted`: the
+    sheets whose cells count (default: every training sheet; round 4: the training notes that pass
+    the gate); `writer`: every new sheet's writer (default: the training mix); `code`, `tag` and
+    `offset_base` keep a later top-up's sheets and scenarios apart from an earlier one's;
+    `weight`: what a new sheet adds to its cells (a note expected to pass the gate at that rate)."""
     cfg = config()["top_up"]
     weights = dict(config()["scenario_weights"])
     targets = {k: math.ceil(v * (1 + cfg["cushion"])) for k, v in cfg["floors"].items()}
     train = [s for s in sheets if s["split"] == "train"]
-    counts = cell_counts(train)
+    counts = cell_counts(train if counted is None else counted)
     seen: dict[Cell, Counter[str]] = {}
     for sheet in train:
         for cell in sheet_cells(sheet):
@@ -317,7 +329,7 @@ def top_up_sheets(
         }
         for kind, name in sorted(short)
     }
-    rng = random.Random(f"{maker.seed}-top-up")
+    rng = random.Random(f"{maker.seed}-{tag}")
     builders: dict[str, ScenarioBuilderV3] = {}
     added: list[dict[str, Any]] = []
     while short:
@@ -325,7 +337,7 @@ def top_up_sheets(
         policy = cell_policy(cell)
         if policy not in builders:
             policies = maker.train_policies if policy == NO_CRITERIA else {policy}
-            offset = 500 + zlib.crc32(policy.encode()) % 10000
+            offset = offset_base + zlib.crc32(policy.encode()) % 10000
             builders[policy] = maker.builder(offset, policies, set(TEST_ONLY_POLICIES))
         allowed = cell_types(cell, weights, seen)
         entry = report[f"{cell[0]} {cell[1]}"]
@@ -333,10 +345,9 @@ def top_up_sheets(
         while cell in short and entry["attempts"] < cfg["max_attempts_per_cell"]:
             entry["attempts"] += 1
             scenario_type = rng.choices(list(allowed), weights=list(allowed.values()))[0]
-            writer = "A" if rng.random() < config()["writer_mix"]["train"]["A"] else "B"
-            sheet = maker.sheet(
-                builders[policy], scenario_type, "train", TOP_UP_CODE, len(added), writer
-            )
+            mix = config()["writer_mix"]["train"]["A"]
+            chosen = writer or ("A" if rng.random() < mix else "B")
+            sheet = maker.sheet(builders[policy], scenario_type, "train", code, len(added), chosen)
             if sheet is None:
                 failures[scenario_type] += 1
                 if failures[scenario_type] > 200 and len(allowed) > 1:
@@ -352,7 +363,8 @@ def top_up_sheets(
                 continue
             sheet["top_up"] = [f"{k} {n}" for k, n in helped]
             added.append(sheet)
-            counts.update(cells)
+            for c, n in cells.items():
+                counts[c] += n * weight
             for c in helped:
                 report[f"{c[0]} {c[1]}"]["top_up_sheets"] += 1
                 if counts[c] >= targets[c[0]]:
@@ -368,6 +380,85 @@ def top_up_sheets(
         "cells_under_floor_after": sum(not e["reached_floor"] for e in report.values()),
         "cells": report,
     }
+
+
+TRICKY_OF = {  # the tricky-fact types of the team's ±10% rule (19 Oct), per sheet
+    "negation": lambda s: "negation" in s["tricky"],
+    "history": lambda s: bool(s["distractors"].get("past")),
+    "uncertainty": lambda s: "uncertainty" in s["tricky"],
+    "contradiction": lambda s: "contradiction" in s["tricky"],
+    "borderline": lambda s: "borderline" in s["tricky"],
+}
+
+
+def passing_training(out_dir: Path = OUT_DIR) -> list[dict[str, Any]]:
+    """The training sheets whose latest note passes the gate (gate.jsonl)."""
+    sheets = load_sheets(out_dir)
+    notes = latest(read_jsonl(out_dir / "notes.jsonl"))
+    return [
+        sheets[g["sheet_id"]]
+        for g in read_jsonl(out_dir / "gate.jsonl")
+        if g["passed"]
+        and sheets[g["sheet_id"]]["split"] == "train"
+        and notes.get(g["sheet_id"], {}).get("attempt") == g["attempt"]
+    ]
+
+
+def targeted_sheets(
+    out_dir: Path = OUT_DIR, pass_rate: float = 0.75, aim: float = 1.0
+) -> dict[str, Any]:
+    """Round 4 (team decision of 19 Oct: gaps closed with writer B first): writer B training
+    sheets (TARGETED_CODE) for (1) the coverage cells under their floor on the training notes
+    that pass the gate, then (2) each tricky-fact type whose share among those notes is under
+    `aim` times its share among the training sheets drawn without a top-up, until the expected
+    share reaches it. A new sheet counts at `pass_rate`, the share of its notes expected to pass.
+    Appended to sheets.jsonl."""
+    sheets = list(load_sheets(out_dir).values())
+    passing = passing_training(out_dir)
+    maker = SheetMaker(config()["seed"])
+    added, cells = top_up_sheets(
+        maker, sheets, passing, TARGETED_CODE, "B", "targeted-r4", 20000, pass_rate
+    )
+    natural = [s for s in sheets if s["split"] == "train" and not s.get("top_up")]
+    rng = random.Random(f"{maker.seed}-targeted-r4-tricky")
+    weights = dict(config()["scenario_weights"])
+    b = maker.builder(30000, maker.train_policies, set(TEST_ONLY_POLICIES))
+    tricky: dict[str, Any] = {}
+    for name, has in sorted(TRICKY_OF.items()):
+        asked = sum(map(has, natural)) / len(natural)
+
+        def expected(name_has=has) -> tuple[float, float]:
+            n = len(passing) + pass_rate * len(added)
+            c = sum(map(name_has, passing)) + pass_rate * sum(map(name_has, added))
+            return c, n
+
+        c, n = expected()
+        entry = {"asked": round(asked, 4), "before": round(c / n, 4), "sheets": 0, "draws": 0}
+        while c / n < aim * asked and entry["draws"] < 200000:
+            entry["draws"] += 1
+            scenario_type = rng.choices(list(weights), weights=list(weights.values()))[0]
+            sheet = maker.sheet(b, scenario_type, "train", TARGETED_CODE, len(added), "B")
+            if sheet is None or not has(sheet):
+                continue
+            sheet["top_up"] = [f"tricky type {name}"]
+            added.append(sheet)
+            entry["sheets"] += 1
+            c, n = expected()
+        entry["expected_after"] = round(c / n, 4)
+        tricky[name] = entry
+    with (out_dir / "sheets.jsonl").open("a", encoding="utf-8") as f:
+        for sheet in added:
+            f.write(json.dumps(sheet, ensure_ascii=False) + "\n")
+    report = {
+        "sheets_added": len(added),
+        "for_cells": cells["sheets"],
+        "cells_short_before": cells["cells_short_before"],
+        "cells_still_short_expected": cells["cells_under_floor_after"],
+        "tricky": tricky,
+        "short_cells": {k: v for k, v in cells["cells"].items() if not v["reached_floor"]},
+    }
+    (out_dir / "targeted_r4.json").write_text(json.dumps(report, indent=2) + "\n")
+    return report
 
 
 def load_sheets(out_dir: Path = OUT_DIR) -> dict[str, dict[str, Any]]:
@@ -630,6 +721,7 @@ def main() -> None:
     take = sub.add_parser("ingest")
     take.add_argument("--round", required=True)
     sub.add_parser("gate")
+    sub.add_parser("targeted", help="round 4: writer B sheets for the cells and tricky types short")
     sub.add_parser("build")
     args = parser.parse_args()
     out = args.out
@@ -649,6 +741,8 @@ def main() -> None:
         print(json.dumps(ingest(out / "kaggle" / f"round{args.round}", out)))
     elif args.command == "gate":
         print(json.dumps(run_gate(out), indent=2))
+    elif args.command == "targeted":
+        print(json.dumps(targeted_sheets(out), indent=2))
     elif args.command == "build":
         from training.generate.v3.build import build
 
