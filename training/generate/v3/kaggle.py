@@ -245,7 +245,11 @@ def estimate_hours(writers: list[dict], verify: list[dict]) -> dict[str, float]:
             ) / 3600
     model_notes = len(writers)
     # second looks in the session: about a third of the absent statements get a finding
-    looks = sum(s["expect"] == "absent" for j in writers for s in j["statements"]) // 3
+    looks = (
+        sum(s["expect"] == "absent" for j in writers for s in j["statements"]) // 3
+        if config()["verification"].get("second_look", True)
+        else 0
+    )
     jobs = len(verify) + model_notes + looks
     if jobs:
         prompt = sum(tokens(j["messages"]) for j in verify) + (model_notes + looks) * 1800
@@ -388,7 +392,9 @@ def prepare_round(
         "verifier_jobs": len(verify) + len(writers),
         "second_looks_in_session": sum(
             s["expect"] == "absent" for j in writers for s in j["statements"]
-        ),
+        )
+        if config()["verification"].get("second_look", True)
+        else 0,
         "gpu_hours_estimate": estimate_hours(writers, verify),
         "upload_check": "passed",
     }

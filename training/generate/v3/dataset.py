@@ -308,6 +308,7 @@ def top_up_sheets(
     tag: str = "top-up",
     offset_base: int = 500,
     weight: float = 1.0,
+    start: Counter[Cell] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Training sheets for the cells under their floor (plus the cushion), thinnest cell first:
     sheets of the cell's policy, from the scenario types likely to add to it, kept only when
@@ -315,12 +316,13 @@ def top_up_sheets(
     sheets whose cells count (default: every training sheet; round 4: the training notes that pass
     the gate); `writer`: every new sheet's writer (default: the training mix); `code`, `tag` and
     `offset_base` keep a later top-up's sheets and scenarios apart from an earlier one's;
-    `weight`: what a new sheet adds to its cells (a note expected to pass the gate at that rate)."""
+    `weight`: what a new sheet adds to its cells (a note expected to pass the gate at that rate);
+    `start`: the counts to begin from instead (round 4: notes waiting for a rewrite count too)."""
     cfg = config()["top_up"]
     weights = dict(config()["scenario_weights"])
     targets = {k: math.ceil(v * (1 + cfg["cushion"])) for k, v in cfg["floors"].items()}
     train = [s for s in sheets if s["split"] == "train"]
-    counts = cell_counts(train if counted is None else counted)
+    counts = start if start is not None else cell_counts(train if counted is None else counted)
     seen: dict[Cell, Counter[str]] = {}
     for sheet in train:
         for cell in sheet_cells(sheet):
@@ -421,11 +423,18 @@ def targeted_sheets(
     `aim` times its share among the training sheets drawn without a top-up, until the expected
     share reaches it. A new sheet counts at `pass_rate`, the share of its notes expected to pass.
     Appended to sheets.jsonl."""
-    sheets = list(load_sheets(out_dir).values())
+    by_id = load_sheets(out_dir)
+    sheets = list(by_id.values())
     passing = passing_training(out_dir)
+    rewrites = [  # training notes this round writes again: they count at `pass_rate`
+        by_id[sid] for sid in needs_note(out_dir) if by_id[sid]["split"] == "train"
+    ]
+    start = cell_counts(passing)
+    for cell, n in cell_counts(rewrites).items():
+        start[cell] += n * pass_rate
     maker = SheetMaker(config()["seed"])
     added, cells = top_up_sheets(
-        maker, sheets, passing, TARGETED_CODE, "B", "targeted-r4", 20000, pass_rate
+        maker, sheets, passing, TARGETED_CODE, "B", "targeted-r4", 20000, pass_rate, start
     )
     natural = [s for s in sheets if s["split"] == "train" and not s.get("top_up")]
     rng = random.Random(f"{maker.seed}-targeted-r4-tricky")
@@ -436,9 +445,9 @@ def targeted_sheets(
         asked = sum(map(has, natural)) / len(natural)
 
         def expected(name_has=has) -> tuple[float, float]:
-            n = len(passing) + pass_rate * len(added)
-            c = sum(map(name_has, passing)) + pass_rate * sum(map(name_has, added))
-            return c, n
+            n = len(passing) + pass_rate * (len(added) + len(rewrites))
+            later = sum(map(name_has, added)) + sum(map(name_has, rewrites))
+            return sum(map(name_has, passing)) + pass_rate * later, n
 
         c, n = expected()
         entry = {"asked": round(asked, 4), "before": round(c / n, 4), "sheets": 0, "draws": 0}
