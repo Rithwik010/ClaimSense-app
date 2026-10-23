@@ -48,8 +48,11 @@ from training.generate.v3.dataset import (
     write_jsonl,
 )
 from training.generate.v3.llm import (
+    JUDGE_SYSTEM,
+    JUDGE_USER,
     VERIFIER_SYSTEM,
     VERIFIER_USER,
+    judge_messages,
     statements,
     verifier_messages,
     writer_messages,
@@ -84,6 +87,8 @@ def run_config() -> dict[str, Any]:
         "vllm": llm["vllm"],
         "verifier_system": VERIFIER_SYSTEM,
         "verifier_user": VERIFIER_USER,
+        "judge_system": JUDGE_SYSTEM,
+        "judge_user": JUDGE_USER,
         "stages": {
             name: {
                 "kind": "verify" if name == "verifier" else "write",
@@ -108,10 +113,13 @@ def round_jobs(
     sheets = load_sheets(out_dir)
     if looks_only:
         notes = latest(read_jsonl(out_dir / "notes.jsonl"))
+        answers = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
         looks = []
         for row in gate_rows(out_dir)[0]:
             if row["looks"]:
-                looks += second_looks(sheets[row["sheet_id"]], notes[row["sheet_id"]], row["looks"])
+                note = notes[row["sheet_id"]]
+                found = (answers.get((row["sheet_id"], note["attempt"])) or {}).get("answers")
+                looks += second_looks(sheets[row["sheet_id"]], note, row["looks"], found or {})
         return [], looks
     needed = needs_note(out_dir)
     writers: list[dict] = []
@@ -171,33 +179,49 @@ def round_jobs(
                 "writer": note["writer"],
                 "seed": 0,
                 "messages": verifier_messages(note["note"], items),
+                "statements": items,  # the stage's second looks need them, and the note
+                "note": note["note"],
             }
         )
-        absent = [item["fact_id"] for item in items if item["expect"] == "absent"]
-        verify += second_looks(sheets[sheet_id], note, absent)
+    answers = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
     for row in gate:  # earlier notes whose leak finding waits for the second look
         note = notes.get(row["sheet_id"])
         if row.get("looks") and note and note["attempt"] == row["attempt"]:
-            verify += second_looks(sheets[row["sheet_id"]], note, row["looks"])
+            found = (answers.get((row["sheet_id"], note["attempt"])) or {}).get("answers")
+            verify += second_looks(sheets[row["sheet_id"]], note, row["looks"], found or {})
     return writers, verify
 
 
-def second_looks(sheet: dict, note: dict, fact_ids: list[str]) -> list[dict]:
-    """The verifier asked again about each of these missing or absent facts alone (verify.py
-    `check_note`: a leak finding counts only when this answer finds it too)."""
+def second_looks(
+    sheet: dict, note: dict, fact_ids: list[str], quoted: Mapping[str, str | None]
+) -> list[dict]:
+    """The second look at each of these missing or absent facts the verifier found (verify.py
+    `check_note`: the finding counts only when the second look agrees): for a missing fact, the
+    judge on the passage the verifier cited (`quoted`: its answers by fact); for an exclusion,
+    the verifier asked again about that fact alone."""
     items = {item["fact_id"]: item for item in statements(sheet)}
-    return [
-        {
-            "job_id": f"look-{sheet['sheet_id']}#{note['attempt']}:{fid}",
-            "sheet_id": sheet["sheet_id"],
-            "attempt": note["attempt"],
-            "writer": note["writer"],
-            "seed": 0,
-            "messages": verifier_messages(note["note"], [{**items[fid], "id": 1}]),
-        }
-        for fid in fact_ids
-        if fid in items
-    ]
+    jobs = []
+    for fid in fact_ids:
+        item = items.get(fid)
+        if item is None:
+            continue
+        judged = item.get("check") == "judge"
+        if judged and not quoted.get(fid):
+            continue
+        jobs.append(
+            {
+                "job_id": f"{item.get('check', 'look')}-{sheet['sheet_id']}#{note['attempt']}"
+                f":{fid}",
+                "sheet_id": sheet["sheet_id"],
+                "attempt": note["attempt"],
+                "writer": note["writer"],
+                "seed": 0,
+                "messages": judge_messages(quoted[fid] or "", item["statement"])
+                if judged
+                else verifier_messages(note["note"], [{**item, "id": 1}]),
+            }
+        )
+    return jobs
 
 
 def estimate_hours(writers: list[dict], verify: list[dict]) -> dict[str, float]:
@@ -216,7 +240,8 @@ def estimate_hours(writers: list[dict], verify: list[dict]) -> dict[str, float]:
                 LOAD_SECONDS + prompt / PROMPT_TOKENS_PER_SECOND + output / OUTPUT_TOKENS_PER_SECOND
             ) / 3600
     model_notes = len(writers)
-    looks = sum(s["expect"] == "absent" for j in writers for s in j["statements"])
+    # second looks in the session: about a third of the absent statements get a finding
+    looks = sum(s["expect"] == "absent" for j in writers for s in j["statements"]) // 3
     jobs = len(verify) + model_notes + looks
     if jobs:
         prompt = sum(tokens(j["messages"]) for j in verify) + (model_notes + looks) * 1800

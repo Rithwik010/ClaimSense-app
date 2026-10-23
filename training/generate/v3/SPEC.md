@@ -272,8 +272,13 @@ fact's own wording writes it so), or spelled out.
   exclusion the opposite polarity to every wording, a passage `verification.procedure_share` made
   of the claim's own procedure wording (naming the requested procedure documents nothing), or a
   passage with less than `verification.finding_overlap` of every wording's words. Any other
-  finding gets a second look: the verifier is asked about that fact alone (in the same Kaggle
-  session for the notes it verifies there), and the finding counts only when it finds it again.
+  finding gets a second look, in the same Kaggle session for the notes verified there, and counts
+  only when the second look agrees. For a missing fact, the judge: the verifier model is shown
+  only the cited passage and the statement and asked whether the passage itself establishes it
+  (not when it only names the requested procedure, is about another problem, or covers only part;
+  a diagnosis only when the statement asks for that condition). For an exclusion, the verifier
+  is asked about that fact alone. (Asking about a missing fact alone, 23 Oct, returned the same
+  quote in 155 of 155 cases: at temperature 0 it is no second opinion.)
   The local word-overlap check leaves the claim's procedure wording out the same way.
 
 Model notes get "denies" written as "reports no" and "pending" as "awaited" before the gate.
@@ -340,7 +345,8 @@ repeats a v2 training note, none is a near-duplicate of a test record, none goes
 - **Hardware:** the two T4s run with tensor parallel `llm.vllm.tensor_parallel_size`, at
   `llm.vllm.max_model_len` tokens (or a model's own `llm.<model>.max_model_len`, such as
   `llm.writer_c.max_model_len` for OLMo-2's 4,096) and `llm.vllm.gpu_memory_utilization` of memory;
-  a model may run fewer sequences at once (`llm.writer_c.max_num_seqs`).
+  a model may run fewer sequences at once (`llm.writer_c.max_num_seqs`,
+  `llm.verifier.max_num_seqs`).
 - **Saved as it goes:** a stage answers `llm.vllm.chunk_size` prompts at a time and saves them, a
   rerun skips what is saved, and a failed stage does not stop the next.
 - **Time budgets:** a stage stops taking new chunks after `llm.vllm.stage_hours.<stage>` hours; what

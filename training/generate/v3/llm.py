@@ -76,6 +76,18 @@ VERIFIER_USER = (
     'Answer with JSON only, in this form: {{"answers": [{{"id": 1, "quote": "..."}}, '
     '{{"id": 2, "quote": null}}]}}'
 )
+JUDGE_SYSTEM = (  # the second look at a missing fact the verifier found (D-V3-12)
+    "You check one statement against one passage copied from a clinical note. Decide from the "
+    "passage alone whether it establishes the statement. Answer with JSON only."
+)
+JUDGE_USER = (
+    "PASSAGE:\n<passage>\n{passage}\n</passage>\n\nSTATEMENT: {statement}\n\n"
+    "Does the passage itself establish the statement? It does not when it only names the "
+    "procedure or test being requested or planned, when it is about a different problem, or when "
+    "it covers only part of what the statement asks for. A diagnosis establishes the statement "
+    "only when the statement asks for that condition itself.\n"
+    'Answer with JSON only: {{"answer": "yes"}} or {{"answer": "no"}}'
+)
 
 
 def _date(value: str) -> str:
@@ -296,6 +308,7 @@ def statements(sheet: Mapping[str, Any]) -> list[dict[str, Any]]:
                     + fact["missing_text"][1:]
                     + ".",
                     "expect": "absent",
+                    "check": "judge",  # a finding gets the judge's second look
                 }
             )
         elif (
@@ -306,6 +319,7 @@ def statements(sheet: Mapping[str, Any]) -> list[dict[str, Any]]:
                     "fact_id": fact["fact_id"],
                     "statement": _strip_slots(fact["forbidden"][0]),
                     "expect": "absent",
+                    "check": "look",  # a finding gets the second look: asked again, alone
                 }
             )
     for i, item in enumerate(found, start=1):
@@ -360,6 +374,26 @@ def parse_verifier(text: str) -> dict[int, str | None]:
             empty = not isinstance(quote, str) or quote.strip().strip(".'\"").lower() in NO_QUOTE
             found[answer["id"]] = None if empty else quote
     return found
+
+
+def judge_messages(passage: str, statement: str) -> list[dict[str, str]]:
+    return [
+        {"role": "system", "content": JUDGE_SYSTEM},
+        {"role": "user", "content": JUDGE_USER.format(passage=passage, statement=statement)},
+    ]
+
+
+def parse_judge(text: str) -> bool:
+    """The judge's yes (True) or no (False); ValueError when it answered neither."""
+    start, end = text.find("{"), text.rfind("}")
+    if start >= 0 and end > start:
+        try:
+            answer = json.loads(text[start : end + 1]).get("answer")
+        except (ValueError, AttributeError):
+            answer = None
+        if isinstance(answer, str) and answer.strip().lower() in ("yes", "no"):
+            return answer.strip().lower() == "yes"
+    raise ValueError(f"no yes or no answer: {text[:80]!r}")
 
 
 def clean_note(text: str) -> str:

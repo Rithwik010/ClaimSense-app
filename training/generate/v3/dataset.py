@@ -39,7 +39,13 @@ from training.generate.v3 import noise, writer_a
 from training.generate.v3.config import OUT_DIR, borderlines, config, leaks
 from training.generate.v3.coverage import NO_CRITERIA, Cell, cell_counts, policy_of, sheet_cells
 from training.generate.v3.facts import ScenarioBuilderV3
-from training.generate.v3.llm import clean_note, neutral_words, parse_verifier, statements
+from training.generate.v3.llm import (
+    clean_note,
+    neutral_words,
+    parse_judge,
+    parse_verifier,
+    statements,
+)
 from training.generate.v3.segments import render
 from training.generate.v3.sheets import fact_sheet
 from training.generate.v3.verify import check_note, filled_target
@@ -569,24 +575,8 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
     for row in read_jsonl(output("verifier_out.jsonl")):
         job = jobs.get(row["job_id"]) or {}
         sheet_id, attempt = row["sheet_id"], row["attempt"]
-        if row["job_id"].startswith("look-"):  # one missing or absent fact, asked alone
-            try:
-                quote = parse_verifier(row["text"]).get(1)
-            except ValueError as exc:
-                broken += 1
-                quote, error = None, str(exc)
-            else:
-                error = None
-            looks.append(
-                {
-                    "sheet_id": sheet_id,
-                    "attempt": attempt,
-                    "fact_id": row["job_id"].rsplit(":", 1)[1],
-                    "quote": quote,
-                    "error": error,
-                    "model": row.get("model"),
-                }
-            )
+        if row["job_id"].startswith(("look-", "judge-")):  # second looks: after the answers
+            looks.append(row)
             continue
         items = verifier_items(sheets[sheet_id])
         try:
@@ -604,10 +594,36 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
                 "job": job.get("job_id"),
             }
         )
+    first = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
+    first |= {(a["sheet_id"], a["attempt"]): a for a in answers}
+    second = []
+    for row in looks:
+        kind, fact_id = row["job_id"].split("-", 1)[0], row["job_id"].rsplit(":", 1)[1]
+        error = None
+        try:
+            if kind == "judge":  # yes: the finding stands, on the passage the verifier cited
+                cited = (first.get((row["sheet_id"], row["attempt"])) or {}).get("answers") or {}
+                quote = cited.get(fact_id) if parse_judge(row["text"]) else None
+            else:
+                quote = parse_verifier(row["text"]).get(1)
+        except ValueError as exc:
+            broken += 1
+            quote, error = None, str(exc)
+        second.append(
+            {
+                "sheet_id": row["sheet_id"],
+                "attempt": row["attempt"],
+                "fact_id": fact_id,
+                "source": kind,
+                "quote": quote,
+                "error": error,
+                "model": row.get("model"),
+            }
+        )
     found = {
         "notes": append_jsonl(out_dir / "notes.jsonl", notes),
         "verifier": append_jsonl(out_dir / "verifier.jsonl", answers),
-        "second_looks": append_jsonl(out_dir / "second_look.jsonl", looks),
+        "second_looks": append_jsonl(out_dir / "second_look.jsonl", second),
         "verifier_unparsed": broken,
     }
     marker.write_text(json.dumps(found) + "\n")
@@ -627,6 +643,24 @@ def run_gate(out_dir: Path = OUT_DIR) -> dict[str, Any]:
     }
 
 
+def second_look_answers(
+    out_dir: Path, sheets: Mapping[str, Mapping[str, Any]]
+) -> dict[tuple[str, int], dict[str, str | None]]:
+    """{(sheet, attempt): {fact: quote or None}}: each finding's second look (D-V3-12). For a
+    missing fact the judge's (the passage it agreed establishes the fact, or None), for an
+    exclusion the verifier's own answer when asked about it alone; the latest of each counts,
+    and an unreadable one is asked again."""
+    found: dict[tuple[str, int], dict[str, str | None]] = {}
+    for row in read_jsonl(out_dir / "second_look.jsonl"):
+        if row.get("error") is not None:
+            continue
+        facts = {f["fact_id"]: f for f in sheets[row["sheet_id"]]["facts"]}
+        wanted = "judge" if facts[row["fact_id"]]["status"] == "missing" else "look"
+        if row.get("source", "look") == wanted:
+            found.setdefault((row["sheet_id"], row["attempt"]), {})[row["fact_id"]] = row["quote"]
+    return found
+
+
 def gate_rows(
     out_dir: Path = OUT_DIR,
 ) -> tuple[list[dict[str, Any]], dict[str, Counter[str]], Counter[str]]:
@@ -636,10 +670,7 @@ def gate_rows(
     sheets = load_sheets(out_dir)
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     verifier = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
-    looks: dict[tuple[str, int], dict[str, str | None]] = {}
-    for row in read_jsonl(out_dir / "second_look.jsonl"):
-        if row.get("error") is None:  # an unreadable second look is asked again
-            looks.setdefault((row["sheet_id"], row["attempt"]), {})[row["fact_id"]] = row["quote"]
+    looks = second_look_answers(out_dir, sheets)
     results = []
     tallies: dict[str, Counter[str]] = {}
     reasons: Counter[str] = Counter()

@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from training.generate.v3.config import OUT_DIR
-from training.generate.v3.dataset import latest, load_sheets, read_jsonl
+from training.generate.v3.dataset import latest, load_sheets, read_jsonl, second_look_answers
 from training.generate.v3.verify import GateResult, check_note, filled_target, share
 
 # The hand check of 19 Oct: the failed notes the team judged really wrong (the others failed on
@@ -106,10 +106,7 @@ def gate_change(out_dir: Path = OUT_DIR, before_file: str = "gate_r3_before_fix.
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     verifier = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
     before = {g["sheet_id"]: g for g in read_jsonl(out_dir / before_file)}
-    looks: dict[tuple[str, int], dict[str, str | None]] = {}
-    for row in read_jsonl(out_dir / "second_look.jsonl"):
-        if row.get("error") is None:
-            looks.setdefault((row["sheet_id"], row["attempt"]), {})[row["fact_id"]] = row["quote"]
+    looks = second_look_answers(out_dir, sheets)
     after: dict[str, GateResult] = {}
     for sheet_id, note in notes.items():
         key = (sheet_id, note["attempt"])

@@ -270,3 +270,86 @@ def test_a_quote_with_all_the_facts_values_is_about_it() -> None:
     note = "MRI reviewed. Pain 8/10, NDI 57%. Plan injection."
     result = check_note(sheet(fact), note, None, {"F2": "Pain 8/10, NDI 57%."})
     assert result.failures == []
+
+
+# --- the judge (the second look at a missing fact) -----------------------------------------------
+
+
+def test_the_judge_answers_yes_or_no_and_nothing_else() -> None:
+    from training.generate.v3.llm import parse_judge
+
+    assert parse_judge('{"answer": "yes"}') is True
+    assert parse_judge('Sure. {"answer": "No"}') is False
+    with pytest.raises(ValueError):
+        parse_judge("The passage partly supports it.")
+
+
+def test_the_stage_judges_missing_facts_and_asks_again_about_exclusions() -> None:
+    from training.generate.v3 import kaggle_stage
+    from training.generate.v3.kaggle import run_config
+
+    run = run_config()
+    job = {
+        "job_id": "S-1#1",
+        "sheet_id": "S-1",
+        "attempt": 1,
+        "note": "HPI: pain. Plan: block.",
+        "statements": [
+            {"id": 1, "fact_id": "F1", "statement": "Pain for 6 weeks.", "expect": "present"},
+            {
+                "id": 2,
+                "fact_id": "F2",
+                "statement": "The note documents: a pain score.",
+                "expect": "absent",
+                "check": "judge",
+            },
+            {
+                "id": 3,
+                "fact_id": "F3",
+                "statement": "Testing is a routine check.",
+                "expect": "absent",
+                "check": "look",
+            },
+        ],
+    }
+    answer = '{"answers": [{"id": 1, "quote": "HPI: pain."}, {"id": 2, "quote": "Plan: block."},'
+    answer += ' {"id": 3, "quote": "HPI: pain."}]}'
+    items = kaggle_stage.second_looks(
+        run,
+        {"temperature": 0.0, "max_tokens": 9},
+        [{"job_id": "verify-S-1#1", "text": answer}],
+        {"S-1#1": job},
+    )
+    ids = [item[0]["job_id"] for item in items]
+    assert ids == ["judge-S-1#1:F2", "look-S-1#1:F3"]
+    assert "Plan: block." in items[0][1][1]["content"]  # the judge reads the cited passage only
+    assert "HPI: pain. Plan: block." in items[1][1][1]["content"]  # the look reads the note
+
+
+def test_a_missing_fact_takes_the_judges_answer_and_an_exclusion_the_look(tmp_path) -> None:
+    import json
+
+    from training.generate.v3.dataset import second_look_answers
+
+    sheets = {
+        "S-1": {
+            "facts": [
+                {"fact_id": "F2", "status": "missing"},
+                {"fact_id": "F3", "status": "absent"},
+            ]
+        }
+    }
+    rows = [
+        {"sheet_id": "S-1", "attempt": 1, "fact_id": "F2", "quote": "Plan: block.", "error": None},
+        {"sheet_id": "S-1", "attempt": 1, "fact_id": "F3", "quote": "HPI: pain.", "error": None},
+        {
+            "sheet_id": "S-1",
+            "attempt": 1,
+            "fact_id": "F2",
+            "source": "judge",
+            "quote": None,
+            "error": None,
+        },
+    ]
+    (tmp_path / "second_look.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    assert second_look_answers(tmp_path, sheets) == {("S-1", 1): {"F2": None, "F3": "HPI: pain."}}
