@@ -288,11 +288,43 @@ def share(wording: str, passage: str, drop: frozenset[str] = frozenset()) -> flo
     return len(wanted & words(passage)) / len(wanted)
 
 
+PART = re.compile(r";\s*|,\s*(?:and|but)\s+|\s+and the\s+")
+PARTS_CHECK = True  # the team's rule of 23 Oct (D-V3-14); off only to count what it changes
+
+
+def fact_parts(text: str) -> list[str]:
+    """A fact's clauses (split at ";", ", and", ", but" and " and the "), with two or more words."""
+    return [part for part in PART.split(text) if len(words(part)) >= 2]
+
+
+def supports_parts(
+    passage: str, fact: Mapping[str, Any], dates: Mapping[str, set[str]] | None = None
+) -> bool:
+    """Whether a passage supports every part of a fact with two or more (its full A wording):
+    each holds `verification.part_overlap` of its words in the passage, or all of its numbers.
+    "Memory has worsened over 14 months, and the results will decide between treatment for
+    dementia and for depression" needs both the worsening and what the results decide."""
+    texts = list((fact.get("text") or {}).values())
+    parts = fact_parts((fact.get("text") or {}).get("A") or "")
+    if len(parts) < 2:
+        return True
+    threshold = config()["verification"]["part_overlap"]
+    for part in parts:
+        numbers = re.findall(r"\d+(?:/\d+)?", part)
+        if share(part, passage) >= threshold:
+            continue
+        if numbers and all(has_value(passage, n, texts, dates) for n in numbers):
+            continue
+        return False
+    return True
+
+
 def stated_locally(
     note: str,
     fact: Mapping[str, Any],
     original: bool = False,
     dates: Mapping[str, set[str]] | None = None,
+    parts: bool = False,
 ) -> Span | None:
     """A documented fact (`original`: a contradiction's copied statement) found in the note itself,
     when the verifier missed it or quoted a passage that does not state it: one of its wordings word
@@ -322,6 +354,8 @@ def stated_locally(
                 if _negative(passage) != negative:
                     continue
                 if not all(has_value(passage, v, texts, dates) for v in values):
+                    continue
+                if parts and not supports_parts(passage, fact, dates):
                     continue
                 found = share(text, passage)
                 if found > best_share:
@@ -512,6 +546,19 @@ def check_note(
                     )
             if known_spans is None and not _about(note, span, fact, original, rivals(fid), dates):
                 result.failures.append(f"{fid}: the quote does not state the fact")
+            elif (
+                PARTS_CHECK
+                and known_spans is None
+                and not original
+                and fact.get("label_status") == "MET"
+                and not supports_parts(quote, fact, dates)
+            ):
+                local = stated_locally(note, fact, original, dates, parts=True)
+                if local is None:
+                    result.failures.append(f"{fid}: the quote supports only part of the fact")
+                else:
+                    span = local
+                    result.local_spans.append(fid)
             result.spans[fid] = span
         if fact["status"] == "contradicted":
             first = result.spans.get(f"{fact['fact_id']}:original")

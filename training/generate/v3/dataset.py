@@ -20,9 +20,11 @@ Everything is written under data/generated/v3/ (git-ignored):
 """
 
 import argparse
+import hashlib
 import json
 import math
 import random
+import shutil
 import zlib
 from collections import Counter
 from collections.abc import Iterable, Mapping
@@ -467,6 +469,57 @@ def targeted_sheets(
     return report
 
 
+def fix_leads(out_dir: Path = OUT_DIR) -> dict[str, Any]:
+    """The lead-line rule on the sheets already drawn (D-V3-14, phrases/leads.yaml): each sheet
+    whose lead states part of a criterion it marks missing gets the neutral lead, and its note so
+    far is failed at the gate (`lead_fixes.json`) so that it is written again. sheets.jsonl is kept
+    as sheets_before_lead_fix.jsonl first."""
+    from training.generate.v3.sheets import safe_lead
+
+    rows = read_jsonl(out_dir / "sheets.jsonl")
+    notes = latest(read_jsonl(out_dir / "notes.jsonl"))
+    gate = {g["sheet_id"]: g for g in read_jsonl(out_dir / "gate.jsonl")}
+    fixes_path = out_dir / "lead_fixes.json"
+    fixes = json.loads(fixes_path.read_text()) if fixes_path.exists() else {}
+    found: Counter[str] = Counter()
+    for sheet in rows:
+        lead, replaced = safe_lead(sheet.get("lead") or {}, sheet["facts"])
+        if not replaced:
+            continue
+        note = notes.get(sheet["sheet_id"])
+        g = gate.get(sheet["sheet_id"])
+        state = (
+            "no note"
+            if note is None
+            else (
+                "passed" if g and g["passed"] and g["attempt"] == note["attempt"] else "not passed"
+            )
+        )
+        found[f"{sheet['split']} {sheet['writer']} {state}"] += 1
+        fixes[sheet["sheet_id"]] = {
+            "attempt": note["attempt"] if note else 0,
+            "old": sheet["lead"],
+            "new": lead,
+        }
+        sheet["lead"] = lead
+    if found:
+        shutil.copy(out_dir / "sheets.jsonl", out_dir / "sheets_before_lead_fix.jsonl")
+        write_jsonl(out_dir / "sheets.jsonl", rows)
+        fixes_path.write_text(json.dumps(fixes, indent=1) + "\n")
+    return {
+        "sheets_fixed": sum(found.values()),
+        "by_split_writer_state": dict(sorted(found.items())),
+    }
+
+
+def lead_fixed(out_dir: Path = OUT_DIR) -> dict[str, int]:
+    """{sheet: the last note attempt written with the old lead} (fix_leads)."""
+    path = out_dir / "lead_fixes.json"
+    return (
+        {k: v["attempt"] for k, v in json.loads(path.read_text()).items()} if path.exists() else {}
+    )
+
+
 def load_sheets(out_dir: Path = OUT_DIR) -> dict[str, dict[str, Any]]:
     return {s["sheet_id"]: s for s in read_jsonl(out_dir / "sheets.jsonl")}
 
@@ -491,6 +544,7 @@ def needs_note(out_dir: Path = OUT_DIR) -> dict[str, int]:
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     gate = {g["sheet_id"]: g for g in read_jsonl(out_dir / "gate.jsonl")}
     limit = config()["verification"]["max_regenerations"] + 1
+    old_lead = lead_fixed(out_dir)
     found = {}
     for sheet_id, sheet in sheets.items():
         if sheet["writer"] == "H":
@@ -502,8 +556,8 @@ def needs_note(out_dir: Path = OUT_DIR) -> dict[str, int]:
         result = gate.get(sheet_id)
         failed = result and not result["passed"] and not result.get("pending")
         if failed and result["attempt"] == note["attempt"]:
-            if note["attempt"] < limit:
-                found[sheet_id] = note["attempt"] + 1
+            if note["attempt"] < limit or note["attempt"] == old_lead.get(sheet_id):
+                found[sheet_id] = note["attempt"] + 1  # a lead fix gets one more attempt
     return found
 
 
@@ -596,6 +650,10 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
         )
     first = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
     first |= {(a["sheet_id"], a["attempt"]): a for a in answers}
+    run = json.loads((round_dir / "dataset" / "run.json").read_text())
+    judge_prompt = hashlib.sha256(
+        (run.get("judge_system", "") + run.get("judge_user", "")).encode()
+    ).hexdigest()[:8]
     second = []
     for row in looks:
         kind, fact_id = row["job_id"].split("-", 1)[0], row["job_id"].rsplit(":", 1)[1]
@@ -615,6 +673,7 @@ def ingest(round_dir: Path, out_dir: Path = OUT_DIR) -> dict[str, int]:
                 "attempt": row["attempt"],
                 "fact_id": fact_id,
                 "source": kind,
+                **({"prompt": judge_prompt} if kind == "judge" else {}),
                 "quote": quote,
                 "error": error,
                 "model": row.get("model"),
@@ -644,7 +703,7 @@ def run_gate(out_dir: Path = OUT_DIR) -> dict[str, Any]:
 
 
 def second_look_answers(
-    out_dir: Path, sheets: Mapping[str, Mapping[str, Any]]
+    out_dir: Path, sheets: Mapping[str, Mapping[str, Any]], ignore: tuple[str, ...] = ()
 ) -> dict[tuple[str, int], dict[str, str | None]]:
     """{(sheet, attempt): {fact: quote or None}}: each finding's second look (D-V3-12). For a
     missing fact the judge's (the passage it agreed establishes the fact, or None), for an
@@ -652,7 +711,7 @@ def second_look_answers(
     and an unreadable one is asked again."""
     found: dict[tuple[str, int], dict[str, str | None]] = {}
     for row in read_jsonl(out_dir / "second_look.jsonl"):
-        if row.get("error") is not None:
+        if row.get("error") is not None or row.get("source", "look") in ignore:
             continue
         facts = {f["fact_id"]: f for f in sheets[row["sheet_id"]]["facts"]}
         wanted = "judge" if facts[row["fact_id"]]["status"] == "missing" else "look"
@@ -662,7 +721,7 @@ def second_look_answers(
 
 
 def gate_rows(
-    out_dir: Path = OUT_DIR,
+    out_dir: Path = OUT_DIR, ignore: tuple[str, ...] = ()
 ) -> tuple[list[dict[str, Any]], dict[str, Counter[str]], Counter[str]]:
     """The gate (verify.py) on every sheet's latest note, with the verifier's answers and second
     looks so far; nothing is written. Rows, then statuses by writer and attempt, then failure
@@ -670,7 +729,8 @@ def gate_rows(
     sheets = load_sheets(out_dir)
     notes = latest(read_jsonl(out_dir / "notes.jsonl"))
     verifier = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
-    looks = second_look_answers(out_dir, sheets)
+    looks = second_look_answers(out_dir, sheets, ignore)  # `ignore`: second looks to ask again
+    old_lead = lead_fixed(out_dir)
     results = []
     tallies: dict[str, Counter[str]] = {}
     reasons: Counter[str] = Counter()
@@ -687,6 +747,8 @@ def gate_rows(
         if answer is not None and answers is None:
             result.failures.append(f"verifier answer unreadable: {answer.get('error')}")
             result.verifier_pending = False
+        if note["attempt"] <= old_lead.get(sheet_id, 0):
+            result.failures.append("lead: written with a lead line that states a missing fact")
         if result.failures:  # a local check failed: the note is rewritten, not sent for verifying
             result.verifier_pending = False
         if not result.failures and not result.verifier_pending and not result.looks:
@@ -749,10 +811,14 @@ def main() -> None:
         action="store_true",
         help="only the second looks the gate is waiting for (from the gate run in memory)",
     )
+    jobs.add_argument(
+        "--rejudge", action="store_true", help="with --looks-only: every judge's answer again"
+    )
     take = sub.add_parser("ingest")
     take.add_argument("--round", required=True)
     sub.add_parser("gate")
     sub.add_parser("targeted", help="round 4: writer B sheets for the cells and tricky types short")
+    sub.add_parser("fix-leads", help="the lead-line rule on the sheets drawn (D-V3-14)")
     sub.add_parser("build")
     args = parser.parse_args()
     out = args.out
@@ -766,7 +832,9 @@ def main() -> None:
     elif args.command == "jobs":
         from training.generate.v3.kaggle import prepare_round
 
-        report = prepare_round(args.round, args.limit, out, looks_only=args.looks_only)
+        report = prepare_round(
+            args.round, args.limit, out, looks_only=args.looks_only, rejudge=args.rejudge
+        )
         print(json.dumps(report, indent=2))
     elif args.command == "ingest":
         print(json.dumps(ingest(out / "kaggle" / f"round{args.round}", out)))
@@ -774,6 +842,8 @@ def main() -> None:
         print(json.dumps(run_gate(out), indent=2))
     elif args.command == "targeted":
         print(json.dumps(targeted_sheets(out), indent=2))
+    elif args.command == "fix-leads":
+        print(json.dumps(fix_leads(out), indent=2))
     elif args.command == "build":
         from training.generate.v3.build import build
 

@@ -353,3 +353,34 @@ def test_a_missing_fact_takes_the_judges_answer_and_an_exclusion_the_look(tmp_pa
     ]
     (tmp_path / "second_look.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
     assert second_look_answers(tmp_path, sheets) == {("S-1", 1): {"F2": None, "F3": "HPI: pain."}}
+
+
+# --- D-V3-14: two-part facts and lead lines ------------------------------------------------------
+
+
+def test_every_part_of_a_two_part_met_fact_needs_support() -> None:
+    from training.generate.v3.verify import supports_parts
+
+    fact = documented(
+        "F3",
+        "Forgetfulness and slowed thinking have worsened over 14 months, and the results will "
+        "decide between treatment for dementia and for depression.",
+        ["14"],
+    )
+    half = "Referred for testing due to worsening forgetfulness and slowed thinking over 14 months."
+    assert not supports_parts(half, fact)
+    whole = half + " Results will decide between dementia and depression treatment."
+    assert supports_parts(whole, fact)
+    one_part = documented("F1", "The pain has lasted 6 weeks despite physical therapy.", ["6"])
+    assert supports_parts("Pain x6 wks.", one_part)  # a fact of one part is not split
+
+
+def test_a_lead_never_states_a_criterion_the_sheet_marks_missing() -> None:
+    from training.generate.v3.sheets import safe_lead
+
+    lead = {"A": "The patient is seen for heart rhythm symptoms.", "B": "CC: palpitations."}
+    missing = [{"fact_id": "F1", "criterion_id": "POL-CAR-002.c6", "status": "missing"}]
+    documented_too = [{"fact_id": "F1", "criterion_id": "POL-CAR-002.c6", "status": "documented"}]
+    new, replaced = safe_lead(lead, missing)
+    assert replaced and "symptom" not in new["A"] and "palpitation" not in new["B"].lower()
+    assert safe_lead(lead, documented_too) == (lead, False)

@@ -85,7 +85,8 @@ JUDGE_USER = (
     "Does the passage itself establish the statement? It does not when it only names the "
     "procedure or test being requested or planned, when it is about a different problem, or when "
     "it covers only part of what the statement asks for. A diagnosis establishes the statement "
-    "only when the statement asks for that condition itself.\n"
+    "only when the statement asks for that condition itself. A listed diagnosis counts as a "
+    "known condition when the statement asks for one.\n"
     'Answer with JSON only: {{"answer": "yes"}} or {{"answer": "no"}}'
 )
 

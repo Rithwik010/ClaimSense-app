@@ -277,9 +277,15 @@ fact's own wording writes it so), or spelled out.
   only the cited passage and the statement and asked whether the passage itself establishes it
   (not when it only names the requested procedure, is about another problem, or covers only part;
   a diagnosis only when the statement asks for that condition). For an exclusion, the verifier
-  is asked about that fact alone. (Asking about a missing fact alone, 23 Oct, returned the same
-  quote in 155 of 155 cases: at temperature 0 it is no second opinion.)
+  is asked about that fact alone. (Asked about a fact alone, 23 Oct, the verifier found something
+  in 155 of 155 cases, the same quote in 108: for a missing fact it is no second opinion.)
   The local word-overlap check leaves the claim's procedure wording out the same way.
+- A MET fact with two or more parts (its A wording split at ";", ", and", ", but" and " and the ")
+  needs every part supported by its quote: `verification.part_overlap` of the part's words, or all
+  of its numbers; else the note's own passage that supports them all, else the note fails
+  (D-V3-14). A lead line (the reason for the visit) never states a criterion the sheet marks
+  missing: `phrases/leads.yaml` lists the leads that would, with the criteria they state and the
+  neutral lead used instead (D-V3-14).
 
 Model notes get "denies" written as "reports no" and "pending" as "awaited" before the gate.
 

@@ -104,7 +104,10 @@ def run_config() -> dict[str, Any]:
 
 
 def round_jobs(
-    limit: int | None = None, out_dir: Path = OUT_DIR, looks_only: bool = False
+    limit: int | None = None,
+    out_dir: Path = OUT_DIR,
+    looks_only: bool = False,
+    rejudge: bool = False,
 ) -> tuple[list[dict], list[dict]]:
     """Writer jobs (B and C sheets that need a note) and verifier jobs (writer A notes whose
     latest attempt has no verifier answer yet, and the second looks the gate waits for). `limit`:
@@ -115,7 +118,7 @@ def round_jobs(
         notes = latest(read_jsonl(out_dir / "notes.jsonl"))
         answers = {(v["sheet_id"], v["attempt"]): v for v in read_jsonl(out_dir / "verifier.jsonl")}
         looks = []
-        for row in gate_rows(out_dir)[0]:
+        for row in gate_rows(out_dir, ("judge",) if rejudge else ())[0]:
             if row["looks"]:
                 note = notes[row["sheet_id"]]
                 found = (answers.get((row["sheet_id"], note["attempt"])) or {}).get("answers")
@@ -328,6 +331,7 @@ def prepare_round(
     limit: int | None = None,
     out_dir: Path = OUT_DIR,
     looks_only: bool = False,
+    rejudge: bool = False,
 ) -> dict:
     folder = out_dir / "kaggle" / f"round{round_no}"
     dataset, kernel = folder / "dataset", folder / "kernel"
@@ -335,7 +339,7 @@ def prepare_round(
         if path.exists():
             shutil.rmtree(path)
         path.mkdir(parents=True)
-    writers, verify = round_jobs(limit, out_dir, looks_only)
+    writers, verify = round_jobs(limit, out_dir, looks_only, rejudge)
     write_jsonl(dataset / "writers.jsonl", writers)
     write_jsonl(dataset / "verify.jsonl", verify)
     (dataset / "run.json").write_text(json.dumps(run_config(), indent=2), encoding="utf-8")

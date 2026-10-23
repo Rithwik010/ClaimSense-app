@@ -169,6 +169,18 @@ def style_card(rng: random.Random, wording: str, writer: str) -> dict[str, Any]:
     return card
 
 
+def safe_lead(
+    lead: Mapping[str, str], facts: Sequence[Mapping[str, Any]]
+) -> tuple[dict[str, str], bool]:
+    """The lead line, or its neutral replacement when it states part of a criterion the sheet
+    marks missing (phrases/leads.yaml; D-V3-14), and whether it was replaced."""
+    missing = {f.get("criterion_id") for f in facts if f["status"] == "missing"}
+    for rule in phrases("leads"):
+        if rule["lead"] in lead.values() and missing & set(rule["states"]):
+            return dict(rule["neutral"]), True
+    return dict(lead), False
+
+
 def fact_sheet(
     scenario: Scenario,
     draft: Draft,
@@ -242,7 +254,7 @@ def fact_sheet(
             "name": rng.choice(clinic_spec["names"]),
             "visit": rng.choice(clinic_spec["visits"]),
         },
-        "lead": dict(draft.lead),
+        "lead": safe_lead(dict(draft.lead), [fact_to_json(f) for f in facts])[0],
         "procedures": list(dict.fromkeys(draft.procedures)),
         "office_visits": [
             {"line_no": line["line_no"], "date": line["date"]}
