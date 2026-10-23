@@ -1,0 +1,175 @@
+{
+  "checked": "2026-10-23",
+  "by": "main session (hand check, gate fix of 20-23 Oct, D-V3-12)",
+  "settings": "verify.py at the judge round (3c) and the stricter second-look rule; gate_change.json seed 20261020",
+  "standard": "correct = each documented fact's quote states it (values included), no missing or absent fact is documented anywhere in the note, contradictions in order",
+  "newly_passing": {
+    "of": 679,
+    "notes": [
+      {
+        "sheet_id": "S3TR-01962",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-01275",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TP-00067",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TM-00507",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-01362",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-00886",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-02744",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-05194",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-04403",
+        "correct": false,
+        "why": "F3's quote states the worsening forgetfulness over 14 months but the note never says the results will decide between dementia and depression treatment: the MET label is half supported"
+      },
+      {
+        "sheet_id": "S3TR-02805",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-01880",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-04949",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-00482",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-03285",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-01866",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-00547",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TU-00069",
+        "correct": true,
+        "note": "F1's quote covers the symptoms; the duplex reflux is documented two sentences later (label right, quote partial)"
+      },
+      {
+        "sheet_id": "S3TU-00074",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TM-00659",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-05881",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-05094",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-01977",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-03299",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-01467",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-03213",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-06596",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TU-00146",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-01126",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TM-00603",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-03856",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-00562",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-01693",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-00537",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-04248",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-01676",
+        "correct": false,
+        "why": "debatable: the generator's lead line 'The patient is seen for heart rhythm symptoms' stands where the symptoms criterion is missing; counted wrong (strict)"
+      },
+      {
+        "sheet_id": "S3TM-00087",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-06370",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-04303",
+        "correct": true
+      },
+      {
+        "sheet_id": "S3TR-06250",
+        "correct": false,
+        "why": "F1 missing (a known heart condition that calls for an echocardiogram) is documented by the assessment's chronic systolic heart failure diagnosis; the judge said no"
+      },
+      {
+        "sheet_id": "S3VA-00107",
+        "correct": true
+      }
+    ]
+  }
+}

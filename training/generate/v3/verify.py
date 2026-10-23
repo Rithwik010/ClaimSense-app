@@ -453,8 +453,9 @@ def check_note(
     """Checks 1 to 5 for one note. `known_spans`: writer A's fact spans (None for a model note,
     whose spans come from the verifier's quotes); `verifier`: {fact_id: quote or None} for the
     verifier's statements (llm.statements), None while it has not run; `second_look`:
-    {fact_id: quote or None}, the verifier asked again about one missing or absent fact alone,
-    when its first answer found it (`result.looks` lists the findings still waiting for it)."""
+    {fact_id: quote or None}, the second look at a missing or absent fact the verifier found
+    (`result.looks` lists the findings still waiting for it): the finding stands unless the
+    second look finds nothing (None); a second look citing another passage still confirms it."""
     cfg = config()["verification"]
     result = GateResult(sheet_id=sheet["sheet_id"], writer=sheet["writer"])
     result.verifier_pending = verifier is None
@@ -544,10 +545,9 @@ def check_note(
         if second_look is None or fid not in second_look:
             result.looks.append(fid)  # asked again, about this fact alone, before it counts
             continue
-        again = second_look[fid]
-        if again and _a_finding(note, again, fact, result.spans, claim, mentions):
+        if second_look[fid]:  # the finding stands unless the second look finds nothing
             result.failures.append(
-                f"{fid}: the verifier found the {fact['status']} fact twice: {again[:80]!r}"
+                f"{fid}: the verifier found the {fact['status']} fact twice: {quote[:80]!r}"
             )
     leaked = leaks(note)
     if leaked:
