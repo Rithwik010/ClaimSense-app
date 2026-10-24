@@ -36,9 +36,9 @@ def tokens(messages: list[dict[str, str]], model: str, host: str) -> int:
     return int(response.json()["prompt_eval_count"])
 
 
-def longest(dataset: Path, top: int) -> list[dict[str, Any]]:
+def longest(dataset: Path, top: int, splits: tuple[str, ...] = SPLITS) -> list[dict[str, Any]]:
     records = []
-    for split in SPLITS:
+    for split in splits:
         for line in (dataset / f"{split}.jsonl").read_text(encoding="utf-8").splitlines():
             record = json.loads(line)
             size = sum(len(m["content"]) for m in record["messages"])
@@ -52,9 +52,10 @@ def main() -> None:
     parser.add_argument("--top", type=int, default=12)
     parser.add_argument("--model", default="gemma4:e2b")
     parser.add_argument("--host", default="http://localhost:11434")
+    parser.add_argument("--splits", nargs="+", default=list(SPLITS), help="e.g. train_mix (v3)")
     args = parser.parse_args()
     rows = []
-    for item in longest(args.dataset, args.top):
+    for item in longest(args.dataset, args.top, tuple(args.splits)):
         record = item["record"]
         count = tokens(record["messages"], args.model, args.host)
         rows.append(
