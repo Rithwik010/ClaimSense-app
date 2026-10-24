@@ -313,6 +313,18 @@ def main() -> None:
     trainer = train_on_responses_only(
         trainer, instruction_part=instruction_part, response_part=response_part
     )
+    evaluation_step = trainer.prediction_step
+
+    def prediction_step(model, inputs, prediction_loss_only, ignore_keys=None):  # noqa: ANN001, ANN202
+        """Unsloth 2026.10.8's evaluation returns a loss that still requires grad, although it runs
+        under torch.no_grad, and the trainer's numpy() on it fails (the timing runs of 24 Oct):
+        detach it, which also frees whatever it holds."""
+        loss, logits, labels = evaluation_step(
+            model, inputs, prediction_loss_only, ignore_keys=ignore_keys
+        )
+        return (loss.detach() if loss is not None else None), logits, labels
+
+    trainer.prediction_step = prediction_step
 
     def key(ids) -> str:  # noqa: ANN001  (a list or a tensor of token ids)
         values = ids.tolist() if hasattr(ids, "tolist") else list(ids)

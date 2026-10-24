@@ -38,6 +38,16 @@ USER = "manideep3183"
 SLUG = "claimsense-decision-v3"
 SESSION_HOURS = 11  # the safety stop, from the notebook's start: under Kaggle's 12 h (24 Oct)
 SAVE_STEPS = 125
+PINNED = (  # the training stack of the timing runs of 24 Oct, the same in every session (D-V3-24)
+    "unsloth==2026.10.8",
+    "unsloth_zoo==2026.10.8",
+    "transformers==5.16.1",
+    "trl==1.15.0",
+    "peft==0.20.0",
+    "accelerate==1.14.0",
+    "bitsandbytes==0.50.2",
+    "datasets==4.8.5",
+)
 EVAL_LIMIT = 150  # the fixed validation subset (its first 150 records) of every evaluation
 TIMING = (
     f"--max-steps 25 --save-steps 10 --eval-steps 10 --eval-limit {EVAL_LIMIT} --logging-steps 1"
@@ -108,7 +118,7 @@ def notebook(title: str, out: str, extra: str, source: str | None, resume: str |
         (
             "code",
             "import time\nT0 = time.time()  # the session's start, for the safety stop\n"
-            "!nvidia-smi\n!pip install --upgrade --quiet unsloth unsloth_zoo",
+            "!nvidia-smi\n!pip install --quiet " + " ".join(PINNED),
         ),
         ("code", find),
         *(  # in its own process: a probe in the training process breaks the first evaluation
