@@ -10,8 +10,10 @@ For each passing note:
 4. The user message is decision_v3's (`render_user_message`).
 
 Every record passes v2's record checks (`check_record_v2`): rules parity, the lookup, the
-derivation, and quotes from the notes. Near-duplicates across splits are dropped from train. Each
-split is trimmed to its size, keeping the writer mix. Written under <out>/final/:
+derivation, and quotes from the notes. A record of the LLM-written human-style test set that
+failed the hand check (hand_checks/human_style.json, D-V3-19) is left out. Near-duplicates across
+splits are dropped from train. Each split is trimmed to its size, keeping the writer mix. Written
+under <out>/final/:
 
 - `<split>.jsonl` and `<split>_inputs.jsonl`, for train, validation, test_messy and
   test_unseen_style, in v2's record format, so training and the evaluation harness read them as
@@ -48,6 +50,15 @@ from training.generate.v3.verify import check_note, filled_target, locate, near_
 FINAL_SPLITS = ("train", "validation", "test_messy", "test_unseen_style", "test_human_style")
 V2_DIR = GENERATED_DIR / "decision_v2"  # the v2 clean data (read only)
 DATASET_VERSION = "decision-dataset-v3"
+HAND_CHECK = Path(__file__).resolve().parent / "hand_checks" / "human_style.json"
+
+
+def hand_check_failures(path: Path = HAND_CHECK) -> set[str]:
+    """Record ids of the human-style test set that failed the hand check (D-V3-19)."""
+    if not path.exists():
+        return set()
+    notes = json.loads(path.read_text())["notes"]
+    return {n["record_id"] for n in notes if n["verdict"] == "fail"}
 
 
 def _noised_model_note(
@@ -262,6 +273,7 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
         return render_user_message(claim, rules, context, lookups, PROMPT_V3)
 
     by_split: dict[str, list[tuple[dict, dict]]] = {s: [] for s in FINAL_SPLITS}
+    failed_by_hand = hand_check_failures()
     dropped: Counter[str] = Counter()
     noise_totals: Counter[str] = Counter()
     for sheet_id, result in sorted(gate.items()):
@@ -301,6 +313,12 @@ def build(out_dir: Path = OUT_DIR, v2_dir: Path = V2_DIR) -> dict[str, Any]:
             )
         except ValueError:
             dropped["target"] += 1
+            continue
+        if (
+            sheet["split"] == "test_human_style"
+            and record["metadata"]["record_id"] in failed_by_hand
+        ):
+            dropped["hand check"] += 1
             continue
         excluded = set() if sheet["split"].startswith("test") else set(TEST_ONLY_POLICIES)
 

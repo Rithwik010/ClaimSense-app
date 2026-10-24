@@ -12,7 +12,8 @@ Two comparisons:
 
 - `writer-d`: the LLM-written human-style test set's first pass (every attempt-1 note) against
   its final set (the latest note of each sheet that passes the gate): the style must not drift
-  as notes are rewritten to pass;
+  as notes are rewritten to pass; and the final set as built into the dataset (with the noise
+  layer's misspellings, data/generated/v3/final/test_human_style_inputs.jsonl);
 - `writer-b`: writer B's latest notes that pass the gate against those it rejects (training,
   validation and the messy test): is the strict gate mostly rejecting the messiest notes?
 
@@ -78,7 +79,9 @@ def writer_d() -> dict[str, Any]:
         and g["passed"]
         and g["attempt"] == n["attempt"]
     ]
-    return {"first_pass": stats(first), "final_set": stats(final)}
+    built = OUT_DIR / "final" / "test_human_style_inputs.jsonl"  # with the noise layer
+    as_built = [i["claim"]["clinical_notes"] for i in read_jsonl(built)] if built.exists() else []
+    return {"first_pass": stats(first), "final_set": stats(final), "as_built": stats(as_built)}
 
 
 def writer_b() -> dict[str, Any]:

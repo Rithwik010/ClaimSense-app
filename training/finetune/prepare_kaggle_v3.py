@@ -92,15 +92,22 @@ def notebook(title: str, out: str, extra: str, source: str | None, resume: str |
             f"**/{resume}/trainer_state.json', recursive=True)[0])\n"
         )
     find += "print(DATA, TRAIN, RESUME)\n"
+    probe = "--memory-probe" in extra.split()
+    extra = " ".join(a for a in extra.split() if a != "--memory-probe")
+    command = (
+        "!python {TRAIN} --data {DATA} --out {OUT} --train-split train_mix "
+        "--max-seq-length {MAX_SEQ} "
+    )
     cells = [
         ("markdown", f"# {title}\n\nSynthetic data only; private dataset and notebook."),
         ("code", "!nvidia-smi\n!pip install --upgrade --quiet unsloth unsloth_zoo"),
         ("code", find),
-        (
-            "code",
-            "!python {TRAIN} --data {DATA} --out {OUT} --train-split train_mix "
-            "--max-seq-length {MAX_SEQ} " + extra + " {RESUME}",
+        *(  # in its own process: a probe in the training process breaks the first evaluation
+            [("code", "# the longest record's peak GPU memory\n" + command + "--memory-probe")]
+            if probe
+            else []
         ),
+        ("code", command + extra + " {RESUME}"),
         *(
             [
                 (

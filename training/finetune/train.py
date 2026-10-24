@@ -25,7 +25,10 @@ checkpoint and stops before Kaggle's session limit; the next session attaches th
 and passes `--resume-from` (a checkpoint folder, or a folder holding checkpoint-* folders: the
 latest is used). The trainer restores the weights, optimizer, scheduler, random state and the place
 in the data, so the step count and the loss carry on. `--memory-probe` runs one forward and
-backward pass on the longest training record first and records the peak GPU memory.
+backward pass on the longest training record, writes the peak GPU memory to
+<out>/memory-probe.json and stops; the timing notebook then trains in a new process, which puts
+that file in its training log. (Probing in the training process left Unsloth's compiled loss
+needing gradients, and the first evaluation failed: the timing run of 24 Oct.)
 """
 
 import argparse
@@ -235,8 +238,9 @@ def main() -> None:
     )
     bf16 = torch.cuda.is_bf16_supported()
     print(f"GPUs visible: {torch.cuda.device_count()}; precision: {'bf16' if bf16 else 'float32'}")
-    probe = None
-    if args.memory_probe:  # the longest record, forward and backward, before training
+    probe_file = out / "memory-probe.json"
+    probe = json.loads(probe_file.read_text()) if probe_file.exists() else None
+    if args.memory_probe:  # the longest record, forward and backward, then stop (see above)
         longest = max(train_texts, key=lambda text: token_count(tokenizer, text))
         batch = tokenizer(text=longest, return_tensors="pt").to(model.device)
         model.train()  # as the trainer runs it: gradient checkpointing works in training mode only
@@ -250,9 +254,8 @@ def main() -> None:
             "gpu_total_gb": round(torch.cuda.get_device_properties(0).total_memory / 1e9, 2),
         }
         print("memory probe:", json.dumps(probe), flush=True)
-        del batch, loss
-        torch.cuda.empty_cache()
-        torch.cuda.reset_peak_memory_stats()
+        probe_file.write_text(json.dumps(probe, indent=2))
+        return
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
