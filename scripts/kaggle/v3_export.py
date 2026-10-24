@@ -74,19 +74,24 @@ ADAPTERS = {sources}
 print(ADAPTERS, DATA, TRAIN)
 PINNED = {json.dumps(list(PINNED))}
 subprocess.run([sys.executable, '-m', 'pip', 'install', '--quiet', *PINNED], check=True)
-V2 = {json.dumps(json.loads(V2_PACKAGING.read_text())[0])}
+V2 = json.loads({json.dumps(json.dumps(json.loads(V2_PACKAGING.read_text())[0]))})
 V2_TEMPLATE = {json.dumps(V2_TEMPLATE.read_text())}
 """
 
 
 UNSLOTH_ON_CPU = """# A. Unsloth's own export (train.py --export-from), with its CPU switch
 started = time.time()
-done = subprocess.run([sys.executable, TRAIN, '--export-from', ADAPTERS['test'], '--out',
-                       f'{WORK}/unsloth', '--data', DATA,
-                       '--gguf-work-dir', f'{WORK}/unsloth-gguf'],
-                      env=dict(os.environ, UNSLOTH_ALLOW_CPU='1'), capture_output=True, text=True)
-step('A_unsloth_export_on_cpu', done.returncode == 0, seconds=round(time.time() - started),
-     last_output=(done.stdout + done.stderr)[-1500:])
+try:
+    done = subprocess.run([sys.executable, TRAIN, '--export-from', ADAPTERS['test'], '--out',
+                           f'{WORK}/unsloth', '--data', DATA,
+                           '--gguf-work-dir', f'{WORK}/unsloth-gguf'],
+                          env=dict(os.environ, UNSLOTH_ALLOW_CPU='1'), capture_output=True,
+                          text=True, timeout=1800)
+    ok, tail = done.returncode == 0, (done.stdout + done.stderr)[-1500:]
+except subprocess.TimeoutExpired as exc:
+    ok, tail = False, f'stopped after 30 minutes: {str(exc.stdout or "")[-800:]}'
+step('A_unsloth_export_on_cpu', ok, seconds=round(time.time() - started), last_output=tail)
+# the record attempt is not part of the route: the report's other steps decide
 """
 
 TOOLS = f"""# llama.cpp from Unsloth's installer at the pinned release
