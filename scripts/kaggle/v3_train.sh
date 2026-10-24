@@ -77,7 +77,10 @@ session() {
   done
   hours=$(python3 -c "print(round(($(date +%s) - $started) / 3600, 2))")
   guard "before downloading $stage"
-  uvx kaggle kernels output "$slug" -p "$RUNS/$stage/output" >> "$log" 2>&1
+  # only the small files: Kaggle hands the checkpoints to the next session itself, so the next one
+  # starts within minutes instead of after a large download
+  uvx kaggle kernels output "$slug" -p "$RUNS/$stage/output" \
+    --file-pattern '(training-log|trainer_state|lengths)\.json$|\.log$' >> "$log" 2>&1
   guard "after downloading $stage"
   result=$(uv run --quiet python -m scripts.verify.v3_pace "$RUNS/$stage/output" 2>/dev/null)
   echo "$(date '+%F %T') $hours h; $status; $result" >> "$log"
