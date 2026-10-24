@@ -180,7 +180,7 @@ def notebook(title: str) -> dict[str, Any]:
         "    return subprocess.run(['ollama', *args], env=env, capture_output=True, text=True)\n"
         "for key, model in run['models'].items():\n"
         "    owner, slug = model['kernel'].split('/')\n"
-        "    ggufs = glob.glob(f'/kaggle/input/{slug}/**/*Q4_K_M.gguf', recursive=True)\n"
+        "    ggufs = glob.glob(f'/kaggle/input/**/{slug}/**/*Q4_K_M.gguf', recursive=True)\n"
         "    assert ggufs, f'no GGUF in the output of {model[\"kernel\"]}'\n"
         "    gguf = ggufs[0]\n"
         "    digest = hashlib.sha256()\n"

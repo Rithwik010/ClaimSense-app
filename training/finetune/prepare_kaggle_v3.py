@@ -83,12 +83,12 @@ def notebook(title: str, out: str, extra: str, source: str | None, resume: str |
     )
     if resume == "latest":
         find += (
-            f"RESUME = '--resume-from ' + os.path.dirname(glob.glob('/kaggle/input/{source}/"
+            f"RESUME = '--resume-from ' + os.path.dirname(glob.glob('/kaggle/input/**/{source}/"
             "**/trainer_state.json', recursive=True)[0]).rsplit('/checkpoint-', 1)[0]\n"
         )
     elif resume:
         find += (
-            f"RESUME = '--resume-from ' + os.path.dirname(glob.glob('/kaggle/input/{source}/"
+            f"RESUME = '--resume-from ' + os.path.dirname(glob.glob('/kaggle/input/**/{source}/"
             f"**/{resume}/trainer_state.json', recursive=True)[0])\n"
         )
     find += "print(DATA, TRAIN, RESUME)\n"
