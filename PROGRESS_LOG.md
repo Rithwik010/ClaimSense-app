@@ -482,6 +482,8 @@ Kaggle copy for anything model-related.
 
 - 14:40 | Claude | v3 go / no-go | **No-go on item (f) only; waiting for the team's decision** (branch `v3-realistic-data`, `8c19e45`). (a) fallback bar 12 of 12 rejected; (b) met except POL-SURG-001.c4, 19 of 20, accepted (D-V3-18); (c) all tricky types within 0.1%; (d) met; (e) longest record 4,416 tokens, peak 10.49 GB of 15.64 GB, no record dropped (D-V3-20); (f) 49.7 s per step, so the full run projects to 17.5 h against 14 h; (g) v2 on the messy test 0.6446 against its clean 0.8487, prompts 600 of 600 like for like (D-V3-21). The timing run failed at its step-20 evaluation (the memory probe ran in the training process); the probe now runs in its own process, not yet retried. LLM-written human-style test set: 65 of 70 after the hand check, 25 test-only (D-V3-19). GPU this week about 1.3 h.
 
+- 22:30 | Claude | v3 training | **Go: all seven go / no-go items met; training started 22:29:51** (D-V3-28). Projection from tokens 16.01 h (limit 19 h); validation passes and the best-checkpoint save work (losses 0.651, 0.234, 0.154; validation peak 9.08 GB, training 10.51 GB of 15.64); the resume check repeats the step, learning rate, optimizer state, losses and records. The evaluation failure was Unsloth's (D-V3-24), fixed by detaching its loss; the stack is pinned. The run goes on unattended within 22 h and the week's 30 h (D-V3-25); GGUFs on CPU afterwards under v3-only names (D-V3-26, D-V3-27); v2 checked around every laptop download. GPU this week 2.5 h before training.
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
