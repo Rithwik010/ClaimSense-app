@@ -29,9 +29,18 @@ backward pass on the longest training record, writes the peak GPU memory to
 <out>/memory-probe.json and stops; the timing notebook then trains in a new process, which puts
 that file in its training log. (Probing in the training process left Unsloth's compiled loss
 needing gradients, and the first evaluation failed: the timing run of 24 Oct.)
+
+The training log also holds, per step, its seconds (step begin to step end, so evaluations and
+saves are apart), its tokens and the ids of the records it trained on (read in the collator, matched
+to the training records by their token ids); the step, learning rate and optimizer state when
+training begins (after a resume: those of the checkpoint); and when each checkpoint was saved. The
+timing runs use them for the token-based projection and the resume check (the team's conditions of
+24 Oct). `--stop-after-hours` counts from `--session-start` (the notebook's start, epoch seconds)
+when given, so a session ends before Kaggle's 12-hour limit.
 """
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -121,6 +130,7 @@ def main() -> None:
     parser.add_argument("--logging-steps", type=int, default=10)
     parser.add_argument("--stop-after-steps", type=int, help="save and stop at this step")
     parser.add_argument("--stop-after-hours", type=float, help="save and stop after this long")
+    parser.add_argument("--session-start", type=float, help="epoch seconds the session began")
     parser.add_argument("--resume-from", type=Path, help="a checkpoint, or a folder holding them")
     parser.add_argument("--memory-probe", action="store_true")
     args = parser.parse_args()
@@ -146,7 +156,7 @@ def main() -> None:
     from transformers import EarlyStoppingCallback, TrainerCallback
     from trl import SFTConfig, SFTTrainer
 
-    started = time.time()
+    started = args.session_start or time.time()
 
     class StopAndSave(TrainerCallback):
         """Save and stop at `--stop-after-steps` or after `--stop-after-hours` (a session's end);
@@ -194,6 +204,10 @@ def main() -> None:
     instruction_part, response_part = turn_markers(render)
 
     full_records = len(read_jsonl(args.data / f"{args.train_split}.jsonl"))
+    train_ids = [
+        r["metadata"]["record_id"]
+        for r in read_jsonl(args.data / f"{args.train_split}.jsonl")[: args.limit or None]
+    ]
 
     def texts(split: str) -> list[str]:
         records = read_jsonl(args.data / f"{args.train_split if split == 'train' else split}.jsonl")
@@ -299,6 +313,62 @@ def main() -> None:
     trainer = train_on_responses_only(
         trainer, instruction_part=instruction_part, response_part=response_part
     )
+
+    def key(ids) -> str:  # noqa: ANN001  (a list or a tensor of token ids)
+        values = ids.tolist() if hasattr(ids, "tolist") else list(ids)
+        return hashlib.sha1(json.dumps(values).encode()).hexdigest()
+
+    rows = trainer.train_dataset["input_ids"]
+    if len(rows) != len(train_ids):
+        raise SystemExit(f"{len(rows)} tokenized training rows for {len(train_ids)} records")
+    position = {key(ids): i for i, ids in enumerate(rows)}
+    train_tokens_total = sum(len(ids) for ids in rows)
+    del rows
+    collated: list[tuple[int, int]] = []  # (record position, tokens) per training micro-batch
+    collator = trainer.data_collator
+
+    def recording(features):  # noqa: ANN001, ANN202
+        for feature in features:  # validation rows match no training row and are not counted
+            found = position.get(key(feature["input_ids"]))
+            if found is not None:
+                collated.append((found, len(feature["input_ids"])))
+        return collator(features)
+
+    trainer.data_collator = recording
+
+    class Steps(TrainerCallback):
+        """The state at the start (or resume) of training, each step's seconds, and the saves."""
+
+        def __init__(self) -> None:
+            self.begun: dict = {}
+            self.began: dict[int, float] = {}
+            self.ended: dict[int, float] = {}
+            self.saves: list[dict] = []
+
+        def on_train_begin(self, _args, state, control, optimizer=None, lr_scheduler=None, **_):  # noqa: ANN001, ANN201
+            inner = getattr(optimizer, "optimizer", optimizer)
+            per_param = list(getattr(inner, "state", {}).values())
+            steps = sorted({float(v["step"]) for v in per_param if "step" in v})
+            self.begun = {
+                "global_step": state.global_step,
+                "learning_rate": lr_scheduler.get_last_lr()[0] if lr_scheduler else None,
+                "scheduler_steps": getattr(lr_scheduler, "last_epoch", None),
+                "optimizer_params_with_state": len(per_param),
+                "optimizer_state_steps": steps[:3],
+            }
+            print("training begins:", json.dumps(self.begun), flush=True)
+
+        def on_step_begin(self, _args, state, control, **_kwargs):  # noqa: ANN001, ANN201
+            self.began.setdefault(state.global_step + 1, time.time())
+
+        def on_step_end(self, _args, state, control, **_kwargs):  # noqa: ANN001, ANN201
+            self.ended[state.global_step] = time.time()
+
+        def on_save(self, _args, state, control, **_kwargs):  # noqa: ANN001, ANN201
+            after = time.time() - self.ended.get(state.global_step, time.time())
+            self.saves.append({"step": state.global_step, "seconds_after_step": round(after, 1)})
+
+    trainer.add_callback(steps_seen := Steps())
     resume = latest_checkpoint(args.resume_from) if args.resume_from else None
     first_step = 0
     if resume and resume.parent.resolve() != (out / "checkpoints").resolve():
@@ -325,6 +395,19 @@ def main() -> None:
         * config["num_train_epochs"]
     )
     finished = not stopper.paused  # the last step, or early stopping on the validation loss
+    per_step = config["per_device_train_batch_size"] * config["gradient_accumulation_steps"]
+    step_rows = []
+    for n in range(first_step + 1, trainer.state.global_step + 1):
+        batch = collated[(n - first_step - 1) * per_step : (n - first_step) * per_step]
+        began, ended = steps_seen.began.get(n), steps_seen.ended.get(n)
+        step_rows.append(
+            {
+                "step": n,
+                "seconds": round(ended - began, 2) if began and ended else None,
+                "tokens": sum(t for _, t in batch),
+                "records": [train_ids[i] for i, _ in batch],
+            }
+        )
     log = {
         "train_runtime_seconds": round(runtime),
         "first_step": first_step,
@@ -338,6 +421,15 @@ def main() -> None:
         "estimated_full_run_hours_without_evals": round(runtime / steps * full_steps / 3600, 1),
         "peak_gpu_memory_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2),
         "memory_probe": probe,
+        "train_tokens_total": train_tokens_total,
+        "training_began": steps_seen.begun,
+        "steps": step_rows,
+        "collated_beyond_last_step": [
+            train_ids[i] for i, _ in collated[len(step_rows) * per_step :]
+        ],
+        "saves": steps_seen.saves,
+        "session_hours": round((time.time() - started) / 3600, 2),
+        "seconds_before_training": round(train_started - started),  # set-up, loading, tokenizing
         "train_loss": result.training_loss,
         "best_eval_loss": trainer.state.best_metric,
         "best_checkpoint": trainer.state.best_model_checkpoint,

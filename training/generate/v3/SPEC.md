@@ -314,6 +314,12 @@ per writer. Each split is drawn with `sizes_margin` extra fact sheets, so that s
 after every regeneration can be dropped and the split keeps its size; the final sets are trimmed to
 the sizes above.
 
+**Limitation: what the gate keeps (24 Oct).** The gate rejects more of writer B's heavily
+sectioned, choppy notes: its 495 rejected notes average 8.81 headings per note against 4.53 for the
+3,679 that pass, and a fragment share of 0.711 against 0.620 (abbreviations 1.65 against 1.43 per
+100 words; length about the same; `scripts/verify/v3_style_stats.py writer-b`). So the kept notes,
+the test sets included, are slightly less choppy than all of writer B's output.
+
 ## Phase 5: datasets
 
 **Splits:**

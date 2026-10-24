@@ -6,13 +6,17 @@ the base model with v2's QLoRA settings (training/finetune/data.py), for one epo
 
 Kernel folders (`uvx kaggle kernels push -p <folder>`):
 
-- `kernel-v3-timing`: the timing run. The memory probe on the longest record, then 25 steps with a
-  checkpoint at step 20 and an evaluation there; it writes the exact token lengths of every record.
+- `kernel-v3-timing`: the timing run. 25 steps with an evaluation and a checkpoint at steps 10 and
+  20 (so the best checkpoint is chosen from two) and one at step 25; it writes the exact token
+  lengths of every record, and its log each step's seconds, tokens and records. The memory probe
+  (`train.py --memory-probe`, its own process) ran on 24 Oct and is not repeated (D-V3-20).
 - `kernel-v3-resume`: attaches the timing run's output and resumes from its step-20 checkpoint for
-  steps 21 to 25. Its losses must repeat the timing run's steps 21 to 25: the resume check.
-- `kernel-v3-full-1` and `kernel-v3-full-2`: the full run in two sessions. The first stops itself
-  after `SESSION_HOURS` (a checkpoint every `SAVE_STEPS` steps as well); the second attaches the
-  first's output, resumes from its latest checkpoint and finishes, with two GGUF exports: the
+  steps 21 to 25. Its losses, learning rates and records must repeat the timing run's steps 21 to
+  25, from the checkpoint's step, schedule and optimizer state: the resume check.
+- `kernel-v3-full-1` and `kernel-v3-full-2`: the full run in two sessions. Each stops itself, with a
+  checkpoint, `SESSION_HOURS` after its notebook started, before Kaggle's 12-hour limit (and saves
+  one every `SAVE_STEPS` steps); the second attaches the first's output, resumes from its latest
+  checkpoint and finishes, with two GGUF exports: the
   checkpoint with the lowest validation loss (`adapter`, `gguf/`) and the final one
   (`adapter-final`, `final/gguf/`). Every evaluation uses the first `EVAL_LIMIT` validation
   records (D-V3-13).
@@ -32,17 +36,17 @@ from training.generate.v3.kaggle import upload_problems
 HERE = Path(__file__).resolve().parent
 USER = "manideep3183"
 SLUG = "claimsense-decision-v3"
-SESSION_HOURS = 5.75  # each full-run session stays well under Kaggle's 12-hour session limit
+SESSION_HOURS = 11  # the safety stop, from the notebook's start: under Kaggle's 12 h (24 Oct)
 SAVE_STEPS = 125
 EVAL_LIMIT = 150  # the fixed validation subset (its first 150 records) of every evaluation
 TIMING = (
-    f"--max-steps 25 --save-steps 20 --eval-steps 20 --eval-limit {EVAL_LIMIT} --logging-steps 1"
+    f"--max-steps 25 --save-steps 10 --eval-steps 10 --eval-limit {EVAL_LIMIT} --logging-steps 1"
 )
 KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, resume from)
     "kernel-v3-timing": (
         "claimsense-finetune-v3-timing",
         "/kaggle/working/claimsense-v3-timing",
-        f"{TIMING} --memory-probe --no-gguf",
+        f"{TIMING} --no-gguf",
         None,
         None,
     ),
@@ -57,14 +61,15 @@ KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, 
         "claimsense-finetune-v3-full-1",
         "/kaggle/working/claimsense-v3",
         f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT} "
-        f"--stop-after-hours {SESSION_HOURS} --no-gguf",
+        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}} --no-gguf",
         None,
         None,
     ),
     "kernel-v3-full-2": (
         "claimsense-finetune-v3-full-2",
         "/kaggle/working/claimsense-v3",
-        f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT}",
+        f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT} "
+        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}}",
         "claimsense-finetune-v3-full-1",
         "latest",
     ),
@@ -100,7 +105,11 @@ def notebook(title: str, out: str, extra: str, source: str | None, resume: str |
     )
     cells = [
         ("markdown", f"# {title}\n\nSynthetic data only; private dataset and notebook."),
-        ("code", "!nvidia-smi\n!pip install --upgrade --quiet unsloth unsloth_zoo"),
+        (
+            "code",
+            "import time\nT0 = time.time()  # the session's start, for the safety stop\n"
+            "!nvidia-smi\n!pip install --upgrade --quiet unsloth unsloth_zoo",
+        ),
         ("code", find),
         *(  # in its own process: a probe in the training process breaks the first evaluation
             [("code", "# the longest record's peak GPU memory\n" + command + "--memory-probe")]
@@ -112,8 +121,10 @@ def notebook(title: str, out: str, extra: str, source: str | None, resume: str |
             [
                 (
                     "code",
-                    "# the final checkpoint's GGUF too (stage 5 compares it with the best one)\n"
-                    "!python {TRAIN} --export-from {OUT}/adapter-final --out {OUT}/final "
+                    "# the final checkpoint's GGUF too (stage 5 compares it with the best one);\n"
+                    "# only when training finished (a session stopped early has no adapter-final)\n"
+                    "if os.path.exists(f'{OUT}/adapter-final'):\n"
+                    "    !python {TRAIN} --export-from {OUT}/adapter-final --out {OUT}/final "
                     "--data {DATA} --max-seq-length {MAX_SEQ}",
                 )
             ]

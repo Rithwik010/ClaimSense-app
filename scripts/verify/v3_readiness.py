@@ -13,8 +13,10 @@ c. each tricky-fact type within ±10% (relative) of the rate the fact sheets ask
    training notes with the type, against its share among the training sheets drawn without a
    top-up (the spec's probabilities, as drawn);
 d. sizes: training notes by writer B >= 2,700, unseen-style test >= 150, validation >= 270;
-e. no record over the token limit, and the timing run within T4 memory (its training log);
-f. the projected training time <= 14 h (the timing run);
+e. no record over the token limit, the timing run within T4 memory, and (the team's conditions of
+   24 Oct) a validation pass and the best-checkpoint save working and the resume check passing:
+   step, learning-rate schedule, optimizer state and the next records all continue;
+f. the projected training time, from tokens, <= 19 h (D-V3-22; it was 14 h);
 g. model v2's macro-F1 on the messy test at least 0.03 under its clean 0.8487.
 
 `--source gate` reads the training notes that pass the gate now (before the build, to plan the
@@ -30,6 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.verify.v3_fallback_bar import fallback_bar
+from scripts.verify.v3_timing import LIMIT_HOURS
 from training.generate.v3.config import OUT_DIR, config
 from training.generate.v3.coverage import below, cell_counts
 from training.generate.v3.dataset import TRICKY_OF, load_sheets, passing_training, read_jsonl
@@ -154,7 +157,8 @@ def timing(out_dir: Path) -> dict[str, Any]:
         "resume_matches": data.get("resume_matches"),
         "tokens_ok": longest is not None and limit is not None and longest <= limit,
         "memory_ok": bool(data.get("fits_t4_memory")),
-        "time_ok": projected is not None and projected <= 14,
+        "time_ok": projected is not None and projected <= LIMIT_HOURS,
+        "validation_works": (data.get("validation_and_best_checkpoint") or {}).get("works"),
     }
 
 
@@ -192,7 +196,11 @@ def readiness(source: str = "final", out_dir: Path = OUT_DIR) -> dict[str, Any]:
         "b": report["b_coverage"]["ok"],
         "c": report["c_all_within_10_percent"],
         "d": report["d_sizes"]["ok"],
-        "e": None if "missing" in t else bool(t["tokens_ok"] and t["memory_ok"]),
+        "e": None
+        if "missing" in t
+        else bool(
+            t["tokens_ok"] and t["memory_ok"] and t["resume_matches"] and t["validation_works"]
+        ),
         "f": None if "missing" in t else t["time_ok"],
         "g": report["g_messy_gap"]["ok"],
     }
