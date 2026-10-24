@@ -16,7 +16,7 @@ def history(steps: range, evals: dict[int, float]) -> list[dict]:
     for n in steps:
         rows.append({"step": n, "loss": 1.0 / n, "learning_rate": 1e-5 * n, "grad_norm": 2.0})
         if n in evals:
-            rows.append({"step": n, "eval_loss": evals[n], "eval_runtime": 100.0})
+            rows.append({"step": n, "eval_loss": evals[n] / 10, "eval_runtime": 100.0})
     return rows
 
 
@@ -42,6 +42,8 @@ def first_run(tmp_path: Path) -> Path:
         ],
         "best_checkpoint": "/kaggle/working/claimsense-v3-timing/checkpoints/checkpoint-20",
         "peak_gpu_memory_gb": 9.0,
+        "validation_memory": [{"step": 10, "peak_gb": 7.5}, {"step": 20, "peak_gb": 7.6}],
+        "validation_longest": {"record_id": "DV3-VA-00112", "tokens": 4219},
         "seconds_before_training": 400,
     }
     folder = write(tmp_path / "timing", log)
@@ -110,3 +112,14 @@ def test_a_fresh_optimizer_fails(tmp_path: Path) -> None:
     (resume / "training-log.json").write_text(json.dumps(log))
     report = timing(first_run(tmp_path), resume, 10_000, 4608, None)
     assert not report["resume"]["optimizer_state_loaded"] and not report["resume_matches"]
+
+
+def test_a_nan_validation_loss_fails(tmp_path: Path) -> None:
+    timing_dir = first_run(tmp_path)
+    log = json.loads((timing_dir / "training-log.json").read_text())
+    for row in log["history"]:
+        if row.get("eval_loss") is not None and row["step"] == 10:
+            row["eval_loss"] = float("nan")
+    (timing_dir / "training-log.json").write_text(json.dumps(log))
+    report = timing(timing_dir, resumed_run(tmp_path), 10_000, 4608, None)
+    assert not report["validation_and_best_checkpoint"]["works"]

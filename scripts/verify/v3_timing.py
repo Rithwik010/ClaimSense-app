@@ -10,8 +10,11 @@ begin to step end), tokens and records (training/finetune/train.py).
   steps 6 to 25 (the first 5 include compilation) x every token of the training mix, plus the
   validation passes (`SAVE_STEPS` apart) x their measured time; at most `LIMIT_HOURS`. The
   checkpoint saves and each session's set-up are shown beside it;
-- validation and the best checkpoint: both evaluations ran, the best checkpoint is the one with the
-  lower validation loss, and its adapter was saved;
+- validation and the best checkpoint: both evaluations ran, on a subset holding the longest
+  validation record; each validation loss is a finite number on the training loss's scale (between
+  `LOSS_SCALE` times smaller and larger than the mean training loss of the 10 steps before it); the
+  best checkpoint is the one with the lower validation loss, and its adapter was saved; each
+  validation pass's peak GPU memory, apart from training's;
 - the resume check: the resumed session begins at the checkpoint's step with its learning rate,
   schedule and optimizer state; its steps 21 to 25 repeat the first run's losses, learning rates and
   records (by id), which are the records after step 20's, not the first ones of the data;
@@ -53,6 +56,7 @@ def log_of(folder: Path) -> dict[str, Any]:
 
 
 LIMIT_HOURS = 19  # go / no-go item (f), D-V3-22
+LOSS_SCALE = 5
 WARM_UP_STEPS = 5
 
 
@@ -161,8 +165,36 @@ def timing(
         "best_adapter_saved": bool(adapter),
         "checkpoints_saved": sorted(s["step"] for s in run["saves"]),
     }
+    trained = losses(run, range(1, 10_000))
+    normal = []
+    for h in evals:
+        before = [trained[k] for k in range(h["step"] - 9, h["step"] + 1) if k in trained]
+        scale = statistics.mean(before) if before else None
+        value = h["eval_loss"]
+        normal.append(
+            {
+                "step": h["step"],
+                "eval_loss": value,
+                "mean_training_loss_before": round(scale, 4) if scale else None,
+                "normal": scale is not None
+                and math.isfinite(value)
+                and scale / LOSS_SCALE <= value <= scale * LOSS_SCALE,
+            }
+        )
+    longest = run.get("validation_longest") or {}
+    validation["losses"] = normal
+    validation["longest_validation_record"] = longest
+    validation["memory_gb"] = {
+        "training_peak": run.get("peak_gpu_memory_gb"),
+        "validation_peaks": {v["step"]: v["peak_gb"] for v in run.get("validation_memory") or []},
+    }
     validation["works"] = (
-        len(evals) >= 2 and validation["best_is_the_lowest"] and validation["best_adapter_saved"]
+        len(evals) >= 2
+        and validation["best_is_the_lowest"]
+        and validation["best_adapter_saved"]
+        and all(n["normal"] for n in normal)
+        and bool(longest.get("record_id"))
+        and len(validation["memory_gb"]["validation_peaks"]) == len(evals)
     )
 
     probe = run.get("memory_probe") or probe_of(probe_dir)

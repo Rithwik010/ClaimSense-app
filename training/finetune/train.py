@@ -131,6 +131,11 @@ def main() -> None:
     parser.add_argument("--stop-after-steps", type=int, help="save and stop at this step")
     parser.add_argument("--stop-after-hours", type=float, help="save and stop after this long")
     parser.add_argument("--session-start", type=float, help="epoch seconds the session began")
+    parser.add_argument(
+        "--eval-longest",
+        action="store_true",
+        help="add the longest validation record to the evaluated subset (the timing runs)",
+    )
     parser.add_argument("--resume-from", type=Path, help="a checkpoint, or a folder holding them")
     parser.add_argument("--memory-probe", action="store_true")
     args = parser.parse_args()
@@ -220,6 +225,24 @@ def main() -> None:
         ]
 
     train_texts, validation_texts = texts("train"), texts("validation")
+    validation_longest = None
+    if args.eval_longest:  # the validation pass's memory on the longest record (24 Oct)
+        every = read_jsonl(args.data / "validation.jsonl")
+        rendered = [
+            render(to_chat(r["messages"], system_role), False).removeprefix("<bos>") for r in every
+        ]
+        counts = [token_count(tokenizer, t) for t in rendered]
+        index = max(range(len(counts)), key=counts.__getitem__)
+        within = not args.eval_limit or index < args.eval_limit
+        if not within:
+            validation_texts.append(rendered[index])
+        validation_longest = {
+            "record_id": every[index]["metadata"]["record_id"],
+            "tokens": counts[index],
+            "in_the_first_records": within,
+            "evaluated_records": len(validation_texts),
+        }
+        print("longest validation record:", json.dumps(validation_longest), flush=True)
     lengths = {
         split: [token_count(tokenizer, t) for t in items]
         for split, items in (("train", train_texts), ("validation", validation_texts))
@@ -325,6 +348,25 @@ def main() -> None:
         return (loss.detach() if loss is not None else None), logits, labels
 
     trainer.prediction_step = prediction_step
+    evaluate = trainer.evaluate
+    memory = {"training_peak": 0.0, "validation": []}
+
+    def evaluate_with_memory(*eval_args, **eval_kwargs):  # noqa: ANN002, ANN003, ANN202
+        """Peak GPU memory of each validation pass, apart from training's."""
+        memory["training_peak"] = max(memory["training_peak"], torch.cuda.max_memory_allocated())
+        torch.cuda.reset_peak_memory_stats()
+        found = evaluate(*eval_args, **eval_kwargs)
+        memory["validation"].append(
+            {
+                "step": trainer.state.global_step,
+                "peak_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2),
+                "eval_loss": found.get("eval_loss"),
+            }
+        )
+        torch.cuda.reset_peak_memory_stats()
+        return found
+
+    trainer.evaluate = evaluate_with_memory
 
     def key(ids) -> str:  # noqa: ANN001  (a list or a tensor of token ids)
         values = ids.tolist() if hasattr(ids, "tolist") else list(ids)
@@ -431,7 +473,11 @@ def main() -> None:
         "full_run_records": full_records,
         "full_run_steps": full_steps,
         "estimated_full_run_hours_without_evals": round(runtime / steps * full_steps / 3600, 1),
-        "peak_gpu_memory_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2),
+        "peak_gpu_memory_gb": round(
+            max(memory["training_peak"], torch.cuda.max_memory_allocated()) / 1e9, 2
+        ),  # training only: each validation pass's peak is under validation_memory
+        "validation_memory": memory["validation"],
+        "validation_longest": validation_longest,
         "memory_probe": probe,
         "train_tokens_total": train_tokens_total,
         "training_began": steps_seen.begun,

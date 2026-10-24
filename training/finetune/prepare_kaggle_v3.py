@@ -50,7 +50,8 @@ PINNED = (  # the training stack of the timing runs of 24 Oct, the same in every
 )
 EVAL_LIMIT = 150  # the fixed validation subset (its first 150 records) of every evaluation
 TIMING = (
-    f"--max-steps 25 --save-steps 10 --eval-steps 10 --eval-limit {EVAL_LIMIT} --logging-steps 1"
+    f"--max-steps 25 --save-steps 10 --eval-steps 10 --eval-limit {EVAL_LIMIT} --logging-steps 1 "
+    "--eval-longest"
 )
 KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, resume from)
     "kernel-v3-timing": (
