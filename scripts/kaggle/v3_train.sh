@@ -12,7 +12,10 @@
 # - when the pace projects the run's training over PACE_NOTICE_HOURS, a notice (macOS notification
 #   and kaggle-runs/notices.log), without stopping;
 # - when training has finished, both GGUFs (the best and the final checkpoint) are exported on a
-#   CPU-only session (scripts/kaggle/v3_export.py, D-V3-26: no GPU quota) and its report checked.
+#   CPU-only session (scripts/kaggle/v3_export.py, D-V3-26: no GPU quota) and its report checked;
+#   the GGUFs land in the v3-only folder MODELS_V3 (D-V3-27);
+# - before and after every download to the laptop, v2's GGUF and Ollama blob are checked against
+#   their SHA-256 (scripts/verify/v2_guard.py); any difference stops the chain (D-V3-27).
 #
 # Hours are wall-clock from push to the end of each session (a little over Kaggle's count). Run it
 # detached and under caffeinate, from the repository root:
@@ -27,6 +30,8 @@ WEEK_LIMIT_HOURS=30
 PACE_NOTICE_HOURS=19
 KERNELS=${KERNELS:-data/generated/kaggle}
 RUNS=${RUNS:-data/generated/v3/kaggle-runs}
+MODELS_V3=${MODELS_V3:-data/generated/models/claimsense-decision-v3}
+GUARD=${GUARD:-uv run --quiet python -m scripts.verify.v2_guard}
 mkdir -p "$RUNS"
 run_hours=0
 crashes=0
@@ -43,6 +48,11 @@ stop() {
 }
 
 add() { python3 -c "print(round($1 + $2, 2))"; }
+guard() {  # v2 untouched, before and after each download (D-V3-27)
+  if ! $GUARD --label "$1" >> "$RUNS/v2_guard.log" 2>/dev/null; then
+    stop "v2's GGUF or Ollama blob no longer has its SHA-256 ($1)"
+  fi
+}
 field() { echo "$result" | python3 -c "import json, sys; print(json.load(sys.stdin).get('$1'))"; }
 over() { python3 -c "import sys; sys.exit(0 if $1 > $2 else 1)"; }
 
@@ -66,7 +76,9 @@ session() {
     sleep 300
   done
   hours=$(python3 -c "print(round(($(date +%s) - $started) / 3600, 2))")
+  guard "before downloading $stage"
   uvx kaggle kernels output "$slug" -p "$RUNS/$stage/output" >> "$log" 2>&1
+  guard "after downloading $stage"
   result=$(uv run --quiet python -m scripts.verify.v3_pace "$RUNS/$stage/output" 2>/dev/null)
   echo "$(date '+%F %T') $hours h; $status; $result" >> "$log"
   case "$status" in
@@ -80,7 +92,6 @@ session() {
 export() {
   local slug="claimsense-finetune-v3-$1" log="$RUNS/export/watch.log" status
   mkdir -p "$RUNS/export"
-  rm -rf "$RUNS/export/output"
   echo "exporting: $1 (pid $$, $(date '+%F %T'))" > "$RUNS/chain.status"
   uv run --quiet python -m scripts.kaggle.v3_export --source "$slug" >> "$log" 2>&1 \
     || stop "the export notebook could not be written"
@@ -92,8 +103,11 @@ export() {
     case "$status" in *COMPLETE*|*ERROR*|*CANCEL*) break ;; esac
     sleep 120
   done
-  uvx kaggle kernels output "$USER_SLUG/claimsense-v3-export" -p "$RUNS/export/output" >> "$log" 2>&1
-  report=$(find "$RUNS/export/output" -name report.json | head -1)
+  guard "before downloading the GGUFs"
+  mkdir -p "$MODELS_V3"
+  uvx kaggle kernels output "$USER_SLUG/claimsense-v3-export" -p "$MODELS_V3" >> "$log" 2>&1
+  guard "after downloading the GGUFs"
+  report=$(find "$MODELS_V3" -name report.json | head -1)
   if [ -z "$report" ] || ! python3 -c "import json, sys; r = json.load(open('$report')); \
       sys.exit(0 if r and all(v['ok'] for v in r.values()) else 1)"; then
     stop "training finished in $1, but the CPU export failed or differs from v2 (see $report)"

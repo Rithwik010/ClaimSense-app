@@ -58,13 +58,13 @@ MODELS = {
         "name": "claimsense-decision:v3-best",
         "evaluated": "claimsense-decision-v3",
         "kernel": "claimsense-v3-export",  # D-V3-26
-        "gguf": "claimsense-v3/gguf",
+        "gguf": "claimsense-decision-v3/claimsense-decision-v3-best.Q4_K_M.gguf",
     },
     "v3_final": {
         "name": "claimsense-decision:v3-final",
         "evaluated": "claimsense-decision-v3",
         "kernel": "claimsense-v3-export",  # D-V3-26
-        "gguf": "claimsense-v3/final/gguf",
+        "gguf": "claimsense-decision-v3/claimsense-decision-v3-final.Q4_K_M.gguf",
     },
 }
 SETS = {  # name -> (folder, split)
@@ -114,7 +114,7 @@ def model_entry(key: str, ollama_url: str = "http://127.0.0.1:11434") -> dict[st
         "key": key,
         "name": spec["name"],
         "kernel": f"{USER}/{spec['kernel']}",
-        "gguf": spec.get("gguf", ""),  # the folder under the kernel's output, when it has several
+        "gguf": spec.get("gguf", ""),  # the file in the kernel's output, when it holds several
         "modelfile": text,
         "weights_sha256": own["weights_sha256"] if own else None,
         "ollama": pinned["ollama"],
@@ -190,10 +190,8 @@ def notebook(title: str) -> dict[str, Any]:
         "    return subprocess.run(['ollama', *args], env=env, capture_output=True, text=True)\n"
         "for key, model in run['models'].items():\n"
         "    owner, slug = model['kernel'].split('/')\n"
-        "    within = model['gguf'] + '/' if model['gguf'] else '**/'\n"
-        "    ggufs = glob.glob(f'/kaggle/input/**/{slug}/{within}*Q4_K_M.gguf', recursive=True)\n"
-        "    ggufs += [] if ggufs or not model['gguf'] else glob.glob(\n"
-        "        f'/kaggle/input/**/{slug}/**/{within}*Q4_K_M.gguf', recursive=True)\n"
+        "    pattern = model['gguf'] or '*Q4_K_M.gguf'\n"
+        "    ggufs = glob.glob(f'/kaggle/input/**/{slug}/**/{pattern}', recursive=True)\n"
         "    assert len(ggufs) == 1, f'{key}: GGUFs found: {ggufs}'\n"
         "    gguf = ggufs[0]\n"
         "    digest = hashlib.sha256()\n"

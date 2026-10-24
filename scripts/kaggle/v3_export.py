@@ -8,7 +8,8 @@ The route, the same in the test and for the real exports:
    the merged model, so the GGUF carries the same one;
 3. llama.cpp's converter and quantizer from Unsloth's installer at the pinned release
    `CONVERTER_TAG` (Unsloth's own export would take the latest release, and needs a GPU): conversion
-   to a 16-bit GGUF, then quantization to Q4_K_M, v2's type, named as v2's file was;
+   to a 16-bit GGUF, then quantization to Q4_K_M, v2's type, under v3's own names in a v3-only
+   folder (`FOLDER`, `GGUF_NAMES`; D-V3-27);
 4. the packaging side by side with v2's (scripts/verify/gguf_packaging.py `summary`, the same
    fields): quantization type, size, chat-template hash, tokenizer details, tensor types;
 5. Ollama (the laptop's version) loads it under a throwaway name with the evaluated Modelfile
@@ -18,14 +19,16 @@ The route, the same in the test and for the real exports:
 
 `--test`: the timing run's step-20 checkpoint, and first Unsloth's own export with its test-only
 CPU switch, for the record (expected to fail: Unsloth needs a GPU). Without it: the finished
-training session's `adapter` (the lowest validation loss) into `claimsense-v3/gguf/` and
-`adapter-final` into `claimsense-v3/final/gguf/`, where the stage 5 evaluation finds them.
+training session's `adapter` (the lowest validation loss) and `adapter-final` into
+`claimsense-decision-v3/`, as claimsense-decision-v3-best.Q4_K_M.gguf and
+claimsense-decision-v3-final.Q4_K_M.gguf, where the stage 5 evaluation finds them (registered there
+as claimsense-decision:v3-best and :v3-final).
 
     uv run python -m scripts.kaggle.v3_export --test
     uv run python -m scripts.kaggle.v3_export --source claimsense-finetune-v3-full-2
     uvx kaggle kernels push -p data/generated/kaggle/kernel-v3-export[-test]
 
-Every step's result goes to /kaggle/working/claimsense-v3/report.json.
+Every step's result goes to the folder's report.json.
 """
 
 import argparse
@@ -41,7 +44,12 @@ from training.generate.v3.config import OUT_DIR as V3_DIR
 
 CONVERTER_TAG = "b11798-mix-f8a7950"  # unslothai/llama.cpp's latest release on 24 Oct
 BASE = "unsloth/gemma-4-E2B-it"  # the 16-bit weights
-GGUF_NAME = "gemma-4-E2B-it.Q4_K_M.gguf"  # v2's file name
+FOLDER = "claimsense-decision-v3"  # v3 only: its own folder and names, never v2's (D-V3-27)
+GGUF_NAMES = {
+    "best": "claimsense-decision-v3-best.Q4_K_M.gguf",
+    "final": "claimsense-decision-v3-final.Q4_K_M.gguf",
+    "test": "claimsense-exporttest-step20.Q4_K_M.gguf",
+}
 TEST_MODEL = "claimsense-exporttest-20261024"
 TEST_TOKENS = 256
 V2_PACKAGING = V3_DIR / "v2_gguf_packaging.json"
@@ -51,7 +59,7 @@ V2_TEMPLATE = V3_DIR / "v2_chat_template.jinja"
 def setup(sources: str) -> str:
     return f"""import glob, json, os, subprocess, sys, time, hashlib
 REPORT = {{}}
-OUT = '/kaggle/working/claimsense-v3'
+OUT = '/kaggle/working/__FOLDER__'
 WORK = '/tmp/v3-export'
 os.makedirs(OUT, exist_ok=True); os.makedirs(WORK, exist_ok=True)
 def save():
@@ -136,7 +144,7 @@ done = subprocess.run([sys.executable, str(converter), merged_dir, '--outtype', 
 step('{name}_convert', done.returncode == 0, seconds=round(time.time() - started),
      last_output=(done.stdout + done.stderr)[-1200:])
 os.makedirs('{target}', exist_ok=True)
-gguf = '{target}/{GGUF_NAME}'
+gguf = '{target}/{GGUF_NAMES[name]}'
 started = time.time()
 done = subprocess.run([str(quantizer), f'{{WORK}}/{name}-bf16.gguf', gguf, 'Q4_K_M'],
                       capture_output=True, text=True)
@@ -176,7 +184,7 @@ server = subprocess.Popen(['ollama', 'serve'], stdout=open(f'{{OUT}}/ollama-{nam
                           stderr=subprocess.STDOUT, env=dict(os.environ, OLLAMA_NO_CLOUD='1'))
 time.sleep(10)
 open(f'{{WORK}}/Modelfile', 'w').write({json.dumps(chr(10).join(lines))}.replace(
-    '__GGUF__', '{target}/{GGUF_NAME}'))
+    '__GGUF__', '{target}/{GGUF_NAMES[name]}'))
 throwaway = '{TEST_MODEL}-{name}'
 made = subprocess.run(['ollama', 'create', throwaway, '-f', f'{{WORK}}/Modelfile'],
                       capture_output=True, text=True)
@@ -212,21 +220,19 @@ def notebook(test: bool, source: str) -> dict:
             "test": "os.path.dirname(glob.glob('/kaggle/input/**/claimsense-finetune-v3-timing/"
             "**/checkpoint-20/adapter_config.json', recursive=True)[0])"
         }
-        exports = [("test", "/kaggle/working/claimsense-v3/test/gguf")]
+        exports = [("test", "/kaggle/working/claimsense-v3-export-test")]
     else:
         adapters = {
             name: f"os.path.dirname(glob.glob('/kaggle/input/**/{source}/**/claimsense-v3/"
             f"{folder}/adapter_config.json', recursive=True)[0])"
             for name, folder in (("best", "adapter"), ("final", "adapter-final"))
         }
-        exports = [
-            ("best", "/kaggle/working/claimsense-v3/gguf"),
-            ("final", "/kaggle/working/claimsense-v3/final/gguf"),
-        ]
+        exports = [(name, f"/kaggle/working/{FOLDER}") for name in ("best", "final")]
     sources = "{" + ", ".join(f"{k!r}: {v}" for k, v in adapters.items()) + "}"
+    out = "claimsense-v3-export-test" if test else FOLDER
     cells = [
         ("markdown", "# ClaimSense v3: GGUF export (CPU only)\n\nSynthetic data only."),
-        ("code", setup(sources)),
+        ("code", setup(sources).replace("__FOLDER__", out)),
         *([("code", UNSLOTH_ON_CPU)] if test else []),
         ("code", TOOLS),
         ("code", PACKAGING),
