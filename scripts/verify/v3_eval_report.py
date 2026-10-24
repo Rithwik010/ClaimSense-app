@@ -21,7 +21,15 @@ broken down by tricky-fact type, note length and lines per claim (v3 sets; the c
 tricky facts).
 Writes data/generated/eval/v3study/<model>-<set>.json.
 
+`--compare <v3 model>` sets that model against v2 on every set both have predictions for (clean,
+messy, unseen-style, the LLM-written human-style test set; the team's rule of 24 Oct): for macro-F1,
+line accuracy, valid output and DENY precision, the difference v3 - v2 with a paired 95% interval
+(each bootstrap draw resamples the same claims for both models), guard on and off, in total and by
+policy seen in training against test-only. Each model's own interval stays in its own report.
+Writes data/generated/eval/v3study/compare-<v3 model>-<set>.json.
+
     uv run python -m scripts.verify.v3_eval_report [--only v2-test_messy]
+    uv run python -m scripts.verify.v3_eval_report --compare v3_best
 """
 
 import argparse
@@ -135,10 +143,95 @@ def metrics(rows: list[dict[str, Any]], metas: dict[str, dict[str, Any]]) -> dic
     }
 
 
-def report(model: str, set_name: str) -> dict[str, Any]:
+def loaded(set_name: str) -> tuple[dict[str, Any], dict[str, Any]]:
     folder, split = SETS[set_name]
     records = {r["metadata"]["record_id"]: r for r in read_jsonl(folder / f"{split}.jsonl")}
     inputs = {i["record_id"]: i for i in read_jsonl(folder / f"{split}_inputs.jsonl")}
+    return records, inputs
+
+
+def scored(model: str, set_name: str, guard: bool) -> list[dict[str, Any]]:
+    records, inputs = loaded(set_name)
+    rows = []
+    for p in read_jsonl(STUDY_DIR / f"{model}-{set_name}.jsonl"):
+        row = score_record(records[p["record_id"]], inputs[p["record_id"]], p["output"], guard)
+        rows.append({**row, "latency_ms": p.get("latency_ms"), "attempts": p.get("attempts")})
+    return rows
+
+
+def point(rows: list[dict[str, Any]]) -> dict[str, float | None]:
+    lines = [line for r in rows for line in r["lines"]]
+    found = _decision_metrics([x["gold"] for x in lines], [x["predicted"] for x in lines])
+    denied = [x for x in lines if x["predicted"] == "DENY"]
+    return {
+        "macro_f1": found.get("macro_f1"),
+        "line_accuracy": found.get("accuracy"),
+        "valid_output_rate": sum(r["valid"] for r in rows) / len(rows),
+        "deny_precision": sum(x["gold"] == "DENY" for x in denied) / len(denied)
+        if denied
+        else None,
+    }
+
+
+def paired(v3: list[dict[str, Any]], v2: list[dict[str, Any]]) -> dict[str, Any]:
+    """v3 - v2 on the same claims, with a paired 95% bootstrap interval for each metric."""
+    by3, by2 = {r["record_id"]: r for r in v3}, {r["record_id"]: r for r in v2}
+    if by3.keys() != by2.keys():
+        raise SystemExit(f"the models were run on different claims: {len(by3)} and {len(by2)}")
+    ids = sorted(by3)
+    if not ids:
+        return {"claims": 0}
+    a, b = [by3[i] for i in ids], [by2[i] for i in ids]
+    first, second = point(a), point(b)
+    rng = random.Random(SEED)
+    draws: dict[str, list[float]] = {k: [] for k in first}
+    for _ in range(BOOTSTRAP):
+        picked = [rng.randrange(len(ids)) for _ in ids]
+        x, y = point([a[i] for i in picked]), point([b[i] for i in picked])
+        for k in draws:
+            if x[k] is not None and y[k] is not None:
+                draws[k].append(x[k] - y[k])
+    found: dict[str, Any] = {"claims": len(ids)}
+    for k in draws:
+        ordered = sorted(draws[k])
+        both = first[k] is not None and second[k] is not None
+        found[k] = {
+            "v3": round(first[k], 4) if first[k] is not None else None,
+            "v2": round(second[k], 4) if second[k] is not None else None,
+            "v3_minus_v2": round(first[k] - second[k], 4) if both else None,
+            "ci95": [
+                round(ordered[int(0.025 * len(ordered))], 4),
+                round(ordered[int(0.975 * len(ordered)) - 1], 4),
+            ]
+            if ordered
+            else None,
+            "draws": len(ordered),
+        }
+    return found
+
+
+def compare(v3_model: str, set_name: str) -> dict[str, Any]:
+    records, _ = loaded(set_name)
+    metas = {rid: r["metadata"] for rid, r in records.items()}
+    found: dict[str, Any] = {"v3": v3_model, "v2": "v2", "set": set_name, "resamples": BOOTSTRAP}
+    for guard in (True, False):
+        v3, v2 = scored(v3_model, set_name, guard), scored("v2", set_name, guard)
+        groups = {}
+        for name, keep in (
+            ("total", lambda m: True),
+            ("policy seen in training", lambda m: not test_only(m)),
+            ("test-only policy", test_only),
+        ):
+            groups[name] = paired(
+                [r for r in v3 if keep(metas[r["record_id"]])],
+                [r for r in v2 if keep(metas[r["record_id"]])],
+            )
+        found["guard_on" if guard else "guard_off"] = groups
+    return found
+
+
+def report(model: str, set_name: str) -> dict[str, Any]:
+    records, _ = loaded(set_name)
     predictions = read_jsonl(STUDY_DIR / f"{model}-{set_name}.jsonl")
     metas = {rid: r["metadata"] for rid, r in records.items()}
     found: dict[str, Any] = {
@@ -149,15 +242,8 @@ def report(model: str, set_name: str) -> dict[str, Any]:
         "engine": sorted({p.get("engine") for p in predictions}),
     }
 
-    def scored_with(guard: bool) -> list[dict[str, Any]]:
-        rows = []
-        for p in predictions:
-            row = score_record(records[p["record_id"]], inputs[p["record_id"]], p["output"], guard)
-            rows.append({**row, "latency_ms": p.get("latency_ms"), "attempts": p.get("attempts")})
-        return rows
-
     for guard in (True, False):
-        rows = scored_with(guard)
+        rows = scored(model, set_name, guard)
         seen = [r for r in rows if not test_only(metas[r["record_id"]])]
         unseen = [r for r in rows if test_only(metas[r["record_id"]])]
         found["guard_on" if guard else "guard_off"] = {
@@ -177,7 +263,20 @@ def report(model: str, set_name: str) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--only", nargs="*", help="<model>-<set> names, default: every file")
+    parser.add_argument("--compare", help="a v3 model key (v3_best or v3_final) against v2")
     args = parser.parse_args()
+    if args.compare:
+        for set_name in ("clean", "test_messy", "test_unseen_style", "human_style"):
+            if not all(
+                (STUDY_DIR / f"{m}-{set_name}.jsonl").exists() for m in (args.compare, "v2")
+            ):
+                continue
+            result = compare(args.compare, set_name)
+            out = STUDY_DIR / f"compare-{args.compare}-{set_name}.json"
+            out.write_text(json.dumps(result, indent=2) + "\n")
+            total = result["guard_on"]["total"]["macro_f1"]
+            print(f"{set_name}: v3 - v2 macro-F1 {total['v3_minus_v2']} (95% {total['ci95']})")
+        return
     names = args.only or sorted(p.stem for p in STUDY_DIR.glob("*.jsonl"))
     for name in names:
         model, set_name = name.split("-", 1)
