@@ -52,13 +52,23 @@ MODELS = {
         "evaluated": "claimsense-decision-v2",
         "kernel": "claimsense-finetune-v2",
     },
-    "v3": {
-        "name": "claimsense-decision:v3",
+    # model v3's two checkpoints (D-V3-16): the lowest validation loss and the last step; one is
+    # chosen on validation only, before any test set, and becomes claimsense-decision:v3
+    "v3_best": {
+        "name": "claimsense-decision:v3-best",
         "evaluated": "claimsense-decision-v3",
         "kernel": "claimsense-finetune-v3-full-2",
+        "gguf": "claimsense-v3/gguf",
+    },
+    "v3_final": {
+        "name": "claimsense-decision:v3-final",
+        "evaluated": "claimsense-decision-v3",
+        "kernel": "claimsense-finetune-v3-full-2",
+        "gguf": "claimsense-v3/final/gguf",
     },
 }
 SETS = {  # name -> (folder, split)
+    "validation": (V3_DIR / "final", "validation"),  # the checkpoint choice only (D-V3-16)
     "clean": (GENERATED_DIR / "decision_v2", "test"),
     "test_messy": (V3_DIR / "final", "test_messy"),
     "test_unseen_style": (V3_DIR / "final", "test_unseen_style"),
@@ -104,6 +114,7 @@ def model_entry(key: str, ollama_url: str = "http://127.0.0.1:11434") -> dict[st
         "key": key,
         "name": spec["name"],
         "kernel": f"{USER}/{spec['kernel']}",
+        "gguf": spec.get("gguf", ""),  # the folder under the kernel's output, when it has several
         "modelfile": text,
         "weights_sha256": own["weights_sha256"] if own else None,
         "ollama": pinned["ollama"],
@@ -179,8 +190,11 @@ def notebook(title: str) -> dict[str, Any]:
         "    return subprocess.run(['ollama', *args], env=env, capture_output=True, text=True)\n"
         "for key, model in run['models'].items():\n"
         "    owner, slug = model['kernel'].split('/')\n"
-        "    ggufs = glob.glob(f'/kaggle/input/**/{slug}/**/*Q4_K_M.gguf', recursive=True)\n"
-        "    assert ggufs, f'no GGUF in the output of {model[\"kernel\"]}'\n"
+        "    within = model['gguf'] + '/' if model['gguf'] else '**/'\n"
+        "    ggufs = glob.glob(f'/kaggle/input/**/{slug}/{within}*Q4_K_M.gguf', recursive=True)\n"
+        "    ggufs += [] if ggufs or not model['gguf'] else glob.glob(\n"
+        "        f'/kaggle/input/**/{slug}/**/{within}*Q4_K_M.gguf', recursive=True)\n"
+        "    assert len(ggufs) == 1, f'{key}: GGUFs found: {ggufs}'\n"
         "    gguf = ggufs[0]\n"
         "    digest = hashlib.sha256()\n"
         "    with open(gguf, 'rb') as f:\n"

@@ -14,8 +14,11 @@ For each, the metrics the team asked for:
 - wrong approvals: lines the label pends or denies that the model approves (count and share);
 
 every metric also for the claims on a policy seen in training and on a test-only policy, beside the
-total (so a set's style effect shows apart from its new-policy effect); and errors broken down by
-tricky-fact type, note length and lines per claim (v3 sets; the clean v2 set has no tricky facts).
+total (so a set's style effect shows apart from its new-policy effect); a 95% confidence interval
+for macro-F1 and line accuracy (a bootstrap over claims, `BOOTSTRAP` resamples with a fixed seed;
+D-V3-22 asks for it on the LLM-written human-style test set, and every set gets one); and errors
+broken down by tricky-fact type, note length and lines per claim (v3 sets; the clean v2 set has no
+tricky facts).
 Writes data/generated/eval/v3study/<model>-<set>.json.
 
     uv run python -m scripts.verify.v3_eval_report [--only v2-test_messy]
@@ -23,15 +26,41 @@ Writes data/generated/eval/v3study/<model>-<set>.json.
 
 import argparse
 import json
+import random
 from typing import Any
 
 from training.evaluate.kaggle_eval import SETS, STUDY_DIR, read_jsonl
-from training.evaluate.model import score_record, summarize
+from training.evaluate.model import _decision_metrics, score_record, summarize
 from training.generate.scenarios_v2 import TEST_ONLY_POLICIES
 from training.generate.v3.config import OUT_DIR as V3_DIR
 from training.generate.v3.dataset import TRICKY_OF, load_sheets
 
 LENGTHS = ((0, 250, "under 250 words"), (250, 400, "250-399"), (400, 600, "400-599"))
+BOOTSTRAP = 2000
+SEED = 20261024
+
+
+def interval(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """95% bootstrap intervals of macro-F1 and line accuracy, resampling claims (their lines move
+    together)."""
+    rng = random.Random(SEED)
+    f1s, accuracies = [], []
+    for _ in range(BOOTSTRAP):
+        lines = [line for _ in rows for line in rows[rng.randrange(len(rows))]["lines"]]
+        found = _decision_metrics([x["gold"] for x in lines], [x["predicted"] for x in lines])
+        f1s.append(found["macro_f1"])
+        accuracies.append(found["accuracy"])
+
+    def bounds(values: list[float]) -> list[float]:
+        ordered = sorted(values)
+        return [ordered[int(0.025 * BOOTSTRAP)], ordered[int(0.975 * BOOTSTRAP) - 1]]
+
+    return {
+        "macro_f1": bounds(f1s),
+        "line_accuracy": bounds(accuracies),
+        "resamples": BOOTSTRAP,
+        "unit": "claims",
+    }
 
 
 def length_band(words: int) -> str:
@@ -102,6 +131,7 @@ def metrics(rows: list[dict[str, Any]], metas: dict[str, dict[str, Any]]) -> dic
         "criterion_accuracy": summary["criterion_status_accuracy"],
         "retried": sum((r.get("attempts") or 1) > 1 for r in rows),
         **line_stats(rows),
+        "ci95": interval(rows) if any(r["lines"] for r in rows) else None,
     }
 
 

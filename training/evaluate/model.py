@@ -377,6 +377,8 @@ def run(
                 "engine": engine,
                 "dataset_sha": fingerprint,
                 "attempts": attempts,
+                # what was sent, for the like-for-like check (scripts/verify/v3_like_for_like.py)
+                "prompt_sha256": hashlib.sha256(f"{system}\x00{user}".encode()).hexdigest(),
                 "output": text,
             }
             predictions.write(json.dumps(row) + "\n")
