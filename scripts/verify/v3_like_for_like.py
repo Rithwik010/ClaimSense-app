@@ -280,7 +280,8 @@ def main() -> None:
             args.kaggle_data, args.set, args.database_url, args.qdrant_url, args.control
         )
     STUDY_DIR.mkdir(parents=True, exist_ok=True)
-    out = STUDY_DIR / f"like_for_like-{args.set}{'-control' if args.control else ''}.json"
+    suffix = "-settings" if args.settings_only else "-control" if args.control else ""
+    out = STUDY_DIR / f"like_for_like-{args.set}{suffix}.json"
     out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     summary = {k: {m: v["same"] for m, v in report["settings"].items()} for k in ("settings",)}
     if "prompts" in report:
