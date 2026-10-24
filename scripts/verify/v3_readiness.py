@@ -4,8 +4,11 @@ From data/generated/v3/ (and the files each item names):
 
 a. the gate bars: none of the 12 really wrong notes of the 19 Oct hand check passes, at least 24
    of the 28 good ones pass (gate_change.json), and at least 38 of the 40 newly passing notes are
-   correct (the hand check's verdicts, training/generate/v3/hand_checks/gate_fix.json);
-b. every coverage cell (training/generate/v3/coverage.py) of the training set at its floor;
+   correct (the hand check's verdicts, training/generate/v3/hand_checks/gate_fix.json). That bar
+   was not met and D-V3-14 replaced it; item (a) reads the fallback bar (D-V3-16): all 12 really
+   wrong notes rejected by the final gate code (scripts/verify/v3_fallback_bar.py);
+b. every coverage cell (training/generate/v3/coverage.py) of the training set at its floor, except
+   the one cell the team accepted below it (D-V3-18: POL-SURG-001.c4 NOT_MET at 19 of 20);
 c. each tricky-fact type within ±10% (relative) of the rate the fact sheets asked for: the share of
    training notes with the type, against its share among the training sheets drawn without a
    top-up (the spec's probabilities, as drawn);
@@ -26,6 +29,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from scripts.verify.v3_fallback_bar import fallback_bar
 from training.generate.v3.config import OUT_DIR, config
 from training.generate.v3.coverage import below, cell_counts
 from training.generate.v3.dataset import TRICKY_OF, load_sheets, passing_training, read_jsonl
@@ -33,6 +37,7 @@ from training.generate.v3.dataset import TRICKY_OF, load_sheets, passing_trainin
 HAND_CHECKS = Path(__file__).resolve().parents[2] / "training/generate/v3/hand_checks"
 V2_CLEAN_MACRO_F1 = 0.8487
 TIMING_DIR = OUT_DIR / "timing"
+ACCEPTED_UNDER_FLOOR = {"criterion_status POL-SURG-001.c4 NOT_MET": 19}  # D-V3-18
 STUDY = OUT_DIR.parent / "eval" / "v3study"
 
 
@@ -65,11 +70,23 @@ def coverage(chosen: list[dict[str, Any]], drawn: list[dict[str, Any]]) -> dict[
     counts = cell_counts(chosen)
     for cell in cell_counts(s for s in drawn if s["split"] == "train"):
         counts.setdefault(cell, 0)
-    short = below(counts, floors)
+    short = {f"{k} {n}": counts[(k, n)] for (k, n) in below(counts, floors)}
+    unaccepted = {k: v for k, v in short.items() if ACCEPTED_UNDER_FLOOR.get(k) != v}
+    accepted = sorted(set(short) - set(unaccepted))
+    reading = (
+        "met" if not short else "not met: " + ", ".join(f"{k} {v}" for k, v in unaccepted.items())
+    )
+    if short and not unaccepted:
+        reading = "met except " + ", ".join(
+            f"{k.split()[1]}, {short[k]} of {floors.get(k.split()[0], 20)}, accepted"
+            for k in accepted
+        )
     return {
         "cells": len(counts),
-        "cells_under_floor": {f"{k} {n}": counts[(k, n)] for (k, n) in short},
+        "cells_under_floor": short,
         "all_at_floor": not short,
+        "reading": reading,
+        "ok": not unaccepted,
     }
 
 
@@ -102,6 +119,24 @@ def gate_bars(out_dir: Path) -> dict[str, Any]:
         "good_passing": hand["good_now_passing"],
         "newly_passing_correct": f"{correct} of {len(checked['notes'])}",
         "ok": not wrong_passing and good >= 24 and correct >= 38,
+    }
+
+
+def item_a(out_dir: Path) -> dict[str, Any]:
+    """The original bar, then the fallback that replaced it (D-V3-14, D-V3-16)."""
+    original = gate_bars(out_dir)
+    fallback = fallback_bar()
+    reading = (
+        f"original bar not met ({original.get('good_passing')} good notes passed); replaced by "
+        f"D-V3-14; fallback bar: {fallback['rejected']} really-wrong notes rejected"
+        if not original["ok"]
+        else "original bar met"
+    )
+    return {
+        "original": original,
+        "fallback_rejected": fallback["rejected"],
+        "reading": reading,
+        "ok": original["ok"] or fallback["met"],
     }
 
 
@@ -141,7 +176,7 @@ def readiness(source: str = "final", out_dir: Path = OUT_DIR) -> dict[str, Any]:
     chosen = training_sheets(source, out_dir)
     report = {
         "source": source,
-        "a_gate_bars": gate_bars(out_dir),
+        "a_gate_bars": item_a(out_dir),
         "b_coverage": coverage(chosen, drawn),
         "c_tricky_rates": tricky_rates(chosen, drawn),
         "d_sizes": sizes(source, chosen, out_dir),
@@ -151,6 +186,18 @@ def readiness(source: str = "final", out_dir: Path = OUT_DIR) -> dict[str, Any]:
     report["c_all_within_10_percent"] = all(
         v["within_10_percent"] for v in report["c_tricky_rates"].values()
     )
+    t = report["e_f_timing"]
+    items = {
+        "a": report["a_gate_bars"]["ok"],
+        "b": report["b_coverage"]["ok"],
+        "c": report["c_all_within_10_percent"],
+        "d": report["d_sizes"]["ok"],
+        "e": None if "missing" in t else bool(t["tokens_ok"] and t["memory_ok"]),
+        "f": None if "missing" in t else t["time_ok"],
+        "g": report["g_messy_gap"]["ok"],
+    }
+    report["items"] = items
+    report["go"] = all(v is True for v in items.values())
     return report
 
 
