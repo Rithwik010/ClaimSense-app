@@ -157,6 +157,8 @@ def notebook(title: str) -> dict[str, Any]:
         "run = json.load(open(os.path.join(DATA, 'run.json')))\n"
         "OUT = '/kaggle/working/eval'\n"
         "os.makedirs(OUT, exist_ok=True)\n"
+        "subprocess.run('which zstd || apt-get install -y -qq zstd || "
+        "(apt-get update -qq && apt-get install -y -qq zstd)', shell=True, check=True)\n"
         "subprocess.run('curl -fsSL https://ollama.com/install.sh | OLLAMA_VERSION=' "
         "+ run['ollama'] + ' sh', shell=True, check=True)\n"
         "subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', *run['pip']], check=True)\n"
