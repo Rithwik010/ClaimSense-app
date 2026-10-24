@@ -57,13 +57,13 @@ MODELS = {
     "v3_best": {
         "name": "claimsense-decision:v3-best",
         "evaluated": "claimsense-decision-v3",
-        "kernel": "claimsense-finetune-v3-full-2",
+        "kernel": "claimsense-v3-export",  # D-V3-26
         "gguf": "claimsense-v3/gguf",
     },
     "v3_final": {
         "name": "claimsense-decision:v3-final",
         "evaluated": "claimsense-decision-v3",
-        "kernel": "claimsense-finetune-v3-full-2",
+        "kernel": "claimsense-v3-export",  # D-V3-26
         "gguf": "claimsense-v3/final/gguf",
     },
 }

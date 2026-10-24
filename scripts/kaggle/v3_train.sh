@@ -10,7 +10,9 @@
 #   RUN_LIMIT_HOURS, and the week's (WEEK_USED_HOURS at the start, plus this run) within
 #   WEEK_LIMIT_HOURS, else the chain stops;
 # - when the pace projects the run's training over PACE_NOTICE_HOURS, a notice (macOS notification
-#   and kaggle-runs/notices.log), without stopping.
+#   and kaggle-runs/notices.log), without stopping;
+# - when training has finished, both GGUFs (the best and the final checkpoint) are exported on a
+#   CPU-only session (scripts/kaggle/v3_export.py, D-V3-26: no GPU quota) and its report checked.
 #
 # Hours are wall-clock from push to the end of each session (a little over Kaggle's count). Run it
 # detached and under caffeinate, from the repository root:
@@ -74,6 +76,31 @@ session() {
 }
 
 
+# export <stage>: the CPU-only export of the finished session's adapters
+export() {
+  local slug="claimsense-finetune-v3-$1" log="$RUNS/export/watch.log" status
+  mkdir -p "$RUNS/export"
+  rm -rf "$RUNS/export/output"
+  echo "exporting: $1 (pid $$, $(date '+%F %T'))" > "$RUNS/chain.status"
+  uv run --quiet python -m scripts.kaggle.v3_export --source "$slug" >> "$log" 2>&1 \
+    || stop "the export notebook could not be written"
+  uvx kaggle kernels push -p "$KERNELS/kernel-v3-export" >> "$log" 2>&1 || stop "export: push failed"
+  sleep 60
+  while true; do
+    status=$(uvx kaggle kernels status "$USER_SLUG/claimsense-v3-export" 2>&1 | tail -1)
+    echo "$(date '+%F %T') $status" >> "$log"
+    case "$status" in *COMPLETE*|*ERROR*|*CANCEL*) break ;; esac
+    sleep 120
+  done
+  uvx kaggle kernels output "$USER_SLUG/claimsense-v3-export" -p "$RUNS/export/output" >> "$log" 2>&1
+  report=$(find "$RUNS/export/output" -name report.json | head -1)
+  if [ -z "$report" ] || ! python3 -c "import json, sys; r = json.load(open('$report')); \
+      sys.exit(0 if r and all(v['ok'] for v in r.values()) else 1)"; then
+    stop "training finished in $1, but the CPU export failed or differs from v2 (see $report)"
+  fi
+}
+
+USER_SLUG=$(python3 -c "import json; print(json.load(open('$KERNELS/kernel-v3-full-1/kernel-metadata.json'))['id'].split('/')[0])")
 stage=full-1
 while true; do
   session "$stage"
@@ -85,8 +112,10 @@ while true; do
   fi
   case "$state" in
     finished)
-      echo "done: finished in $stage; $run_hours h ($(date '+%F %T'))" > "$RUNS/chain.status"
-      notice "training finished in $stage ($run_hours h)"
+      notice "training finished in $stage ($run_hours h); exporting on CPU"
+      export "$stage"
+      echo "done: finished in $stage; $run_hours h; exported ($(date '+%F %T'))" > "$RUNS/chain.status"
+      notice "training finished in $stage and both GGUFs are exported"
       exit 0 ;;
     paused) next_reason="safety stop" ;;
     *)

@@ -13,7 +13,7 @@ From the training log of a session's downloaded output (training/finetune/train.
 - `projected_training_hours`: every step of the run at that pace (the run's training and
   validation, as go / no-go item f counts them);
 - `remaining_hours`: the steps left at that pace, plus `FINAL_SESSION_HOURS` for the last session's
-  set-up and its two GGUF exports.
+  set-up and last save.
 
     uv run python -m scripts.verify.v3_pace <session output folder>
 """
@@ -24,7 +24,7 @@ from pathlib import Path
 
 from training.generate.v3.config import OUT_DIR
 
-FINAL_SESSION_HOURS = 0.6  # set-up (about 6 minutes) and two GGUF exports (about 15 minutes each)
+FINAL_SESSION_HOURS = 0.15  # set-up and the last save (the GGUF exports run on CPU, D-V3-26)
 TIMING = OUT_DIR / "timing" / "summary.json"
 
 

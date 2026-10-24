@@ -16,10 +16,10 @@ Kernel folders (`uvx kaggle kernels push -p <folder>`):
 - `kernel-v3-full-1` and `kernel-v3-full-2`: the full run in two sessions. Each stops itself, with a
   checkpoint, `SESSION_HOURS` after its notebook started, before Kaggle's 12-hour limit (and saves
   one every `SAVE_STEPS` steps); the second attaches the first's output, resumes from its latest
-  checkpoint and finishes, with two GGUF exports: the
-  checkpoint with the lowest validation loss (`adapter`, `gguf/`) and the final one
-  (`adapter-final`, `final/gguf/`). Every evaluation uses the first `EVAL_LIMIT` validation
-  records (D-V3-13).
+  checkpoint and finishes, saving the checkpoint with the lowest validation loss (`adapter`) and
+  the final one (`adapter-final`). No session exports a GGUF: both are exported on a CPU-only
+  session afterwards (scripts/kaggle/v3_export.py, D-V3-26). Every evaluation uses the first
+  `EVAL_LIMIT` validation records (D-V3-13).
 - `kernel-v3-full-3`: only when needed (D-V3-25), after one crash or a second session that reached
   its safety stop: attaches the second session's output and resumes from its latest checkpoint.
 
@@ -82,7 +82,7 @@ KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, 
         "claimsense-finetune-v3-full-2",
         "/kaggle/working/claimsense-v3",
         f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT} "
-        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}}",
+        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}} --no-gguf",
         "claimsense-finetune-v3-full-1",
         "latest",
     ),
@@ -91,7 +91,7 @@ KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, 
         "claimsense-finetune-v3-full-3",
         "/kaggle/working/claimsense-v3",
         f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT} "
-        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}}",
+        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}} --no-gguf",
         "claimsense-finetune-v3-full-2",
         "latest",
     ),
@@ -139,20 +139,6 @@ def notebook(title: str, out: str, extra: str, source: str | None, resume: str |
             else []
         ),
         ("code", command + extra + " {RESUME}"),
-        *(
-            [
-                (
-                    "code",
-                    "# the final checkpoint's GGUF too (stage 5 compares it with the best one);\n"
-                    "# only when training finished (a session stopped early has no adapter-final)\n"
-                    "if os.path.exists(f'{OUT}/adapter-final'):\n"
-                    "    !python {TRAIN} --export-from {OUT}/adapter-final --out {OUT}/final "
-                    "--data {DATA} --max-seq-length {MAX_SEQ}",
-                )
-            ]
-            if title.endswith(("full-2", "full-3"))
-            else []
-        ),
         (
             "code",
             "import json\n"
