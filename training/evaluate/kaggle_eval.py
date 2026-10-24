@@ -40,7 +40,6 @@ import httpx
 from training.finetune.modelfile import build, differences, evaluated, settings
 from training.generate.common import GENERATED_DIR
 from training.generate.v3.config import OUT_DIR as V3_DIR
-from training.generate.v3.kaggle import upload_problems
 
 ROOT = Path(__file__).resolve().parents[2]
 USER = "manideep3183"
@@ -320,6 +319,9 @@ def prepare(
             indent=2,
         )
     )
+    # imported here: the v3 generator pulls in app.rag (qdrant), which Kaggle runs do not have
+    from training.generate.v3.kaggle import upload_problems
+
     problems = upload_problems([dataset / "sets", dataset / "run.json", kernel])
     if problems:
         raise SystemExit("upload check failed:\n" + "\n".join(problems[:40]))
