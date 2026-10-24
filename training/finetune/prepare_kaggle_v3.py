@@ -20,6 +20,8 @@ Kernel folders (`uvx kaggle kernels push -p <folder>`):
   checkpoint with the lowest validation loss (`adapter`, `gguf/`) and the final one
   (`adapter-final`, `final/gguf/`). Every evaluation uses the first `EVAL_LIMIT` validation
   records (D-V3-13).
+- `kernel-v3-full-3`: only when needed (D-V3-25), after one crash or a second session that reached
+  its safety stop: attaches the second session's output and resumes from its latest checkpoint.
 
     uv run python -m training.finetune.prepare_kaggle_v3 --max-seq-length 4096
 """
@@ -84,6 +86,15 @@ KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, 
         "claimsense-finetune-v3-full-1",
         "latest",
     ),
+    # only when needed (D-V3-25): after one crash, or a session that reached its safety stop
+    "kernel-v3-full-3": (
+        "claimsense-finetune-v3-full-3",
+        "/kaggle/working/claimsense-v3",
+        f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT} "
+        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}}",
+        "claimsense-finetune-v3-full-2",
+        "latest",
+    ),
 }
 
 
@@ -139,7 +150,7 @@ def notebook(title: str, out: str, extra: str, source: str | None, resume: str |
                     "--data {DATA} --max-seq-length {MAX_SEQ}",
                 )
             ]
-            if title.endswith("full-2")
+            if title.endswith(("full-2", "full-3"))
             else []
         ),
         (
