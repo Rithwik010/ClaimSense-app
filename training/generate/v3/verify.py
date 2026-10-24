@@ -604,11 +604,31 @@ def check_note(
     leaked = leaks(note)
     if leaked:
         result.failures.append(f"leakage: {sorted(set(leaked))}")
+    invented = identifiers(note)
+    if invented:
+        result.failures.append(f"identifier: the note invents a {', '.join(invented)}")
     if not result.verifier_pending and not result.failures:
         result.failures += label_problems(sheet, result.spans, facts)
     if result.failures:
         result.looks = []  # the note is rewritten anyway
     return result
+
+
+IDENTIFIERS = {  # D-V3-17: a model writer's invented patient identifiers (patients are age and sex)
+    "social security number": re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
+    "phone number": re.compile(r"\(?\b\d{3}\)?[-. ]\d{3}[-. ]\d{4}\b"),
+    "e-mail address": re.compile(r"[\w.+-]+@[\w-]+\.[A-Za-z]{2,}"),
+    "placeholder name": re.compile(r"\b(Jane|John|Joe|Mary) (Doe|Smith)\b"),
+    "name field": re.compile(r"(?im)^\s*(pt\.? |patient )?name\s*:"),
+    "title and surname": re.compile(r"\b(Mr|Mrs|Ms|Miss)\.? [A-Z][a-z]+"),
+    "date of birth": re.compile(r"(?i)\b(date of birth|DOB|D\.O\.B\.)\b"),
+    "record number": re.compile(r"(?i)\b(MRN|medical record (number|no\.?))\b"),
+}
+
+
+def identifiers(note: str) -> list[str]:
+    """The kinds of patient identifier a note invents (a name, a date of birth, a number)."""
+    return [kind for kind, pattern in IDENTIFIERS.items() if pattern.search(note)]
 
 
 def second_look_on() -> bool:

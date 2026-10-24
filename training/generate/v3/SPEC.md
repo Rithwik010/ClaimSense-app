@@ -260,7 +260,9 @@ Every note must pass:
 3. **Contradictions and borderline values appear exactly as specified.** Both statements are
    present, the correction comes later, and the exact borderline value is in the quote.
 4. **The label recomputed from the verified facts equals the fact sheet's label.**
-5. **Leakage scan.** No outcome word and no criterion or policy ID (`leakage.patterns`).
+5. **Leakage scan.** No outcome word and no criterion or policy ID (`leakage.patterns`), and no
+   invented patient identifier: a name, a date of birth, a social security, phone or record
+   number, an e-mail address (`verify.IDENTIFIERS`, D-V3-17; patients are age and sex only).
 6. **Targets are valid.** The SLMOutput targets' quotes are exact substrings of the note, are at
    least `verification.min_quote_words` words long, and pass the existing output schema and evidence
    guard.

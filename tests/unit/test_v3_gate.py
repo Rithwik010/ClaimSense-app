@@ -482,3 +482,17 @@ def test_writer_d_gets_one_user_message_in_the_physicians_own_words() -> None:
     text = messages[0]["content"]
     assert HUMAN_STYLE in text and "1. The pain has lasted 6 weeks" in text
     assert "[History" not in text and "routine lines" not in text
+
+
+def test_a_note_that_invents_a_patient_identifier_fails() -> None:
+    from training.generate.v3.verify import identifiers
+
+    header = "NAME: Jane Doe\nDATE OF BIRTH: 01/01/1978\nSOCIAL SECURITY NUMBER: 123-45-6789\n"
+    assert {"name field", "placeholder name", "date of birth", "social security number"} <= set(
+        identifiers(header + "Pain x6 wks.")
+    )
+    assert identifiers("Pt 61 yo F, pain x6 wks; f/u 2 wks. BP 120/80.") == []
+    note = "Mrs. Johnson reports pain for 6 weeks despite physical therapy."
+    fact = documented("F1", "The pain has lasted 6 weeks despite physical therapy.", ["6"])
+    result = check_note(sheet(fact), note, None, {"F1": note})
+    assert any(f.startswith("identifier") for f in result.failures)
