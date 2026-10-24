@@ -239,6 +239,7 @@ def main() -> None:
     if args.memory_probe:  # the longest record, forward and backward, before training
         longest = max(train_texts, key=lambda text: token_count(tokenizer, text))
         batch = tokenizer(text=longest, return_tensors="pt").to(model.device)
+        model.train()  # as the trainer runs it: gradient checkpointing works in training mode only
         torch.cuda.reset_peak_memory_stats()
         loss = model(**batch, labels=batch["input_ids"]).loss
         loss.backward()
