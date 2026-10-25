@@ -51,6 +51,10 @@ PINNED = (  # the training stack of the timing runs of 24 Oct, the same in every
     "bitsandbytes==0.50.2",
     "datasets==4.8.5",
 )
+# the base sessions 1 and 2 loaded (Unsloth's 4-bit copy of unsloth/gemma-4-E2B-it; main unchanged
+# since 17 Jul 2026), pinned for any later session (D-V3-31)
+BASE_4BIT = "unsloth/gemma-4-E2B-it-unsloth-bnb-4bit"
+BASE_4BIT_REVISION = "0ae102ac289cc3f17500a607ad817849778b8ba7"
 EVAL_LIMIT = 150  # the fixed validation subset (its first 150 records) of every evaluation
 TIMING = (
     f"--max-steps 25 --save-steps 10 --eval-steps 10 --eval-limit {EVAL_LIMIT} --logging-steps 1 "
@@ -93,7 +97,8 @@ KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, 
         "claimsense-finetune-v3-full-3",
         "/kaggle/working/claimsense-v3",
         f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT} "
-        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}} --no-gguf --no-early-stopping",
+        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}} --no-gguf --no-early-stopping "
+        f"--base-model {BASE_4BIT} --base-revision {BASE_4BIT_REVISION}",
         "claimsense-finetune-v3-full-2",
         "latest",
     ),

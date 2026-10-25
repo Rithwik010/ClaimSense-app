@@ -44,6 +44,7 @@ from training.generate.v3.config import OUT_DIR as V3_DIR
 
 CONVERTER_TAG = "b11798-mix-f8a7950"  # unslothai/llama.cpp's latest release on 24 Oct
 BASE = "unsloth/gemma-4-E2B-it"  # the 16-bit weights
+BASE_REVISION = "d36bdd3855c82a6a1a23f7c459b749f5724ae75d"  # main since 17 Jul 2026 (D-V3-31)
 FOLDER = "claimsense-decision-v3"  # v3 only: its own folder and names, never v2's (D-V3-27)
 GGUF_NAMES = {
     "best": "claimsense-decision-v3-best.Q4_K_M.gguf",
@@ -128,11 +129,15 @@ from transformers import AutoModelForImageTextToText, AutoProcessor
 from peft import PeftModel
 adapter = ADAPTERS['{name}']
 merged_dir = f'{{WORK}}/{name}-merged'
-base = AutoModelForImageTextToText.from_pretrained('{BASE}', torch_dtype=torch.bfloat16)
+# the merge runs in bfloat16 (Gemma 4 does not run in float16); f16 is only the GGUF made for
+# quantization, below, checked for overflow
+base = AutoModelForImageTextToText.from_pretrained('{BASE}', revision='{BASE_REVISION}',
+                                                   torch_dtype=torch.bfloat16)
+base_commit = getattr(base.config, '_commit_hash', None)
 merged = PeftModel.from_pretrained(base, adapter).merge_and_unload()
 dtypes = sorted({{str(p.dtype) for p in merged.parameters()}})
 merged.save_pretrained(merged_dir, safe_serialization=True)
-AutoProcessor.from_pretrained('{BASE}').save_pretrained(merged_dir)
+AutoProcessor.from_pretrained('{BASE}', revision='{BASE_REVISION}').save_pretrained(merged_dir)
 del base, merged
 config = json.load(open(f'{{merged_dir}}/tokenizer_config.json'))
 config['chat_template'] = V2_TEMPLATE
@@ -146,14 +151,26 @@ UNUSED = {{f'blk.{{i}}.{{t}}.weight' for i in range(first_shared, text['num_hidd
 open(f'{{merged_dir}}/chat_template.jinja', 'w').write(V2_TEMPLATE)
 if os.path.exists(f'{{merged_dir}}/chat_template.json'):
     os.remove(f'{{merged_dir}}/chat_template.json')
-step('{name}_merge', True, seconds=round(time.time() - started), base='{BASE}', dtypes=dtypes,
+step('{name}_merge', base_commit == '{BASE_REVISION}', seconds=round(time.time() - started),
+     base='{BASE}', base_commit=base_commit, dtypes=dtypes,
      adapter_base=json.load(open(f'{{adapter}}/adapter_config.json')).get('base_model_name_or_path'),
      transformers=transformers.__version__, peft=peft.__version__)
 started = time.time()
 done = subprocess.run([sys.executable, str(converter), merged_dir, '--outtype', 'f16',
                        '--outfile', f'{{WORK}}/{name}-f16.gguf'], capture_output=True, text=True)
-step('{name}_convert', done.returncode == 0, seconds=round(time.time() - started),
-     last_output=(done.stdout + done.stderr)[-1200:])
+# f16 holds bfloat16's range only up to 65504: any tensor that overflowed would be inf or NaN
+import numpy as np
+from gguf import GGUFReader
+overflowed, largest = [], 0.0
+for tensor in GGUFReader(f'{{WORK}}/{name}-f16.gguf').tensors:
+    if tensor.tensor_type.name in ('F16', 'F32'):
+        values = np.asarray(tensor.data)
+        if not np.isfinite(values).all():
+            overflowed.append(tensor.name)
+        largest = max(largest, float(np.nanmax(np.abs(values[np.isfinite(values)]), initial=0)))
+step('{name}_convert', done.returncode == 0 and not overflowed,
+     seconds=round(time.time() - started), f16_overflowed=overflowed[:10],
+     largest_f16_magnitude=largest, last_output=(done.stdout + done.stderr)[-800:])
 os.makedirs('{target}', exist_ok=True)
 gguf = '{target}/{GGUF_NAMES[name]}'
 started = time.time()
@@ -172,6 +189,7 @@ same = {{key: found[key] == V2[key] for key in
         ('architecture', 'file_type', 'quantization_version', 'chat_template_sha256',
          'tokenizer', 'tensors', 'tensor_types')}}
 ours, theirs = found.pop('tensor_names'), V2['tensor_names']
+general = sorted(set(V2['general']) | set(found['general']))
 missing = sorted(set(theirs) - set(ours))
 extra = sorted(set(ours) - set(theirs))
 retyped = {{n: [theirs[n], ours[n]] for n in set(ours) & set(theirs) if ours[n] != theirs[n]}}

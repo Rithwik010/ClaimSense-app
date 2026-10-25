@@ -126,6 +126,11 @@ def main() -> None:
     parser.add_argument(
         "--base-model", default=CONFIG["base_model"], help="e.g. unsloth/gemma-4-E4B-it"
     )
+    parser.add_argument(
+        "--base-revision",
+        help="the base repo's commit to load (pass the pre-quantized repo by name: Unsloth drops a "
+        "revision when it remaps a name; D-V3-31)",
+    )
     parser.add_argument("--train-split", default="train", help="e.g. train_mix (model v3)")
     parser.add_argument("--max-steps", type=int, help="a fixed number of steps (timing runs)")
     parser.add_argument("--save-steps", type=int, help="checkpoint every N steps (default: evals)")
@@ -198,10 +203,13 @@ def main() -> None:
 
     model, tokenizer = FastModel.from_pretrained(
         model_name=config["base_model"],
+        revision=args.base_revision,
         max_seq_length=config["max_seq_length"],
         load_in_4bit=config["load_in_4bit"],
         full_finetuning=False,
     )
+    base_commit = getattr(model.config, "_commit_hash", None)  # the commit the hub served
+    print(f"base model {config['base_model']} at commit {base_commit}", flush=True)
     tokenizer = get_chat_template(tokenizer, chat_template=config["chat_template"])
 
     def render(messages: list[dict[str, str]], add_generation_prompt: bool) -> str:
@@ -487,6 +495,9 @@ def main() -> None:
         "validation_longest": validation_longest,
         "memory_probe": probe,
         "train_tokens_total": train_tokens_total,
+        "base_model": config["base_model"],
+        "base_revision_asked": args.base_revision,
+        "base_commit_loaded": base_commit,
         "training_began": steps_seen.begun,
         "steps": step_rows,
         "collated_beyond_last_step": [
