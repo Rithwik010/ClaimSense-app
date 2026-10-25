@@ -33,6 +33,7 @@ step 8).
 """
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -50,6 +51,7 @@ USER = "manideep3183"
 KERNEL = "claimsense-v3-eval"
 BASE = "gemma4:e2b"
 SHARDS = 2  # one per T4
+FOLDER_V3 = "claimsense-decision-v3"  # v3's exports on the laptop, apart from v2's (D-V3-27)
 MODELS = {
     "v2": {
         "name": "claimsense-decision:v2",
@@ -120,9 +122,25 @@ def model_entry(key: str, ollama_url: str = "http://127.0.0.1:11434") -> dict[st
         "kernel": f"{USER}/{spec['kernel']}",
         "gguf": spec.get("gguf", ""),  # the file in the kernel's output, when it holds several
         "modelfile": text,
-        "weights_sha256": own["weights_sha256"] if own else None,
+        "weights_sha256": own["weights_sha256"] if own else laptop_sha256(spec.get("gguf", "")),
         "ollama": pinned["ollama"],
     }
+
+
+def laptop_sha256(gguf: str) -> str | None:
+    """A v3 export's SHA-256 from its copy on the laptop (D-V3-27: the chain downloads both into
+    data/generated/models/claimsense-decision-v3/), so Kaggle evaluates exactly the file the laptop
+    registers; None for a model with no such file named (v2 has its evaluated settings)."""
+    if not gguf:
+        return None
+    found = sorted((GENERATED_DIR / "models" / FOLDER_V3).rglob(Path(gguf).name))
+    if not found:
+        raise SystemExit(f"{gguf} is not on the laptop yet: download the export first")
+    digest = hashlib.sha256()
+    with found[0].open("rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def write_set(name: str, dataset: Path) -> dict[str, int]:
