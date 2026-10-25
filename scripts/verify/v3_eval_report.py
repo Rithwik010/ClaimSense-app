@@ -21,6 +21,12 @@ broken down by tricky-fact type, note length and lines per claim (v3 sets; the c
 tricky facts).
 Writes data/generated/eval/v3study/<model>-<set>.json.
 
+Main sets (D-V3-29, decided before any v3 prediction existed): where a set holds notes stuck in a
+loop (scripts/verify/v3_repetition.py, data/generated/v3/repetition.json), its main set leaves them
+out: the messy test's 588 of 600 and validation's 297 of 300 (the checkpoint choice uses the
+latter).
+Every report shows the main set (`main_set`) beside the full set, and so does every comparison.
+
 `--compare <v3 model>` sets that model against v2 on every set both have predictions for (clean,
 messy, unseen-style, the LLM-written human-style test set; the team's rule of 24 Oct): for macro-F1,
 line accuracy, valid output and DENY precision, the difference v3 - v2 with a paired 95% interval
@@ -44,6 +50,16 @@ from training.generate.v3.config import OUT_DIR as V3_DIR
 from training.generate.v3.dataset import TRICKY_OF, load_sheets
 
 LENGTHS = ((0, 250, "under 250 words"), (250, 400, "250-399"), (400, 600, "400-599"))
+REPETITION = V3_DIR / "repetition.json"
+REPETITION_KEYS = {"human_style": "test_human_style"}
+
+
+def looping_ids(set_name: str) -> set[str]:
+    """The set's notes stuck in a loop, left out of its main set (D-V3-29)."""
+    found = json.loads(REPETITION.read_text())
+    return set(found[REPETITION_KEYS.get(set_name, set_name)]["record_ids"])
+
+
 BOOTSTRAP = 2000
 SEED = 20261024
 
@@ -214,11 +230,13 @@ def compare(v3_model: str, set_name: str) -> dict[str, Any]:
     records, _ = loaded(set_name)
     metas = {rid: r["metadata"] for rid, r in records.items()}
     found: dict[str, Any] = {"v3": v3_model, "v2": "v2", "set": set_name, "resamples": BOOTSTRAP}
+    loops = looping_ids(set_name)
     for guard in (True, False):
         v3, v2 = scored(v3_model, set_name, guard), scored("v2", set_name, guard)
         groups = {}
         for name, keep in (
             ("total", lambda m: True),
+            ("main set (no looping notes)", lambda m: m["record_id"] not in loops),
             ("policy seen in training", lambda m: not test_only(m)),
             ("test-only policy", test_only),
         ):
@@ -246,8 +264,22 @@ def report(model: str, set_name: str) -> dict[str, Any]:
         rows = scored(model, set_name, guard)
         seen = [r for r in rows if not test_only(metas[r["record_id"]])]
         unseen = [r for r in rows if test_only(metas[r["record_id"]])]
+        loops = looping_ids(set_name)
+        main = [r for r in rows if r["record_id"] not in loops]
         found["guard_on" if guard else "guard_off"] = {
             **metrics(rows, metas),
+            "main_set": {
+                "left_out_looping": sorted(loops & {r["record_id"] for r in rows}),
+                **metrics(main, metas),
+                "by_policy": {
+                    "policy seen in training": metrics(
+                        [r for r in main if not test_only(metas[r["record_id"]])], metas
+                    ),
+                    "test-only policy": metrics(
+                        [r for r in main if test_only(metas[r["record_id"]])], metas
+                    ),
+                },
+            },
             "confusion": summarize(rows, metas)["decisions"].get("confusion_matrix"),
             # the team's addition of 23 Oct: style and new-policy effects apart
             "by_policy": {
@@ -286,7 +318,8 @@ def main() -> None:
         print(
             f"{name}: {result['predicted']} of {result['records']}; macro-F1 guard on "
             f"{on['macro_f1']} off {off['macro_f1']}; valid {on['valid_output_rate']}; "
-            f"line acc {on['line_accuracy']}; DENY precision {on['deny_precision']}"
+            f"line acc {on['line_accuracy']}; DENY precision {on['deny_precision']}; main set "
+            f"{on['main_set']['records']} records, macro-F1 {on['main_set']['macro_f1']}"
         )
 
 

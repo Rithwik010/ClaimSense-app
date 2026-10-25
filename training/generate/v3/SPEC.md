@@ -320,6 +320,14 @@ sectioned, choppy notes: its 495 rejected notes average 8.81 headings per note a
 100 words; length about the same; `scripts/verify/v3_style_stats.py writer-b`). So the kept notes,
 the test sets included, are slightly less choppy than all of writer B's output.
 
+**Limitation: notes stuck in a loop (25 Oct, D-V3-29).** The datasets of 24 Oct were built before
+the gate checked for loops: 138 training notes (about 4.6% of writer B's 3,000; none of the 4,000
+v2-style records) repeat one 6-word phrase 5 times or more, most of them 10 times or more (up to
+476). Loss is on the answers only, so they are noisy input, not wrong labels. Validation holds 3 and
+the messy test 12 (all writer B); the other test sets none. The gate now fails such notes
+(`verification.loop_span`, `verification.loop_repeats`) for future builds, and stage 5's main sets
+leave them out (588 messy, 297 validation), the full sets reported beside them.
+
 ## Phase 5: datasets
 
 **Splits:**

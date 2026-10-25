@@ -15,6 +15,7 @@
 
 import re
 from calendar import monthrange
+from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -607,6 +608,9 @@ def check_note(
     invented = identifiers(note)
     if invented:
         result.failures.append(f"identifier: the note invents a {', '.join(invented)}")
+    repeats, phrase = worst_repeat(note)
+    if repeats >= config()["verification"]["loop_repeats"]:  # D-V3-29
+        result.failures.append(f"loop: '{phrase}' repeats {repeats} times")
     if not result.verifier_pending and not result.failures:
         result.failures += label_problems(sheet, result.spans, facts)
     if result.failures:
@@ -629,6 +633,19 @@ IDENTIFIERS = {  # D-V3-17: a model writer's invented patient identifiers (patie
 def identifiers(note: str) -> list[str]:
     """The kinds of patient identifier a note invents (a name, a date of birth, a number)."""
     return [kind for kind, pattern in IDENTIFIERS.items() if pattern.search(note)]
+
+
+def worst_repeat(note: str) -> tuple[int, str]:
+    """How often the note's most repeated `verification.loop_span`-word sequence occurs, and the
+    sequence (words: lower case, letters and digits). A writer model stuck in a loop repeats one
+    phrase until it stops (D-V3-29); notes under 40 words count as 0."""
+    span = config()["verification"]["loop_span"]
+    words = re.findall(r"[a-z0-9']+", note.lower())
+    if len(words) < 40:
+        return 0, ""
+    grams = Counter(tuple(words[i : i + span]) for i in range(len(words) - span + 1))
+    gram, count = grams.most_common(1)[0]
+    return count, " ".join(gram)
 
 
 def second_look_on() -> bool:

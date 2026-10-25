@@ -496,3 +496,22 @@ def test_a_note_that_invents_a_patient_identifier_fails() -> None:
     fact = documented("F1", "The pain has lasted 6 weeks despite physical therapy.", ["6"])
     result = check_note(sheet(fact), note, None, {"F1": note})
     assert any(f.startswith("identifier") for f in result.failures)
+
+
+def test_a_note_stuck_in_a_loop_fails() -> None:
+    """D-V3-29: one 6-word sequence 5 times or more fails the gate; 4 times does not."""
+    from training.generate.v3.verify import worst_repeat
+
+    fact = documented("F1", "The pain has lasted 6 weeks despite physical therapy.", ["6"])
+    stated = "The pain has lasted 6 weeks despite physical therapy. "
+    filler = "Pt seen in clinic today for follow up of chronic low back pain and stiffness. " * 3
+    loop = "no new symp " * 12
+    assert worst_repeat(stated + filler + loop)[0] >= 5
+    result = check_note(sheet(fact), stated + filler + loop, None, {"F1": stated.strip()})
+    assert any(f.startswith("loop:") for f in result.failures)
+    four = (
+        "no relevant admissions. " * 4
+    )  # "no relevant admissions no relevant admissions": 3 times
+    assert worst_repeat(stated + filler + four)[0] < 5
+    result = check_note(sheet(fact), stated + filler + four, None, {"F1": stated.strip()})
+    assert not any(f.startswith("loop:") for f in result.failures)
