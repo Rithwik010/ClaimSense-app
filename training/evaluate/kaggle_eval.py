@@ -212,7 +212,19 @@ def notebook(title: str) -> dict[str, Any]:
         "subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', *run['pip']], check=True)\n"
         "print(subprocess.run(['ollama', '--version'], capture_output=True, text=True).stdout)\n"
     )
+    # The servers start one at a time, each answering before the next starts: each prunes the
+    # shared models folder at start-up, and two at once raced (stage 5, 25 Oct: server 0 exited
+    # with "remove /root/.ollama/models/manifests: no such file or directory").
     servers = (
+        "import urllib.request\n"
+        "def answers(port):\n"
+        "    for _ in range(120):\n"
+        "        try:\n"
+        "            urllib.request.urlopen(f'http://127.0.0.1:{port}/api/version', timeout=2)\n"
+        "            return True\n"
+        "        except Exception:\n"
+        "            time.sleep(1)\n"
+        "    return False\n"
         "servers = {}\n"
         "for gpu in range(run['shards']):\n"
         "    port = 11434 + gpu\n"
@@ -222,7 +234,7 @@ def notebook(title: str) -> dict[str, Any]:
         "    log = open(f'{OUT}/ollama-{gpu}.log', 'w')\n"
         "    servers[gpu] = subprocess.Popen(['ollama', 'serve'], env=env,\n"
         "                                    stdout=log, stderr=log)\n"
-        "time.sleep(10)\n"
+        "    assert answers(port), f'Ollama server {gpu} did not start: see ollama-{gpu}.log'\n"
         "def on(gpu, *args):\n"
         "    env = dict(os.environ, OLLAMA_HOST=f'127.0.0.1:{11434 + gpu}')\n"
         "    return subprocess.run(['ollama', *args], env=env, capture_output=True, text=True)\n"
