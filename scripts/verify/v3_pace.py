@@ -3,7 +3,8 @@
 
 From the training log of a session's downloaded output (training/finetune/train.py):
 
-- `state`: `finished` (the last step, or early stopping: the adapters are saved), `paused` (the
+- `state`: `finished` (the last step: the adapters are saved), `stopped_early` (early stopping
+  ended it before the last step: the team wants every step, D-V3-30), `paused` (the
   session's safety stop: its checkpoint is the result) or `crashed` (no training log: the step is
   then its latest checkpoint's, and the pace the timing run's, data/generated/v3/timing/
   summary.json);
@@ -55,7 +56,7 @@ def pace(folder: Path) -> dict:
     total = log["full_run_steps"]
     left = max(total - log["last_step"], 0)
     return {
-        "state": "finished" if log["finished"] else "paused",
+        "state": ("finished" if not left else "stopped_early") if log["finished"] else "paused",
         "checkpoint": any(folder.rglob("trainer_state.json")),
         "first_step": log["first_step"],
         "last_step": log["last_step"],

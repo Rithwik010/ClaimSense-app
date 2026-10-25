@@ -24,7 +24,12 @@
 #
 # After the laptop was off: ATTACH_STARTED=<epoch seconds of session 1's push> attaches to the
 # session 1 already running (or ended) on Kaggle instead of pushing it again, which would restart
-# training; its hours count from that push.
+# training; its hours count from that push. START_STAGE (default full-1) and RUN_HOURS_BEFORE (the
+# run's hours of the sessions before it) take the chain over at a later session.
+#
+# Early stopping ending training before the last step (`stopped_early`) is not the end: the team
+# wants every step (D-V3-30), so the next session (full-3, without early stopping) trains to the
+# last step, and nothing is exported before that.
 #
 # kaggle-runs/chain.status: `training ...`, then `done ...` or `stopped: ...`.
 set -u
@@ -37,7 +42,7 @@ RUNS=${RUNS:-data/generated/v3/kaggle-runs}
 MODELS_V3=${MODELS_V3:-data/generated/models/claimsense-decision-v3}
 GUARD=${GUARD:-uv run --quiet python -m scripts.verify.v2_guard}
 mkdir -p "$RUNS"
-run_hours=0
+run_hours=${RUN_HOURS_BEFORE:-0}
 crashes=0
 
 notice() {
@@ -128,7 +133,7 @@ export() {
 }
 
 USER_SLUG=$(python3 -c "import json; print(json.load(open('$KERNELS/kernel-v3-full-1/kernel-metadata.json'))['id'].split('/')[0])")
-stage=full-1
+stage=${START_STAGE:-full-1}
 while true; do
   session "$stage"
   run_hours=$(add "$run_hours" "$hours")
@@ -145,6 +150,9 @@ while true; do
       notice "training finished in $stage and both GGUFs are exported"
       exit 0 ;;
     paused) next_reason="safety stop" ;;
+    stopped_early)
+      next_reason="early stopping before the last step (D-V3-30)"
+      notice "$stage: early stopping at step $(field last_step); training goes on to the last step" ;;
     *)
       crashes=$((crashes + 1))
       [ "$crashes" -gt 1 ] && stop "$stage crashed again (second crash)"

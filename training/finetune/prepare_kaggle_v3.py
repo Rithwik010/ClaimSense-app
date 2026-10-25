@@ -20,8 +20,9 @@ Kernel folders (`uvx kaggle kernels push -p <folder>`):
   the final one (`adapter-final`). No session exports a GGUF: both are exported on a CPU-only
   session afterwards (scripts/kaggle/v3_export.py, D-V3-26). Every evaluation uses the first
   `EVAL_LIMIT` validation records (D-V3-13).
-- `kernel-v3-full-3`: only when needed (D-V3-25), after one crash or a second session that reached
-  its safety stop: attaches the second session's output and resumes from its latest checkpoint.
+- `kernel-v3-full-3`: only when needed (D-V3-25, D-V3-30), after one crash, a second session that
+  reached its safety stop, or early stopping before the last step: attaches the second session's
+  output, resumes from its latest checkpoint and trains to the last step without early stopping.
 
     uv run python -m training.finetune.prepare_kaggle_v3 --max-seq-length 4096
 """
@@ -86,12 +87,13 @@ KERNELS = {  # folder -> (kernel slug, output folder, arguments, source kernel, 
         "claimsense-finetune-v3-full-1",
         "latest",
     ),
-    # only when needed (D-V3-25): after one crash, or a session that reached its safety stop
+    # only when needed (D-V3-25, D-V3-30): after one crash, a second safety stop, or early stopping
+    # before the last step; it trains to the last step without early stopping
     "kernel-v3-full-3": (
         "claimsense-finetune-v3-full-3",
         "/kaggle/working/claimsense-v3",
         f"--epochs 1 --save-steps {SAVE_STEPS} --eval-limit {EVAL_LIMIT} "
-        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}} --no-gguf",
+        f"--stop-after-hours {SESSION_HOURS} --session-start {{T0}} --no-gguf --no-early-stopping",
         "claimsense-finetune-v3-full-2",
         "latest",
     ),
@@ -108,10 +110,11 @@ def notebook(title: str, out: str, extra: str, source: str | None, resume: str |
         f"OUT = '{out}'\n"
         "RESUME = ''\n"
     )
-    if resume == "latest":
+    if resume == "latest":  # a checkpoint folder only: adapter-final has no optimizer state
         find += (
             f"RESUME = '--resume-from ' + os.path.dirname(glob.glob('/kaggle/input/**/{source}/"
-            "**/trainer_state.json', recursive=True)[0]).rsplit('/checkpoint-', 1)[0]\n"
+            "**/checkpoints/checkpoint-*/trainer_state.json', recursive=True)[0])"
+            ".rsplit('/checkpoint-', 1)[0]\n"
         )
     elif resume:
         find += (

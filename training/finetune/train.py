@@ -36,7 +36,9 @@ to the training records by their token ids); the step, learning rate and optimiz
 training begins (after a resume: those of the checkpoint); and when each checkpoint was saved. The
 timing runs use them for the token-based projection and the resume check (the team's conditions of
 24 Oct). `--stop-after-hours` counts from `--session-start` (the notebook's start, epoch seconds)
-when given, so a session ends before Kaggle's 12-hour limit.
+when given, so a session ends before Kaggle's 12-hour limit. `--no-early-stopping` keeps the
+validation passes and the best checkpoint but trains every step (model v3's one full pass over the
+data, D-V3-30).
 """
 
 import argparse
@@ -131,6 +133,11 @@ def main() -> None:
     parser.add_argument("--stop-after-steps", type=int, help="save and stop at this step")
     parser.add_argument("--stop-after-hours", type=float, help="save and stop after this long")
     parser.add_argument("--session-start", type=float, help="epoch seconds the session began")
+    parser.add_argument(
+        "--no-early-stopping",
+        action="store_true",
+        help="evaluate and keep the best checkpoint, but train every step (model v3, D-V3-30)",
+    )
     parser.add_argument(
         "--eval-longest",
         action="store_true",
@@ -329,7 +336,7 @@ def main() -> None:
         callbacks=[stopper := StopAndSave()]
         + (
             []
-            if args.no_eval
+            if args.no_eval or args.no_early_stopping
             else [EarlyStoppingCallback(early_stopping_patience=config["early_stopping_patience"])]
         ),
     )
