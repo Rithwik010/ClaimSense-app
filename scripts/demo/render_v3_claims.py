@@ -19,6 +19,7 @@ claims with CPT codes) with index.json and README.md (each claim's record, split
 format, files, policies, label, lines and words).
 
     uv run python -m scripts.demo.render_v3_claims
+    uv run python -m scripts.demo.render_v3_claims --count-pages   # pages of every claim, no files
 """
 
 import io
@@ -120,7 +121,32 @@ def render(split: str, record: dict, given: dict, form: str) -> dict:
     }
 
 
+def page_counts() -> dict:
+    """Pages every claim of the v3 datasets would take, looping notes apart."""
+    found = {}
+    for split in ("train", *SETS):
+        notes = [
+            r["claim"]["clinical_notes"]
+            for r in read_jsonl(OUT_DIR / "final" / f"{split}_inputs.jsonl")
+        ]
+        pages = [pages_for(n) for n in notes]
+        clean = [pages_for(n) for n in notes if not looping(n)]
+        found[split] = {
+            "claims": len(pages),
+            "pages": dict(sorted(Counter(pages).items())),
+            "max_pages": max(pages),
+            "max_pages_without_looping_notes": max(clean),
+            "over_two_pages": sum(p > 2 for p in pages),
+        }
+    return found
+
+
 def main() -> None:
+    import sys
+
+    if "--count-pages" in sys.argv:
+        print(json.dumps(page_counts(), indent=2))
+        return
     if OUT.exists():
         shutil.rmtree(OUT)
     for form in FORMATS:
