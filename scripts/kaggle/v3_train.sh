@@ -22,6 +22,10 @@
 #
 #   nohup caffeinate -ims scripts/kaggle/v3_train.sh 2.3 > /dev/null 2>&1 &   # 2.3: hours used
 #
+# After the laptop was off: ATTACH_STARTED=<epoch seconds of session 1's push> attaches to the
+# session 1 already running (or ended) on Kaggle instead of pushing it again, which would restart
+# training; its hours count from that push.
+#
 # kaggle-runs/chain.status: `training ...`, then `done ...` or `stopped: ...`.
 set -u
 WEEK_USED_HOURS=${1:?hours of GPU quota used this week before the run}
@@ -63,10 +67,16 @@ session() {
   rm -rf "$RUNS/$stage/output"
   mkdir -p "$RUNS/$stage"
   echo "training: $stage (pid $$, $(date '+%F %T'))" > "$RUNS/chain.status"
-  echo "$(date '+%F %T') push $slug" >> "$log"
-  started=$(date +%s)
-  uvx kaggle kernels push -p "$folder" >> "$log" 2>&1 || stop "$stage: push failed"
-  sleep 60
+  if [ -n "${ATTACH_STARTED:-}" ]; then
+    echo "$(date '+%F %T') attach to the running $slug (pushed at $ATTACH_STARTED)" >> "$log"
+    started=$ATTACH_STARTED
+    ATTACH_STARTED=""
+  else
+    echo "$(date '+%F %T') push $slug" >> "$log"
+    started=$(date +%s)
+    uvx kaggle kernels push -p "$folder" >> "$log" 2>&1 || stop "$stage: push failed"
+    sleep 60
+  fi
   while true; do
     status=$(uvx kaggle kernels status "$slug" 2>&1 | tail -1)
     echo "$(date '+%F %T') $status" >> "$log"
