@@ -122,22 +122,38 @@ def model_entry(key: str, ollama_url: str = "http://127.0.0.1:11434") -> dict[st
         "kernel": f"{USER}/{spec['kernel']}",
         "gguf": spec.get("gguf", ""),  # the file in the kernel's output, when it holds several
         "modelfile": text,
-        "weights_sha256": own["weights_sha256"] if own else laptop_sha256(spec.get("gguf", "")),
+        "weights_sha256": own["weights_sha256"] if own else export_sha256(spec.get("gguf", "")),
         "ollama": pinned["ollama"],
     }
 
 
-def laptop_sha256(gguf: str) -> str | None:
-    """A v3 export's SHA-256 from its copy on the laptop (D-V3-27: the chain downloads both into
-    data/generated/models/claimsense-decision-v3/), so Kaggle evaluates exactly the file the laptop
-    registers; None for a model with no such file named (v2 has its evaluated settings)."""
+def export_sha256(gguf: str) -> str | None:
+    """A v3 export's SHA-256 as its export notebook recorded it (report.json, `best_packaging` or
+    `final_packaging`; scripts/kaggle/v3_export.py), so Kaggle evaluates the file it wrote; a copy
+    downloaded in full (data/generated/models/claimsense-decision-v3/, D-V3-27) must have the
+    same, or nothing is prepared. None for a model with no such file named (v2 has its evaluated
+    settings)."""
     if not gguf:
         return None
-    found = sorted((GENERATED_DIR / "models" / FOLDER_V3).rglob(Path(gguf).name))
-    if not found:
-        raise SystemExit(f"{gguf} is not on the laptop yet: download the export first")
+    name = Path(gguf).name
+    which = name.removeprefix(f"{FOLDER_V3}-").split(".")[0]  # best or final
+    reports = sorted((V3_DIR / "kaggle-runs" / "export").rglob("report.json"))
+    reports += sorted((GENERATED_DIR / "models" / FOLDER_V3).rglob("report.json"))
+    found = [json.loads(r.read_text()).get(f"{which}_packaging", {}).get("sha256") for r in reports]
+    found = sorted({sha for sha in found if sha})
+    if len(found) != 1:
+        raise SystemExit(f"{name}: the export reports give {found or 'no'} SHA-256: download them")
+    for copy in (GENERATED_DIR / "models" / FOLDER_V3).rglob(name):
+        if copy.with_name(copy.name + ".kaggle-partial").exists():
+            continue  # still downloading: checked when the laptop registers it
+        if laptop_sha256(copy) != found[0]:
+            raise SystemExit(f"{copy} is not the file the export wrote")
+    return found[0]
+
+
+def laptop_sha256(path: Path) -> str:
     digest = hashlib.sha256()
-    with found[0].open("rb") as f:
+    with path.open("rb") as f:
         for block in iter(lambda: f.read(1 << 20), b""):
             digest.update(block)
     return digest.hexdigest()
