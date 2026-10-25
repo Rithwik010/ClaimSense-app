@@ -52,7 +52,7 @@ GGUF_NAMES = {
     "test": "claimsense-exporttest-step20.Q4_K_M.gguf",
 }
 TEST_MODEL = "claimsense-exporttest-20261024"
-TEST_TOKENS = 256
+TEST_TOKENS = 1536  # the real answer budget (v2's num_predict), so the answer can end by itself
 V2_PACKAGING = V3_DIR / "v2_gguf_packaging.json"
 V2_TEMPLATE = V3_DIR / "v2_chat_template.jinja"
 
@@ -163,7 +163,7 @@ import numpy as np
 from gguf import GGUFReader
 overflowed, largest = [], 0.0
 for tensor in GGUFReader(f'{{WORK}}/{name}-f16.gguf').tensors:
-    if tensor.tensor_type.name in ('F16', 'F32'):
+    if tensor.tensor_type.name == 'F16':
         values = np.asarray(tensor.data)
         if not np.isfinite(values).all():
             overflowed.append(tensor.name)
@@ -174,7 +174,11 @@ step('{name}_convert', done.returncode == 0 and not overflowed,
 os.makedirs('{target}', exist_ok=True)
 gguf = '{target}/{GGUF_NAMES[name]}'
 started = time.time()
-done = subprocess.run([str(quantizer), f'{{WORK}}/{name}-f16.gguf', gguf, 'Q4_K_M'],
+# v2's own type for every tensor both files hold: Q4_K_M's mix rule picks attn_v's type by layer
+# position, and with the unused shared-layer tensors left out it picks other layers than v2's
+overrides = [arg for n, t in sorted(V2['tensor_names'].items()) if t in ('Q4_K', 'Q6_K')
+             for arg in ('--tensor-type', '^' + n.replace('.', '[.]') + '$=' + t.lower())]
+done = subprocess.run([str(quantizer), *overrides, f'{{WORK}}/{name}-f16.gguf', gguf, 'Q4_K_M'],
                       capture_output=True, text=True)
 step('{name}_quantize', done.returncode == 0 and os.path.exists(gguf),
      seconds=round(time.time() - started), last_output=(done.stdout + done.stderr)[-600:])
@@ -193,7 +197,8 @@ general = sorted(set(V2['general']) | set(found['general']))
 missing = sorted(set(theirs) - set(ours))
 extra = sorted(set(ours) - set(theirs))
 retyped = {{n: [theirs[n], ours[n]] for n in set(ours) & set(theirs) if ours[n] != theirs[n]}}
-# packaged as v2 except the unused shared-layer tensors the newer llama.cpp leaves out
+# packaged as v2 except the unused shared-layer tensors the newer llama.cpp leaves out (their
+# absence also changes the tensor counts, so `tensors` and `tensor_types` are not compared whole)
 as_v2 = all(same[k] for k in ('architecture', 'file_type', 'quantization_version',
                               'chat_template_sha256', 'tokenizer'))
 only_unused = set(missing) == UNUSED and not extra and not retyped
