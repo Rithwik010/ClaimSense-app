@@ -7,7 +7,9 @@ vocabulary size, special token ids, add-BOS and add-EOS), the count of tensors p
 quantization mix), and any general.* field naming the tool or version that made it. Needs the `gguf`
 package (llama.cpp's gguf-py), which is not a project dependency:
 
-    uv run --with gguf python -m scripts.verify.gguf_packaging <file.gguf> [<file.gguf> ...]
+    uv run --with gguf python -m scripts.verify.gguf_packaging [--names] <file.gguf> [...]
+
+`--names` adds every tensor's name and type, for comparing by name.
 
 The same `summary` runs inside the Kaggle export notebook (scripts/kaggle/v3_export.py).
 """
@@ -19,7 +21,7 @@ import sys
 from collections import Counter
 
 
-def summary(path: str) -> dict:
+def summary(path: str, names: bool = False) -> dict:
     from gguf import GGUFReader
 
     reader = GGUFReader(path)
@@ -63,6 +65,7 @@ def summary(path: str) -> dict:
         },
         "tensors": len(reader.tensors),
         "tensor_types": dict(sorted(Counter(t.tensor_type.name for t in reader.tensors).items())),
+        **({"tensor_names": {t.name: t.tensor_type.name for t in reader.tensors}} if names else {}),
     }
 
 
@@ -74,4 +77,5 @@ def chat_template(path: str) -> str | None:
 
 
 if __name__ == "__main__":
-    print(json.dumps([summary(p) for p in sys.argv[1:]], indent=2))
+    paths = [p for p in sys.argv[1:] if p != "--names"]
+    print(json.dumps([summary(p, "--names" in sys.argv) for p in paths], indent=2))

@@ -136,7 +136,13 @@ AutoProcessor.from_pretrained('{BASE}').save_pretrained(merged_dir)
 del base, merged
 config = json.load(open(f'{{merged_dir}}/tokenizer_config.json'))
 config['chat_template'] = V2_TEMPLATE
+config['eos_token'] = '<eos>'  # v2's end token (id 1); the base's tokenizer names <turn|> (106)
 json.dump(config, open(f'{{merged_dir}}/tokenizer_config.json', 'w'), indent=2)
+text = json.load(open(f'{{merged_dir}}/config.json')).get('text_config', {{}})
+first_shared = text['num_hidden_layers'] - text.get('num_kv_shared_layers', 0)
+# the later layers reuse the earlier layers' keys and values: their own are never used
+UNUSED = {{f'blk.{{i}}.{{t}}.weight' for i in range(first_shared, text['num_hidden_layers'])
+          for t in ('attn_k', 'attn_v', 'attn_k_norm')}}
 open(f'{{merged_dir}}/chat_template.jinja', 'w').write(V2_TEMPLATE)
 if os.path.exists(f'{{merged_dir}}/chat_template.json'):
     os.remove(f'{{merged_dir}}/chat_template.json')
@@ -144,20 +150,20 @@ step('{name}_merge', True, seconds=round(time.time() - started), base='{BASE}', 
      adapter_base=json.load(open(f'{{adapter}}/adapter_config.json')).get('base_model_name_or_path'),
      transformers=transformers.__version__, peft=peft.__version__)
 started = time.time()
-done = subprocess.run([sys.executable, str(converter), merged_dir, '--outtype', 'bf16',
-                       '--outfile', f'{{WORK}}/{name}-bf16.gguf'], capture_output=True, text=True)
+done = subprocess.run([sys.executable, str(converter), merged_dir, '--outtype', 'f16',
+                       '--outfile', f'{{WORK}}/{name}-f16.gguf'], capture_output=True, text=True)
 step('{name}_convert', done.returncode == 0, seconds=round(time.time() - started),
      last_output=(done.stdout + done.stderr)[-1200:])
 os.makedirs('{target}', exist_ok=True)
 gguf = '{target}/{GGUF_NAMES[name]}'
 started = time.time()
-done = subprocess.run([str(quantizer), f'{{WORK}}/{name}-bf16.gguf', gguf, 'Q4_K_M'],
+done = subprocess.run([str(quantizer), f'{{WORK}}/{name}-f16.gguf', gguf, 'Q4_K_M'],
                       capture_output=True, text=True)
 step('{name}_quantize', done.returncode == 0 and os.path.exists(gguf),
      seconds=round(time.time() - started), last_output=(done.stdout + done.stderr)[-600:])
-if os.path.exists(f'{{WORK}}/{name}-bf16.gguf'):
-    os.remove(f'{{WORK}}/{name}-bf16.gguf')
-found = summary(gguf)
+if os.path.exists(f'{{WORK}}/{name}-f16.gguf'):
+    os.remove(f'{{WORK}}/{name}-f16.gguf')
+found = summary(gguf, names=True)
 digest = hashlib.sha256()
 with open(gguf, 'rb') as f:
     for block in iter(lambda: f.read(1 << 24), b''):
@@ -165,9 +171,19 @@ with open(gguf, 'rb') as f:
 same = {{key: found[key] == V2[key] for key in
         ('architecture', 'file_type', 'quantization_version', 'chat_template_sha256',
          'tokenizer', 'tensors', 'tensor_types')}}
-general = sorted(set(V2['general']) | set(found['general']))
-step('{name}_packaging', all(same.values()), sha256=digest.hexdigest(), same_as_v2=same,
-     side_by_side={{'v2': V2, '{name}': found}},
+ours, theirs = found.pop('tensor_names'), V2['tensor_names']
+missing = sorted(set(theirs) - set(ours))
+extra = sorted(set(ours) - set(theirs))
+retyped = {{n: [theirs[n], ours[n]] for n in set(ours) & set(theirs) if ours[n] != theirs[n]}}
+# packaged as v2 except the unused shared-layer tensors the newer llama.cpp leaves out
+as_v2 = all(same[k] for k in ('architecture', 'file_type', 'quantization_version',
+                              'chat_template_sha256', 'tokenizer'))
+only_unused = set(missing) == UNUSED and not extra and not retyped
+step('{name}_packaging', as_v2 and only_unused, sha256=digest.hexdigest(), same_as_v2=same,
+     missing_from_v2s_tensors=len(missing), missing_are_the_unused_shared_layer_tensors=only_unused,
+     shared_layers=[first_shared, text['num_hidden_layers'] - 1], extra_tensors=extra,
+     retyped_tensors=retyped,
+     side_by_side={{'v2': {{k: v for k, v in V2.items() if k != 'tensor_names'}}, '{name}': found}},
      general_differences={{k: [V2['general'].get(k), found['general'].get(k)] for k in general
                           if V2['general'].get(k) != found['general'].get(k)}})
 """
@@ -214,6 +230,7 @@ step('{name}_ollama', made.returncode == 0 and bool(text), seconds=round(time.ti
      create_output=(made.stdout + made.stderr)[-400:],
      error=error, record=record['metadata']['record_id'], answer_start=text[:300],
      eval_count=(answer or {{}}).get('eval_count'),
+     done_reason=(answer or {{}}).get('done_reason'),  # stop: it ended by itself (the end token)
      prompt_eval_count=(answer or {{}}).get('prompt_eval_count'),
      deleted=removed.returncode == 0, models_left=left)
 """
