@@ -484,6 +484,13 @@ Kaggle copy for anything model-related.
 
 - 22:30 | Claude | v3 training | **Go: all seven go / no-go items met; training started 22:29:51** (D-V3-28). Projection from tokens 16.01 h (limit 19 h); validation passes and the best-checkpoint save work (losses 0.651, 0.234, 0.154; validation peak 9.08 GB, training 10.51 GB of 15.64); the resume check repeats the step, learning rate, optimizer state, losses and records. The evaluation failure was Unsloth's (D-V3-24), fixed by detaching its loss; the stack is pinned. The run goes on unattended within 22 h and the week's 30 h (D-V3-25); GGUFs on CPU afterwards under v3-only names (D-V3-26, D-V3-27); v2 checked around every laptop download. GPU this week 2.5 h before training.
 
+### 2026-10-25
+
+- 09:33 | Claude | v3 training | **Session 1 paused at step 767 after 11.06 h (the 11 h safety stop); session 2 started** from its checkpoint.
+- ~12:10 | Claude | v3 training | The laptop slept or lost power, so the local chain stopped (last poll 12:10:50); Kaggle's session 2 carried on. The laptop restarted at 16:25.
+- ~16:18 | Claude | v3 training | **Training finished: one full pass, steps 1 to 1,250, every one of the 10,000 records once** (session 2: steps 767 to 1,250 in 6.74 h, 49.6 s per step; training 17.2 h in all, under the 19 h limit). Validation loss improved at every pass after 750 (875 0.004642, 1,000 0.004092, 1,125 0.003814, 1,250 0.003480), so early stopping (patience 2) never fired, no session 3 was needed, and the best-loss checkpoint is the last one (checkpoint-1250). `scripts/verify/v3_continuity.py`: OK (first step, global step, scheduler, optimizer state and learning rate continue across the sessions; steps numbered without a gap; no record trained twice).
+- 16:29 | Claude | v3 export | Chain restarted (attached to the finished session 2; v2's GGUF SHA checked before and after every download); the CPU-only export of both checkpoints running (`claimsense-v3-export`, no GPU quota). Export test v5 (step-20 checkpoint): packaging equal to v2's, and the model stops at its end-of-turn token (`done_reason` stop after 70 tokens). GPU this week about 20.3 h of 30 (2.5 before training, 11.06 and about 6.75 for the sessions); stage 5 about 2 h.
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
