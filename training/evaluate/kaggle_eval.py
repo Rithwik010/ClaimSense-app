@@ -24,6 +24,10 @@ must equal v2's, so both are decoded the same way.
         --sets test_messy
     uv run python -m training.evaluate.kaggle_eval collect --name eval-messy-v2   # after download
 
+Every model runs on every set, except the pairs `--skip MODEL:SET` names (stage 5: v2 is not run
+on validation, which only chooses v3's checkpoint, nor again on the messy test it was scored on in
+step 8).
+
 `collect` merges the shards of each (model, set) into data/generated/eval/v3study/<model>-<set>
 .jsonl.
 """
@@ -256,7 +260,11 @@ def notebook(title: str) -> dict[str, Any]:
 
 
 def prepare(
-    name: str, models: list[str], sets: list[str], out_dir: Path = GENERATED_DIR / "kaggle"
+    name: str,
+    models: list[str],
+    sets: list[str],
+    out_dir: Path = GENERATED_DIR / "kaggle",
+    skip: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     folder = out_dir / name
     dataset, kernel = folder / "dataset", folder / "kernel"
@@ -274,6 +282,8 @@ def prepare(
     jobs = []
     for key in models:
         for s, sizes in written.items():
+            if f"{key}:{s}" in skip:
+                continue
             for n, shard in enumerate(sizes):
                 jobs.append(
                     {
@@ -391,6 +401,7 @@ def main() -> None:
     make.add_argument("--name", required=True)
     make.add_argument("--models", nargs="+", choices=sorted(MODELS), required=True)
     make.add_argument("--sets", nargs="+", choices=sorted(SETS), required=True)
+    make.add_argument("--skip", nargs="*", default=[], metavar="MODEL:SET")
     work = sub.add_parser("run")
     work.add_argument("--jobs", type=Path, required=True)
     work.add_argument("--data", type=Path, required=True)
@@ -400,7 +411,12 @@ def main() -> None:
     take.add_argument("--name", required=True)
     args = parser.parse_args()
     if args.command == "prepare":
-        print(json.dumps(prepare(args.name, args.models, args.sets), indent=2))
+        unknown = [p for p in args.skip if p.partition(":")[0] not in args.models]
+        unknown += [p for p in args.skip if p.partition(":")[2] not in args.sets]
+        if unknown:
+            raise SystemExit(f"--skip names a model or set not in this run: {unknown}")
+        found = prepare(args.name, args.models, args.sets, skip=frozenset(args.skip))
+        print(json.dumps(found, indent=2))
     elif args.command == "run":
         run_jobs(args.jobs, args.data, args.out, args.url)
     else:
