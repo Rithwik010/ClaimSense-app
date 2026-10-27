@@ -165,7 +165,7 @@ export const OVERRIDE_REASONS: Record<"DENY" | "PEND", string[]> = {
     "DN_FACET_LEVELS",
     "DN_VISIT_LIMIT",
   ],
-  PEND: ["PD_MISSING_DOCUMENTATION", "PD_PROVIDER_ENROLLMENT"],
+  PEND: ["PD_MISSING_DOCUMENTATION"],
 };
 
 /** A reason code's label for a choice list: "Documentation is missing (PD_MISSING_DOCUMENTATION)". */

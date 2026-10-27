@@ -120,6 +120,9 @@ const VIEW = {
   field_confidences: {},
   record: RECORD,
   adjustments: [],
+  outcome: "IN_REVIEW",
+  summary: { outcome: "IN_REVIEW", outcome_label: "In review", items: [] },
+  documents: [],
 };
 
 /** Answers every API call the review page makes; records the review the page sends. */

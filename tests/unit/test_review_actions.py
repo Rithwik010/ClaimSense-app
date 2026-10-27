@@ -455,7 +455,7 @@ def test_the_allowed_override_reasons() -> None:
             "DN_FACET_LEVELS",
             "DN_VISIT_LIMIT",
         ),
-        PEND: ("PD_MISSING_DOCUMENTATION", "PD_PROVIDER_ENROLLMENT"),
+        PEND: ("PD_MISSING_DOCUMENTATION",),
     }
 
 

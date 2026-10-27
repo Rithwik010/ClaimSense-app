@@ -45,8 +45,8 @@ FINAL_STATUS = {
 
 # D-REV-9: the reason codes a reviewer may give. DENY: the line-level denial codes with approved
 # CARC/RARC mappings (the model's, then the rules' in rule order, R11 to R21); the claim-level rule
-# reasons (R05 to R10) are not line reasons. PEND: the pend reasons (no CARC, D-CARC-1);
-# MODEL_OUTPUT_INVALID is an internal marker, not a reason.
+# reasons (R05 to R10) are not line reasons. PEND: missing documentation only (no CARC, D-CARC-1);
+# PD_PROVIDER_ENROLLMENT is R06's claim-level reason, and MODEL_OUTPUT_INVALID an internal marker.
 OVERRIDE_REASONS: dict[LineDecision, tuple[str, ...]] = {
     LineDecision.DENY: (
         "DN_NOT_MEDICALLY_NECESSARY",
@@ -61,7 +61,7 @@ OVERRIDE_REASONS: dict[LineDecision, tuple[str, ...]] = {
         "DN_FACET_LEVELS",
         "DN_VISIT_LIMIT",
     ),
-    LineDecision.PEND: ("PD_MISSING_DOCUMENTATION", "PD_PROVIDER_ENROLLMENT"),
+    LineDecision.PEND: ("PD_MISSING_DOCUMENTATION",),
 }
 
 
