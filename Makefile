@@ -25,6 +25,7 @@ setup: docker-up ## Python and web dependencies, database schema, reference data
 	uv run alembic upgrade head
 	uv run python -m app.db.seed
 	uv run python -m app.rag.knowledge
+	HF_HUB_OFFLINE=0 uv run python -m scripts.setup.fetch_tokenizer
 
 docker-up: ## start Docker Desktop when Docker is not running, and wait until it answers
 	@docker info >/dev/null 2>&1 || { \

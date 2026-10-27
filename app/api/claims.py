@@ -85,6 +85,7 @@ from app.explain.summary import claim_summary
 from app.intake.documents import original_file
 from app.intake.files import UnreadableFile, read_claim_file, read_claim_files
 from app.ml.client import DecisionModel, ModelUnavailable
+from app.ml.tokens import TokenizerUnavailable
 from app.rag.retrieve import RetrievalUnavailable, Retriever
 from app.review.actions import ReviewRefused
 from app.workflow.check import ClaimCheck, check_claim
@@ -359,9 +360,12 @@ def _file(
             provider_id=user.provider_id,
             filed_by=user.username,
             documents=[document for document in kept if document is not None],
+            settings=settings,
         )
     except IntakeRefused as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    except TokenizerUnavailable as exc:  # the prompt check needs it (D-DOC-3)
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     except DuplicateClaim as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     if result is not None:
@@ -745,7 +749,10 @@ def correct(
             {item.field: item.value for item in body.corrections},
             user.username,
             settings.extraction_confidence_min,
+            settings,
         )
+    except TokenizerUnavailable as exc:  # the prompt check needs it (D-DOC-3)
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     except ClaimNotFound as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
     except (InvalidTransition, CorrectionNotAllowed) as exc:

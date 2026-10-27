@@ -64,7 +64,10 @@ Then:
 A claim can also come as its form's two pages in two files (for example two scans, `page 1.png`
 and `page 2.png`): choose or drop both on **Submit claim** (or **Add page 2 as another file**),
 check that **Page 1** is the claim and **Page 2** the clinical note (**Swap pages** if not), then
-**Read claim**. The claim page's **View original files** shows each file.
+**Read claim**. The claim page's **View original files** shows each file. Long notes go on to
+further pages titled "(CONTINUED, PAGE n OF m)": up to 5 pages in all, in one PDF or as files in
+page order (**Add page 3 as another file**, and so on); pages out of order or missing are refused
+with the reason (D-DOC-3).
 
 Before processing, a provider can **Check claim** (on Submit claim, or on an unprocessed claim's
 page): the rules run as processing would run them and nothing is saved. The check says whether

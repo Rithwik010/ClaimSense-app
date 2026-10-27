@@ -199,6 +199,7 @@ dependencies = [
     { name = "scikit-learn" },
     { name = "sqlalchemy" },
     { name = "structlog" },
+    { name = "tokenizers" },
     { name = "uvicorn" },
 ]
 
@@ -235,6 +236,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.9.1" },
     { name = "sqlalchemy", specifier = ">=2.0.54" },
     { name = "structlog", specifier = ">=26.1.0" },
+    { name = "tokenizers", specifier = "==0.23.2" },
     { name = "uvicorn", specifier = ">=0.53.0" },
 ]
 

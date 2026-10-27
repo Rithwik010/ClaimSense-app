@@ -15,11 +15,15 @@ reference -> context -> model -> output validation -> calculator (§8.6, P2.4) -
 - A calculation that fails (CalculationError: an approved line whose code has no fee, or
   out-of-network care on a plan with no out-of-network terms) is audited as CALCULATION_FAILED and
   the claim waits for FULL review without amounts.
+- A claim whose prompt could be longer than the model reads with its answer is refused at upload
+  (`check_prompt_fits`, D-DOC-3). A prompt that long at the model call all the same is never sent
+  (a bug): the answer is unusable, so the lines pend for FULL review.
 - Anything else the pipeline cannot do raises `PipelineError`; the claim stays RECEIVED.
 """
 
 import time
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from hashlib import sha256
 from typing import Any
@@ -41,6 +45,7 @@ from app.calculator.engine import (
     calculate,
 )
 from app.context.assemble import ContextError, assemble_context
+from app.context.prompt_budget import largest_prompt_tokens
 from app.core.logging import get_logger
 from app.core.settings import Settings
 from app.db import lookups
@@ -67,7 +72,7 @@ from app.domain.contracts import (
 from app.explain.codes import procedure_codes
 from app.explain.render import render
 from app.intake.documents import OriginalFile
-from app.ml.client import DecisionModel
+from app.ml.client import DecisionModel, ModelUnavailable
 from app.ml.evidence import evidence_guard
 from app.ml.prompt import (
     PromptLookups,
@@ -75,6 +80,7 @@ from app.ml.prompt import (
     render_user_message,
     system_prompt,
 )
+from app.ml.tokens import PROMPT_BUDGET, TokenizerUnavailable, prompt_tokens
 from app.ml.validate import ValidationResult, validate_output
 from app.rag.knowledge import curated_knowledge_version
 from app.rag.retrieve import Retriever
@@ -93,6 +99,8 @@ RULE_STATUS = {
     RuleOutcomeValue.DENY: ClaimStatus.DENIED_BY_RULE,
     RuleOutcomeValue.PEND: ClaimStatus.PENDED_BY_RULE,
 }
+# The last check before the model (D-DOC-3): an unusable answer, so the lines pend for FULL review
+PROMPT_TOO_LONG = "model not called: prompt too long"
 
 
 class PipelineError(ValueError):
@@ -102,6 +110,10 @@ class PipelineError(ValueError):
 class IntakeRefused(ValueError):
     """The claim cannot be filed: no claim ID, member ID or received date, or a validation error
     that rules R01 to R03 do not report (A-R8)."""
+
+
+class PromptTooLong(IntakeRefused):
+    """The claim's prompt could be longer than the model reads with its answer (D-DOC-3)."""
 
 
 class ReferenceDataUnavailable(RuntimeError):
@@ -148,6 +160,7 @@ def intake_claim_data(
     provider_id: str | None = None,
     filed_by: str | None = None,
     documents: list[OriginalFile] | None = None,
+    settings: Settings | None = None,
 ) -> tuple[IntakeResult | None, list[str]]:
     """Store a received claim (status RECEIVED) and write INTAKE_COMPLETED. Returns the validated
     claim, or None for a claim that fails the contract, and its contract errors. Such a claim is
@@ -155,7 +168,8 @@ def intake_claim_data(
     reject it; otherwise it is refused. `provider_id` and `filed_by` name the provider account
     that filed it (D-AUTH-1); the filing user is INTAKE_COMPLETED's actor. `documents`, the files
     the claim came from in page order, are kept with the claim in the same transaction (D-DOC-1,
-    D-DOC-2): a refused claim keeps nothing."""
+    D-DOC-2): a refused claim keeps nothing. With `settings` (the API's uploads), a claim whose
+    prompt could not fit the model is refused (`check_prompt_fits`, D-DOC-3)."""
     claim_id, member_id, received_date = filing_fields(data)
     if any(not 0.0 <= value <= 1.0 for value in field_confidences.values()):
         raise IntakeRefused("field confidences must be between 0 and 1")
@@ -163,6 +177,8 @@ def intake_claim_data(
         claim, failures = contract_failures(data)
     except InvalidClaimData as exc:
         raise IntakeRefused(str(exc)) from exc
+    if claim is not None and settings is not None:
+        check_prompt_fits(session, claim, settings)
     errors = [f"{failure.rule_id}: {failure.detail}" for failure in failures]
     if session.get(Claim, claim_id) is not None:
         raise DuplicateClaim(f"claim {claim_id} already exists")
@@ -453,6 +469,35 @@ def prompt_lookups(session: Session, claim: IntakeClaim, policy_set: str) -> Pro
     )
 
 
+def claim_prompt_bound(session: Session, claim: IntakeClaim, settings: Settings) -> int:
+    """The most tokens the claim's prompt can have: its notes and the largest rest of its prompt,
+    counted exactly (`largest_prompt_tokens`, D-DOC-3). `TokenizerUnavailable` when the tokenizer
+    file is missing."""
+    found = replace(
+        prompt_lookups(session, claim, settings.policy_set),
+        icd10_descriptions=lookups.icd10_longest_descriptions(session, list(claim.diagnoses)),
+    )
+    return largest_prompt_tokens(
+        claim,
+        found,
+        load_curated(settings.policy_set),
+        settings.prompt_version,
+        settings.prompt_tokenizer,
+    )
+
+
+def check_prompt_fits(session: Session, claim: IntakeClaim, settings: Settings) -> None:
+    """Refuse a claim whose prompt could be longer than the model reads with its answer
+    (`PROMPT_BUDGET`, D-DOC-3): raises `PromptTooLong`."""
+    tokens = claim_prompt_bound(session, claim, settings)
+    if tokens > PROMPT_BUDGET:
+        raise PromptTooLong(
+            f"the clinical notes are too long for the decision model: with the rest of the claim"
+            f" its prompt could reach {tokens:,} tokens, and it reads at most {PROMPT_BUDGET:,}"
+            " with its answer; shorten the notes"
+        )
+
+
 def _ms(since: float) -> float:
     """Milliseconds since a perf_counter reading (the stage timings of `claim_processed`)."""
     return round((time.perf_counter() - since) * 1000, 1)
@@ -551,11 +596,20 @@ def process_claim(
     prompt = settings.prompt_version
     user_message = render_user_message(claim, rules, context, claim_lookups, prompt)
     system = system_prompt(prompt)
+    try:
+        tokens = prompt_tokens(system, user_message, settings.prompt_tokenizer)
+    except TokenizerUnavailable as exc:
+        raise ModelUnavailable(str(exc)) from exc
     model_started = time.perf_counter()
-    attempts = [validate_output(model.complete(system, user_message), rules, context)]
-    if not attempts[0].valid:  # one retry with another fixed seed (D-DEC-1)
-        retry = model.complete(system, user_message, attempt=2)
-        attempts.append(validate_output(retry, rules, context))
+    if tokens > PROMPT_BUDGET:  # intake refuses such a claim (D-DOC-3), so this is a bug
+        log.error("prompt_too_long", claim_id=claim_id, prompt_tokens=tokens, budget=PROMPT_BUDGET)
+        too_long = f"{PROMPT_TOO_LONG} ({tokens:,} tokens; at most {PROMPT_BUDGET:,} fit)"
+        attempts = [ValidationResult(None, (too_long,))]
+    else:
+        attempts = [validate_output(model.complete(system, user_message), rules, context)]
+        if not attempts[0].valid:  # one retry with another fixed seed (D-DEC-1)
+            retry = model.complete(system, user_message, attempt=2)
+            attempts.append(validate_output(retry, rules, context))
     model_ms = round((time.perf_counter() - model_started) * 1000, 1)
     result = attempts[-1]
     # D-EVID-1: a MET criterion must quote the notes; the record keeps the model's own answer.

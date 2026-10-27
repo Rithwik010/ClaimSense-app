@@ -19,10 +19,27 @@ describe("a claim in several files (D-DOC-2)", () => {
     ]);
   });
 
-  it("keeps two files at most: a claim form has two pages", () => {
-    const { files, note } = arrange([file("p3.png"), file("p1.png"), file("p2.png")]);
-    expect(files.map((f) => f.name)).toEqual(["p1.png", "p2.png"]);
-    expect(note).toMatch(/two pages/);
+  it("keeps five files at most: a claim form has at most five pages (D-DOC-3)", () => {
+    const six = ["p6", "p3", "p1", "p5", "p2", "p4"].map((name) => file(`${name}.png`));
+    const { files, note } = arrange(six);
+    expect(files.map((f) => f.name)).toEqual(["p1.png", "p2.png", "p3.png", "p4.png", "p5.png"]);
+    expect(note).toMatch(/at most 5 pages/);
+  });
+
+  it("accepts five files, in page order (D-DOC-3)", () => {
+    const { files, note } = arrange(["p5", "p4", "p3", "p2", "p1"].map((name) => file(`${name}.png`)));
+    expect(files.map((f) => f.name)).toEqual(["p1.png", "p2.png", "p3.png", "p4.png", "p5.png"]);
+    expect(note).toBeNull();
+  });
+
+  it("offers to add the next page until five, and lists three pages without a swap (D-DOC-3)", () => {
+    const three = [file("a.png"), file("b.png"), file("c.png")];
+    const { rerender } = render(<DropZone files={three} onFiles={() => {}} />);
+    expect(screen.getByLabelText("Page 4 file")).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Files chosen, in page order" })).toHaveTextContent("Page 3c.png");
+    expect(screen.queryByRole("button", { name: "Swap pages" })).toBeNull();
+    rerender(<DropZone files={[...three, file("d.png"), file("e.png")]} onFiles={() => {}} />);
+    expect(screen.queryByLabelText("Page 6 file")).toBeNull();
   });
 
   it("keeps a JSON claim on its own", () => {

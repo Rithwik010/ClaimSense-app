@@ -6,9 +6,16 @@ the top-left corner, as PyMuPDF reports them.
 
 Limitation: these coordinates describe our own generated layout only. They are NOT valid for the
 official printed CMS-1500 (02/12) form.
+
+Long notes (D-DOC-3): the notes box of page 2 holds about 44 lines; notes that need more go on to
+further attachment pages, each with the same box under the title "ATTACHMENTS FOR CLAIM <id>
+(CONTINUED, PAGE n OF m)", n and m counting the claim's pages. A claim has at most
+`MAX_FORM_PAGES` pages. Limitation: continuation pages are found by our own "PAGE n OF m" title,
+which real attachments will not always have.
 """
 
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, replace
 
 PAGE_WIDTH, PAGE_HEIGHT = 612.0, 792.0
 MAX_LINES_PER_FORM = 6  # like the CMS-1500, six service lines per page
@@ -109,6 +116,57 @@ PRIMARY_PAID_BOXES = [
     )
     for row in range(MAX_LINES_PER_FORM)
 ]
+
+# Long notes go on to further attachment pages (D-DOC-3): the prompt of a 5-page claim still fits
+# the model's context with its answer (8,192 tokens; scripts/verify/v3_prompt_tokens.py)
+FORM_PAGES = 2  # page 1: the claim; page 2: its attachments
+MAX_FORM_PAGES = 5
+TITLE_BAND = (25.0, 15.0, 590.0, 66.0)  # points: the band holding a page's printed title
+# "(CONTINUED, PAGE 3 OF 4)", allowing for an OCR reading 0 for O, or dropping or adding punctuation
+# ("PAGE 3. OF 3": a rendered v3 claim's scan, 25 Oct)
+CONTINUED = re.compile(r"CONTINUED\W*PAGE\W*([0-9]+)\W*[O0]F\W*([0-9]+)")
+
+
+class PageOrderError(ValueError):
+    """The pages are not the claim form's pages in order (D-DOC-2, D-DOC-3)."""
+
+
+def notes_box(page: int) -> Box:
+    """The notes box on attachment page `page` (index 1 is page 2; index 2 on, continuation)."""
+    return replace(NOTES_BOX, page=page)
+
+
+def continuation(title: str) -> tuple[int, int] | None:
+    """(n, m) of a continuation page's title "... (CONTINUED, PAGE n OF m)", else None."""
+    found = CONTINUED.search(title.upper())
+    return (int(found.group(1)), int(found.group(2))) if found else None
+
+
+def check_continuation(titles: list[str]) -> None:
+    """Pages 3 on of a claim are its notes' continuation pages, in order: page n of m at position
+    n, m the number of pages, at most `MAX_FORM_PAGES`; and page 2 is never a continuation page
+    (a claim of two pages is otherwise checked by D-DOC-2's own rules)."""
+    pages = len(titles)
+    rule = (
+        f"a claim form has {FORM_PAGES} pages, or up to {MAX_FORM_PAGES} when its notes go on to"
+        ' further attachment pages titled "CONTINUED, PAGE n OF m"'
+    )
+    if pages >= FORM_PAGES and continuation(titles[1]) is not None:
+        raise PageOrderError(f"{rule}: page 2, the first attachments page, is missing")
+    if pages <= FORM_PAGES:
+        return
+    if pages > MAX_FORM_PAGES:
+        raise PageOrderError(f"{rule}: these hold {pages} pages")
+    for index in range(FORM_PAGES, pages):
+        found = continuation(titles[index])
+        if found is None:
+            raise PageOrderError(f"{rule}: page {index + 1} is not a continuation page")
+        if found != (index + 1, pages):
+            raise PageOrderError(
+                f"{rule}: page {index + 1} is titled page {found[0]} of {found[1]}, so a page is"
+                " missing, repeated or out of order"
+            )
+
 
 SIMPLE_BOXES = HEADER_BOXES + PATIENT_BOXES + PROVIDER_BOXES
 ALL_PAGE_ONE_BOXES = SIMPLE_BOXES + DIAGNOSIS_BOXES + [box for row in LINE_BOXES for box in row]

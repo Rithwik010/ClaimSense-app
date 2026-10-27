@@ -104,6 +104,19 @@ def icd10_descriptions(session: Session, codes: list[str], fiscal_year: int) -> 
     return {code: description for code, description in rows}
 
 
+def icd10_longest_descriptions(session: Session, codes: list[str]) -> dict[str, str]:
+    """Each code's longest description over the fiscal years loaded (the largest prompt a claim
+    can get, D-DOC-3: its date's year may not be loaded yet when it is filed)."""
+    longest: dict[str, str] = {}
+    rows = session.execute(
+        select(Icd10Code.code, Icd10Code.description).where(Icd10Code.code.in_(codes))
+    )
+    for code, description in rows:
+        if len(description) > len(longest.get(code, "")):
+            longest[code] = description
+    return longest
+
+
 def procedure_descriptions(session: Session, codes: list[str]) -> dict[str, str]:
     rows = session.execute(
         select(ProcedureCode.code, ProcedureCode.description).where(ProcedureCode.code.in_(codes))

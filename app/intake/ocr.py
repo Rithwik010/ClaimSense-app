@@ -27,10 +27,14 @@ from app.intake.field_formats import ALPHABETS, canonical, format_ok, kind
 from app.intake.form_codec import from_form_values
 from app.intake.layout import (
     ALL_PAGE_ONE_BOXES,
+    FORM_PAGES,
     NOTES_BOX,
     PAGE_WIDTH,
     PRIMARY_PAID_BOXES,
+    TITLE_BAND,
     Box,
+    check_continuation,
+    notes_box,
 )
 
 RENDER_DPI = 300  # a PDF page is rendered at this resolution for OCR
@@ -275,7 +279,6 @@ def read_box(page: Image.Image, box: Box) -> FieldRead | None:
 
 
 FORM_BOXES = [*ALL_PAGE_ONE_BOXES, NOTES_BOX, *PRIMARY_PAID_BOXES]
-TITLE_BAND = (25.0, 15.0, 590.0, 66.0)  # points: the band holding a page's printed title
 
 
 def page_title(page: Image.Image) -> str:
@@ -302,12 +305,38 @@ def read_page(page: Image.Image, index: int) -> dict[str, FieldRead]:
     return found
 
 
+def continued_notes(pages: list[Image.Image]) -> list[FieldRead]:
+    """The notes read from each continuation page of a scan (pages 3 on, D-DOC-3), in page order;
+    the titles of pages 2 on are read and checked first (`check_continuation`)."""
+    if len(pages) >= FORM_PAGES:  # page 1's title is not needed: only pages 2 on are checked
+        check_continuation(["", *(page_title(page) for page in pages[1:])])
+    if len(pages) <= FORM_PAGES:
+        return []
+    reads = []
+    for index in range(FORM_PAGES, len(pages)):
+        read = read_box(straighten(pages[index]), notes_box(index))
+        if read is not None:
+            reads.append(read)
+    return reads
+
+
+def joined_notes(first: FieldRead | None, more: list[FieldRead]) -> FieldRead | None:
+    """Page 2's notes and the continuation pages' as one read, at the lowest confidence."""
+    reads = [read for read in (first, *more) if read is not None]
+    if not reads or not more:
+        return first
+    return FieldRead(" ".join(r.text for r in reads), min(r.confidence for r in reads))
+
+
 def read_scan(pages: list[Image.Image]) -> dict[str, FieldRead]:
     """Every non-blank box of a scanned form, keyed by layout field path."""
     found: dict[str, FieldRead] = {}
     for index, page in enumerate(pages):
         if any(box.page == index for box in FORM_BOXES):
             found |= read_page(page, index)
+    notes = joined_notes(found.get(NOTES_BOX.field), continued_notes(pages))
+    if notes is not None:
+        found[NOTES_BOX.field] = notes
     return found
 
 

@@ -108,8 +108,9 @@ export function useEvaluation() {
   });
 }
 
-/** The most files one claim is filed from: its form's two pages (D-DOC-2). */
-export const MAX_CLAIM_FILES = 2;
+/** The most files one claim is filed from: its form's pages, 2, or up to 5 when its notes go on to
+ * continuation pages (D-DOC-2, D-DOC-3). The API refuses more pages. */
+export const MAX_CLAIM_FILES = 5;
 
 /**
  * Where a claim file goes: a JSON claim to POST /v1/claims/intake, as its own text (the API keeps

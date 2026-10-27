@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.audit.events import EventType, record_event
+from app.core.settings import Settings
 from app.db.models import AuditEvent, Claim
 from app.domain.contracts import ClaimStatus, IntakeResult, SourceFormat
 from app.intake.corrections import (
@@ -34,6 +35,7 @@ from app.rules.integrity import InvalidClaimData, contract_failures
 from app.workflow.pipeline import (
     ClaimNotFound,
     IntakeRefused,
+    check_prompt_fits,
     filing_fields,
 )
 from app.workflow.states import InvalidTransition
@@ -83,12 +85,14 @@ def correct_claim(
     corrections: Mapping[str, str],
     actor: str,
     threshold: float,
+    settings: Settings | None = None,
 ) -> tuple[IntakeResult | None, list[str]]:
     """Make the corrections and audit them. Returns the claim (None while it fails the contract)
     and its contract errors, as intake does. Raises ClaimNotFound, InvalidTransition (not
     RECEIVED), CorrectionNotAllowed (a JSON claim), CorrectionRefused (a box that cannot be
     corrected or a text that fails its format check) or IntakeRefused (a claim the contract check
-    refuses, or without a member ID or received date)."""
+    refuses, or without a member ID or received date; with `settings`, a claim whose prompt could
+    no longer fit the model, as at intake: D-DOC-3)."""
     row = session.get(Claim, claim_id, with_for_update=True)
     if row is None:
         raise ClaimNotFound(f"claim {claim_id} not found")
@@ -110,6 +114,8 @@ def correct_claim(
         claim, failures = contract_failures(data)
     except InvalidClaimData as exc:
         raise IntakeRefused(str(exc)) from exc
+    if claim is not None and settings is not None:
+        check_prompt_fits(session, claim, settings)
     errors = [f"{failure.rule_id}: {failure.detail}" for failure in failures]
     after = form_text(data)
     confidences = dict(row.field_confidences or {})

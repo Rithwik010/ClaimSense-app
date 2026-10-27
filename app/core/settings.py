@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     embedding_cache_dir: Path = (
         Path(__file__).resolve().parents[2] / "data/generated/models/fastembed"
     )
+    # The base model's tokenizer, local only, for counting a prompt before the model is called
+    # (D-DOC-3; scripts/setup/fetch_tokenizer.py puts it here at setup).
+    prompt_tokenizer: Path = (
+        Path(__file__).resolve().parents[2]
+        / "data/generated/models/gemma-4-E2B-it-d36bdd38/tokenizer.json"
+    )
     # Coverage policy set of the pipeline (D-POL-2): v2 uses the exact lookup (D-RAG-2); v1 is
     # kept to reproduce model v1.
     policy_set: Literal["v1", "v2"] = "v2"

@@ -3,6 +3,11 @@ both from the single layout in `app/intake/layout.py`.
 
 - Digital PDF: typed values; parses back to the original claim exactly
   (`app/intake/digital_pdf.py`).
+- `continued=True` (long notes, the v3 renders of 25 Oct): notes that overflow page 2's notes box
+  go on as many further attachment pages as they need, each with the same box under the title
+  "ATTACHMENTS FOR CLAIM <id> (CONTINUED, PAGE n OF m)", counting the claim's pages. Without it
+  the form keeps its two pages
+  (the notes box holds `notes_capacity()` lines) and the output is unchanged.
 - Scanned: the same form with hand-filled-looking values (per-character jitter in built-in fonts),
   rasterized and degraded with skew, blur, speckle and JPEG compression. Optional value noise
   (a typo or a missing box) is applied before rendering and recorded in a noise log, so the expected
@@ -94,10 +99,32 @@ def _hand(pdf: canvas.Canvas, box: Box, text: str, rng: random.Random) -> None:
         x += advance * fit
 
 
+def notes_capacity() -> int:
+    """Lines of notes one notes box holds."""
+    return int((NOTES_BOX.y1 - NOTES_BOX.y0 - 14) // NOTES_LEADING) + 1
+
+
+def notes_lines(notes: str) -> list[str]:
+    return simpleSplit(notes, NOTES_FONT, NOTES_SIZE, NOTES_BOX.x1 - NOTES_BOX.x0 - 8)
+
+
+def _notes_box(pdf: canvas.Canvas, lines: list[str]) -> None:
+    _draw_box(pdf, NOTES_BOX)
+    y = _y(NOTES_BOX.y0) - 14
+    pdf.setFont(NOTES_FONT, NOTES_SIZE)
+    for text_line in lines:
+        pdf.drawString(NOTES_BOX.x0 + 4, y, text_line)
+        y -= NOTES_LEADING
+
+
 def render_pdf(
-    values: dict[str, str], style: str = "typed", rng: random.Random | None = None
+    values: dict[str, str],
+    style: str = "typed",
+    rng: random.Random | None = None,
+    continued: bool = False,
 ) -> bytes:
-    """Render the two-page form. `style` is "typed" (digital) or "hand" (for scanned copies)."""
+    """Render the form: page 1 the claim, page 2 its attachments (more pages for long notes with
+    `continued`). `style` is "typed" (digital) or "hand" (for scanned copies)."""
     rng = rng or random.Random(0)
     buffer = io.BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter, invariant=1)
@@ -116,22 +143,29 @@ def render_pdf(
             (_typed(pdf, box, text) if style == "typed" else _hand(pdf, box, text, rng))
     pdf.showPage()
 
+    claim_id = values.get("claim_id", "")
+    lines = notes_lines(values.get("clinical_notes", ""))
+    size = notes_capacity()
+    chunks = [lines[i : i + size] for i in range(0, len(lines), size)] if continued else [lines]
+    chunks = chunks or [[]]
     pdf.setFont("Helvetica-Bold", 11)
     pdf.drawString(30, _y(45), f"ATTACHMENTS FOR CLAIM {values.get('claim_id', '')}")
-    _draw_box(pdf, NOTES_BOX)
-    notes = values.get("clinical_notes", "")
-    width = NOTES_BOX.x1 - NOTES_BOX.x0 - 8
-    y = _y(NOTES_BOX.y0) - 14
-    pdf.setFont(NOTES_FONT, NOTES_SIZE)
-    for text_line in simpleSplit(notes, NOTES_FONT, NOTES_SIZE, width):
-        pdf.drawString(NOTES_BOX.x0 + 4, y, text_line)
-        y -= NOTES_LEADING
+    _notes_box(pdf, chunks[0])
     for row, box in enumerate(PRIMARY_PAID_BOXES):  # one caption above the first row only
         text = values.get(box.field)
         if text:
             _draw_box(pdf, box, None if row == 0 else "")
             _typed(pdf, box, text)
     pdf.showPage()
+    for number, chunk in enumerate(chunks[1:], start=2):
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(
+            30,
+            _y(45),
+            f"ATTACHMENTS FOR CLAIM {claim_id} (CONTINUED, PAGE {number + 1} OF {len(chunks) + 1})",
+        )
+        _notes_box(pdf, chunk)
+        pdf.showPage()
     pdf.save()
     return buffer.getvalue()
 
@@ -161,11 +195,14 @@ def _apply_value_noise(
 
 
 def render_scan(
-    values: dict[str, str], rng: random.Random, value_noise_rate: float = 0.2
+    values: dict[str, str],
+    rng: random.Random,
+    value_noise_rate: float = 0.2,
+    continued: bool = False,
 ) -> ScanResult:
     """Scanned-style page images plus the values written on them and a noise log."""
     written, value_noise = _apply_value_noise(values, rng, value_noise_rate)
-    pdf = render_pdf(written, style="hand", rng=rng)
+    pdf = render_pdf(written, style="hand", rng=rng, continued=continued)
     visual = {
         "skew_degrees": round(rng.uniform(-1.2, 1.2), 2),
         "blur_radius": round(rng.uniform(0.3, 0.9), 2),

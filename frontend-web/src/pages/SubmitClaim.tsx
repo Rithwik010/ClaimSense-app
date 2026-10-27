@@ -1,5 +1,5 @@
 // Submit claim (providers, D-AUTH-1): drop a JSON claim, a PDF of the form or a scanned form, or the
-// form's two pages as two files (one claim, D-DOC-2); check the claim (D-CHK-1) and the boxes read
+// form's pages as files (one claim, D-DOC-2, D-DOC-3); check the claim (D-CHK-1) and the boxes read
 // with their confidence, correcting any read wrong (D-FIX-1); process the claim, and the stage strip
 // fills in (motion moment 5). If the model is down (503) the claim stays received and "Try again"
 // processes it.

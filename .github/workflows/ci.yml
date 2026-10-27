@@ -55,6 +55,17 @@ jobs:
       - name: Embedding model (fetch on a cache miss, check the SHA-256)
         run: uv run python -m scripts.verify.embedding_model fetch
 
+      # D-DOC-3: the prompt token guard reads the base model's tokenizer from its local file only;
+      # cached, fetched at the pinned commit on a cache miss, its SHA-256 checked.
+      - name: Cache the prompt tokenizer
+        uses: actions/cache@v6.1.0
+        with:
+          path: data/generated/models/gemma-4-E2B-it-d36bdd38
+          key: gemma-4-E2B-it-tokenizer-d36bdd3855c8-cc8d3a0ce364
+
+      - name: Prompt tokenizer (fetch on a cache miss, check the SHA-256)
+        run: uv run python -m scripts.setup.fetch_tokenizer
+
       - name: Ruff check
         run: uv run ruff check .
 

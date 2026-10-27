@@ -107,6 +107,11 @@ app talks only to the API.
 - **OCR reads only our own synthetic form layout**, not the official printed CMS-1500. Field
   accuracy on held-out synthetic scans is 93.8%; a handwritten 1 is often read as 7. A field read
   with low confidence rejects the claim for resubmission rather than deciding it.
+- **Long notes on further pages are found by our own page title.** A claim form has 2 pages, or up
+  to 5 when its notes go on to attachment pages titled "(CONTINUED, PAGE n OF m)", which real
+  attachments will not always have (D-DOC-3). The decision model v3 was trained on prompts of up
+  to 4,416 tokens; a claim of 4 or 5 pages can have a longer prompt (up to the 6,656 tokens the
+  model reads with its answer, checked at upload), and such prompts are untested.
 - **Coverage policies cover only some services** (17 policies for the procedure codes in scope);
   a line outside them is decided on the rules and benefits alone.
 - **One laptop, synchronous.** The pipeline runs claim by claim; model answers take a few seconds

@@ -1,7 +1,8 @@
 // A file drop zone: drag a claim file onto it, or click to choose one. The file input stays in
 // the page (labelled "Claim file") so a keyboard and the browser's own picker work too. A claim's
-// form can also come as its two pages in two files (D-DOC-2): choose or drop both, or add page 2
-// after page 1; they are listed in page order (by name at first), with a button to swap them.
+// form can also come as its pages in several files (D-DOC-2; up to 5 when its notes go on to
+// continuation pages, D-DOC-3): choose or drop them all, or add the next page after the ones chosen;
+// they are listed in page order (by name at first), with a button to swap two pages.
 
 import { ArrowUpDown, FilePlus2, FileUp, X } from "lucide-react";
 import { useId, useRef, useState } from "react";
@@ -27,7 +28,7 @@ export function arrange(chosen: File[]): { files: File[]; note: string | null } 
   if (sorted.length > MAX_CLAIM_FILES) {
     return {
       files: sorted.slice(0, MAX_CLAIM_FILES),
-      note: "Only the first two files were kept: a claim form has two pages.",
+      note: `Only the first ${MAX_CLAIM_FILES} files were kept: a claim form has at most ${MAX_CLAIM_FILES} pages.`,
     };
   }
   return { files: sorted, note: null };
@@ -76,7 +77,7 @@ export function DropZone({ files, onFiles }: { files: File[]; onFiles: (files: F
             ? several
               ? "Drop or choose files again to replace them."
               : `${kb(first)}. Drop another file to replace it.`
-            : "A JSON claim, a PDF of the ClaimSense form, or a scanned form (PDF, PNG, JPEG or TIFF). A form's two pages can be two files: choose or drop both."}
+            : `A JSON claim, a PDF of the ClaimSense form, or a scanned form (PDF, PNG, JPEG or TIFF). A form's pages can be separate files, up to ${MAX_CLAIM_FILES}: choose or drop them all.`}
         </span>
         <input
           ref={input}
@@ -119,25 +120,27 @@ export function DropZone({ files, onFiles }: { files: File[]; onFiles: (files: F
               </li>
             ))}
           </ol>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={() => {
-              setNote(null);
-              onFiles([...files].reverse());
-            }}
-          >
-            <ArrowUpDown aria-hidden /> Swap pages
-          </Button>
+          {files.length === 2 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                setNote(null);
+                onFiles([...files].reverse());
+              }}
+            >
+              <ArrowUpDown aria-hidden /> Swap pages
+            </Button>
+          )}
         </div>
       )}
-      {files.length === 1 && first && !isJson(first) && (
+      {files.length >= 1 && files.length < MAX_CLAIM_FILES && first && !isJson(first) && (
         <div>
           <input
             id={addId}
             type="file"
-            aria-label="Page 2 file"
+            aria-label={`Page ${files.length + 1} file`}
             accept={PAGE_ACCEPT}
             className="peer sr-only"
             onChange={(event) => {
@@ -145,7 +148,7 @@ export function DropZone({ files, onFiles }: { files: File[]; onFiles: (files: F
               event.target.value = "";
               if (added) {
                 setNote(null);
-                onFiles([first, added]);
+                onFiles([...files, added]);
               }
             }}
           />
@@ -153,7 +156,7 @@ export function DropZone({ files, onFiles }: { files: File[]; onFiles: (files: F
             htmlFor={addId}
             className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.04] px-3 text-[13px] font-medium transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-glow-cyan hover:bg-white/[0.08]"
           >
-            <FilePlus2 aria-hidden className="size-4" /> Add page 2 as another file
+            <FilePlus2 aria-hidden className="size-4" /> Add page {files.length + 1} as another file
           </label>
         </div>
       )}
