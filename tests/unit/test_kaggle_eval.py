@@ -5,6 +5,10 @@ import json
 import subprocess
 import sys
 
+import pytest
+
+from app.db import raw
+
 RUNNER = """
 import sys
 sys.modules["qdrant_client"] = None  # importing it now raises ImportError
@@ -20,6 +24,7 @@ def test_the_kaggle_runner_imports_without_qdrant() -> None:
     assert done.returncode == 0, done.stderr[-2000:]
 
 
+@pytest.mark.skipif(not raw.raw_available(), reason="data/raw/ not present (the upload check)")
 def test_skip_leaves_out_only_the_named_model_and_set(tmp_path, monkeypatch) -> None:  # noqa: ANN001
     """Stage 5: v2 runs on the test sets it is compared on, not on validation (D-V3-23)."""
     from training.evaluate import kaggle_eval
