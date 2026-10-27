@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 
+from app.explain.reasons import reason_text
 from tests.e2e.support import PROVIDER, audit, process_case
 
 CLAIM = "CLM-E2E-14"
@@ -82,16 +83,20 @@ def test_a_deny_override_stores_and_audits_its_code_and_the_provider_sees_no_not
     staff = client.get(f"/v1/claims/{CLAIM}/explanation", params={"format": "text"}).text
     assert NOTE in staff and "reason DN_NOT_MEDICALLY_NECESSARY" in staff
 
-    # The provider sees the plain reason and CARC 50, never the note or the comment.
+    # The provider sees the final decision (the reviewer's DENY, never the model's APPROVE) with its
+    # plain reason and CARC 50, never the reviewer's ID, the note or the comment.
     view = client.get(f"/v1/claims/{CLAIM}", headers=PROVIDER)
     assert view.status_code == 200, view.text
     body = view.json()
-    assert body["record"]["review"] is None
-    assert body["record"]["line_decisions"][0]["reason_codes"] == ["DN_NOT_MEDICALLY_NECESSARY"]
-    assert [
-        (a["line_no"], a["reason_code"], a["group_code"], [c["code"] for c in a["codes"]])
-        for a in body["adjustments"]
-    ] == [(1, "DN_NOT_MEDICALLY_NECESSARY", "CO", ["50"])]
+    explanation = body["explanation"]
+    assert body["outcome"] == "DENIED"
+    assert (1, reason_text("DN_NOT_MEDICALLY_NECESSARY").provider) in [
+        (item["line_no"], item["text"]) for item in explanation["why"]
+    ]
+    assert [(g["line_no"], [c["code"] for c in g["codes"]]) for g in explanation["codes"]] == [
+        (1, ["50"])
+    ]
+    assert "reviewer-1" not in json.dumps(body)
     for fmt in ("text", "html"):
         shown = client.get(
             f"/v1/claims/{CLAIM}/explanation", params={"format": fmt}, headers=PROVIDER
@@ -118,7 +123,10 @@ def test_a_pend_override_carries_its_pend_reason_without_a_carc(api, load_case_r
     assert response.status_code == 200, response.text
     assert response.json()["line_decisions"][0]["reason_codes"] == ["PD_MISSING_DOCUMENTATION"]
     body = client.get(f"/v1/claims/{CLAIM}", headers=PROVIDER).json()
-    assert body["adjustments"] == []  # pended lines get no CARC (D-CARC-1)
+    assert body["explanation"]["codes"] == []  # pended lines get no CARC (D-CARC-1)
+    assert (1, reason_text("PD_MISSING_DOCUMENTATION").provider) in [
+        (item["line_no"], item["text"]) for item in body["explanation"]["why"]
+    ]
     shown = client.get(
         f"/v1/claims/{CLAIM}/explanation", params={"format": "text"}, headers=PROVIDER
     ).text
