@@ -84,6 +84,7 @@ def test_an_override_is_audited_line_by_line_and_its_reason_is_never_logged(
         {
             "line_no": 1,
             "reason": reason,
+            "reason_code": "DN_NOT_MEDICALLY_NECESSARY",  # E2E-24's code (D-GOLD-10)
             "before": {
                 "decision": "APPROVE",
                 "benefit_category": "DIAGNOSTIC_TESTS",
@@ -94,7 +95,7 @@ def test_an_override_is_audited_line_by_line_and_its_reason_is_never_logged(
                 "decision": "DENY",
                 "benefit_category": "DIAGNOSTIC_TESTS",
                 "source": "REVIEWER",
-                "reason_codes": [],
+                "reason_codes": ["DN_NOT_MEDICALLY_NECESSARY"],
             },
         }
     ]

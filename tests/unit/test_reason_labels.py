@@ -64,7 +64,8 @@ def test_the_override_reasons_are_the_mapped_line_reasons() -> None:
     assert set(deny) == {DENY_CRITERION, DENY_EXCLUSION} | set(RULE_OF)
     assert all(mapped[c].outcome == "DENY" and mapped[c].carc for c in deny)
     assert set(pend) == {c for c, e in mapped.items() if e.outcome == "PEND"} - {
-        "MODEL_OUTPUT_INVALID"
+        "MODEL_OUTPUT_INVALID",
+        "PD_PROVIDER_ENROLLMENT",  # R06's claim-level reason, not a line reason (D-GOLD-10)
     }
     assert PEND_MISSING in pend
 
