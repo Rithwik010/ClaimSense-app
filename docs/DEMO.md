@@ -17,6 +17,8 @@ Synthetic data only. The nine claims are in `demo/claims/`; run them in this ord
 | `provider2` | Jennifer Dunn, DPM (provider) | My claims |
 | `reviewer1`, `reviewer2` | reviewers | Review queue |
 | `admin` | read-only admin | Overview |
+| `member1` | Timothy Townsend, a patient (member MBR-000152; claims 1 and 7) | My claims |
+| `member2` | Stephanie Wilson, a patient (member MBR-000150; claim 4) | My claims |
 
 Passwords are in `.env` at the repository root (`DEMO_PASSWORD_PROVIDER1` and so on); `make
 demo-users` or `make demo-reset` writes any that are missing. Switch user with the menu at the
@@ -89,6 +91,15 @@ A decided claim has a **Patient EOB** button (provider, reviewer and admin): the
 explanation of benefits with each service, what the plan allowed and paid, what the patient may
 owe, the deductible and out-of-pocket so far this year, and "This is not a bill." **Print** gives
 black text on white. Try it on `CLM-DEMO-01` (approved) or `CLM-DEMO-04` (partly approved).
+
+A member is a patient: **member1** and **member2** see only the claims in which they are the
+patient. A claim shows "Your claim is being processed" until it is final. Once the plan decides it,
+the claim opens on its explanation of benefits, the same EOB the provider sees. A rejected claim
+says it went back to the provider. **My benefits** shows the deductible and out-of-pocket amounts
+met this benefit year and the rehab visits used, each next to the plan's limit. **Profile** shows
+the name, member ID, plan and coverage dates. After the run, member1 has claim 1 (approved) and 7
+(rejected), and member2 has claim 4 (partly approved). A member's account has no access to any
+provider, reviewer or admin page.
 
 Every dashboard uses one set of status labels: In review, Approved, Partly approved (some lines
 paid, some not), Pended, Denied, Rejected; reviewers and admins also see Not processed for a

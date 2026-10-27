@@ -273,3 +273,76 @@ def test_out_of_network_terms_must_match_coverage_flag(migrated: Engine) -> None
                 "VALUES ('P1', 'Plan', 'PPO', '2026-01-01', 90, 180, true, 50000, 2000, 300000)"
             )
         )
+
+
+# --- Member logins (D-MEM-1, migration 0011) -----------------------------------------------------
+
+PLAN_AND_MEMBER = (
+    "INSERT INTO plans (plan_id, name, plan_type, effective_date, filing_window_inn_days, "
+    "filing_window_oon_days, oon_covered, inn_deductible_cents, inn_coinsurance_bps, "
+    "inn_oop_max_cents) VALUES ('P1', 'Plan', 'HMO', '2026-01-01', 90, 90, false, 25000, 2000, "
+    "400000)",
+    "INSERT INTO members (member_id, plan_id, first_name, last_name, date_of_birth, sex, "
+    "address_line, city, state, zip_code, coverage_start) VALUES ('MBR-1', 'P1', 'Ana', 'Lopez', "
+    "'1970-03-04', 'F', '1 Main St', 'Town', 'OR', '97001', '2025-01-01')",
+)
+
+
+def add_user(conn, username: str, role: str, provider_id=None, member_id=None) -> None:  # noqa: ANN001
+    conn.execute(
+        text(
+            "INSERT INTO users (username, display_name, password_hash, role, provider_id, "
+            "member_id) VALUES (:u, :d, 'x', :r, :p, :m)"
+        ),
+        {"u": username, "d": username, "r": role, "p": provider_id, "m": member_id},
+    )
+
+
+def test_a_member_user_is_linked_to_a_member_on_file(migrated: Engine) -> None:
+    with migrated.begin() as conn:
+        for statement in PLAN_AND_MEMBER:
+            conn.execute(text(statement))
+        add_user(conn, "member1", "member", member_id="MBR-1")
+
+    for name, role, provider_id, member_id, refused_by in (
+        ("member-without-id", "member", None, None, "ck_users_member_id_for_members"),
+        ("reviewer-with-id", "reviewer", None, "MBR-1", "ck_users_member_id_for_members"),
+        ("provider-with-id", "provider", "1234567893", "MBR-1", "ck_users_member_id_for_members"),
+        ("member-not-on-file", "member", None, "MBR-NOPE", "fk_users_member_id_members"),
+        ("member-and-provider", "member", "1234567893", "MBR-1", "ck_users_provider_id_for_"),
+    ):
+        with pytest.raises(DBAPIError, match=refused_by), migrated.begin() as conn:
+            add_user(conn, name, role, provider_id, member_id)
+
+    with migrated.connect() as conn:
+        rows = conn.execute(text("SELECT username, role, member_id FROM users")).all()
+    assert [tuple(row) for row in rows] == [("member1", "member", "MBR-1")]
+
+
+def test_downgrading_0011_removes_member_logins_only(db_url: str) -> None:
+    config = alembic_config(db_url)
+    command.upgrade(config, "head")
+    engine = create_engine(db_url)
+    with engine.begin() as conn:
+        for statement in PLAN_AND_MEMBER:
+            conn.execute(text(statement))
+        add_user(conn, "member1", "member", member_id="MBR-1")
+        add_user(conn, "reviewer1", "reviewer")
+
+    command.downgrade(config, "0010")
+
+    with engine.connect() as conn:
+        kept = conn.execute(text("SELECT username FROM users")).scalars().all()
+        columns = {c["name"] for c in inspect(conn).get_columns("users")}
+    with pytest.raises(DBAPIError, match="ck_users_role_allowed"), engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO users (username, display_name, password_hash, role) "
+                "VALUES ('member2', 'member2', 'x', 'member')"
+            )
+        )
+    engine.dispose()
+    command.downgrade(config, "base")
+
+    assert kept == ["reviewer1"]
+    assert "member_id" not in columns

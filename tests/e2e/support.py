@@ -223,6 +223,25 @@ def add_test_users(session: Session) -> None:
     )
 
 
+def add_member_user(
+    engine: Engine, member_id: str, username: str = "member-test"
+) -> dict[str, str]:
+    """A member login (D-MEM-1) for a member already on file (a case's reference data: the users
+    table's foreign key needs it), and an Authorization header with its session token."""
+    with Session(engine) as session:
+        session.add(
+            User(
+                username=username,
+                display_name=username.replace("-", " ").title(),
+                password_hash=_test_hash(),
+                role="member",
+                member_id=member_id,
+            )
+        )
+        session.commit()
+    return {"Authorization": f"Bearer {create_token(username, 'member', TEST_SECRET)}"}
+
+
 class SessionClient(TestClient):
     """The end-to-end tests' API client. A request without an Authorization header acts as the
     role its endpoint needs: the test provider files and processes claims, a review action runs as

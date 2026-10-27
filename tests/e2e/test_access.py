@@ -257,3 +257,40 @@ def test_a_deactivated_user_is_logged_out(api, engine: Engine) -> None:  # noqa:
     assert client.get("/v1/auth/me", headers=bearer("reviewer-1")).status_code == 401
     login = {"username": "reviewer-1", "password": TEST_PASSWORD}
     assert client.post("/v1/auth/login", json=login, headers=NO_SESSION).status_code == 401
+
+
+# --- The member role (D-MEM-1) -------------------------------------------------------------------
+# Kept as separate tests so the matrix above stays as it is: a member is 403 on every endpoint in
+# it but /v1/auth/me, and the member's own routes are for members only (what a member sees there is
+# in test_member.py).
+
+
+def member_endpoints() -> list[tuple[str, str]]:
+    return [
+        ("GET", "/v1/member/claims"),
+        ("GET", f"/v1/member/claims/{CLAIM}"),
+        ("GET", f"/v1/member/claims/{CLAIM}/eob"),
+        ("GET", "/v1/member/benefits"),
+        ("GET", "/v1/member/profile"),
+    ]
+
+
+def test_a_member_is_refused_every_endpoint_but_their_own(api, load_case_reference, engine) -> None:  # noqa: ANN001
+    from tests.e2e.support import add_member_user
+
+    client = process_case(api, load_case_reference, "E2E-14")
+    member = add_member_user(engine, E2E_CASES["E2E-14"]["given"]["claim"]["member_id"])
+    for method, path, kwargs, _allowed in endpoints():
+        response = client.request(method, path, headers=member, **kwargs)
+        expected = 200 if path == "/v1/auth/me" else 403  # a member files, reads or acts on none
+        assert response.status_code == expected, (method, path, response.text)
+
+    for method, path in member_endpoints():
+        response = client.request(method, path, headers=member)
+        assert response.status_code not in (401, 403), (method, path, response.text)
+        for role, headers in WHO.items():
+            response = client.request(method, path, headers=headers)
+            assert response.status_code == 403, (method, path, role, response.text)
+        response = client.request(method, path, headers=NO_SESSION)
+        assert response.status_code == 401, (method, path, "not logged in")
+        assert response.headers["www-authenticate"] == "Bearer"

@@ -1,7 +1,8 @@
 // The patient's explanation of benefits (D-EOB-1): what the plan did with each service on a decided
 // claim, for the provider to print or hand to the patient. It is not a bill. Built by the API from
 // the decision record; every amount is the calculator's and the page only formats it. Printing
-// gives black text on white without the app around it (index.css).
+// gives black text on white without the app around it (index.css). A member's own claim page shows
+// the same EOB (EobView, D-MEM-2).
 
 import { Printer } from "lucide-react";
 import { Fragment } from "react";
@@ -224,13 +225,25 @@ export function PatientEob() {
   const eob = usePatientEob(claimId);
   if (eob.isPending) return <Skeleton lines={8} />;
   if (eob.error) return <ErrorNotice error={eob.error} onRetry={() => void eob.refetch()} />;
-  const data = eob.data;
+  return <EobView eob={eob.data} />;
+}
+
+/** The EOB itself, for the provider's and staff's EOB page and the member's claim page. */
+export function EobView({
+  eob: data,
+  hint = "What the plan did with each service, for the patient.",
+  back = { to: "..", label: "Back to the claim" },
+}: {
+  eob: Eob;
+  hint?: string;
+  back?: { to: string; label: string };
+}) {
   const [notBill, ...notes] = data.notes;
   return (
     <div className="eob">
       <PageTitle
         title="Explanation of benefits"
-        hint={`Claim ${data.claim_id}. What the plan did with each service, for the patient.`}
+        hint={`Claim ${data.claim_id}. ${hint}`}
         actions={
           <div className="flex flex-wrap items-center gap-3 print:hidden">
             <OutcomeChip outcome={data.outcome} />
@@ -269,8 +282,12 @@ export function PatientEob() {
       <p className="max-w-[75ch] text-[13px] text-ink-muted">
         Questions about this claim: contact the plan and give claim {data.claim_id}. ClaimSense prototype: synthetic data
         only.{" "}
-        <Link className="font-semibold text-link underline print:hidden" to=".." relative="path">
-          Back to the claim
+        <Link
+          className="font-semibold text-link underline print:hidden"
+          to={back.to}
+          relative={back.to === ".." ? "path" : "route"}
+        >
+          {back.label}
         </Link>
       </p>
     </div>

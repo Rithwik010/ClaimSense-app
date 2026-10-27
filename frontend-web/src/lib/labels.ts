@@ -76,6 +76,26 @@ export const IN_REVIEW: Label = {
   tone: "neutral",
 };
 
+/** What a member sees of their claim until it is final (D-MEM-2): nothing of its outcome. */
+export const PROCESSING: Label = {
+  label: "Being processed",
+  hint: "Your plan is working on it; the outcome shows once it is decided",
+  tone: "neutral",
+};
+
+/** A member's label for their claim (the API's outcome; PROCESSING until final). */
+export function memberOutcome(outcome: Outcome | "PROCESSING"): Label {
+  return outcome === "PROCESSING" || outcome === "IN_REVIEW" || outcome === "NOT_PROCESSED"
+    ? PROCESSING
+    : OUTCOME[outcome];
+}
+
+/** A benefit category in words: "REHAB_THERAPY" -> "Rehab therapy". */
+export function benefitCategory(code: string): string {
+  const text = code.replaceAll("_", " ").toLowerCase();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 /** A provider's label for their claim's outcome (IN_REVIEW until final). */
 export function providerOutcome(outcome: Outcome): Label {
   return outcome === "IN_REVIEW" || outcome === "NOT_PROCESSED" ? IN_REVIEW : OUTCOME[outcome];

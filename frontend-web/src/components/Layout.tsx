@@ -23,6 +23,14 @@ import { ErrorBoundary } from "./ErrorBoundary";
 
 function crumbs(pathname: string): { label: string; to?: string }[] {
   const [first, second, third] = pathname.split("/").filter(Boolean);
+  if (first === "member") {
+    // A member's pages (D-MEM-1): My claims, a claim, My benefits, Profile.
+    const page = PAGES.find((n) => n.to === `/member/${second ?? ""}`);
+    if (second === "claims" && third) {
+      return [{ label: "My claims", to: "/member/claims" }, { label: decodeURIComponent(third) }];
+    }
+    return [{ label: page?.label ?? "ClaimSense" }];
+  }
   if (first === "review" && second) {
     return [{ label: "Review queue", to: "/queue" }, { label: decodeURIComponent(second) }];
   }

@@ -1,6 +1,7 @@
 // Routes (D-AUTH-1): the login page is public; every other page needs a logged-in user, and each
 // is for some roles only (another role's URL shows "You don't have access"). "/" goes to the
-// role's home: provider My claims, reviewer Review queue, admin Overview.
+// role's home: provider My claims, reviewer Review queue, admin Overview, member their My claims
+// (D-MEM-1).
 
 import { Route, Routes } from "react-router";
 
@@ -12,6 +13,10 @@ import { ClaimDetail } from "./pages/ClaimDetail";
 import { ClaimResult } from "./pages/ClaimResult";
 import { Claims } from "./pages/Claims";
 import { Login } from "./pages/Login";
+import { MemberBenefits } from "./pages/MemberBenefits";
+import { MemberClaim } from "./pages/MemberClaim";
+import { MemberClaims } from "./pages/MemberClaims";
+import { MemberProfile } from "./pages/MemberProfile";
 import { Metrics } from "./pages/Metrics";
 import { MyClaims } from "./pages/MyClaims";
 import { Overview } from "./pages/Overview";
@@ -50,6 +55,12 @@ export function App() {
             <Route path="metrics" element={<Metrics />} />
             <Route path="audit" element={<AuditLookup />} />
             <Route path="system" element={<SystemStatus />} />
+          </Route>
+          <Route element={<Allow roles={["member"]} />}>
+            <Route path="member/claims" element={<MemberClaims />} />
+            <Route path="member/claims/:claimId" element={<MemberClaim />} />
+            <Route path="member/benefits" element={<MemberBenefits />} />
+            <Route path="member/profile" element={<MemberProfile />} />
           </Route>
           <Route path="*" element={<EmptyState title="Page not found" />} />
         </Route>
