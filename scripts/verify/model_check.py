@@ -17,7 +17,7 @@ first attempt and the retry; they override the Modelfile's sampling, D-MODEL-7).
 The manifest digest is reported as well: the same digest means the very same model; another digest
 with matching settings and weights usually means another Ollama version.
 
-    uv run python -m scripts.verify.model_check [--model claimsense-decision:v2] [--record]
+    uv run python -m scripts.verify.model_check [--model claimsense-decision:v3] [--record]
 """
 
 import argparse
@@ -118,7 +118,7 @@ def record(url: str, model: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--model", default=os.environ.get("MODEL_NAME", "claimsense-decision:v2"))
+    parser.add_argument("--model", default=os.environ.get("MODEL_NAME", "claimsense-decision:v3"))
     parser.add_argument(
         "--record", action="store_true", help="pin the running model (only the evaluated one)"
     )

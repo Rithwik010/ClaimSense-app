@@ -24,7 +24,7 @@ WEB = os.environ.get("WEB_URL", API)
 
 def main() -> None:
     settings = get_settings()
-    model = os.environ.get("MODEL_NAME", "claimsense-decision:v2")
+    model = os.environ.get("MODEL_NAME", "claimsense-decision:v3")
     results: list[tuple[str, bool, str]] = []
 
     def probe(name: str, test) -> None:  # noqa: ANN001

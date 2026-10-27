@@ -9,7 +9,7 @@
 4. Builds the coverage policy collections in Qdrant when one is missing.
 5. The demo logins (`scripts/demo/users.py`; passwords and SECRET_KEY in .env, written when
    missing).
-6. Checks that Ollama serves the demo model (`MODEL_NAME`, default claimsense-decision:v2), then
+6. Checks that Ollama serves the demo model (`MODEL_NAME`, default claimsense-decision:v3), then
    loads it and keeps it loaded (a warm-up call with keep_alive -1).
 
     uv run python -m scripts.demo.reset
@@ -39,7 +39,7 @@ from scripts.demo.users import USERS, ensure_env, seed_users
 ROOT = Path(__file__).resolve().parents[2]
 REFERENCE = ROOT / "data" / "generated" / "reference"
 DEMO = ROOT / "demo"
-DEMO_MODEL = "claimsense-decision:v2"
+DEMO_MODEL = "claimsense-decision:v3"
 
 
 def step(text: str) -> None:

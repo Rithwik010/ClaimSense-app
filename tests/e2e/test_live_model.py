@@ -45,4 +45,4 @@ def test_sample_claim_runs_through_the_base_model(api, load_case_reference) -> N
     events = [e["event_type"] for e in client.get(f"/v1/claims/{claim['claim_id']}/audit").json()]
     assert events[:3] == ["INTAKE_COMPLETED", "RULES_EVALUATED", "CONTEXT_ASSEMBLED"]
     assert events[3] in {"SLM_RECOMMENDED", "OUTPUT_INVALID"}
-    assert events[4:] == ["CALCULATED"]
+    assert events[4:] == ["CALCULATED", "EXPLANATION_BUILT"]

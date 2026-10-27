@@ -315,7 +315,7 @@ class OllamaSwitch:
 
 def second_api(ollama_url: str) -> subprocess.Popen:
     env = dict(os.environ, OLLAMA_URL=ollama_url)
-    env.setdefault("MODEL_NAME", "claimsense-decision:v2")
+    env.setdefault("MODEL_NAME", "claimsense-decision:v3")
     server = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "app.api.main:app", "--port", str(DEAD_API_PORT)],
         cwd=ROOT,

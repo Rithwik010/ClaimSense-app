@@ -1,0 +1,55 @@
+# Lead lines (the reason for the visit; writer A's chief complaint) that state part of a criterion a
+# fact sheet can mark missing (the team's rule of 23 Oct: a lead line or chief complaint never states
+# a fact the sheet marks missing; D-V3-14). The leads come from v2's note templates, which stay as
+# they are; v3 swaps in the neutral lead when one of the listed criteria is missing on the sheet.
+# Judged once per lead, on the wording that says the most (the B chief complaint, often): a lead
+# that only names the clinic, the referral or the requested procedure states no criterion.
+# Synthetic wording only.
+- lead: "The patient is seen for heart rhythm symptoms."
+  states: [POL-CAR-002.c4, POL-CAR-002.c6]
+  why: "names the rhythm symptoms (palpitations, in the B wording)"
+  neutral: {A: "The patient is seen in the heart clinic.", B: "Cardiology visit."}
+- lead: "The patient reports chest discomfort."
+  states: [POL-CAR-001.c7]
+  why: "names a symptom that suggests coronary artery disease"
+  neutral: {A: "The patient is seen in the heart clinic.", B: "Cardiology visit."}
+- lead: "The patient returns after atrial fibrillation treatment."
+  states: [POL-CAR-002.c5]
+  why: "names the treatment whose response the recording will check"
+  neutral: {A: "The patient returns to the heart clinic.", B: "Cardiology f/u."}
+- lead: "OSA, returns for CPAP study."
+  states: [POL-DX-001.c6]
+  why: "names the reason for the repeat study (CPAP titration)"
+  neutral: {B: "Returns for sleep testing."}
+- lead: "The patient is seen for hand numbness."
+  states: [POL-DX-002.c5]
+  why: "names the history that shows why nerve testing is needed"
+  neutral: {A: "The patient is referred for nerve testing.", B: "Referred for nerve testing."}
+- lead: "The patient with type 2 diabetes is seen for nerve symptoms."
+  states: [POL-DX-002.c5]
+  why: "names the nerve symptoms (neuropathy, in the B wording)"
+  neutral: {A: "The patient is referred for nerve testing.", B: "Referred for nerve testing."}
+- lead: "The patient has a recurring rash."
+  states: [POL-DX-003.c6]
+  why: "names a finding that suggests contact dermatitis (recurrent dermatitis, in the B wording)"
+  neutral: {A: "The patient is seen in the allergy clinic.", B: "Allergy clinic visit."}
+- lead: "The patient has neck and arm symptoms."
+  states: [POL-IMG-001.c1]
+  why: "names the symptoms that support the scan"
+  neutral: {A: "The patient is referred for imaging.", B: "Referred for imaging."}
+- lead: "The patient is seen for headaches."
+  states: [POL-IMG-001.c1]
+  why: "names the symptom that supports the scan"
+  neutral: {A: "The patient is referred for imaging.", B: "Referred for imaging."}
+- lead: "CC: lump/swelling."
+  states: [POL-IMG-002.c6]
+  why: "names the condition the ultrasound is meant to evaluate"
+  neutral: {B: "Referred for ultrasound."}
+- lead: "The patient is seen about a drooping eyelid."
+  states: [POL-SURG-004.c5]
+  why: "names the eyelid condition (lid ptosis, in the B wording)"
+  neutral: {A: "The patient is seen in the eye clinic about eyelid surgery.", B: "Oculoplastics consult."}
+- lead: "The patient is seen about drooping upper eyelids."
+  states: [POL-SURG-004.c5]
+  why: "names the eyelid condition"
+  neutral: {A: "The patient is seen in the eye clinic about eyelid surgery.", B: "Oculoplastics consult."}

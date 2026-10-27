@@ -199,7 +199,7 @@ test("admin: overview, model metrics, audit lookup and system status, read-only"
 
   await page.goto("/system");
   await expect(page.getByText("Reachable", { exact: true })).toHaveCount(3);
-  await expect(page.getByText("claimsense-decision:v2").first()).toBeVisible();
+  await expect(page.getByText("claimsense-decision:v3").first()).toBeVisible();
 
   await page.goto("/queue");
   await expect(page.getByText("Read only.", { exact: false })).toBeVisible();

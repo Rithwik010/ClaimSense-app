@@ -4,7 +4,7 @@
 # start them when they are not running.
 # First time on a machine: `make setup`.
 SHELL := /bin/bash
-MODEL_NAME ?= claimsense-decision:v2
+MODEL_NAME ?= claimsense-decision:v3
 API_PORT ?= 8000
 # Seconds `make docker-up` waits for Docker Desktop to start.
 DOCKER_WAIT ?= 120

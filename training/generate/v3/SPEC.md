@@ -1,0 +1,412 @@
+# Generator v3: realism spec
+
+Training and test claims whose clinical notes look like real notes, for the v3 decision model. Every
+value below is a parameter in `training/generate/v3/config.yaml` (named in `code`); the unit tests
+check that this file and the config name the same parameters. Synthetic data only: no real patient
+data, nothing from the Evernorth or Cigna documents in `data/raw/payer-guides/`, no AMA CPT descriptor
+text, and no outside model APIs (the open-weight models run in private Kaggle notebooks).
+
+## Sources
+
+Realism comes only from public sources already in `data/raw/`:
+
+- **Note content.** The LCDs behind the policies (MCD download `mcd/2026-09-21/`). For example
+  L33906 (epidural injections) asks for "history, physical examination, and concordant radiological
+  image-based diagnostic testing", an objective pain scale at baseline, and documented conservative
+  care. This is why a note has history, exam, results (with an embedded imaging report) and plan
+  sections, and why prior-procedure responses are dated.
+- **Uncertain mentions.** ICD-10-CM Official Guidelines FY2027, Section IV.H: an uncertain diagnosis
+  ("probable", "suspected", "rule out") is not coded as confirmed in the outpatient setting. This is
+  why a hedged mention never establishes a criterion.
+- **Chapter 15 codes.** The same guidelines restrict Chapter 15 codes to the maternal record.
+- **Claim form.** NUCC 1500 Claim Form Reference Instruction Manual v13 (p.34: six service lines;
+  p.38: up to four modifiers) and the CMS Claims Processing Manual ch.26 (p.15: up to 12 diagnoses;
+  p.16: up to four modifiers).
+
+No public sample notes are used.
+
+## Phase 1: what a note looks like
+
+### Structure
+
+The section list is `note.sections`:
+
+1. chief complaint
+2. history of present illness (HPI)
+3. past history
+4. medications
+5. allergies
+6. social history
+7. review of systems
+8. exam
+9. results
+10. assessment
+11. plan
+
+A section without a fact appears with probability `note.section_presence.<section>`. A section that
+holds a fact always appears. Headers vary (`phrases/sections.yaml` `headers`).
+
+### Length
+
+- Range: 150 to 900 words (`note.length_words.min`, `note.length_words.max`).
+- Target median: `note.length_words.target_median`.
+- Long tail: a share `note.length_words.long_tail_share` of notes is drawn from
+  `note.length_words.long_tail_min` to the maximum.
+
+Length is reached with more history, exam and copied-forward text, never with more criterion facts.
+
+### Embedded reports
+
+A claim still has one note, so a report goes inside it:
+
+- an imaging report (`note.embedded_reports.imaging_report`);
+- a therapy summary (`note.embedded_reports.therapy_summary`);
+- a prior procedure and its response (`note.embedded_reports.prior_procedure`), for example
+  "PRIOR PROCEDURE: transforaminal epidural steroid injection at L5 on 2026-03-02. RESPONSE: 60%
+  relief for 3 months".
+
+Each value is the chance that a fact placed in that kind of report is written as a report block.
+Which criterion goes where is the `placement` in `phrases/criteria.yaml`. A prior-procedure date is
+the visit date minus the interval the fact states.
+
+### Writing style
+
+- **Author habits** (`style_cards.author_habits`): terse and abbreviated, full sentences, dictated
+  (run-on dictation phrasing, `note.dictation_style`), or a templated EHR layout.
+- **Abbreviations:** pt, c/o, LBP, hx, s/p, w/, x6wks, HNP, SLR and the rest of
+  `phrases/abbreviations.yaml`. None of them is on The Joint Commission's "Do Not Use" list.
+- **Copy-forward:** a block marked "copied from" an earlier visit appears with probability
+  `tricky.copy_forward`.
+
+### Tricky facts
+
+All of these use the v2 labelling (D-POL-3); none adds a labelling rule.
+
+- **Negation.** An exclusion that does not apply may be stated in the negative
+  (`tricky.negated_exclusion`, `negated` sentences). It stays NOT_APPLICABLE. Review-of-systems lines
+  are negatives. Notes never say "denies" (leakage); they say "reports no", "negative for" or "no".
+- **Past vs current.** A dated past episode, resolved and unrelated to the visit's criteria, appears
+  with probability `tricky.past_vs_current` (`phrases/sections.yaml` `past_vs_current`).
+- **Uncertainty.** A missing criterion may get a hedged mention (`tricky.uncertain_for_missing`,
+  `uncertain` sentences). It stays NOT_DOCUMENTED.
+- **Contradiction.** A criterion is stated twice with conflicting content (`tricky.contradicted`):
+  first as text copied forward from an earlier visit, then as an explicit correction marked with one
+  of `tricky.correction_markers`. The correction decides the status, and its sentence is the
+  evidence. A contradiction without an explicit correction is not generated: the v2 prompt has no
+  rule for it.
+- **Distractors.**
+  - Unrelated conditions (`tricky.distractor_conditions`), which may also be listed on the claim.
+  - Medications (`tricky.distractor_medications`).
+  - Allergies and social history.
+
+  Every distractor has topics, and each clinic excludes the topics that touch its own criteria
+  (`phrases/sections.yaml` `clinics.<type>.exclude`).
+- **Borderline values.** With probability `tricky.borderline`, a criterion with a numeric threshold
+  is stated at the edge of it, on the side its state needs:
+  - **Above:** the value meets the threshold, so the status is MET.
+  - **Below:** it just misses it, so the status is NOT_MET.
+
+  The status is computed from the case's slot values and the threshold (`borderline` in
+  `phrases/criteria.yaml`), never written by hand. Thresholds used:
+
+  | Criterion | Threshold | Above (MET) | Below (NOT_MET) |
+  |---|---|---|---|
+  | POL-PAIN-001.c10 | pain at least 28 days (4 weeks) | 4, 5 weeks; onset 28, 31 days before the visit (as a date) | 3 weeks; onset 24, 26 days before |
+  | POL-PAIN-002.c6 | pain at least 3 months | 3 months | 2 months |
+  | POL-PAIN-001.c8 | relief at least 50% and lasting at least 3 months | 50% for 3 months, 55% for 3 months | 45% for 3 months, 65% for 2 months; both with the same approach planned again |
+  | POL-FOOT-001.c1 | no feeling at 2 or more of 5 sites | 2 of 5 | 1 of 5 |
+  | POL-SURG-004.c7 | at least 12 degrees or 30 percent | 12 deg (24%), 10 deg (30%) | 11 deg (25%), 10 deg (22%) |
+  | POL-SURG-002.c3 | at least 24 months since the last colonoscopy | 24, 25 months | 22, 23 months |
+  | POL-IMG-001.c2 | headache more than 14 days | 15, 16 days | 13, 14 days |
+  | POL-SURG-003.c4 | conservative trial at least 13 weeks (3 months) | 13, 14 weeks | 10, 11 weeks (the c2 exclusion's situation then holds too) |
+
+  Numeric thresholds not used, and why:
+
+  - **POL-CAR-002.c4, ejection fraction 40% or less.** These profiles' diagnoses include atrial
+    fibrillation, which meets "arrhythmias" on its own.
+  - **POL-CAR-002.c5 and c6, 48 hours to 15 days and 30 days.** These are recording lengths, a
+    property of the test, not a patient fact.
+  - **POL-CAR-001.c6, once a year.** Crossing the line changes whether the conditional applies, not
+    whether it is met.
+  - **POL-DX-003.c7, under 70 prick, 40 intradermal and up to 80 patch tests.** The counts are the
+    claim's units and meet the MUE rule.
+  - **POL-PAIN-002.c5, 2 weeks between blocks.** Its met state is the intent to go on to ablation.
+  - **POL-PAIN-001.c8's 14-day alternative.** It also needs a changed approach.
+  - **POL-SURG-002.c5, 2 cm adenoma and 7 or 15 years of colitis.**
+    - Any polyp history already qualifies, so the 2 cm size never decides the case.
+    - The colitis durations need IBD diagnoses outside the profile.
+  - **POL-FOOT-001.c4, class findings.** These are combinations of findings, not one number.
+  - **POL-WOUND-001.c4, 30 days.** Care without improvement does not continue regardless of the day
+    count.
+  - **POL-REHAB-001.c7.** No number.
+
+### Claim form
+
+Limits:
+
+| Limit | Config key | Source | contracts.py |
+|---|---|---|---|
+| 6 service lines | `claim_form.max_lines` | NUCC | 50 lines allowed, so no limit was hit |
+| 12 diagnoses | `claim_form.max_diagnoses` | | 12 |
+| 4 pointers per line | `claim_form.max_pointers_per_line` | | 4 |
+| 4 modifiers | `claim_form.max_modifiers` | | 4 |
+
+How claims are drawn:
+
+- **Lines per claim** (`claim_form.lines_per_claim`): mostly 1 or 2. Extra lines are office visits on
+  earlier dates (`claim_form.extra_visit_days`), so a claim can have several dates of service.
+- **Extra diagnoses** (`claim_form.extra_diagnoses`): distractor conditions, listed after the claim's
+  own diagnoses. A share `claim_form.extra_pointer_share` of them are pointed to from a line, after
+  the primary pointer.
+- **Modifiers:** combinations are v2's (25, 57, 59, XS, XU, RT, LT, Q8). Units come from the profiles.
+- **Rules check:** every claim goes through the real rules engine, and one whose rule outcome changes
+  is drawn again.
+
+### Noise
+
+Applied to writer A and B notes (Phase 3):
+
+- typos per eligible word (`noise.typo_rate`);
+- abbreviation swaps (`noise.abbreviation_swap_rate`);
+- two adjacent sections swapped (`noise.section_shuffle`, never the HPI);
+- formatting noise (`noise.formatting.*`):
+  - upper-case headers;
+  - sections run together;
+  - double spaces;
+  - bullet lists;
+  - trailing spaces.
+
+Noise never touches a protected span (`noise.protected`): fact phrases, numbers, dates and negation
+words (`noise.negation_words`).
+
+### Target mix
+
+- **Scenario types and weights** (`scenario_weights`): v2's, so the outcome mix matches v2, with the
+  tricky facts above layered on.
+- **Policies** (`test_unseen_policy_share`): train and validation use the training policies. A third
+  of each test set uses the test-only policies (`TEST_ONLY_POLICIES`), as in v2.
+
+## Phase 2: fact sheets and labels
+
+Every claim starts from a fact sheet (JSON). It records:
+
+- the patient (age and sex) and the visit dates;
+- a timeline of dated events (prior procedures, prior studies, the start of symptoms);
+- the lines;
+- for each line and each criterion the lookup shows:
+  - its fact status: `documented`, `missing`, `contradicted`, `borderline_below` or
+    `borderline_above`, or `absent` (an exclusion, conditional or group member not in play);
+  - the label status the status gives;
+  - the fact's text, the values that must appear in it, and its placement;
+- the distractors and the style card.
+
+How labels come about:
+
+- **Borderline statuses** map to MET or NOT_MET through the threshold checks.
+- **Contradicted** facts take the status of their correction.
+- **Labels** are computed from the statuses by v2's own code: `app.ml.derive.implied_decision`, as
+  `scenarios_v2` does. There is no new labelling logic.
+- **Reference data** (members, providers, plans) is generated from the seed files, as in v2, never
+  read from a database.
+
+## Phase 3: note writers
+
+- **Writer A (templates).**
+  - It draws from the v2 sentences and the extra wordings in `phrases/criteria.yaml`, inside
+    clinic-specific sections (`phrases/sections.yaml`).
+  - Everything is seeded.
+- **Writer B (open-weight model).**
+  - The model is `llm.writer_b.model` (licence `llm.writer_b.licence`), run with vLLM
+    `llm.vllm.version` in a private Kaggle notebook.
+  - Sampling: temperature `llm.writer_b.temperature` and top-p `llm.writer_b.top_p`, up to
+    `llm.writer_b.max_tokens` tokens, a fixed seed per note.
+  - The prompt gives the fact sheet and a style card.
+  - The note must contain every documented fact with its values, none of the missing ones, and the
+    contradictions and distractors as specified, and no outcome words.
+- **Writer C (held out, test only).**
+  - The model is `llm.writer_c.model` (`llm.writer_c.licence`), a family neither A nor B uses.
+  - It writes in its own formats (`style_cards.writer_c_formats`).
+- **Hand-written set.** 30 fact sheets (`sizes.handwritten`) and a one-page writing guide, for the
+  team to write notes from. Replaced on 23 Oct by the set below (D-V3-15).
+- **LLM-written human-style test set (writer D, test only; D-V3-15).** `sizes.test_human_style`
+  notes (`writer_mix.test_human_style`): the 30 briefs and 70 more fact sheets drawn the same way
+  from the held-out pool (every policy, `test_unseen_policy_share` on the test-only ones), never in
+  training or validation, and checked for near-duplicates against every other split.
+  - The model is `llm.writer_d.model` at `llm.writer_d.revision` (`llm.writer_d.licence`, family
+    `llm.writer_d.family`), a family no other v3 model uses; sampling `llm.writer_d.temperature`,
+    `llm.writer_d.top_p`, `llm.writer_d.max_tokens`, with `llm.writer_d.max_model_len` and
+    `llm.writer_d.max_num_seqs`; one user message (its chat template takes no system message).
+  - The style card, "the physician's own words": very terse, the physician's own abbreviations,
+    fragments, sections in an order the writer chooses, a target of `llm.writer_d.target_words`
+    words; the facts as one fragment each, numbers and dates exact. Its occasional misspellings come
+    from the noise layer, which never touches numbers, dates, negation words or the facts' quotes.
+  - Every note passes the gate (the lead-line and two-part rules included) and is checked by hand
+    against its fact sheet. Labels come from the fact sheets.
+  - Limitation: generated by an LLM, not written by people; it tests an unfamiliar style, not real
+    clinicians' notes.
+
+The noise layer is applied to A, B and D notes after the facts are found.
+
+## Phase 4: verification gate
+
+Every note must pass:
+
+1. **Every documented fact is present.** The quote is the sentence that states it, its exact
+   character span is recorded, and it contains the fact's values.
+2. **No missing fact is present.**
+   - Pattern check: no sentence holds `verification.missing_overlap` of a missing fact's content words.
+   - Verifier: `llm.verifier.model` (temperature `llm.verifier.temperature`), a family no writer uses,
+     quotes the evidence for each criterion. Any evidence found for a missing fact fails the note.
+3. **Contradictions and borderline values appear exactly as specified.** Both statements are
+   present, the correction comes later, and the exact borderline value is in the quote.
+4. **The label recomputed from the verified facts equals the fact sheet's label.**
+5. **Leakage scan.** No outcome word and no criterion or policy ID (`leakage.patterns`), and no
+   invented patient identifier: a name, a date of birth, a social security, phone or record
+   number, an e-mail address (`verify.IDENTIFIERS`, D-V3-17; patients are age and sex only).
+6. **Targets are valid.** The SLMOutput targets' quotes are exact substrings of the note, are at
+   least `verification.min_quote_words` words long, and pass the existing output schema and evidence
+   guard.
+7. **No near-duplicates** across the train, validation and test splits (5-word shingles, Jaccard of
+   `verification.near_duplicate_jaccard` or more).
+
+The verifier's quotes (D-V3-10, D-V3-11, D-V3-12). Words are compared with the writers' short forms
+written out (phrases/abbreviations.yaml), hyphenated and slashed words split and a plural "s"
+dropped. A value counts only as a number of its own (not the 4 of 44% or the 5 of C5, unless the
+fact's own wording writes it so), or spelled out.
+
+- A quote the verifier paraphrased stands for the note passage it matches (word overlap of
+  `verification.fuzzy_quote_overlap` or more), and the evidence is that passage, copied exactly;
+  "null" written as text is no quote.
+- A documented fact's quote must be about it: `verification.quote_overlap` of its words, and not
+  another stated fact's sentence (one holding `verification.rival_overlap` of that fact's words
+  and fitting it by `verification.rival_margin` more); the verifier sometimes gives one fact's
+  quote to the next. A fact the verifier missed, or quoted wrongly, is looked for in the note
+  itself: its own wording, else the sentence, or the fewest adjacent sentences on one line (up to
+  three), with `verification.local_fact_overlap` of its words, every value and the same polarity.
+  A contradicted fact and its copied statement only word for word.
+- For a missing or absent fact, the verifier's quote is no finding when it cites nothing in the
+  note, another documented fact's sentence, the fact's own hedged or negative mention (with the
+  same polarity: a flipped negation is a leak), a hedge while no wording is hedged, for an
+  exclusion the opposite polarity to every wording, a passage `verification.procedure_share` made
+  of the claim's own procedure wording (naming the requested procedure documents nothing), or a
+  passage with less than `verification.finding_overlap` of every wording's words. Any other
+  finding gets a second look, in the same Kaggle session for the notes verified there, and counts
+  only when the second look agrees. For a missing fact, the judge: the verifier model is shown
+  only the cited passage and the statement and asked whether the passage itself establishes it
+  (not when it only names the requested procedure, is about another problem, or covers only part;
+  a diagnosis only when the statement asks for that condition). For an exclusion, the verifier
+  is asked about that fact alone. (Asked about a fact alone, 23 Oct, the verifier found something
+  in 155 of 155 cases, the same quote in 108: for a missing fact it is no second opinion.)
+  `verification.second_look` switches the second look on; it is off since 23 Oct (D-V3-14: the
+  judge failed the team's bars), and every finding the rules above keep counts at once.
+  The local word-overlap check leaves the claim's procedure wording out the same way.
+- A MET fact with two or more parts (its A wording split at ";", ", and", ", but" and " and the ")
+  needs every part supported by its quote: `verification.part_overlap` of the part's words, or all
+  of its numbers; else the note's own passage that supports them all, else the note fails
+  (D-V3-14). A lead line (the reason for the visit) never states a criterion the sheet marks
+  missing: `phrases/leads.yaml` lists the leads that would, with the criteria they state and the
+  neutral lead used instead (D-V3-14).
+
+Model notes get "denies" written as "reports no" and "pending" as "awaited" before the gate.
+
+A failing note is regenerated, up to `verification.max_regenerations` times. Pass rates are tracked
+per writer. Each split is drawn with `sizes_margin` extra fact sheets, so that sheets still failing
+after every regeneration can be dropped and the split keeps its size; the final sets are trimmed to
+the sizes above.
+
+**Limitation: what the gate keeps (24 Oct).** The gate rejects more of writer B's heavily
+sectioned, choppy notes: its 495 rejected notes average 8.81 headings per note against 4.53 for the
+3,679 that pass, and a fragment share of 0.711 against 0.620 (abbreviations 1.65 against 1.43 per
+100 words; length about the same; `scripts/verify/v3_style_stats.py writer-b`). So the kept notes,
+the test sets included, are slightly less choppy than all of writer B's output.
+
+**Limitation: notes stuck in a loop (25 Oct, D-V3-29).** The datasets of 24 Oct were built before
+the gate checked for loops: 138 training notes (about 4.6% of writer B's 3,000; none of the 4,000
+v2-style records) repeat one 6-word phrase 5 times or more, most of them 10 times or more (up to
+476). Loss is on the answers only, so they are noisy input, not wrong labels. Validation holds 3 and
+the messy test 12 (all writer B); the other test sets none. The gate now fails such notes
+(`verification.loop_span`, `verification.loop_repeats`) for future builds, and stage 5's main sets
+leave them out (588 messy, 297 validation), the full sets reported beside them.
+
+## Phase 5: datasets
+
+**Splits:**
+
+| Split | Size | Writers |
+|---|---|---|
+| train | `sizes.train` | A and B (`writer_mix.train`) |
+| validation | `sizes.validation` | A and B (`writer_mix.validation`) |
+| messy test | `sizes.test_messy` | A and B (`writer_mix.test_messy`) |
+| unseen-style test | `sizes.test_unseen_style` | C (`writer_mix.test_unseen_style`) |
+| hand-written | `sizes.handwritten` fact sheets | the team |
+
+The v2 clean test (300) stays unchanged.
+
+**Sizes and top-ups (D-V3-6).** The training split is then topped up until every cell
+(`training/generate/v3/coverage.py`) reaches its floor in `top_up.floors`: lines per policy and
+decision, each criterion's label statuses, the tricky facts per policy, and both sides of every
+borderline criterion. Top-up sheets are drawn for the thinnest cell's policy from the scenario types
+likely to add to it, and kept only when they add to a cell still short; the target is the floor plus
+`top_up.cushion`, for notes the gate drops; a cell still short after `top_up.max_attempts_per_cell`
+sheets is reported. Validation and the tests keep the natural distribution.
+
+**Visit limits (D-V3-8).** No claim sends a line beyond its plan's yearly visit limit to the model:
+the same count as rule R21 (`training/generate/v3/visits.py`); such a claim is dropped and another
+drawn.
+
+**Training mix:** v2 clean train to v3 messy train at `training_mix.v2_clean` : `training_mix.v3_messy`.
+v2's 2,000 training records are joined by more v2-style records from the v2 generator and labels
+(D-V3-7): seed `v2_extra.seed`, numbered from `v2_extra.start`, `v2_extra.margin` spare; none
+repeats a v2 training note, none is a near-duplicate of a test record, none goes over a visit limit.
+
+**Statistics:**
+
+- note length;
+- token length with the real prompt template, against the context limit;
+- noise rates;
+- outcome and scenario mix;
+- lines per claim;
+- verification pass rates.
+
+**Check packs (synthetic only):**
+
+- 50 notes with their fact sheets and labels, as a checklist;
+- 20 notes without labels, for an optional realism rating.
+
+## Kaggle
+
+- **Estimates first:** GPU hours are estimated before each run (`llm.gpu_hours_estimate`), and the
+  estimates are refreshed from the pilots.
+- **Engine and precision:** vLLM's V1 engine (`llm.vllm.use_v1_engine`; Kaggle's Python 3.13 image
+  needs vLLM 0.10 or later, which has no other) in half precision (`llm.vllm.dtype`). A T4 cannot
+  run FlashAttention, so each stage tries the attention backends `llm.vllm.attention_backends` in
+  order and records the one that ran. The notebook pins `llm.vllm.pip_pins` next to vLLM (Kaggle's
+  image ships a Transformers that vLLM 0.11 cannot use).
+- **Hardware:** the two T4s run with tensor parallel `llm.vllm.tensor_parallel_size`, at
+  `llm.vllm.max_model_len` tokens (or a model's own `llm.<model>.max_model_len`, such as
+  `llm.writer_c.max_model_len` for OLMo-2's 4,096) and `llm.vllm.gpu_memory_utilization` of memory;
+  a model may run fewer sequences at once (`llm.writer_c.max_num_seqs`,
+  `llm.verifier.max_num_seqs`).
+- **Saved as it goes:** a stage answers `llm.vllm.chunk_size` prompts at a time and saves them, a
+  rerun skips what is saved, and a failed stage does not stop the next.
+- **Time budgets:** a stage stops taking new chunks after `llm.vllm.stage_hours.<stage>` hours; what
+  it has not done goes to the next round, so a round's GPU time is bounded.
+- **Privacy:** the datasets and notebooks are private, because the records hold CPT codes.
+
+## Other parameters
+
+| Parameter | Meaning |
+|---|---|
+| `version` | The generator version |
+| `seed` | The base seed |
+| `policy_set` | The labels follow policy set v2 |
+| `prompt_version` | The user message uses decision_v3, unchanged |
+| `style_cards.length_buckets` | Shares of short, medium and long notes |
+| `llm.writer_b.family` | The writer B family, for the different-family checks |
+| `llm.writer_c.family` | The writer C family |
+| `llm.writer_c.temperature` | Writer C sampling temperature |
+| `llm.writer_c.top_p` | Writer C top-p |
+| `llm.writer_c.max_tokens` | Writer C token limit |
+| `llm.verifier.family` | The verifier family |
+| `llm.verifier.max_tokens` | Verifier token limit |
+| `llm.verifier.licence` | The verifier licence |
