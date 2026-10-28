@@ -288,7 +288,8 @@ no network calls other than the database.
 1. **Group A (data integrity)**: R01–R04. If any fails → claim outcome **REJECT**; stop.
 2. **Group B (hard requirements)**: R05–R10. Evaluate **all**, record every failure.
    Outcome precedence: DENY over PEND. Any failure → claim stops with that outcome.
-3. **Group C (line level)**: R11–R13, then rules v2 R14–R20 (P2.3b; D-RULE-2 to D-RULE-7). Every
+3. **Group C (line level)**: R11–R13, then rules v2 R14–R20 (P2.3b; D-RULE-2 to D-RULE-7), then
+   R21, the yearly visit limit (D-RULE-10). Every
    rule runs on every line; a line's reason codes and flags are listed in rule order and the first
    reason is the primary one. A failing line is denied; the claim continues with the remaining
    lines. If every line is denied → claim outcome DENY. A flag never denies: a rule denies only
@@ -319,6 +320,7 @@ no network calls other than the database.
 | R18 | Transforaminal ESI levels per date above 2 on a side deny the add-on lines on that side (an RT or LT line counts on its side, modifier 50 or no side modifier on both; each unit of an add-on level code is one level, the primary code the first); an interlaminar or caudal ESI with modifier 50 | Line DENY | `DN_ESI_LEVELS` |
 | R19 | Third-level facet code (64492, 64495) → DENY; facet codes of both spinal regions on one date → PASS with flag `FACET_TWO_REGIONS` | Line DENY / Flag | `DN_FACET_LEVELS` |
 | R20 | More than 8 hours from the testing codes on the claim (96130, 96131 one hour per unit; 96136 30 minutes) → PASS with flag `EXTENDED_TESTING` | Flag | — |
+| R21 | Visit limit: in a visit-limited benefit category, one visit per date of service; the visits used in the benefit year count first, then the claim's dates in date order; every line of the category on a date beyond the plan's yearly limit is denied (a date whose lines an earlier rule denies uses no visit; D-RULE-10) | Line DENY | `DN_VISIT_LIMIT` |
 
 - **Conditional exclusions** (e.g. cosmetic vs. reconstructive, depending on diagnosis) are **not**
   rules. They belong to the SLM via coverage criteria.
@@ -431,7 +433,9 @@ Rendered with Jinja2 from the `DecisionRecord` only (H15). Sections:
 ### 8.8 Human decision review (`app/review/`)
 
 - Queue contains every claim in `AWAITING_REVIEW`, sortable by tier.
-- Actions: **ACCEPT**, or **OVERRIDE** individual line decisions with a **required** reason.
+- Actions: **ACCEPT**, or **OVERRIDE** individual line decisions with a **required** reason. A
+  DENY or PEND override also names a reason code from the allowed list, which becomes the line's
+  reason code; the provider sees that reason and its codes, never the free-text reason (D-REV-9).
 - Reviewers **cannot enter amounts**. After an override, the calculator re-runs on the new line
   decisions.
 - On finalization: status → `FINAL_*`, accumulators updated for approved lines, audit event written.

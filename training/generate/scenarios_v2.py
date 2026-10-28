@@ -1311,8 +1311,9 @@ def _code_tables() -> Any:
 
 
 def rules_reference(reference: ReferenceData) -> RulesReference:
-    """The engine's reference for generated claims: the generated members, providers, networks and
-    authorizations, with the full code tables (data/raw)."""
+    """The engine's reference for generated claims: the generated members, providers, networks,
+    authorizations and visit usage (R21, D-RULE-10: a line beyond its visit limit is a rule denial
+    and never reaches the model), with the full code tables (data/raw)."""
     return build_reference(
         load_curated(),
         _code_tables(),
@@ -1320,4 +1321,5 @@ def rules_reference(reference: ReferenceData) -> RulesReference:
         reference_dicts(reference.providers),
         reference_dicts(reference.provider_networks),
         reference_dicts(reference.authorizations),
+        visit_usage=reference_dicts(reference.visit_usage),
     )

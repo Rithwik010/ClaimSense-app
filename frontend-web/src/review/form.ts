@@ -1,9 +1,12 @@
-// The review form's rules (§8.8, D-REV-2, D-REV-4), apart from the page so they can be tested:
-// a line decided by a rule cannot be changed; a changed line needs a reason; the benefit category
-// is chosen only for an approved line with several candidate categories; reviewers never enter
-// amounts. "Accept all" is for an unchanged form, "Submit changes" for a changed one.
+// The review form's rules (§8.8, D-REV-2, D-REV-4, D-REV-9), apart from the page so they can be
+// tested: a line decided by a rule cannot be changed; a line changed to Deny or Pend needs a reason
+// code from the allowed list, which the provider sees; every changed line needs a note for the
+// audit trail, which the provider never sees; the benefit category is chosen only for an approved
+// line with several candidate categories; reviewers never enter amounts. "Accept all" is for an
+// unchanged form, "Submit changes" for a changed one.
 
 import type { DecisionRecord, LineDecision, LineOverride } from "../api/types";
+import { OVERRIDE_REASONS } from "../lib/labels";
 
 export interface LineState {
   lineNo: number;
@@ -12,13 +15,18 @@ export interface LineState {
   candidates: string[]; // benefit categories the plan offers for the line's code
   decision: LineDecision;
   category: string | null;
-  reason: string;
+  reasonCode: string | null; // a Deny or Pend override's reason code
+  reason: string; // the reviewer's note (the API's free-text reason)
 }
+
+/** The input an error belongs to, so the form marks that one. */
+export type FormField = "reasonCode" | "reason" | "category";
 
 export interface Checked {
   changed: number[];
   overrides: LineOverride[];
   errors: Record<number, string>;
+  fields: Record<number, FormField>;
 }
 
 export function initialLines(record: DecisionRecord): LineState[] {
@@ -34,8 +42,25 @@ export function initialLines(record: DecisionRecord): LineState[] {
       ),
       decision: line.decision,
       category: line.benefit_category,
+      reasonCode: null,
       reason: "",
     }));
+}
+
+/** The reason codes a decision allows: Deny and Pend have a list, Approve none. */
+export function reasonCodes(decision: LineDecision): string[] {
+  return decision === "APPROVE" ? [] : OVERRIDE_REASONS[decision];
+}
+
+/** Does the line need a reason code? A line changed to Deny or Pend. */
+export function needsReasonCode(line: LineState): boolean {
+  return reasonCodes(line.decision).length > 0;
+}
+
+/** The line with a new decision; a reason code the new decision does not allow is cleared. */
+export function withDecision(line: LineState, decision: LineDecision): LineState {
+  const keep = line.reasonCode !== null && reasonCodes(decision).includes(line.reasonCode);
+  return { ...line, decision, reasonCode: keep ? line.reasonCode : null };
 }
 
 /** Does the line need a benefit category choice? An approved line with several candidates. */
@@ -50,21 +75,29 @@ export function isChanged(line: LineState): boolean {
 }
 
 export function check(lines: LineState[]): Checked {
-  const result: Checked = { changed: [], overrides: [], errors: {} };
+  const result: Checked = { changed: [], overrides: [], errors: {}, fields: {} };
   for (const line of lines) {
     if (!isChanged(line)) continue;
-    result.changed.push(line.lineNo);
-    if (!line.reason.trim()) {
-      result.errors[line.lineNo] = `Give a reason for changing line ${line.lineNo}.`;
+    const n = line.lineNo;
+    result.changed.push(n);
+    const fail = (field: FormField, message: string) => {
+      result.errors[n] = message;
+      result.fields[n] = field;
+    };
+    if (needsReasonCode(line) && !line.reasonCode) {
+      fail("reasonCode", `Choose a reason for line ${n}.`);
+    } else if (!line.reason.trim()) {
+      fail("reason", `Write a note for changing line ${n}.`);
     } else if (needsCategory(line) && !line.category) {
-      result.errors[line.lineNo] = `Choose a benefit category for line ${line.lineNo}.`;
+      fail("category", `Choose a benefit category for line ${n}.`);
     }
     const override: LineOverride = {
-      line_no: line.lineNo,
+      line_no: n,
       decision: line.decision,
       reason: line.reason.trim(),
     };
     if (needsCategory(line) && line.category) override.benefit_category = line.category;
+    if (needsReasonCode(line) && line.reasonCode) override.reason_code = line.reasonCode;
     result.overrides.push(override);
   }
   return result;

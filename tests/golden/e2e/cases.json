@@ -4227,6 +4227,7 @@
             {
               "line_no": 1,
               "decision": "DENY",
+              "reason_code": "DN_NOT_MEDICALLY_NECESSARY",
               "reason": "Ordering physician's note shows the test was already done this month"
             }
           ],
@@ -4298,7 +4299,9 @@
               "line_no": 1,
               "decision": "DENY",
               "source": "REVIEWER",
-              "reason_codes": []
+              "reason_codes": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ]
             }
           ],
           "amounts": {
@@ -4353,7 +4356,7 @@
         "    working accumulators: deductible remaining 133017, OOP remaining 533017.",
         "  Totals: plan pays 0, member pays 16983. Working accumulators after (IN_NETWORK): deductible met 16983, OOP met 16983 (A5).",
         "Claim decision (derived) APPROVE; review tier: all APPROVE, complexity LOW, total allowed 16983 < 100000 -> QUICK.",
-        "Review OVERRIDE: line 1 -> DENY (Ordering physician's note shows the test was already done this month)",
+        "Review OVERRIDE: line 1 -> DENY, reason DN_NOT_MEDICALLY_NECESSARY (CO-50) (Ordering physician's note shows the test was already done this month)",
         "Calculator re-runs on the final decisions:",
         "  Plan PLN-PPO-SILVER, IN_NETWORK: deductible 150000, coinsurance 3000 bps, OOP max 550000.",
         "  Accumulators before: deductible met 0 -> remaining 150000; OOP met 0 -> remaining 550000.",

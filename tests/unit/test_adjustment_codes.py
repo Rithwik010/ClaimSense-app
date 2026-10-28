@@ -103,6 +103,21 @@ def test_level_limits_share_carc_151() -> None:
     assert [c[3] for c in codes(found)] == [[("CARC", "151"), ("RARC", "N115")]] * 2
 
 
+def test_a_visit_limit_denial_is_pr_119_with_n640_and_its_official_descriptions() -> None:
+    """D-CARC-3 (R21, D-RULE-10)."""
+    (found,) = adjustments(record([line(1, "DENY", "DN_VISIT_LIMIT", "RULE")]))
+    text = render(record([line(1, "DENY", "DN_VISIT_LIMIT", "RULE")]), "text")
+
+    assert codes([found]) == [(1, "DN_VISIT_LIMIT", "PR", [("CARC", "119"), ("RARC", "N640")])]
+    assert "the plan's yearly visit limit for this service is used up" in text
+    assert "group PR" in text
+    if RAW:
+        assert [c.description for c in found.codes] == [
+            "Benefit maximum for this time period or occurrence has been reached.",
+            "Exceeds number/frequency approved/allowed within time period.",
+        ]
+
+
 def test_an_r15_denial_names_its_article_and_gets_n115_only_with_a_related_lcd() -> None:
     (found,) = adjustments(record([line(1, "DENY", "DN_DX_NOT_SUPPORTED", "RULE")]), {1: R15_CODE})
 

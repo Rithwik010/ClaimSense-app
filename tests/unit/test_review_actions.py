@@ -29,6 +29,7 @@ from app.domain.contracts import (
     Versions,
 )
 from app.review.actions import (
+    OVERRIDE_REASONS,
     ReviewRefused,
     changes,
     finalization,
@@ -181,12 +182,27 @@ def test_a_review_for_another_claim_is_refused() -> None:
 # --- OVERRIDE ------------------------------------------------------------------------------------
 
 
+DEFAULT_CODES = {"DENY": "DN_NOT_MEDICALLY_NECESSARY", "PEND": "PD_MISSING_DOCUMENTATION"}
+
+
 def override(*lines: dict) -> ReviewAction:
+    """A DENY or PEND line gets a reason code (D-REV-9) unless it gives its own (None: none)."""
     return ReviewAction(
         claim_id="CLM-1",
         reviewer_id="r1",
         action="OVERRIDE",
-        line_overrides=[{"reason": "Reviewed the notes", **line} for line in lines],
+        line_overrides=[
+            {
+                "reason": "Reviewed the notes",
+                **(
+                    {"reason_code": DEFAULT_CODES[line["decision"]]}
+                    if line["decision"] in DEFAULT_CODES
+                    else {}
+                ),
+                **line,
+            }
+            for line in lines
+        ],
         timestamp=datetime.now(UTC),
     )
 
@@ -336,7 +352,7 @@ def test_unknown_and_repeated_lines_are_refused() -> None:
         )
 
 
-def test_the_audit_changes_hold_before_after_and_reason() -> None:
+def test_the_audit_changes_hold_before_after_reason_and_reason_code() -> None:
     record = _record([MODEL_APPROVE])
     action = override({"line_no": 1, "decision": "DENY"})
 
@@ -346,6 +362,7 @@ def test_the_audit_changes_hold_before_after_and_reason() -> None:
         {
             "line_no": 1,
             "reason": "Reviewed the notes",
+            "reason_code": "DN_NOT_MEDICALLY_NECESSARY",
             "before": {
                 "decision": "APPROVE",
                 "benefit_category": "ADVANCED_IMAGING",
@@ -356,10 +373,90 @@ def test_the_audit_changes_hold_before_after_and_reason() -> None:
                 "decision": "DENY",
                 "benefit_category": "ADVANCED_IMAGING",
                 "source": "REVIEWER",
-                "reason_codes": [],
+                "reason_codes": ["DN_NOT_MEDICALLY_NECESSARY"],
             },
         }
     ]
+
+
+# --- Reason codes on overrides (D-REV-9) ----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("value", "code"),
+    [
+        ("DENY", "DN_VISIT_LIMIT"),
+        ("DENY", "DN_CONDITIONAL_EXCLUSION"),
+        ("PEND", "PD_MISSING_DOCUMENTATION"),
+    ],
+)
+def test_a_deny_or_pend_override_carries_its_reason_code(value: str, code: str) -> None:
+    final = review_decisions(
+        _record([MODEL_APPROVE]), override({"line_no": 1, "decision": value, "reason_code": code})
+    )
+
+    assert (final[0].decision.value, final[0].source, final[0].reason_codes) == (
+        value,
+        "REVIEWER",
+        [code],
+    )
+
+
+@pytest.mark.parametrize("value", ["DENY", "PEND"])
+def test_a_deny_or_pend_override_without_a_reason_code_is_refused(value: str) -> None:
+    with pytest.raises(ReviewRefused, match=f"line 1: a {value} override needs a reason code"):
+        review_decisions(
+            _record([MODEL_APPROVE]),
+            override({"line_no": 1, "decision": value, "reason_code": None}),
+        )
+
+
+def test_an_approve_override_takes_no_reason_code() -> None:
+    with pytest.raises(ReviewRefused, match="goes with a DENY or PEND decision only"):
+        review_decisions(
+            _record([MODEL_DENY]),
+            override(
+                {"line_no": 1, "decision": "APPROVE", "reason_code": "DN_NOT_MEDICALLY_NECESSARY"}
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    ("value", "code"),
+    [
+        ("DENY", "DN_LATE_FILING"),  # a claim-level rule reason
+        ("DENY", "PD_MISSING_DOCUMENTATION"),  # a pend reason
+        ("PEND", "DN_NOT_MEDICALLY_NECESSARY"),  # a denial reason
+        ("PEND", "MODEL_OUTPUT_INVALID"),  # internal
+        ("DENY", "RJ_INVALID_CODE"),  # a rejection
+        ("DENY", "DN_SOMETHING_ELSE"),  # not a code at all
+    ],
+)
+def test_a_reason_code_outside_the_allowed_list_is_refused(value: str, code: str) -> None:
+    with pytest.raises(ReviewRefused, match=f"{code} is not a reason for a {value} override"):
+        review_decisions(
+            _record([MODEL_APPROVE]),
+            override({"line_no": 1, "decision": value, "reason_code": code}),
+        )
+
+
+def test_the_allowed_override_reasons() -> None:
+    assert OVERRIDE_REASONS == {
+        DENY: (
+            "DN_NOT_MEDICALLY_NECESSARY",
+            "DN_CONDITIONAL_EXCLUSION",
+            "DN_NCCI_BUNDLED",
+            "DN_MUE_EXCEEDED",
+            "DN_EXCLUDED",
+            "DN_MULTIPLE_BLOCKS",
+            "DN_DX_NOT_SUPPORTED",
+            "DN_HOME_TEST_PARASOMNIA",
+            "DN_ESI_LEVELS",
+            "DN_FACET_LEVELS",
+            "DN_VISIT_LIMIT",
+        ),
+        PEND: ("PD_MISSING_DOCUMENTATION",),
+    }
 
 
 # --- Visits --------------------------------------------------------------------------------------

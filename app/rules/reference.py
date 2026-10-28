@@ -31,7 +31,8 @@ class ProviderRef:
 class PlanRef:
     """What the rules need from a plan's configuration (data/curated/plans.yaml, benefits.csv,
     exclusions.csv). `auth_required_codes` lists the in-scope codes whose benefit category needs
-    prior authorization."""
+    prior authorization; `visit_limits` the visits per benefit year of each visit-limited benefit
+    category (R21, D-RULE-10)."""
 
     plan_id: str
     filing_window_inn_days: int
@@ -40,6 +41,7 @@ class PlanRef:
     referral_provider_types: frozenset[str]
     auth_required_codes: frozenset[str]
     excluded_codes: frozenset[str]
+    visit_limits: Mapping[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -144,6 +146,10 @@ class RulesReference:
     ptp_modifiers: Mapping[str, PtpModifierRef] = field(default_factory=dict)
     em_codes: frozenset[str] = frozenset()
     global_days: Mapping[str, str] = field(default_factory=dict)
+    # R21 (D-RULE-10): each in-scope code's candidate benefit categories, and the visits used
+    # before the claim: (member ID, benefit category, benefit year start) -> visits
+    benefit_categories: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
+    visits_used: Mapping[tuple[str, str, date], int] = field(default_factory=dict)
 
     def in_network(self, npi: str, plan_id: str) -> bool:
         """A-R1: no network row for the plan means out of network."""

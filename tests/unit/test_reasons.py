@@ -8,7 +8,9 @@ from pathlib import Path
 
 import pytest
 
+from app.db import raw
 from app.domain.contracts import ClaimStatus, LineDecision
+from app.explain.codes import official
 from app.explain.reasons import (
     FLAG_ONLY_RULES,
     OUTCOME_LABELS,
@@ -130,3 +132,19 @@ def test_a_claim_not_processed_is_in_review_to_its_provider() -> None:
     assert provider_outcome("DENIED") == "DENIED"
     rejected = rule_record(ClaimStatus.REJECTED, "R04", "RJ_MEMBER_NOT_FOUND", ["member_id"])
     assert claim_outcome(ClaimStatus.REJECTED, rejected) == "REJECTED"
+
+
+def test_the_yearly_visit_limit_is_worded_for_providers() -> None:
+    """R21 (D-RULE-10): a provider reads plain words for DN_VISIT_LIMIT, never the code."""
+    entry = REASONS["DN_VISIT_LIMIT"]
+    assert entry.rules == ("R21",)
+    assert not JARGON.search(entry.short) and not JARGON.search(entry.provider)
+    assert "N640" not in entry.provider and "119" not in entry.provider
+
+
+@pytest.mark.skipif(not raw.raw_available(), reason="data/raw/ not present (the X12 lists)")
+def test_the_visit_limit_codes_show_their_official_descriptions() -> None:
+    """DN_VISIT_LIMIT's CARC 119 and RARC N640 (data/curated/reason_code_map.csv) are shown with the
+    official X12 descriptions (app/explain/codes.py), not as bare codes."""
+    descriptions = official()
+    assert descriptions["CARC"]["119"] and descriptions["RARC"]["N640"]

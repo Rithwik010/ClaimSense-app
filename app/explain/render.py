@@ -49,6 +49,7 @@ REASON_LABELS = {
     "DN_HOME_TEST_PARASOMNIA": "a home sleep test billed for a parasomnia",
     "DN_ESI_LEVELS": "more epidural injection levels than the policy allows",
     "DN_FACET_LEVELS": "more facet levels than the policy allows",
+    "DN_VISIT_LIMIT": "the plan's yearly visit limit for this service is used up",
     "DN_NOT_MEDICALLY_NECESSARY": "not medically necessary under the coverage criteria",
     "DN_CONDITIONAL_EXCLUSION": "a coverage policy excludes the service in this situation",
     "PD_PROVIDER_ENROLLMENT": "the provider's enrollment needs checking",
@@ -260,6 +261,7 @@ def view(
                         "line_no": o.line_no,
                         "decision": DECISION_LABELS[o.decision],
                         "reason": o.reason,
+                        "reason_code": reason(o.reason_code) if o.reason_code else "",
                         "benefit_category": o.benefit_category,
                     }
                     for o in review.line_overrides

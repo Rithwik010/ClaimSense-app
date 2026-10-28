@@ -7,13 +7,15 @@ source for the claim lists' Reason column, the provider's explanation and billin
 summary (app/explain/provider.py, app/explain/summary.py). The reviewer's explanation keeps its own
 labels (render.py, D-EXPL-1).
 
-The codes come from the rules (R01 to R16, R18 and R19, the duplicate check, and the low-confidence
-conversion H5), the model's line derivation (app/ml/derive.py) and output validation
+The codes come from the rules (R01 to R16, R18, R19 and R21, the duplicate check, and the
+low-confidence conversion H5), the model's line derivation (app/ml/derive.py) and output validation
 (MODEL_OUTPUT_INVALID). R17 and R20 only flag lines, as do R11's NCCI bypass and R19's two-region
-check: they produce no reason code. A line a reviewer denies or pends carries no reason code
-(app/review/actions.py), so two keys of this table only, RV_DENIED_ON_REVIEW and
-RV_PENDED_ON_REVIEW, explain those lines; they never enter a decision record and have no CARC/RARC
-mapping. The wording is team-written; nothing is copied from AMA CPT descriptors or payer documents.
+check: they produce no reason code. A line a reviewer denies or pends carries the reason code the
+reviewer chose (D-REV-9, app/review/actions.py), worded by its entry here; two keys of this table
+only, RV_DENIED_ON_REVIEW and RV_PENDED_ON_REVIEW, explain a reviewer's line without a code (a
+record from before D-REV-9); they never enter a decision record and have no CARC/RARC mapping. A
+CARC or RARC itself is shown with its official description (app/explain/codes.py). The wording is
+team-written; nothing is copied from AMA CPT descriptors or payer documents.
 """
 
 from dataclasses import dataclass
@@ -266,6 +268,14 @@ _TABLE = (
         "More facet joint levels than covered",
         "The coverage policy for facet joint procedures does not cover a third spinal level on "
         "one date.",
+        (_CODE, _DATE),
+    ),
+    ReasonText(
+        "DN_VISIT_LIMIT",
+        ("R21",),
+        "Yearly visit limit used up",
+        "The member's plan covers a set number of these visits each year, and they have already "
+        "been used for this benefit year.",
         (_CODE, _DATE),
     ),
     ReasonText(

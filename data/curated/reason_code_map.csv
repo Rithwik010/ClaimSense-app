@@ -19,6 +19,7 @@ DN_DX_NOT_SUPPORTED,DENY,CO,11,N115,R15: the line's diagnoses do not support the
 DN_HOME_TEST_PARASOMNIA,DENY,CO,50,N115,R16: a home sleep test for a parasomnia (LCD L35050; D-RULE-3)
 DN_ESI_LEVELS,DENY,CO,151,N115,R18: ESI levels above the limit or an interlaminar ESI billed bilaterally (LCD L33906; D-RULE-3)
 DN_FACET_LEVELS,DENY,CO,151,N115,R19: a third-level facet procedure (LCD L33930; A57787; D-RULE-3); CARC 151 as for DN_ESI_LEVELS (D-CARC-2)
+DN_VISIT_LIMIT,DENY,PR,119,N640,R21: a visit beyond the benefit's yearly visit limit (D-RULE-10); group PR: the member's benefit maximum is reached (D-CARC-3; X12 lists of 2026-10-11)
 DN_NOT_MEDICALLY_NECESSARY,DENY,CO,50,,Model recommendation confirmed by a reviewer
 DN_CONDITIONAL_EXCLUSION,DENY,CO,96,N130,Model recommendation confirmed by a reviewer; CARC 96 requires a remark code
 PD_PROVIDER_ENROLLMENT,PEND,OA,133,,CARC 133 is used only with group code OA

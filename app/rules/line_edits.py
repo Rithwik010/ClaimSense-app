@@ -14,6 +14,8 @@ R14 to R20 change exactly the lines listed in tests/golden/rules/v2_dataset_chan
 - R12 (A-R4): the units of one code on one date of service, added over the lines, above the MUE
   limit deny every line of that code and date.
 - R13: a code on the plan's fixed exclusion list is denied.
+- R21 (D-RULE-10, app/rules/visit_limits.py) runs last: a line of a visit-limited benefit
+  category on a date beyond the plan's yearly limit is denied.
 A line failing several rules lists every reason, and its flags, in rule order (A-R11); the first
 reason is the primary one (D-RULE-3).
 """
@@ -25,6 +27,7 @@ from app.domain.contracts import (
     RuleResult,
     ServiceLine,
 )
+from app.rules import visit_limits
 from app.rules.lcd_edits import PASS_DETAILS, REASON_RULES, check_lcd_edits
 from app.rules.reference import PlanRef, RulesReference
 from app.rules.results import failed, line_fields, passed
@@ -32,7 +35,11 @@ from app.rules.results import failed, line_fields, passed
 BYPASS_FLAG = "NCCI_BYPASS"
 NO_EDIT = "9"  # modifier indicator: the edit does not apply
 BYPASS_ALLOWED = "1"
-RULE_OF = {"DN_NCCI_BUNDLED": "R11", "DN_MUE_EXCEEDED": "R12", "DN_EXCLUDED": "R13"} | REASON_RULES
+RULE_OF = (
+    {"DN_NCCI_BUNDLED": "R11", "DN_MUE_EXCEEDED": "R12", "DN_EXCLUDED": "R13"}
+    | REASON_RULES
+    | {visit_limits.VISIT_LIMIT: visit_limits.RULE_ID}
+)
 
 
 def _in_place(
@@ -155,6 +162,11 @@ def check_line_edits(
             details[(hit.index, hit.rule_id)] = hit.detail
             fields_of[(hit.index, hit.rule_id)] = list(hit.fields_used)
 
+    for visit in visit_limits.check_visit_limits(claim, plan, reference, reasons):
+        reasons[visit.index].append(visit_limits.VISIT_LIMIT)
+        details[(visit.index, visit_limits.RULE_ID)] = visit.detail
+        fields_of[(visit.index, visit_limits.RULE_ID)] = list(visit.fields_used)
+
     failures = [
         failed(
             RULE_OF[reason],
@@ -187,6 +199,14 @@ def check_line_edits(
         for rule_id, detail in PASS_DETAILS.items()
         if rule_id not in failing_rules
     ]
+    if visit_limits.RULE_ID not in failing_rules:
+        passes.append(
+            passed(
+                visit_limits.RULE_ID,
+                visit_limits.PASS_DETAIL,
+                ["member_id", *line_fields(len(lines), "date_of_service", "procedure_code")],
+            )
+        )
     outcomes = [
         LineRuleOutcome(
             line_no=line.line_no,

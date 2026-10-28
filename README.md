@@ -126,3 +126,14 @@ explanation of benefits, their benefits this year and their profile, and cannot 
 - **One laptop, synchronous.** The pipeline runs claim by claim; model answers take a few seconds
   to a minute; there is no queue, no scaling and no claim history beyond the demo database.
 - **Reviewer agreement and review time are not measured**: no real reviewers have used it.
+- **No physician review of medical-necessity denials.** Real insurers commonly require a physician
+  or other clinician to make these denials; our reviewer role is generic.
+- **No provider specialty check, and prior authorization is matched by member, provider, code and
+  date only:** the authorization number and units are not checked, and a referral is a referring
+  provider named on the claim, not a referral on file.
+- **No procedure frequency limits or surgery follow-up periods** across claims; the only limit
+  across claims is the yearly therapy visit limit (R21).
+- **No decision deadlines:** prompt-payment time limits are not tracked.
+- **Original claims only:** corrected and voided claims (frequency codes 7 and 8) are not accepted.
+- **One clinical note per claim:** separate report attachments (imaging, therapy, operative
+  reports) are not accepted.

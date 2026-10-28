@@ -34,7 +34,10 @@ LINE = re.compile(r"^  Line (\d+) \(([^)]*)\): (.+), decided by (.+)$")
 LISTED = re.compile(r"^  Line (\d+) \(([^)]*)\): (.+)$")
 RULE = re.compile(r"^  (R\d\d|DUP) (passed|failed)(?: \((\w+)\))?(?:, line (\d+))?: ")
 AMOUNT = re.compile(r"^ +([A-Za-z -]+): (-?\$[\d,]+\.\d{2})$")
-OVERRIDE = re.compile(r"^  Line (\d+) changed to ([A-Za-z ]+?)(?: \(([A-Z_]+)\))?: (.*)$")
+OVERRIDE = re.compile(
+    r"^  Line (\d+) changed to ([A-Za-z ]+?)(?: \(([A-Z_]+)\))?"
+    r"(?:, reason ([A-Z_]+)(?: \(.*?\))?)?: (.*)$"
+)
 
 
 def dollars(cents: int) -> str:
@@ -138,7 +141,7 @@ def mismatches(record: DecisionRecord, text: str) -> list[str]:
 
     # Review overrides.
     overrides = [
-        [int(m.group(1)), m.group(2), m.group(3), m.group(4)]
+        [int(m.group(1)), m.group(2), m.group(3), m.group(4), m.group(5)]
         for row in parts.get("Review", [])
         if (m := OVERRIDE.match(row))
     ]
@@ -146,7 +149,13 @@ def mismatches(record: DecisionRecord, text: str) -> list[str]:
         "overrides",
         overrides,
         [
-            [o.line_no, DECISIONS[o.decision.value], o.benefit_category, " ".join(o.reason.split())]
+            [
+                o.line_no,
+                DECISIONS[o.decision.value],
+                o.benefit_category,
+                o.reason_code,
+                " ".join(o.reason.split()),
+            ]
             for o in (record.review.line_overrides if record.review else [])
         ],
     )

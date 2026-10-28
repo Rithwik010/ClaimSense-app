@@ -237,6 +237,7 @@ export interface LineOverride {
   decision: LineDecision;
   reason: string;
   benefit_category?: string;
+  reason_code?: string; // a Deny or Pend override's reason code (D-REV-9)
 }
 
 export interface ModelRow {

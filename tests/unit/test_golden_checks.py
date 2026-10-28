@@ -213,7 +213,8 @@ def _rule_checks(case: dict) -> set[str]:
 
 
 def test_section_8_3_is_read_from_instructions() -> None:
-    assert set(SPEC.rules) == {f"R{n:02d}" for n in range(1, 21)} | {"DUP"}  # rules v2 (P2.3b)
+    assert set(SPEC.rules) == {f"R{n:02d}" for n in range(1, 22)} | {"DUP"}  # with R21 (D-RULE-10)
+    assert SPEC.rules["R21"].reasons == {"DN_VISIT_LIMIT"}
     assert SPEC.rules["R06"].outcomes == {"REJECT", "PEND"}
     assert SPEC.rules["R13"].outcomes == {"DENY"}
     assert SPEC.rules["R15"].reasons == {"DN_DX_NOT_SUPPORTED"}

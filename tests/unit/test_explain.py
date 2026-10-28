@@ -197,7 +197,42 @@ REJECTED = DecisionRecord(
     versions=Versions(rules_version="2.1.0"),
     timestamps=Timestamps(received=date(2026, 10, 1)),
 )
-RECORDS = {"approved": APPROVED, "pended": PENDED, "overridden": OVERRIDDEN, "rejected": REJECTED}
+CODED_NOTE = "Repeat scan within 30 days, no change."
+OVERRIDDEN_WITH_CODE = record(  # D-REV-9: the reviewer's reason code is the line's reason code
+    ClaimStatus.FINAL_PARTIAL,
+    [final(1, APPROVE), final(2, DENY, "REVIEWER")],
+    breakdown(line_amounts(1, 123456, 98765, 79012, 19753), line_amounts(2, 5000, 0, 0, 0)),
+    accept(
+        LineOverride(
+            line_no=2, decision=DENY, reason=CODED_NOTE, reason_code="DN_NOT_MEDICALLY_NECESSARY"
+        )
+    ),
+)
+RECORDS = {
+    "approved": APPROVED,
+    "pended": PENDED,
+    "overridden": OVERRIDDEN,
+    "overridden_with_code": OVERRIDDEN_WITH_CODE,
+    "rejected": REJECTED,
+}
+
+
+def test_staff_see_the_override_code_and_note_and_a_provider_neither_note_nor_reviewer() -> None:
+    """D-REV-9: the provider's record has no review, so the explanation shows the line's plain
+    reason and CARC but never the reviewer, the note or the comment."""
+    from app.api.claims import without_review
+
+    staff = render(OVERRIDDEN_WITH_CODE, "text")
+    shown = without_review(OVERRIDDEN_WITH_CODE)
+
+    assert "Line 2 changed to Denied, reason DN_NOT_MEDICALLY_NECESSARY (not medically" in staff
+    assert CODED_NOTE in staff and "reviewer-7" in staff
+    assert shown.review is None
+    assert shown.line_decisions == OVERRIDDEN_WITH_CODE.line_decisions
+    for body in (render(shown, "text"), render(shown, "html")):
+        assert CODED_NOTE not in body and "reviewer-7" not in body
+        assert "not medically necessary under the coverage criteria" in body
+        assert "CARC 50" in body
 
 
 @pytest.mark.parametrize("name", RECORDS)

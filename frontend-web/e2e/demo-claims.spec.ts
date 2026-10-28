@@ -98,7 +98,7 @@ test("03 model deny: after accepting claim 2, Next claim opens it; a line overri
   await page.getByRole("button", { name: "Override line" }).first().click();
   await page.getByLabel("New decision for line 1").click();
   await page.getByRole("option", { name: /^Approve/ }).click();
-  await page.getByLabel("Reason (required)").fill("The note documents the criterion; approved on review.");
+  await page.getByLabel("Note (required)").fill("The note documents the criterion; approved on review.");
   await page.getByRole("dialog").getByRole("button", { name: "Override line" }).click();
   await page.getByRole("button", { name: "Finalize claim" }).click();
   await finalize(page, "CLM-DEMO-03");

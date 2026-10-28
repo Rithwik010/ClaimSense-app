@@ -112,7 +112,7 @@ Review
   Comment: {{ review.reason | oneline }}
 {% endif %}
 {% for o in review.overrides %}
-  Line {{ o.line_no }} changed to {{ o.decision }}{% if o.benefit_category %} ({{ o.benefit_category }}){% endif %}: {{ o.reason | oneline }}
+  Line {{ o.line_no }} changed to {{ o.decision }}{% if o.benefit_category %} ({{ o.benefit_category }}){% endif %}{% if o.reason_code %}, reason {{ o.reason_code }}{% endif %}: {{ o.reason | oneline }}
 {% endfor %}
 {% endif %}
 

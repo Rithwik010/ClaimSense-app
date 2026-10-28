@@ -163,7 +163,7 @@
 {% if review.overrides %}
 <ul>
 {% for o in review.overrides %}
-<li>Line {{ o.line_no }} changed to {{ o.decision }}{% if o.benefit_category %} ({{ o.benefit_category }}){% endif %}: {{ o.reason }}</li>
+<li>Line {{ o.line_no }} changed to {{ o.decision }}{% if o.benefit_category %} ({{ o.benefit_category }}){% endif %}{% if o.reason_code %}, reason {{ o.reason_code }}{% endif %}: {{ o.reason }}</li>
 {% endfor %}
 </ul>
 {% endif %}

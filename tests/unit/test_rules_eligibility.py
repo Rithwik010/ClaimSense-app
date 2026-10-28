@@ -77,5 +77,6 @@ def test_passing_result_uses_every_date_of_service() -> None:
 
 
 def test_rules_version() -> None:
-    """v1 rules (P2.3a), rules v2 R14 to R20 (P2.3b) and R11's modifiers (P2.3c, D-RULE-9)."""
-    assert RULES_VERSION == "2.1.0"
+    """v1 rules (P2.3a), rules v2 R14 to R20 (P2.3b), R11's modifiers (P2.3c, D-RULE-9) and R21,
+    the visit limit (D-RULE-10: 2.2.0 as set on 17 Oct)."""
+    assert RULES_VERSION == "2.2.0"

@@ -1694,6 +1694,7 @@
             {
               "line_no": 1,
               "decision": "DENY",
+              "reason_code": "DN_NOT_MEDICALLY_NECESSARY",
               "reason": "Ordering physician's note shows the test was already done this month"
             }
           ],
@@ -1766,7 +1767,9 @@
               "line_no": 1,
               "decision": "DENY",
               "source": "REVIEWER",
-              "reason_codes": []
+              "reason_codes": [
+                "DN_NOT_MEDICALLY_NECESSARY"
+              ]
             }
           ],
           "amounts": {
