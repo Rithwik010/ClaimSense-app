@@ -513,6 +513,8 @@ Kaggle copy for anything model-related.
   - **README:** prototype limits added (physician review of denials; specialty, authorization number and units, referral on file; frequency limits and follow-up periods; decision deadlines; corrected and voided claims; separate reports).
   - **Tests (local, data/raw, no Postgres):** Python 1,849 passed, 525 skipped (database tests: the demo stack is down and was not started); web 58 passed.
 
+- 2026-10-28 09:00 | Claude | p7 merge | R21 yearly visit limit (D-RULE-10) and override reason codes (D-REV-9) rebased onto main and merged. On the way: the provider view's conflict resolved (main's view, the review stripped first: the provider sees the final decision and its plain reason, never the reviewer's ID, note or comment; tested); DN_VISIT_LIMIT in the reason table, CARC 119 and RARC N640 shown with their official descriptions; golden E2E-24 and E2E-24-V2's override names DN_NOT_MEDICALLY_NECESSARY (D-GOLD-10, H12, approved); PD_PROVIDER_ENROLLMENT off the override reasons. Checks: local pytest 2,845 passed, 1 skipped; web 118; `make offline-check` OK (250 checks passed); `make model-check` OK; Playwright 54/54; CI run 40535552838 passed (2465 passed, 82 skipped). **Next:** p9.1, docs/project-info; then the docs pass.
+
 <!-- Next entry goes here. Example:
 - 2026-09-23 01:30 | Manideep3183 | P4.3 | Full run finished: best eval loss ..., runtime ...; files downloaded to data/generated/models/claimsense-decision-v1/.
 -->
