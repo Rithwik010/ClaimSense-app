@@ -49,7 +49,7 @@ CLAIMS: dict[str, tuple[str, str]] = {
     "02-pend-standard": ("DV3-TM-00281", "json"),
     "03-deny-full-override": ("DV3-TM-00065", "json"),
     "04-partial-ncci": ("DV3-TU-00095", "json"),
-    "05-rule-deny-r15": ("DV3-TU-00104", "json"),
+    "05-rule-deny-r15": ("DV3-TM-00183", "json"),
     "06-reject-invalid-npi": ("DV3-TM-00367", "invalid-npi"),
     "07-duplicate-of-01": ("DV3-TM-00287", "json"),
     "08-scanned-clean": ("DV3-TU-00018", "scan"),
