@@ -12,10 +12,12 @@ work surface used for hours, not a landing page: legible codes, the evidence nex
 nothing that competes with the claim. The memorable element is the stage strip: a band that shows
 where a claim went in the pipeline and fills in once when a claim has just been processed.
 
-## Theme (D-UI-7, amends D-UI-5)
+## Theme (D-UI-7, amends D-UI-5; D-UI-8)
 
-White pages, a blue sidebar, indigo serif headings and one blue for actions and links, inspired by
-the Cigna Group's sites with our own values: no Cigna or Evernorth logo, name, font, image or copy.
+White pages, a large blue sidebar, indigo serif headings and one blue for actions and links. The
+blue family is the Cigna Group's public palette, at the team's request (D-UI-8): brand blue
+`#0033FF`, hover `#001F99`, indigo `#110081`, tints `#E6EBFF` and `#CCD6FF`, text `#333333`. No
+Cigna or Evernorth logo, name, font, image, leaf pattern or copy.
 Cards and tables are white with a soft grey rule; menus, dialogs, sheets, tooltips and toasts are
 solid white with a soft shadow, over a 40% indigo scrim for dialogs and sheets. No glass, no glow
 and nothing in the background. Every pair below is checked by `scripts/verify/contrast_check.py`.
@@ -27,17 +29,17 @@ Colour still means something. Every text pair meets WCAG AA on its surface.
 | Token | Value | Use | Contrast |
 |---|---|---|---|
 | `canvas`, `paper`, `raised` | `#FFFFFF` | pages, cards, floating layers | |
-| `subtle` | `#F5F6F8` | table headers, quiet panels, empty states | |
-| `ink` | `#2B2F38` | body text | 13.4:1 on white |
-| `ink-muted` | `#5B6170` | secondary text | 6.2:1 on white, 5.7:1 on `subtle` |
-| `ink-strong` | `#1B1464` | headings (serif), numbers that matter, the tab underline | 15.8:1 on white |
+| `subtle` | `#F4F4F4` | table headers, quiet panels, empty states | |
+| `ink` | `#333333` | body text | 12.6:1 on white |
+| `ink-muted` | `#5A5A5A` | secondary text | 6.9:1 on white, 6.3:1 on `subtle` |
+| `ink-strong` | `#110081` | headings (serif), numbers that matter, the tab underline | 15.7:1 on white |
 | `rules` | `#D9DCE3` | dividers and card borders (decorative) | |
 | `control` | `#7A8091` | input, select and checkbox borders | 3.9:1 on white |
-| `primary`, `link` | `#2442D6` | buttons, links, claim IDs, focus outline | 7.4:1 on white |
-| `primary-hover` | `#1A2FA3` | hovered buttons and links | |
-| `brand-tint` | `#E8ECFF` | hover, selected, in-review chips | |
-| `highlight` | `#FFF2CC` | evidence quotes, with `ink` text and an amber underline | 12.0:1 |
-| sidebar | `#2442D6` | the sidebar and the login story panel; links `#E8ECFF` (6.3:1), the page you are on white on `#1A2FA3` (10.6:1) with a white bar on its left | |
+| `primary`, `link` | `#0033FF` | buttons, links, claim IDs, focus outline | 7.2:1 on white |
+| `primary-hover` | `#001F99` | hovered buttons and links | |
+| `brand-tint` | `#E6EBFF` | hover, selected, in-review chips | |
+| `highlight` | `#FFF2CC` | evidence quotes, with `ink` text and an amber underline | 11.3:1 |
+| sidebar | `#0033FF` | the sidebar (19 rem wide, 4 rem as icons; 17 px links on 48 px rows, 22 px icons, a 28 px wordmark) and the login story panel; links white (7.2:1), the role label `#CCD6FF` (5.0:1), the page you are on white on `#001F99` (12.7:1) with a 4 px white bar on its left | |
 
 Decisions are always text plus an icon on a tint, as a pill, never colour alone:
 
@@ -47,9 +49,9 @@ Decisions are always text plus an icon on a tint, as a pill, never colour alone:
 | Pend (needs information) | `#7A5300` | `#9A6A00` | `#FFF2CC` | `CircleHelp` | 6.1:1 / 4.2:1 |
 | Deny | `#A1121B` | `#B3141F` | `#FCE4E4` | `CircleX` | 6.6:1 / 5.7:1 |
 | Reject | `#474D5B` | `#474D5B` | `#ECEEF2` | `CircleSlash` | 7.3:1 |
-| In review, awaiting review | `#1B1464` | `#1B1464` | `#E8ECFF` | `Clock` | 13.4:1 |
+| In review, awaiting review | `#110081` | `#110081` | `#E6EBFF` | `Clock` | 13.2:1 |
 
-The primary action is a solid blue button (`#2442D6`, white text 7.4:1; `#1A2FA3` on hover). One
+The primary action is a solid blue button (`#0033FF`, white text 7.2:1; `#001F99` on hover). One
 primary button per screen; the others are outline buttons (white, a `control` border, blue text).
 
 ## Surfaces and depth

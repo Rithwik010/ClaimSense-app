@@ -51,7 +51,7 @@ export function Login() {
             </h2>
           </BlurFade>
           <BlurFade delay={0.16}>
-            <p className="mt-5 max-w-[48ch] text-[17px] leading-7 text-[#e8ecff]">
+            <p className="mt-5 max-w-[48ch] text-[17px] leading-7 text-[#e6ebff]">
               Every recommendation shows its evidence. A reviewer accepts or overrides each line, and every step
               is recorded.
             </p>
@@ -60,7 +60,7 @@ export function Login() {
             <PipelineBeam />
           </BlurFade>
         </div>
-        <p className="relative flex items-center gap-2 text-[13px] text-[#e8ecff]">
+        <p className="relative flex items-center gap-2 text-[13px] text-[#e6ebff]">
           <ShieldCheck aria-hidden className="size-4 text-white" />
           Prototype · synthetic data only
         </p>
