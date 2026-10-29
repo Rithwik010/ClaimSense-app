@@ -60,7 +60,7 @@ export function ProviderOutcome({ explanation }: { explanation: ProviderExplanat
   const look = LOOK[explanation.outcome] ?? LOOK.PENDED!;
   return (
     <Panel glass className="mb-8 p-5 md:p-6">
-      <h2 className="flex items-center gap-2 text-[20px] leading-7 font-semibold">
+      <h2 className="flex items-center gap-2 text-[22px] leading-8 font-bold">
         <look.Icon aria-hidden className={`size-5 shrink-0 ${look.className}`} strokeWidth={2.25} />
         {explanation.heading}
       </h2>

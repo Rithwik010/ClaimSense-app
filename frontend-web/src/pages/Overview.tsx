@@ -53,7 +53,7 @@ function Kpi({ label, value, hint, icon: Icon }: { label: string; value: number;
         </span>
         {label}
       </p>
-      <p className="mt-3 text-[34px] leading-10 font-semibold tracking-[-0.02em]">
+      <p className="mt-3 font-heading text-[34px] leading-10 font-bold text-ink-strong">
         <NumberTicker value={value} />
       </p>
       <p className="mt-1 text-[13px] text-ink-muted">{hint}</p>
