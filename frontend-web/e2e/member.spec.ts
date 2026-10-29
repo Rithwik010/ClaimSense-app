@@ -177,7 +177,7 @@ test("member1: benefits and profile, as the API sends them", async ({ page }) =>
   await page.getByRole("link", { name: "Profile" }).click();
   await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
   const profile = page.getByRole("main");
-  for (const text of [MEMBER1, "Timothy Townsend", "ClaimSense HMO Select (HMO)", "01/01/2025", "No end date"]) {
+  for (const text of [MEMBER1, "Carl Sanchez", "ClaimSense PPO Gold (PPO)", "01/01/2026", "No end date"]) {
     await expect(profile).toContainText(text);
   }
   await axeClean(page, "member: profile");
