@@ -2,7 +2,6 @@
 // only (D-AUTH-1). Collapses to icons; a sheet on small screens. Who is logged in is in the user
 // menu at the top right.
 
-import { ShieldCheck } from "lucide-react";
 import { NavLink, useLocation } from "react-router";
 
 import { LogoMark, Wordmark } from "@/components/fx";
@@ -10,7 +9,6 @@ import { LogoMark, Wordmark } from "@/components/fx";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
@@ -61,12 +59,6 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="group-data-[collapsible=icon]:hidden">
-        <p className="flex items-center gap-2 rounded-md border border-[#ccd6ff]/40 bg-sidebar-accent px-3 py-2.5 text-[14px] text-white">
-          <ShieldCheck aria-hidden className="size-[18px] shrink-0 text-white" />
-          Prototype · synthetic data only
-        </p>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

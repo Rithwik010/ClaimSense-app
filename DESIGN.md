@@ -91,8 +91,8 @@ Sentence case everywhere. Buttons say what happens. Prose lines stay under about
 
 - Spacing on a 4 px grid: 4, 8, 12, 16, 24, 32, 48.
 - App shell: the blue sidebar (collapses to icons; a sheet below 768 px) with the logo mark, the
-  serif wordmark, the role's pages and a "Prototype · synthetic data only" note; a sticky white
-  header with a soft rule, the breadcrumb and the user menu. The page content is the `<main>` landmark (the sidebar inset).
+  serif wordmark and the role's pages; a sticky white header with a soft rule, the breadcrumb and
+  the user menu. The page content is the `<main>` landmark (the sidebar inset).
 - Not everything is a card. Lists and tables sit directly on a surface with dividers.
 
 ## Components
