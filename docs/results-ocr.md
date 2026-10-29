@@ -8,6 +8,7 @@ Target (P5.1): 90% field accuracy on the boxes that hold a value; clinical notes
 |---|---|
 | Field accuracy (boxes with a value) | **0.9378** (5193 fields) |
 | Blank boxes read as blank | 1.0000 (12027) |
+| Genuine forms refused by the label check (B5) | 0 |
 | Claims with every field correct | 33 of 205 |
 | Wrong reads flagged below 0.85 confidence | 0.805 |
 | Right reads at or above 0.85 confidence | 0.8423 |

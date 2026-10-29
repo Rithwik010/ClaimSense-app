@@ -7,23 +7,30 @@ dictionary, each field's confidence and the source format.
   check, 0.0 for one that fails it.
 - Scanned: OCR (`ocr.py`): lowest word confidence / 100, 0.0 when the format check fails.
 
+Before any box is read, each page's printed labels must be where our form prints them
+(`form_check.py`, B5): a PDF page by its text layer, a scanned page by OCR (turned upright first
+when it was scanned on its side or upside down). Anything else is refused with a plain message
+naming the page and what was expected, never read into confidently wrong values.
+
 Long notes go on to continuation pages (pages 3 on, at most `MAX_FORM_PAGES` pages; D-DOC-3), in one
-file or as further files; their notes are read after page 2's, in page order, and pages out of
-order, missing or repeated are refused. A claim of one or two pages is read exactly as before.
+file or as further files; each is checked as page 2 is (it prints the same labels), their notes are
+read after page 2's, in page order, and pages out of order, missing or repeated are refused. A
+claim of one or two pages is read exactly as before.
 """
 
 import io
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import pymupdf
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.domain.contracts import SourceFormat
-from app.intake.digital_pdf import Word, box_values, page_words, read_form_values, words_title
+from app.intake.digital_pdf import Word, box_values, page_words
 from app.intake.documents import content_type
 from app.intake.field_formats import format_ok
+from app.intake.form_check import NotOurForm, band_text, check_text_page, form_page_of
 from app.intake.form_codec import from_form_values
 from app.intake.layout import (
     ALL_PAGE_ONE_BOXES,
@@ -31,7 +38,6 @@ from app.intake.layout import (
     NOTES_BOX,
     PageOrderError,
     check_continuation,
-    notes_box,
 )
 from app.intake.ocr import (
     FORM_BOXES,
@@ -40,13 +46,13 @@ from app.intake.ocr import (
     joined_notes,
     page_title,
     parse_scan,
-    read_box,
     read_page,
-    straighten,
+    turn_upright,
 )
 
 MAX_FILE_BYTES = 20 * 1024 * 1024
 PAGE_ONE_FIELDS = {box.field for box in ALL_PAGE_ONE_BOXES}
+NOTES = NOTES_BOX.field
 FORM_PAGES = 2  # page 1: the claim; page 2: its attachments (layout.py); more: D-DOC-3
 PAGE_TYPES = ("application/pdf", "image/png", "image/jpeg")  # what a page file may be
 
@@ -68,41 +74,114 @@ def read_claim_file(data: bytes) -> tuple[dict[str, Any], dict[str, float], Sour
             raise UnreadableFile(f"the JSON claim cannot be read: {exc}") from exc
         return claim, {}, SourceFormat.JSON
     if data[:5] == b"%PDF-":
-        try:
-            with pymupdf.open(stream=data, filetype="pdf") as doc:
-                layers = [bool(page_words(page)) for page in doc]
-        except RuntimeError as exc:  # PyMuPDF: not a readable PDF
-            raise UnreadableFile(f"the PDF cannot be read: {exc}") from exc
-        if any(layers) and not all(layers):  # typed pages and scanned ones: page by page (D-DOC-3)
+        pages = _pdf_words(data)
+        if any(pages) and not all(pages):  # typed pages and scanned ones: page by page (D-DOC-3)
             return _read_pages(_file_pages(1, data))
-        try:
-            values = read_form_values(data)
-        except RuntimeError as exc:  # PyMuPDF: not a readable PDF
-            raise UnreadableFile(f"the PDF cannot be read: {exc}") from exc
-        except PageOrderError as exc:  # D-DOC-3
-            raise UnreadableFile(str(exc)) from exc
-        if PAGE_ONE_FIELDS & set(values):
-            confidences = {f: 1.0 if format_ok(f, text) else 0.0 for f, text in values.items()}
-            return from_form_values(values), confidences, SourceFormat.DIGITAL_PDF
+        if pages[0]:  # a text layer on every page: a digital PDF of our form
+            return _digital_pdf(pages)
     else:
         try:
-            Image.open(io.BytesIO(data)).verify()
+            with Image.open(io.BytesIO(data)) as image:
+                _check_pixels(image, "the image")
+                image.verify()
         except (UnidentifiedImageError, OSError) as exc:
             raise UnreadableFile("the file is not JSON, a PDF or an image") from exc
+        except Image.DecompressionBombError as exc:
+            raise UnreadableFile(f"the image {TOO_MANY_PIXELS}") from exc
     try:
         claim, confidences = parse_scan(data)
-    except PageOrderError as exc:  # D-DOC-3
+    except (NotOurForm, PageOrderError) as exc:  # B5; D-DOC-3
         raise UnreadableFile(str(exc)) from exc
+    except Image.DecompressionBombError as exc:
+        raise UnreadableFile(f"the image {TOO_MANY_PIXELS}") from exc
     return claim, confidences, SourceFormat.SCANNED
+
+
+def _digital_pdf(pages: list[list[Word]]) -> tuple[dict[str, Any], dict[str, float], SourceFormat]:
+    """A PDF with a text layer on every page: pages 1 and 2 read once their printed labels are
+    found where our form prints them, then the notes of any continuation pages (D-DOC-3), each
+    checked as page 2 is, after page 2's."""
+    values: dict[str, str] = {}
+    for index, words in enumerate(pages[:FORM_PAGES]):
+        values |= _text_page_values(words, index, f"page {index + 1} of the PDF")
+    try:
+        check_continuation([band_text(words) for words in pages])
+    except PageOrderError as exc:
+        raise UnreadableFile(str(exc)) from exc
+    more = [
+        text
+        for index, words in enumerate(pages[FORM_PAGES:], start=FORM_PAGES)
+        if (text := _text_page_values(words, 1, f"page {index + 1} of the PDF").get(NOTES))
+    ]
+    if more:
+        values[NOTES_BOX.field] = " ".join([values.get(NOTES_BOX.field, ""), *more]).strip()
+    confidences = {f: 1.0 if format_ok(f, text) else 0.0 for f, text in values.items()}
+    return from_form_values(values), confidences, SourceFormat.DIGITAL_PDF
+
+
+MAX_PAGE_POINTS = 2000.0  # a PDF page wider or taller than this is not a claim form page
+MAX_PIXELS = 50_000_000  # nor an image with more pixels (a letter page at 600 dpi has 34 million)
+TOO_MANY_PIXELS = "has too many pixels to be a scan of a claim form page"
+
+
+def _check_pixels(image: Image.Image, what: str) -> None:
+    if image.width * image.height > MAX_PIXELS:
+        raise UnreadableFile(f"{what} {TOO_MANY_PIXELS}")
+
+
+def _open_pdf(data: bytes, what: str) -> pymupdf.Document:
+    """The PDF, refused when it cannot be read, needs a password, has no pages or a page far
+    larger than a claim form page."""
+    try:
+        doc = pymupdf.open(stream=data, filetype="pdf")
+    except RuntimeError as exc:  # PyMuPDF: not a readable PDF
+        raise UnreadableFile(f"{what} cannot be read: {exc}") from exc
+    problem = None
+    if doc.needs_pass:
+        problem = f"{what} is protected by a password"
+    elif doc.page_count == 0:
+        problem = f"{what} has no pages"
+    elif any(max(page.rect.width, page.rect.height) > MAX_PAGE_POINTS for page in doc):
+        problem = f"{what} has a page far larger than a claim form page"
+    if problem:
+        doc.close()
+        raise UnreadableFile(problem)
+    return doc
+
+
+def _pdf_words(data: bytes) -> list[list[Word]]:
+    """The words of each page's text layer (an empty list for a page without one)."""
+    with _open_pdf(data, "the PDF") as doc:
+        try:
+            return [page_words(page) for page in doc]
+        except (RuntimeError, ValueError) as exc:  # PyMuPDF: a page that cannot be read
+            raise UnreadableFile(f"the PDF cannot be read: {exc}") from exc
+
+
+def _text_page_values(words: list[Word], index: int, where: str) -> dict[str, str]:
+    """The boxes of page `index` read from its text layer, once its printed labels are found
+    where our form prints them (UnreadableFile otherwise); a page without text gives nothing."""
+    if not words:
+        return {}
+    try:
+        check_text_page(words, index, where)
+    except NotOurForm as exc:
+        raise UnreadableFile(str(exc)) from exc
+    return box_values(words, [box for box in FORM_BOXES if box.page == index])
 
 
 @dataclass(frozen=True)
 class Page:
     """One page of a claim in several files: its text layer (a PDF page with one), or its image
-    (an image file, or a PDF page without text, rendered for OCR)."""
+    (an image file, or a PDF page without text, rendered for OCR); where it is, for messages
+    ("file 2", or "page 3 of file 1" in a file of several pages); and, once titled, its printed
+    title and the page of our form that title names (0 or 1; None when it names neither)."""
 
     words: list[Word] | None
     image: Image.Image | None
+    where: str = ""
+    form_page: int | None = None
+    title: str = ""
 
 
 def _file_pages(number: int, data: bytes) -> list[Page]:
@@ -119,8 +198,8 @@ def _file_pages(number: int, data: bytes) -> list[Page]:
         )
     if kind == "application/pdf":
         pages = []
-        try:
-            with pymupdf.open(stream=data, filetype="pdf") as doc:
+        with _open_pdf(data, f"file {number}: the PDF") as doc:
+            try:
                 for page in doc:
                     words = page_words(page)
                     if words:
@@ -129,38 +208,48 @@ def _file_pages(number: int, data: bytes) -> list[Page]:
                     pix = page.get_pixmap(dpi=RENDER_DPI, colorspace=pymupdf.csGRAY)
                     image = Image.frombytes("L", (pix.width, pix.height), pix.samples)
                     pages.append(Page(None, image))
-        except RuntimeError as exc:  # PyMuPDF: not a readable PDF
-            raise UnreadableFile(f"file {number}: the PDF cannot be read: {exc}") from exc
-        return pages
+            except (RuntimeError, ValueError) as exc:  # PyMuPDF: a page that cannot be read
+                raise UnreadableFile(f"file {number}: the PDF cannot be read: {exc}") from exc
+        if len(pages) == 1:
+            return [replace(pages[0], where=f"file {number}")]
+        return [replace(p, where=f"page {i} of file {number}") for i, p in enumerate(pages, 1)]
     try:
         image = Image.open(io.BytesIO(data))
+        _check_pixels(image, f"file {number}: the image")
         image.load()
     except (UnidentifiedImageError, OSError) as exc:
         raise UnreadableFile(f"file {number}: the image cannot be read") from exc
-    return [Page(None, ImageOps.exif_transpose(image).convert("L"))]
+    except Image.DecompressionBombError as exc:
+        raise UnreadableFile(f"file {number}: {TOO_MANY_PIXELS}") from exc
+    return [Page(None, ImageOps.exif_transpose(image).convert("L"), f"file {number}")]
 
 
-def _title(page: Page) -> str:
-    """The page's printed title, upper case: from its text layer, or by OCR."""
+def _titled(page: Page) -> Page:
+    """The page with its printed title and the form page that title names: from its text layer, or
+    by OCR of its title band, turned upright when the title reads only that way (B5)."""
     if page.words is not None:
-        return words_title(page.words)
-    return page_title(page.image) if page.image is not None else ""
+        title = band_text(page.words)
+        return replace(page, form_page=form_page_of(title), title=title)
+    if page.image is None:
+        return page
+    upright, found = turn_upright(page.image)
+    return replace(page, image=upright, form_page=found, title=page_title(upright))
 
 
 def _check_order(pages: list[Page]) -> None:
     """Page 1 (the claim) first and page 2 (its attachments) second, told apart by the title each
-    page prints, so the attachments page is never read as a claim."""
-    titles = [_title(page) for page in pages]
+    page prints, so the attachments page is never read as a claim; pages 3 on, the notes'
+    continuation pages in order (D-DOC-3)."""
     try:
-        check_continuation(titles)  # pages 3 on (D-DOC-3); two pages are checked below as before
+        check_continuation([page.title for page in pages])
     except PageOrderError as exc:
         raise UnreadableFile(str(exc)) from exc
-    if "ATTACHMENTS" in titles[0]:
+    if pages[0].form_page == 1:
         raise UnreadableFile(
             "the first file is page 2 of the claim form (its attachments): page 1, the claim,"
             " must come first"
         )
-    if len(titles) > 1 and "CLAIM FORM" in titles[1] and "ATTACHMENTS" not in titles[1]:
+    if len(pages) > 1 and pages[1].form_page == 0:
         raise UnreadableFile(
             "the second file is another page 1: it must be page 2 of the same claim form (its"
             " attachments)"
@@ -170,22 +259,26 @@ def _check_order(pages: list[Page]) -> None:
 def _read(page: Page, index: int) -> tuple[dict[str, str], dict[str, float], bool]:
     """(values, confidences, read from a text layer) of page `index` of the form, read as the
     single-file readers read it: every value and 1.0 or 0.0 from a text layer; from OCR, only
-    the values that pass their format check, with the OCR confidence."""
+    the values that pass their format check, with the OCR confidence. Its printed labels are
+    checked first (UnreadableFile naming the file when they are not where our form prints them)."""
+    where = page.where
     if page.words is not None:
-        values = box_values(page.words, [box for box in FORM_BOXES if box.page == index])
+        values = _text_page_values(page.words, index, where)
         return values, {f: 1.0 if format_ok(f, text) else 0.0 for f, text in values.items()}, True
-    reads = read_page(page.image, index) if page.image is not None else {}
+    try:
+        reads = read_page(page.image, index, where) if page.image is not None else {}
+    except NotOurForm as exc:
+        raise UnreadableFile(str(exc)) from exc
     values = {field: read.text for field, read in reads.items() if format_ok(field, read.text)}
     return values, {field: read.confidence for field, read in reads.items()}, False
 
 
-def _continued(page: Page, index: int) -> FieldRead | None:
-    """The notes of continuation page `index` (D-DOC-3), from its text layer or by OCR."""
-    box = notes_box(index)
-    if page.words is not None:
-        text = box_values(page.words, [box]).get(NOTES_BOX.field)
-        return FieldRead(text, 1.0) if text else None
-    return read_box(straighten(page.image), box) if page.image is not None else None
+def _continued(page: Page) -> FieldRead | None:
+    """The notes of a continuation page (D-DOC-3), from its text layer or by OCR, once its printed
+    labels are found where page 2's are (it prints the same)."""
+    found, read_with, _ = _read(page, 1)
+    text = found.get(NOTES_BOX.field)
+    return FieldRead(text, read_with[NOTES_BOX.field]) if text else None
 
 
 def read_claim_files(files: list[bytes]) -> tuple[dict[str, Any], dict[str, float], SourceFormat]:
@@ -215,6 +308,7 @@ def _read_pages(pages: list[Page]) -> tuple[dict[str, Any], dict[str, float], So
             f"a claim form has {FORM_PAGES} pages, or up to {MAX_FORM_PAGES} when its notes go on"
             f" to further attachment pages, and this one holds {len(pages)}"
         )
+    pages = [_titled(page) for page in pages]
     _check_order(pages)
     values: dict[str, str] = {}
     confidences: dict[str, float] = {}
@@ -222,7 +316,7 @@ def _read_pages(pages: list[Page]) -> tuple[dict[str, Any], dict[str, float], So
     continued: list[FieldRead] = []
     for index, page in enumerate(pages):
         if index >= FORM_PAGES:  # a continuation page: its notes (D-DOC-3)
-            if (read := _continued(page, index)) is not None:
+            if (read := _continued(page)) is not None:
                 continued.append(read)
             digital = digital and page.words is not None
             continue

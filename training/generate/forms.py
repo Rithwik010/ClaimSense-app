@@ -27,9 +27,14 @@ from reportlab.pdfgen import canvas
 
 from app.intake.layout import (
     ALL_PAGE_ONE_BOXES,
+    CAPTION_FONT,
+    CAPTION_INDENT,
+    CAPTION_RISE,
+    CAPTION_SIZE,
     LINE_BOXES,
     NOTES_BOX,
     PAGE_HEIGHT,
+    PAGE_TITLES,
     PRIMARY_PAID_BOXES,
     Box,
 )
@@ -64,8 +69,10 @@ def _y(top: float) -> float:
 def _draw_box(pdf: canvas.Canvas, box: Box, label: str | None = None) -> None:
     pdf.setLineWidth(0.5)
     pdf.rect(box.x0, _y(box.y1), box.x1 - box.x0, box.y1 - box.y0)
-    pdf.setFont("Helvetica", 5.5)
-    pdf.drawString(box.x0 + 1, _y(box.y0) + 2, box.label if label is None else label)
+    pdf.setFont(CAPTION_FONT, CAPTION_SIZE)
+    pdf.drawString(
+        box.x0 + CAPTION_INDENT, _y(box.y0) + CAPTION_RISE, box.label if label is None else label
+    )
 
 
 def _typed(pdf: canvas.Canvas, box: Box, text: str) -> None:
@@ -129,10 +136,9 @@ def render_pdf(
     buffer = io.BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter, invariant=1)
     pdf.setTitle("ClaimSense synthetic claim form")
-    pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(
-        30, _y(40), "HEALTH INSURANCE CLAIM FORM (ClaimSense synthetic layout, not the CMS-1500)"
-    )
+    first, second = PAGE_TITLES
+    pdf.setFont(first.font, first.size)
+    pdf.drawString(first.x, _y(first.baseline), first.text)
     pdf.setFont("Helvetica", 6.5)
     pdf.drawString(30, _y(372), "24. SERVICE LINES")
     for box in ALL_PAGE_ONE_BOXES:
@@ -148,8 +154,8 @@ def render_pdf(
     size = notes_capacity()
     chunks = [lines[i : i + size] for i in range(0, len(lines), size)] if continued else [lines]
     chunks = chunks or [[]]
-    pdf.setFont("Helvetica-Bold", 11)
-    pdf.drawString(30, _y(45), f"ATTACHMENTS FOR CLAIM {values.get('claim_id', '')}")
+    pdf.setFont(second.font, second.size)
+    pdf.drawString(second.x, _y(second.baseline), f"{second.text} {claim_id}")
     _notes_box(pdf, chunks[0])
     for row, box in enumerate(PRIMARY_PAID_BOXES):  # one caption above the first row only
         text = values.get(box.field)
@@ -158,11 +164,11 @@ def render_pdf(
             _typed(pdf, box, text)
     pdf.showPage()
     for number, chunk in enumerate(chunks[1:], start=2):
-        pdf.setFont("Helvetica-Bold", 11)
+        pdf.setFont(second.font, second.size)
         pdf.drawString(
-            30,
-            _y(45),
-            f"ATTACHMENTS FOR CLAIM {claim_id} (CONTINUED, PAGE {number + 1} OF {len(chunks) + 1})",
+            second.x,
+            _y(second.baseline),
+            f"{second.text} {claim_id} (CONTINUED, PAGE {number + 1} OF {len(chunks) + 1})",
         )
         _notes_box(pdf, chunk)
         pdf.showPage()

@@ -171,3 +171,52 @@ def check_continuation(titles: list[str]) -> None:
 SIMPLE_BOXES = HEADER_BOXES + PATIENT_BOXES + PROVIDER_BOXES
 ALL_PAGE_ONE_BOXES = SIMPLE_BOXES + DIAGNOSIS_BOXES + [box for row in LINE_BOXES for box in row]
 DATE_FORMAT = "%m/%d/%Y"
+
+# --- Printed labels: what every copy of the form prints, whatever the claim -----------------------
+# The intake checks that these sit where the layout puts them before it reads any box
+# (`form_check.py`), so a file that is not our form, or our form turned, tilted or shifted, is
+# refused instead of read wrong.
+
+
+@dataclass(frozen=True)
+class Title:
+    """A page's printed title: bold text at (x, baseline). `words` is the fixed part the checks
+    look for (page 2 adds the claim control number after it)."""
+
+    words: str
+    text: str
+    x: float
+    baseline: float
+    size: float
+    font: str = "Helvetica-Bold"
+
+
+PAGE_TITLES = (
+    Title(
+        "HEALTH INSURANCE CLAIM FORM",
+        "HEALTH INSURANCE CLAIM FORM (ClaimSense synthetic layout, not the CMS-1500)",
+        30,
+        40,
+        12,
+    ),
+    Title("ATTACHMENTS FOR CLAIM", "ATTACHMENTS FOR CLAIM", 30, 45, 11),
+)
+# A box's caption is printed in this font just above the box: at (x0 + CAPTION_INDENT,
+# y0 - CAPTION_RISE), the baseline.
+CAPTION_FONT, CAPTION_SIZE = "Helvetica", 5.5
+CAPTION_INDENT, CAPTION_RISE = 1.0, 2.0
+# The captions checked on each page: spread over the page (top, middle and bottom; left and right)
+# and long enough to read reliably. Page 2 prints only the clinical notes' caption every time.
+CHECKED_CAPTIONS = (
+    (
+        "member_id",
+        "patient.last_name",
+        "subscriber_is_patient",
+        "prior_auth_number",
+        "service_lines.0.date_of_service",
+        "service_lines.0.rendering_npi",
+        "billing_tin",
+        "billing_npi",
+    ),
+    ("clinical_notes",),
+)

@@ -14,6 +14,10 @@ reported: blank boxes read as blank, accuracy by kind of field, how well the con
 wrong reads (threshold EXTRACTION_CONFIDENCE_MIN, 0.85), and the clinical notes (exact and
 character similarity), which the target does not count.
 
+Every scan goes through the check of the form's printed labels (B5, app/intake/form_check.py)
+before its boxes are read; a genuine form it refuses is reported (`refused`) and its fields count
+as not read.
+
     uv run python -m scripts.verify.ocr_accuracy [--set heldout|dev] [--limit N] [--workers 8]
 """
 
@@ -31,6 +35,7 @@ from PIL import Image
 
 from app.domain.contracts import IntakeClaim
 from app.intake.field_formats import kind
+from app.intake.form_check import NotOurForm
 from app.intake.form_codec import to_form_values
 from app.intake.layout import ALL_PAGE_ONE_BOXES, NOTES_BOX, PRIMARY_PAID_BOXES
 from app.intake.ocr import page_images, read_scan
@@ -69,7 +74,11 @@ def case(record: dict[str, Any], seed: str) -> dict[str, Any]:
     scan = render_scan(to_form_values(claim), random.Random(f"{seed}-{claim.claim_id}"))
     written, noise = scan.values, scan.noise
     pages = page_images(scanned_pdf(scan.pages))
-    reads = read_scan(pages)
+    refused = None
+    try:
+        reads = read_scan(pages)
+    except NotOurForm as exc:  # a genuine form refused by the label check: nothing read
+        reads, refused = {}, str(exc)
     fields = []
     for field in FIELDS:
         want = " ".join(written.get(field, "").split())
@@ -92,6 +101,7 @@ def case(record: dict[str, Any], seed: str) -> dict[str, Any]:
         "claim_id": claim.claim_id,
         "value_noise": noise.get("value"),
         "skew_degrees": noise["visual"]["skew_degrees"],
+        "refused": refused,
         "fields": fields,
         "notes_exact": notes_got == notes_want,
         "notes_similarity": difflib.SequenceMatcher(None, notes_got, notes_want).ratio(),
@@ -114,6 +124,7 @@ def summary(cases: list[dict[str, Any]]) -> dict[str, Any]:
 
     return {
         "claims": len(cases),
+        "refused": [c["claim_id"] for c in cases if c.get("refused")],
         "fields_written": len(written),
         "field_accuracy": round(len(right) / len(written), 4),
         "blank_boxes": len(blank),
@@ -139,6 +150,7 @@ def report(name: str, result: dict[str, Any]) -> str:
                 f"**{r['field_accuracy']:.4f}** ({r['fields_written']} fields)",
             ),
             ("Blank boxes read as blank", f"{r['blank_read_as_blank']:.4f} ({r['blank_boxes']})"),
+            ("Genuine forms refused by the label check (B5)", f"{len(r['refused'])}"),
             (
                 "Claims with every field correct",
                 f"{r['claims_all_fields_correct']} of {r['claims']}",
