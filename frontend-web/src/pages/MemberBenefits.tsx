@@ -90,7 +90,7 @@ export function MemberBenefits() {
       )}
       <p className="max-w-[75ch] text-[13px] text-ink-muted">
         As your plan recorded them on {dateOnly(data.as_of)}, for the claims it has decided this benefit year; a claim
-        still being processed is not counted yet. Plan values are fictional: ClaimSense prototype, synthetic data only.
+        still being processed is not counted yet.
       </p>
     </>
   );

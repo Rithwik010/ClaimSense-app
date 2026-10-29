@@ -2,7 +2,6 @@
 // for (when the role may open it) or the role's home. Wide screens also show what ClaimSense
 // does, with the pipeline drawn as a slow beam of light.
 
-import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 
@@ -60,10 +59,6 @@ export function Login() {
             <PipelineBeam />
           </BlurFade>
         </div>
-        <p className="relative flex items-center gap-2 text-[13px] text-[#e6ebff]">
-          <ShieldCheck aria-hidden className="size-4 text-white" />
-          Prototype · synthetic data only
-        </p>
       </section>
 
       <div className="relative grid place-items-center px-4 py-10 sm:px-8">
@@ -84,8 +79,7 @@ export function Login() {
                 .finally(() => setPending(false));
             }}
           >
-            <h1 className="mb-1 text-[32px] leading-10 font-bold">Log in</h1>
-            <p className="mb-7 text-ink-muted">Synthetic data only. Not for real claims.</p>
+            <h1 className="mb-7 text-[32px] leading-10 font-bold">Log in</h1>
             <label className="mb-5 grid gap-2 text-[14px] font-semibold" htmlFor="username">
               Username
               <Input
@@ -127,7 +121,6 @@ export function Login() {
               {pending ? "Logging in" : "Log in"}
             </Button>
           </form>
-          <p className="mt-6 text-center text-[13px] text-ink-muted lg:hidden">Prototype · synthetic data only</p>
         </BlurFade>
       </div>
     </main>

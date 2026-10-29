@@ -280,8 +280,7 @@ export function EobView({
         </Section>
       )}
       <p className="max-w-[75ch] text-[13px] text-ink-muted">
-        Questions about this claim: contact the plan and give claim {data.claim_id}. ClaimSense prototype: synthetic data
-        only.{" "}
+        Questions about this claim: contact the plan and give claim {data.claim_id}.{" "}
         <Link
           className="font-semibold text-link underline print:hidden"
           to={back.to}
