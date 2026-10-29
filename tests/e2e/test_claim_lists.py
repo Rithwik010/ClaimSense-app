@@ -148,3 +148,52 @@ def test_the_results_file_is_served_once_written(api, tmp_path, monkeypatch) -> 
     assert client.get("/v1/metrics/results", headers=ADMIN).json() == {
         "reviewer_agreement": "not measured"
     }
+
+
+def test_the_evaluation_shows_v3_against_v2_from_the_results_file(
+    api, tmp_path, monkeypatch
+) -> None:  # noqa: ANN001, E501
+    scores = {
+        "claims": 588,
+        "macro_f1": 0.8321,
+        "valid_output": 0.9617,
+        "line_accuracy": 0.8711,
+        "deny_precision": 0.881,
+        "wrong_approvals": 49,
+        "criterion_accuracy": 0.931,
+    }
+    found = {
+        "set": "test_messy",
+        "title": "Messy notes",
+        "notes": "v3's test set",
+        "claims": 588,
+        "left_out_looping": 12,
+        "machine": "Kaggle, T4 GPU (Ollama 0.34.1)",
+        "v2": dict(scores, macro_f1=0.6458),
+        "v3": scores,
+        "macro_f1_difference_ci95": [0.1394, 0.2329],
+        "draws": 2000,
+        "files": ["v2-test_messy.json", "v3_best-test_messy.json"],
+    }
+    (tmp_path / "results-v3.json").write_text(json.dumps({"sets": [found], "timing": None}))
+    monkeypatch.setattr(metrics, "MODEL_REPORTS", ())
+    monkeypatch.setattr(metrics, "V3_REPORT", tmp_path / "results-v3.json")
+    client = api(None, None)
+
+    shown = client.get("/v1/metrics/evaluation", headers=ADMIN).json()["v3_sets"]
+    monkeypatch.setattr(metrics, "V3_REPORT", tmp_path / "missing.json")
+    without = client.get("/v1/metrics/evaluation", headers=ADMIN).json()["v3_sets"]
+
+    measures = ("macro_f1", "valid_output", "line_accuracy", "deny_precision", "wrong_approvals")
+    assert shown == [
+        {
+            "title": "Messy notes",
+            "notes": "v3's test set",
+            "claims": 588,
+            "machine": "Kaggle, T4 GPU (Ollama 0.34.1)",
+            "v2": {k: found["v2"][k] for k in measures},
+            "v3": {k: scores[k] for k in measures},
+            "macro_f1_difference_ci95": [0.1394, 0.2329],
+        }
+    ]
+    assert without == []  # a report not yet written is left out

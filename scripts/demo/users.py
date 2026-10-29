@@ -23,7 +23,7 @@ from app.db.session import get_engine
 ROOT = Path(__file__).resolve().parents[2]
 ENV = ROOT / ".env"
 USERS = {  # username: (role, provider NPI, display name when not a provider)
-    "provider1": (Role.PROVIDER, "2829620345", None),
+    "provider1": (Role.PROVIDER, "2615054733", None),
     "provider2": (Role.PROVIDER, "1816701100", None),
     "reviewer1": (Role.REVIEWER, None, "Reviewer One"),
     "reviewer2": (Role.REVIEWER, None, "Reviewer Two"),
@@ -34,9 +34,9 @@ USERS = {  # username: (role, provider NPI, display name when not a provider)
 # Each member login's member ID (their name comes from the member record): member1 is the patient
 # of claim 01 (approved after review) and 07 (its duplicate, rejected), member2 of claim 04 (partly
 # approved after review), so both have final claims once the demo run is through (docs/DEMO.md).
-MEMBERS = {"member1": "MBR-000152", "member2": "MBR-000150"}
+MEMBERS = {"member1": "MBR-000015", "member2": "MBR-000495"}
 # Which provider files which demo claim (demo/claims/): provider1 bills claims 01 and 07 itself,
-# provider2's practice bills 04 and 06; the rest are split between them.
+# provider2's practice bills 04, 06 and 09; the rest are split between them.
 FILED_BY = {
     "01-approve-quick.json": "provider1",
     "02-pend-standard.json": "provider1",

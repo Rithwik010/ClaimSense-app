@@ -263,12 +263,32 @@ export interface V2Errors {
   quick_claims_with_wrong_line: number;
 }
 
+export interface V3Scores {
+  macro_f1: number;
+  valid_output: number;
+  line_accuracy: number;
+  deny_precision: number;
+  wrong_approvals: number;
+}
+
+/** Model v3 against v2 on one set, both measured on the same machine (D-V3-34). */
+export interface V3Set {
+  title: string;
+  notes: string;
+  claims: number;
+  machine: string;
+  v2: V3Scores;
+  v3: V3Scores;
+  macro_f1_difference_ci95: [number, number] | null;
+}
+
 export interface Evaluation {
   models: ModelRow[];
   macro_f1_target: number;
   ocr: { claims: number; fields: number; field_accuracy: number; blank_read_as_blank: number } | null;
   ocr_target: number;
   v2_errors: V2Errors | null;
+  v3_sets: V3Set[];
 }
 
 /** A line of the provider's explanation: the whole claim (line_no null) or one line. */

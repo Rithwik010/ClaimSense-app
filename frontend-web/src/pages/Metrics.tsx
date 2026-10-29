@@ -1,5 +1,6 @@
-// Model metrics (admin): models v1, v2 and E4B on the same 300 synthetic v2 test claims side by side,
-// the per-class scores, the evidence-guard rows, and what else the results file records. Every
+// Model metrics (admin): model v3 against v2 on four sets (each measured on one machine, named),
+// models v1, v2 and E4B on the same 300 synthetic v2 test claims side by side, the per-class
+// scores, the evidence-guard rows, and what else the results file records. Every
 // number comes from GET /v1/metrics/evaluation or GET /v1/metrics/results; "not measured" and "not
 // applicable" are shown exactly as the API returns them.
 
@@ -7,7 +8,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { ApiError } from "@/api/client";
 import { useEvaluation, useResults } from "@/api/hooks";
-import type { GuardRow, ModelRow, Results } from "@/api/types";
+import type { GuardRow, ModelRow, Results, V3Set } from "@/api/types";
 import { PageTitle, Section } from "@/components/Layout";
 import { EmptyState, ErrorNotice, Skeleton } from "@/components/States";
 import {
@@ -78,6 +79,46 @@ function SideBySide({ models, guard, target }: { models: ModelRow[]; guard: Guar
                   {row.cell(m)}
                 </TableCell>
               ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function V3AgainstV2({ sets }: { sets: V3Set[] }) {
+  const interval = (ci: [number, number] | null) =>
+    ci ? `${ci[0] >= 0 ? "+" : ""}${ci[0].toFixed(3)} to ${ci[1] >= 0 ? "+" : ""}${ci[1].toFixed(3)}` : "—";
+  return (
+    <div className="overflow-x-auto surface rounded-lg">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Set</TableHead>
+            <TableHead>Measured on</TableHead>
+            <TableHead className="text-right">Claims</TableHead>
+            <TableHead className="text-right">v2 macro-F1</TableHead>
+            <TableHead className="text-right">v3 macro-F1</TableHead>
+            <TableHead className="text-right">v3 − v2, 95% interval</TableHead>
+            <TableHead className="text-right">v3 valid output</TableHead>
+            <TableHead className="text-right">v3 deny precision</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sets.map((s) => (
+            <TableRow key={`${s.title} ${s.machine}`}>
+              <TableCell>
+                <span className="font-semibold">{s.title}</span>
+                <span className="block text-[13px] text-ink-muted">{s.notes}</span>
+              </TableCell>
+              <TableCell>{s.machine}</TableCell>
+              <TableCell className="text-right tabular-nums">{s.claims}</TableCell>
+              <TableCell className="text-right tabular-nums">{three(s.v2.macro_f1)}</TableCell>
+              <TableCell className="text-right tabular-nums font-semibold">{three(s.v3.macro_f1)}</TableCell>
+              <TableCell className="text-right tabular-nums whitespace-nowrap">{interval(s.macro_f1_difference_ci95)}</TableCell>
+              <TableCell className="text-right tabular-nums">{percent(s.v3.valid_output)}</TableCell>
+              <TableCell className="text-right tabular-nums">{three(s.v3.deny_precision)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -261,14 +302,23 @@ export function Metrics() {
   const noResults = results.error instanceof ApiError && results.error.status === 404;
   if (evaluation.isPending) return <Skeleton lines={8} />;
   if (evaluation.error) return <ErrorNotice error={evaluation.error} onRetry={() => void evaluation.refetch()} />;
-  const { models, macro_f1_target } = evaluation.data;
+  const { models, macro_f1_target, v3_sets } = evaluation.data;
   const guard = results.data?.evidence_guard ?? [];
   return (
     <>
       <PageTitle
         title="Model metrics"
-        hint="Models v1, v2 and E4B on the same 300 synthetic v2 test claims. Line decisions are derived from the criteria, as the pipeline derives them; v2 is the model the demo uses."
+        hint="v3 is the model the demo uses: first against v2 on four sets of synthetic claims, then models v1, v2 and E4B on the same 300 v2 test claims. Line decisions are derived from the criteria, as the pipeline derives them."
       />
+      {v3_sets.length > 0 && (
+        <Section title="Model v3 against v2">
+          <V3AgainstV2 sets={v3_sets} />
+          <p className="mt-3 max-w-[72ch] text-[13px] text-ink-muted">
+            Both models on each set, on the machine named, with the evidence guard as the pipeline runs (notes stuck in a
+            loop left out). An interval above zero means v3 is better on that set beyond chance. From docs/results-v3.md.
+          </p>
+        </Section>
+      )}
       <Section title="Side by side">
         {models.length === 0 ? (
           <EmptyState title="No evaluation results yet">

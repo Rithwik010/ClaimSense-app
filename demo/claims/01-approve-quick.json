@@ -1,43 +1,44 @@
 {
   "claim_id": "CLM-DEMO-01",
-  "member_id": "MBR-000152",
+  "member_id": "MBR-000015",
   "patient": {
-    "first_name": "Timothy",
-    "last_name": "Townsend",
-    "date_of_birth": "1998-01-23",
+    "first_name": "Carl",
+    "last_name": "Sanchez",
+    "date_of_birth": "1983-03-03",
     "sex": "M",
     "address": {
-      "line1": "315 Kerr Crescent",
-      "city": "West Michelle",
-      "state": "NY",
-      "zip_code": "13210"
+      "line1": "10260 King Plaza",
+      "city": "Mayhaven",
+      "state": "MT",
+      "zip_code": "27992"
     }
   },
   "subscriber_is_patient": true,
-  "billing_npi": "2829620345",
-  "billing_tin": "319970926",
-  "referring_npi": "1102596032",
-  "prior_auth_number": "AUTH-S60921-00006",
+  "billing_npi": "2615054733",
+  "billing_tin": "900142579",
+  "referring_npi": null,
+  "prior_auth_number": null,
   "diagnoses": [
-    "R262"
+    "M25561",
+    "K219"
   ],
   "service_lines": [
     {
       "line_no": 1,
-      "date_of_service": "2026-10-06",
+      "date_of_service": "2026-10-28",
       "place_of_service": "11",
-      "procedure_code": "97161",
+      "procedure_code": "97162",
       "modifiers": [],
       "diagnosis_pointers": [
         "A"
       ],
       "units": 1,
-      "charge_cents": 20100,
-      "rendering_npi": "2829620345"
+      "charge_cents": 20800,
+      "rendering_npi": "2615054733"
     }
   ],
-  "clinical_notes": "The patient starts physical therapy with an initial evaluation. Past medical history was reviewed without changes. Treatment includes guided strengthening and balance training that need a physical therapist's skills. The patient understands the plan and wants to go ahead. A written plan of care from the evaluation sets goals: climb stairs without pain. Plan: physical therapy evaluation, low complexity.",
-  "received_date": "2026-10-28",
+  "clinical_notes": "CC: PT initial eval. HPI: progress visit: 43 y/o M. Hx from pt, reliable historian. PMH: GERD, controlled. Stable since 2017. PNA 2011, resolved. Wisdom teeth removed in 2018. Father with high cholesterol. A sister w/ asthma. Laser surgery for nearsightedness in 2007. Mother - HTN. Inguinal hernia repair 2011. Benign skin lesion excised (back) 2023. ALLERGIES: Sulfa - hives SH: Lives alone, independent. Occupation: electrician. ROS: ROS: no bruising/bleeding, N/V/bowel change, vision change & cough/SOB. PE: BP 125/76, HR 68, T 97.8F, SpO2 99% RA. Alert, seated comfortably. Vital signs taken before exercise. No clubbing. Abd soft, NT, no masses. Const: WDWN, NAD. Prior BPs: 131/86 (03/23/2026), 114/74 (03/10/2026), 123/79 (10/28/2025). Resp: CTAB, nl effort. HEENT: NCAT, MMM. Psychiatric: alert, oriented, nl mood & affect. Skin: warm and dry, no rash on exposed areas. RESULTS: No new labs. BMP (09/07/2026): Na 138, K 4.1, Cr 1.0. LFTs (09/12/2026): ALT 16, AST 31. Lipid panel on 08/03/2026: LDL 74 mg/dL on the current statin dose. Blood count on 08/05/2026: white count 5.2, hemoglobin 14.2, platelets 261. A/P: - Pain in R knee (M25.561) - Gastro-esophageal reflux disease without esophagitis (K21.9) PLAN: Proc: physical tx eval, moderate complexity. Skilled tx: progressive strengthening, balance/gait training. Copy to PCP. Portal access reviewed & No interpreter needed. R/B/A discussed, questions answered. Outside records scanned. The referring office will be sent today's findings. Scheduling/transport questions answered; front desk to arrange next appt. Contact preference updated. MVI daily refilled. Time was spent reviewing the med list with the patient, confirming doses and the pharmacy on file. Written info given incl after-hours contact. Amlodipine 5mg daily refilled.",
+  "received_date": "2026-11-05",
   "frequency_code": "1",
   "other_coverage": null
 }

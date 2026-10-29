@@ -19,8 +19,8 @@ const DEMO_01 = fileURLToPath(new URL("../../demo/claims/01-approve-quick.json",
 // What a member page never shows: rule IDs, internal reason codes, criterion IDs, a reviewer.
 const HIDDEN = /\bR(?:0[1-9]|1\d|20)\b|\bDUP\b|\b(?:RJ|DN|PD|RV)_[A-Z0-9_]+\b|\bMODEL_OUTPUT_INVALID\b|\bPOL-[A-Z]+-\d{3}\.c\d+\b|reviewer\d/;
 const NEW_CLAIM = `CLM-MBR-${String(Date.now()).slice(-6)}`;
-const MEMBER1 = "MBR-000152";
-const MEMBER2 = "MBR-000150";
+const MEMBER1 = "MBR-000015";
+const MEMBER2 = "MBR-000495";
 
 test.describe.configure({ mode: "serial" });
 test.setTimeout(120_000);
@@ -177,7 +177,7 @@ test("member1: benefits and profile, as the API sends them", async ({ page }) =>
   await page.getByRole("link", { name: "Profile" }).click();
   await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
   const profile = page.getByRole("main");
-  for (const text of [MEMBER1, "Timothy Townsend", "ClaimSense HMO Select (HMO)", "01/01/2025", "No end date"]) {
+  for (const text of [MEMBER1, "Carl Sanchez", "ClaimSense PPO Gold (PPO)", "01/01/2026", "No end date"]) {
     await expect(profile).toContainText(text);
   }
   await axeClean(page, "member: profile");

@@ -1,16 +1,16 @@
 {
   "claim_id": "CLM-DEMO-06",
-  "member_id": "MBR-000128",
+  "member_id": "MBR-000442",
   "patient": {
-    "first_name": "Paula",
-    "last_name": "Gross",
-    "date_of_birth": "1974-04-06",
-    "sex": "F",
+    "first_name": "Eric",
+    "last_name": "Mcmahon",
+    "date_of_birth": "1997-03-14",
+    "sex": "M",
     "address": {
-      "line1": "1630 Lucas Points",
-      "city": "Lake Elizabethmouth",
-      "state": "MD",
-      "zip_code": "67488"
+      "line1": "559 Valerie Groves Suite 640",
+      "city": "Johnmouth",
+      "state": "MT",
+      "zip_code": "49807"
     }
   },
   "subscriber_is_patient": true,
@@ -19,27 +19,43 @@
   "referring_npi": null,
   "prior_auth_number": null,
   "diagnoses": [
-    "G609",
-    "B351"
+    "L97412",
+    "E785",
+    "K219",
+    "E669"
   ],
   "service_lines": [
     {
       "line_no": 1,
-      "date_of_service": "2026-11-24",
+      "date_of_service": "2026-10-08",
       "place_of_service": "11",
-      "procedure_code": "11721",
+      "procedure_code": "99212",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A"
+      ],
+      "units": 1,
+      "charge_cents": 15700,
+      "rendering_npi": "1816701100"
+    },
+    {
+      "line_no": 2,
+      "date_of_service": "2026-10-22",
+      "place_of_service": "11",
+      "procedure_code": "97597",
       "modifiers": [],
       "diagnosis_pointers": [
         "A",
-        "B"
+        "B",
+        "C"
       ],
       "units": 1,
-      "charge_cents": 9200,
+      "charge_cents": 22100,
       "rendering_npi": "1816701100"
     }
   ],
-  "clinical_notes": "Onychomycotic nails, painful. Monofilament: absent at 4/5 sites left foot. VS WNL. Non-professional care unsafe. Plan -> trimming and cleaning of thickened toenails, 6 or more nails.",
-  "received_date": "2026-11-27",
+  "clinical_notes": "PLAN: Dead tissue was removed from the 5 cm ulcer on the right ankle down to the fat layer, with the patient seen one on one.\n\nPLAN: The care plan addresses off-loading, infection control and blood-sugar control so that the wound can close.\n\nPRIOR CARE: sharp debridement on 07/01/2026. RESPONSE: This is the third debridement; the ulcer has shrunk week by week, and the treatment plan was reviewed and revised last week.\n\nBACKGROUND: The pt reports no fever, chills, or unplanned weight loss. No urinary sx. No change in vision. No chest pain or palpitations. No cough or shortness of breath. No nausea, vomiting, or change in bowel habits. Mood is stable. Sleeping well. He is a former smoker, quit years ago. No alcohol. Retired, lives with a spouse in a single-story home.\n\nROS: Negative for fever, chills, and unplanned weight loss. No urinary symptoms. No change in vision. No chest pain or palpitations. No cough or shortness of breath. No nausea, vomiting, or change in bowel habits. Mood is stable. Sleeping well.\n\nASSESSMENT: Non-pressure chronic ulcer of right heel and midfoot with fat layer exposed (L97.412); Hyperlipidemia, unspecified (E78.5); Gastro-esophageal reflux disease without esophagitis (K21.9); Obesity, unspecified (E66.9).\n\nPLAN: Selective removal of dead tissue from an open wound, first 20 square cm or less.\n\nBACKGROUND: The patient is on amlodipine 5 mg daily, levothyroxine 75 mcg daily, sertraline 50 mg daily, vitamin D3 2000 units daily, docusate 100 mg as needed, and calcium carbonate 500 mg BID. He has seasonal pollen allergies. Outside laboratory results were reviewed and scanned into the chart. Family history is noncontributory. The pt knows how to reach the clinic w/ questions. There have ben no hospital stays or emergency visits since the last visit. The patient's preferred contact method was updated. The pt came to the visit alone. Questions weer answered, and the patient agrees w/ the plan. Constitutional: well developed, well nourished, in no distress.",
+  "received_date": "2026-10-27",
   "frequency_code": "1",
   "other_coverage": null
 }

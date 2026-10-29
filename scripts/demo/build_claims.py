@@ -2,9 +2,13 @@
 demo/claims/ with the prior authorizations they need (demo/authorizations.jsonl), so that
 `make demo-reset` gives every path on a clean database.
 
-Each claim is a claim of the synthetic corpus (data/generated/claims/claims.jsonl) under a demo
-claim ID; the corpus claim was picked because model v2 takes it down the path. Synthetic data only;
-clinical notes come from the generator's own templates (no CPT descriptor text).
+Each claim is a claim of v3's held-out test sets (data/generated/v3/final/<split>_inputs.jsonl:
+messy notes, a writing style v3 never trained on, and the LLM-written human-style notes, D-V3-15;
+never in training or validation) under a demo claim ID, so the demo shows the notes model v3 was
+built for (D-DEMO-1). Each was picked because v3 took it down its path on Kaggle and again on the
+laptop through the pipeline; `scripts/verify/repeatability.py` `demo_claims` checks that before a
+merge. Claim 05 keeps only the line R15 denies, so that every line is denied by the rule.
+Synthetic data only; no CPT descriptor text (checked below).
 
 | File | Path |
 |---|---|
@@ -32,24 +36,49 @@ from app.intake.ocr import page_images, read_scan
 from scripts.verify.ocr_accuracy import scanned_pdf
 from scripts.verify.policy_sources import cpt_descriptors, redact
 from training.generate.forms import render_scan
+from training.generate.v3.config import OUT_DIR as V3_DIR
 
 ROOT = Path(__file__).resolve().parents[2]
-CORPUS = ROOT / "data" / "generated" / "claims" / "claims.jsonl"
+SPLITS = ("test_messy", "test_unseen_style", "test_human_style")  # v3's held-out test sets
 OUT = ROOT / "demo"
 SCAN_SEED = "demo-20261011"  # scans: the first seed the OCR reads exactly (`clean_scan`)
 
-# demo file -> (corpus claim, how the demo copy differs)
+# demo file -> (v3 test record, how the demo copy differs)
 CLAIMS: dict[str, tuple[str, str]] = {
-    "01-approve-quick": ("CLM-C00023", "json"),
-    "02-pend-standard": ("CLM-C00065", "json"),
-    "03-deny-full-override": ("CLM-C00044", "json"),
-    "04-partial-ncci": ("CLM-C00135", "json"),
-    "05-rule-deny-r15": ("CLM-C00031", "json"),
-    "06-reject-invalid-npi": ("CLM-C00010", "invalid-npi"),
-    "07-duplicate-of-01": ("CLM-C00023", "json"),
-    "08-scanned-clean": ("CLM-C00009", "scan"),
-    "09-scanned-low-confidence": ("CLM-C00011", "scan-npi-typo"),
+    "01-approve-quick": ("DV3-TM-00287", "json"),
+    "02-pend-standard": ("DV3-TM-00281", "json"),
+    "03-deny-full-override": ("DV3-TM-00065", "json"),
+    "04-partial-ncci": ("DV3-TU-00095", "json"),
+    "05-rule-deny-r15": ("DV3-TM-00183", "json"),
+    "06-reject-invalid-npi": ("DV3-TM-00367", "invalid-npi"),
+    "07-duplicate-of-01": ("DV3-TM-00287", "json"),
+    "08-scanned-clean": ("DV3-TU-00018", "scan"),
+    "09-scanned-low-confidence": ("DV3-HW-00075", "scan-npi-typo"),
 }
+KEEP_LINES = {"05-rule-deny-r15": (2,)}  # its line 1 goes to the model; line 2 R15 denies
+
+
+def v3_records() -> dict[str, dict[str, Any]]:
+    """v3's held-out test records by record ID (data/generated/v3, not committed)."""
+    found = {}
+    for split in SPLITS:
+        for line in (V3_DIR / "final" / f"{split}_inputs.jsonl").read_text("utf-8").splitlines():
+            if line.strip():
+                record = json.loads(line)
+                found[record["record_id"]] = record
+    return found
+
+
+def demo_claim(name: str, number: int, record: dict[str, Any]) -> dict[str, Any]:
+    """The record's claim as demo claim `number`: its demo claim ID, only the lines kept, and its
+    notes without trailing blanks (a form cannot print them, so a claim read from one has none)."""
+    claim = dict(record["claim"], claim_id=f"CLM-DEMO-{number:02d}")
+    claim["clinical_notes"] = claim["clinical_notes"].rstrip()
+    keep = KEEP_LINES.get(name)
+    if keep:
+        lines = [line for line in claim["service_lines"] if line["line_no"] in keep]
+        claim["service_lines"] = [dict(line, line_no=n) for n, line in enumerate(lines, start=1)]
+    return claim
 
 
 def broken_check_digit(npi: str) -> str:
@@ -78,17 +107,13 @@ def clean_scan(name: str, values: dict[str, str], tries: int = 40) -> bytes:
 
 
 def build() -> list[str]:
-    corpus = {}
-    for line in CORPUS.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            record = json.loads(line)
-            corpus[record["claim"]["claim_id"]] = record
+    records = v3_records()
     (OUT / "claims").mkdir(parents=True, exist_ok=True)
     authorizations: dict[str, dict[str, Any]] = {}
     written = []
     for number, (name, (source, kind)) in enumerate(CLAIMS.items(), start=1):
-        record = corpus[source]
-        claim = dict(record["claim"], claim_id=f"CLM-DEMO-{number:02d}")
+        record = records[source]
+        claim = demo_claim(name, number, record)
         for auth in record.get("authorizations", []):
             authorizations[auth["auth_number"]] = auth
         if kind == "invalid-npi":
@@ -108,10 +133,10 @@ def build() -> list[str]:
     codes = {
         line["procedure_code"]
         for s, _ in CLAIMS.values()
-        for line in corpus[s]["claim"]["service_lines"]
+        for line in records[s]["claim"]["service_lines"]
     }
     found = sum(
-        redact(json.dumps(corpus[s]["claim"]), cpt_descriptors(codes))[1]
+        redact(json.dumps(records[s]["claim"]), cpt_descriptors(codes))[1]
         for s, _ in CLAIMS.values()
     )
     if found:

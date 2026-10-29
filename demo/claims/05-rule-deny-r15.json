@@ -1,42 +1,46 @@
 {
   "claim_id": "CLM-DEMO-05",
-  "member_id": "MBR-000325",
+  "member_id": "MBR-000484",
   "patient": {
-    "first_name": "Nathaniel",
-    "last_name": "Williams",
-    "date_of_birth": "1979-11-13",
-    "sex": "M",
+    "first_name": "Kimberly",
+    "last_name": "Craig",
+    "date_of_birth": "1969-02-09",
+    "sex": "F",
     "address": {
-      "line1": "203 Brown Circle",
-      "city": "Nicholasfurt",
-      "state": "AR",
-      "zip_code": "38055"
+      "line1": "3658 Stephens Fort Suite 797",
+      "city": "South Jessica",
+      "state": "IA",
+      "zip_code": "08172"
     }
   },
   "subscriber_is_patient": true,
-  "billing_npi": "1039186980",
-  "billing_tin": "626413097",
+  "billing_npi": "1661357644",
+  "billing_tin": "853960707",
   "referring_npi": null,
   "prior_auth_number": null,
   "diagnoses": [
-    "K5900"
+    "G4733",
+    "B351",
+    "E785",
+    "E039"
   ],
   "service_lines": [
     {
       "line_no": 1,
-      "date_of_service": "2026-11-04",
+      "date_of_service": "2026-11-01",
       "place_of_service": "11",
-      "procedure_code": "97110",
+      "procedure_code": "95806",
       "modifiers": [],
       "diagnosis_pointers": [
-        "A"
+        "B",
+        "D"
       ],
-      "units": 3,
-      "charge_cents": 19700,
-      "rendering_npi": "1039186980"
+      "units": 1,
+      "charge_cents": 21600,
+      "rendering_npi": "1661357644"
     }
   ],
-  "clinical_notes": "The patient reports hard stools and infrequent bowel movements. Plan: therapeutic exercise to build strength, flexibility or endurance, each 15 minutes. Past medical history was reviewed without changes.",
+  "clinical_notes": "We are seeing this 57-year-old woman today for a follow-up visit, and the history today is as follows. Several toenails are thick, yellow and crumbly. The sleep evaluation found loud snoring, pauses in breathing seen by the bed partner and daytime sleepiness, with an Epworth score of 19. The sleep evaluation found loud snoring, pauses in breathing seen by the bed partner and daytime sleepiness, with an Epworth score of 17. The pt came to the visit alone.\n\nPMH:\nHyperlipidemia, on a statin. Followed by primary care since 2016.\nHypothyroidism, stable on replacement.\nFamily history is noncontributory.\nLaser surgery for nearsightedness in 2010.\nCarpal tunnel release in 2016.\nTonsillectomy as a child.\nShoulder tendon repair in 2006.\nFather with an underactive thyroid.\nMother with osteoporosis.\nA brother w/ migraines.\nInguinal hernia repair in 2021.\n\nCurrent medications:\nlevothyroxine 75 mcg daily\nmetformin 500 mg twice daily, no side effects reported\n\nALLERGIES/INTOLERANCES:\nCodeine (nausea).\n\nSocial history:\nWorks as an accountant. Former smoker, quit years ago. No alcohol.\n\nExamination:\nBlood pressure 125/73, pulse 74, temperature 98.6 F, oxygen saturation 96% on room air. Well-appearing and in no distress. Loud snoring, witnessed pauses in breathing, a body mass index of 39 and a crowded airway make moderate to severe sleep apnea very likely. Skin is warm & dry. Neck: supple, no lymphadenopathy, no thyromegaly. HEENT: normocephalic, atraumatic; oral mucosa moist. Abdomen: soft, nontender, nondistended, nl bowel sounds. Skin: warm & dry, no rash on exposed areas.\n\nResults:\nThe diagnostic study last month showed moderate sleep apnea, and a CPAP titration study is needed. Most recent blood counts were unremarkable. Lipid panel on 06/23/2026: LDL 89 mg/dL on the current statin dose. Thyroid-stimulating hormone 2.8 on 09/11/2026, within the reference range. Basic metabolic panel on 07/20/2026: sodium 136, potassium 4.1, creatinine 0.9. Blood couunt on 09/18/2026: white count 5.2, hemoglobin 13.8, platelets 259.\n\nAssessment:\n1. Obstructive sleep apnea (adult) (pediatric) (G47.33)\n2. Tinea unguium (B35.1)\n3. Hyperlipidemia, unspecified (E78.5)\n4. Hypothyroidism, unspecified (E03.9)\n\nDisposition:\nProcedure planned: overnight lab sleep study with CPAP titration, pt 6 or older. A copy of this note goes to the primary care physician. Return precautions were reviewed. The patient was given written information about the visit, including how to reach the clinic after hours & when to call. Today's findings and the next steps were explained in plain language, & the patient repeated the plan back accurately. Metformin 500 mg twice daily was renewed for 90 days. The patient's preferred contact method was updated. Next routine visit is planned in about 3 wks. Time was spent reviewing the medication list with the pt, confirming doses & the pharmacy on file. Outside records from the prior clinic were scanned into the chart.",
   "received_date": "2026-11-09",
   "frequency_code": "1",
   "other_coverage": null
