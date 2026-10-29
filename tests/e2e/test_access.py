@@ -294,3 +294,183 @@ def test_a_member_is_refused_every_endpoint_but_their_own(api, load_case_referen
         response = client.request(method, path, headers=NO_SESSION)
         assert response.status_code == 401, (method, path, "not logged in")
         assert response.headers["www-authenticate"] == "Bearer"
+
+
+# --- The access matrix from the application's own route table (B4) ------------------------------
+#
+# Every route FastAPI serves is checked for every role and without a session, so a route added
+# later cannot slip through: a route missing from ROUTE_ACCESS fails the test with its name, and
+# an entry for a route that no longer exists fails too. Adding a role: add its session to SESSIONS
+# and its name to the role sets of the routes it may use. A member (D-MEM-1) logs in as a member on
+# file, so the member's session is added by the test that needs it (`with_member`).
+
+SESSIONS = {"provider": PROVIDER, "reviewer": REVIEWER, "admin": ADMIN}
+EVERYONE = frozenset(SESSIONS)
+MEMBERS = frozenset({"member"})  # a member's own routes only, and /v1/auth/me
+STAFF = frozenset({"reviewer", "admin"})
+PROVIDERS = frozenset({"provider"})
+REVIEWERS = frozenset({"reviewer"})
+ADMINS = frozenset({"admin"})
+# Values for the path parameters of the route templates.
+PATH_VALUES = {"claim_id": CLAIM, "file_no": "1", "plan_id": "PLN-PPO-GOLD"}
+CORRECTION = {"json": {"corrections": [{"field": "billing_npi", "value": "1234567893"}]}}
+OTHER_REVIEW = {  # a review of another claim: refused (422) after the role check
+    "json": {
+        "claim_id": "CLM-OTHER",
+        "reviewer_id": "reviewer-golden",
+        "action": "ACCEPT",
+        "timestamp": "2026-10-11T10:00:00Z",
+    }
+}
+
+# (method, path template) -> (the roles allowed, request arguments). The bodies are valid enough
+# to pass authorization; what comes after (409, 422) does not matter here.
+ROUTE_ACCESS: dict[tuple[str, str], tuple[frozenset[str], dict[str, Any]]] = {
+    ("GET", "/v1/auth/me"): (EVERYONE | MEMBERS, {}),
+    ("POST", "/v1/claims/intake"): (PROVIDERS, {"json": E2E_CASES["E2E-14"]["given"]["claim"]}),
+    ("POST", "/v1/claims/intake/file"): (PROVIDERS, {"content": b"not a claim"}),
+    (
+        "POST",
+        "/v1/claims/intake/files",
+    ): (PROVIDERS, {"json": {"files": [{"name": "a.pdf", "content_base64": "bm90IGEgY2xhaW0="}]}}),
+    ("POST", "/v1/claims/{claim_id}/process"): (PROVIDERS, {}),
+    ("GET", "/v1/claims"): (EVERYONE, {}),
+    ("GET", "/v1/claims/{claim_id}"): (EVERYONE, {}),
+    ("GET", "/v1/claims/{claim_id}/explanation"): (EVERYONE, {}),
+    ("GET", "/v1/claims/{claim_id}/document"): (EVERYONE, {}),
+    ("GET", "/v1/claims/{claim_id}/document/{file_no}"): (EVERYONE, {}),
+    ("GET", "/v1/claims/{claim_id}/audit"): (STAFF, {}),
+    ("GET", "/v1/claims/{claim_id}/form"): (EVERYONE, {}),
+    ("POST", "/v1/claims/{claim_id}/corrections"): (PROVIDERS, CORRECTION),
+    ("GET", "/v1/claims/{claim_id}/check"): (PROVIDERS, {}),
+    ("GET", "/v1/claims/{claim_id}/eob"): (EVERYONE, {}),
+    ("POST", "/v1/claims/{claim_id}/review/open"): (
+        REVIEWERS,
+        {"json": {"reviewer_id": "reviewer-golden"}},
+    ),
+    ("POST", "/v1/claims/{claim_id}/review"): (REVIEWERS, OTHER_REVIEW),
+    ("GET", "/v1/review/queue"): (STAFF, {}),
+    ("GET", "/v1/plans/{plan_id}"): (STAFF, {}),
+    ("GET", "/v1/metrics/evaluation"): (ADMINS, {}),
+    ("GET", "/v1/metrics/results"): (ADMINS, {}),
+    ("GET", "/v1/metrics/overview"): (ADMINS, {}),
+    ("GET", "/v1/metrics/system"): (ADMINS, {}),
+    ("GET", "/v1/member/claims"): (MEMBERS, {}),
+    ("GET", "/v1/member/claims/{claim_id}"): (MEMBERS, {}),
+    ("GET", "/v1/member/claims/{claim_id}/eob"): (MEMBERS, {}),
+    ("GET", "/v1/member/benefits"): (MEMBERS, {}),
+    ("GET", "/v1/member/profile"): (MEMBERS, {}),
+}
+# Public routes (D-AUTH-1: login, logout and /health), always served.
+PUBLIC_ROUTES = {("POST", "/v1/auth/login"), ("POST", "/v1/auth/logout"), ("GET", "/health")}
+# Not API routes, served only in some setups: the web app's build (its files and index.html for
+# the app's own paths, `make demo-up`) and the API docs (API_DOCS=1). They hold no claim data.
+NOT_API_ROUTES = {
+    ("MOUNT", "/assets"),
+    ("GET", "/{path:path}"),
+    ("GET", "/docs"),
+    ("GET", "/docs/oauth2-redirect"),
+    ("GET", "/openapi.json"),
+}
+
+
+def served_routes() -> set[tuple[str, str]]:
+    """(method, path template) of every route the application serves, from FastAPI's route table
+    (included routers flattened); a mounted application is ("MOUNT", path)."""
+    from fastapi.routing import iter_route_contexts
+
+    from app.api.main import app
+
+    found: set[tuple[str, str]] = set()
+    for route in iter_route_contexts(app.routes):
+        path = route.path
+        assert path, f"a route without a path: {route!r}"
+        methods = route.methods
+        if not methods:
+            found.add(("MOUNT", path))
+            continue
+        found |= {(method, path) for method in methods if method != "HEAD"}
+    return found
+
+
+def test_every_served_route_has_an_access_rule() -> None:
+    served = served_routes()
+
+    unlisted = sorted(served - ROUTE_ACCESS.keys() - PUBLIC_ROUTES - NOT_API_ROUTES)
+    gone = sorted((ROUTE_ACCESS.keys() | PUBLIC_ROUTES) - served)
+
+    assert not unlisted, f"routes without an entry in ROUTE_ACCESS (who may use them?): {unlisted}"
+    assert not gone, f"ROUTE_ACCESS or PUBLIC_ROUTES lists routes that no longer exist: {gone}"
+    assert not ROUTE_ACCESS.keys() & (PUBLIC_ROUTES | NOT_API_ROUTES)
+    assert all(roles <= EVERYONE | MEMBERS and roles for roles, _ in ROUTE_ACCESS.values())
+
+
+def _url(template: str) -> str:
+    return template.format(**PATH_VALUES)
+
+
+def with_member(engine: Engine) -> dict[str, dict[str, str]]:
+    """SESSIONS and the session of the member whose claim CLAIM is (D-MEM-1)."""
+    from tests.e2e.support import add_member_user
+
+    member_id = E2E_CASES["E2E-14"]["given"]["claim"]["member_id"]
+    return SESSIONS | {"member": add_member_user(engine, member_id)}
+
+
+def test_every_route_from_the_route_table_for_every_role(api, load_case_reference, engine) -> None:  # noqa: ANN001
+    client = process_case(api, load_case_reference, "E2E-14")
+    sessions = with_member(engine)
+    checked = 0
+    for method, template in sorted(served_routes()):
+        if (method, template) in PUBLIC_ROUTES | NOT_API_ROUTES:
+            continue
+        allowed, kwargs = ROUTE_ACCESS[(method, template)]
+        url = _url(template)
+        for role, session in sessions.items():
+            response = client.request(method, url, headers=session, **kwargs)
+            if role in allowed:
+                assert response.status_code not in (401, 403), (method, url, role, response.text)
+            else:
+                assert response.status_code == 403, (method, url, role, response.text)
+        response = client.request(method, url, headers=NO_SESSION, **kwargs)
+        assert response.status_code == 401, (method, url, "not logged in")
+        assert response.headers["www-authenticate"] == "Bearer"
+        checked += 1
+    assert checked == len(ROUTE_ACCESS)
+
+
+def test_the_public_routes_answer_without_a_session(api) -> None:  # noqa: ANN001
+    client = api(StubModel("unused"))
+    login = {"username": "nobody", "password": "x"}
+    answers = {
+        ("GET", "/health"): client.get("/health", headers=NO_SESSION).status_code,
+        ("POST", "/v1/auth/logout"): client.post("/v1/auth/logout", headers=NO_SESSION).status_code,
+        ("POST", "/v1/auth/login"): client.post(
+            "/v1/auth/login", json=login, headers=NO_SESSION
+        ).status_code,
+    }
+    assert answers.keys() == PUBLIC_ROUTES
+    assert answers == {
+        ("GET", "/health"): 200,
+        ("POST", "/v1/auth/logout"): 204,
+        ("POST", "/v1/auth/login"): 401,  # wrong password, not "log in first"
+    }
+
+
+def test_every_claim_route_hides_another_providers_claim(api, load_case_reference) -> None:  # noqa: ANN001
+    """Every route of one claim a provider may use answers another provider as if the claim did
+    not exist (404), so its existence is not revealed (D-AUTH-1)."""
+    client = process_case(api, load_case_reference, "E2E-14")  # filed by provider-test
+    other = bearer("provider-other")
+    claim_routes = [
+        (method, template)
+        for (method, template), (allowed, _) in sorted(ROUTE_ACCESS.items())
+        if "{claim_id}" in template and "provider" in allowed
+    ]
+
+    assert len(claim_routes) >= 9
+    for method, template in claim_routes:
+        kwargs = ROUTE_ACCESS[(method, template)][1]
+        response = client.request(method, _url(template), headers=other, **kwargs)
+        assert response.status_code == 404, (method, template, response.text)
+        assert response.json()["detail"] == f"claim {CLAIM} not found"

@@ -115,7 +115,11 @@ explanation of benefits, their benefits this year and their profile, and cannot 
   [docs/results-v2-errors.md](docs/results-v2-errors.md).
 - **OCR reads only our own synthetic form layout**, not the official printed CMS-1500. Field
   accuracy on held-out synthetic scans is 93.8%; a handwritten 1 is often read as 7. A field read
-  with low confidence rejects the claim for resubmission rather than deciding it.
+  with low confidence rejects the claim for resubmission rather than deciding it. Before any box
+  is read, the form's printed title and box captions must be where our layout prints them: any
+  other file, or our form tilted more than 2 degrees or shifted, is refused at upload with a
+  message saying which page and what was expected; a page scanned on its side or upside down is
+  turned upright first (D-SEC-2).
 - **Long notes on further pages are found by our own page title.** A claim form has 2 pages, or up
   to 5 when its notes go on to attachment pages titled "(CONTINUED, PAGE n OF m)", which real
   attachments will not always have (D-DOC-3). The decision model v3 was trained on prompts of up

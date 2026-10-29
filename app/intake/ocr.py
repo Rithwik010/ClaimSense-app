@@ -10,6 +10,11 @@ out too, keeping its confidence 0: the claim is then filed and the rules reject 
 a rule that uses the field) instead of the intake refusing it (§8.2: a low-confidence field does
 not stop a claim by itself; D-OCR-1).
 
+Before any box is read, the page's printed labels are checked (`form_check.py`, B5): the page is
+turned upright by its title (a quarter, half or three quarters around), and refused when it is
+tilted beyond what the straightening handles or when its title and box captions are not where the
+form prints them.
+
 Limitation: the coordinates fit our own synthetic layout only, not the official CMS-1500 form.
 """
 
@@ -24,6 +29,20 @@ import pytesseract
 from PIL import Image, ImageFilter, ImageOps
 
 from app.intake.field_formats import ALPHABETS, canonical, format_ok, kind
+from app.intake.form_check import (
+    SKEW_LIMIT,
+    Label,
+    NotOurForm,
+    Seen,
+    also_tilted,
+    form_page_of,
+    not_our_form,
+    page_labels,
+    similarity,
+    tilted,
+    verdict,
+    wrong_page,
+)
 from app.intake.form_codec import from_form_values
 from app.intake.layout import (
     ALL_PAGE_ONE_BOXES,
@@ -34,13 +53,17 @@ from app.intake.layout import (
     TITLE_BAND,
     Box,
     check_continuation,
-    notes_box,
 )
 
 RENDER_DPI = 300  # a PDF page is rendered at this resolution for OCR
 TARGET_SCALE = 300 / 72  # crops smaller than 300 dpi are enlarged to it before OCR
 INSET = 1.5  # points kept clear of each box's printed border
-SKEW_RANGE, SKEW_STEP = 2.0, 0.1  # degrees searched when straightening a page
+SKEW_RANGE, SKEW_STEP = SKEW_LIMIT, 0.1  # degrees searched when straightening a page
+TILT_RANGE = 15.0  # degrees searched to tell a page tilted beyond SKEW_RANGE (refused)
+TURNS = (0, 90, 270, 180)  # degrees a page is turned (counter-clockwise) to find its title
+INK_ABOVE_CAP = 0.5  # points the ink of a scanned label reaches above its capitals (blur)
+EDGE_SHARE = 0.02  # a label's top: where its first 2% of ink is (a speck above it is ignored)
+EDGE_COLUMN = 0.2  # a label's left end: its first column inked over 20% of the line's height
 DARK_LEVEL = 200  # gray level below which a pixel counts as ink
 RULE_SHARE = 0.6  # a row or column this dark is a printed rule, not writing
 RULE_EDGE = 4.0  # points from a crop's side within which such a row or column is a border
@@ -294,10 +317,126 @@ def page_title(page: Image.Image) -> str:
     return " ".join(pytesseract.image_to_string(crop, config="--psm 6").split()).upper()
 
 
-def read_page(page: Image.Image, index: int) -> dict[str, FieldRead]:
+# --- Is it our form's page, upright and in place? (B5, form_check.py) ----------------------------
+
+
+def turn_upright(page: Image.Image) -> tuple[Image.Image, int | None]:
+    """The page turned so that its title band reads as one of our form's titles, and that page
+    (0 or 1); the page as it is and None when no turn gives a title of our form."""
+    for turn in TURNS:
+        turned = page if turn == 0 else page.rotate(turn, expand=True)
+        found = form_page_of(page_title(turned))
+        if found is not None:
+            return turned, found
+    return page, None
+
+
+def tilt_angle(page: Image.Image) -> float:
+    """The rotation (degrees) that makes the page's rules and text rows horizontal, searched
+    within TILT_RANGE: a coarse search on the page about 320 pixels wide, then a fine one about
+    640 wide. Only used to refuse a page tilted beyond SKEW_RANGE; straightening uses
+    skew_angle."""
+    angle = 0.0
+    for width, span, step in ((320, TILT_RANGE, 1.0), (640, 1.5, 0.1)):
+        divisor = max(1, page.width // width)
+        small = page.resize((max(1, page.width // divisor), max(1, page.height // divisor)))
+        dark = small.filter(ImageFilter.MedianFilter(3)).point(lambda v: 255 if v < 200 else 0)
+        steps = round(span / step)
+        candidates = [angle + n * step for n in range(-steps, steps + 1)]
+        angle = max(candidates, key=lambda a: _row_profile_score(dark, a))
+    return round(angle, 2)
+
+
+def _without_rules(crop: Image.Image) -> tuple[Image.Image, Image.Image]:
+    """(the crop, its ink) with the rows of printed rules whitened: rows mostly dark, as a box
+    border is and a line of text is not."""
+    cleaned = crop.filter(ImageFilter.MedianFilter(3))
+    ink = cleaned.point(lambda v: 255 if v < DARK_LEVEL else 0)
+    rows = list(ink.resize((1, ink.height), Image.Resampling.BOX).getdata())
+    for y, level in enumerate(rows):
+        if level > 0.8 * 255:
+            cleaned.paste(255, (0, y, cleaned.width, y + 1))
+            ink.paste(0, (0, y, ink.width, y + 1))
+    return cleaned, ink
+
+
+def _edge(levels: list[int]) -> int:
+    """The position where the first EDGE_SHARE of the ink is reached."""
+    total, running = sum(levels), 0
+    for position, level in enumerate(levels):
+        running += level
+        if running >= EDGE_SHARE * total:
+            return position
+    return 0
+
+
+def _label_seen(page: Image.Image, label: Label) -> Seen:
+    """Where the ink of a label is, against where the form prints it, and (for a caption) how
+    close the text read there is: the line of ink with the most ink in the label's search area,
+    its left end and its top."""
+    scale = page.width / PAGE_WIDTH
+    x0, y0, x1, y1 = (round(v * scale) for v in label.search)
+    cleaned, ink = _without_rules(page.crop((x0, y0, x1, y1)))
+    rows = list(ink.resize((1, ink.height), Image.Resampling.BOX).getdata())
+    lines = _runs(rows, max(1, round(0.5 * scale)))
+    if not lines:
+        return Seen(label, 0.0 if label.read else None, None, None)
+    top, bottom, _ = max(lines, key=lambda run: run[2])
+    line = ink.crop((0, top, ink.width, bottom))
+    cols = list(line.resize((line.width, 1), Image.Resampling.BOX).getdata())
+    left_px = next((x for x, level in enumerate(cols) if level >= EDGE_COLUMN * 255), 0)
+    top_px = top + _edge(list(line.resize((1, line.height), Image.Resampling.BOX).getdata()))
+    dx = (x0 + left_px) / scale - label.x
+    dy = (y0 + top_px) / scale - (label.cap_top - INK_ABOVE_CAP)
+    match = None
+    if label.read:
+        factor = 2 * TARGET_SCALE / scale
+        size = (round(cleaned.width * factor), round(cleaned.height * factor))
+        big = ImageOps.autocontrast(cleaned.resize(size, Image.Resampling.LANCZOS), cutoff=1)
+        text = pytesseract.image_to_string(
+            ImageOps.expand(big, border=20, fill=255), config="--psm 13"
+        )
+        match = round(similarity(text, label.text), 3)
+    return Seen(label, match, round(dx, 2), round(dy, 2))
+
+
+def labels_seen(page: Image.Image, index: int) -> list[Seen]:
+    """Each label of page `index` as found on a straightened page."""
+    return [_label_seen(page, label) for label in page_labels(index)]
+
+
+def checked_page(page: Image.Image, index: int, where: str | None = None) -> Image.Image:
+    """Page `index` of a scanned form (0: the claim, 1: its attachments), turned upright and
+    straightened, once its printed labels are found where the form prints them; NotOurForm
+    otherwise, with a message naming the page (`where`, "page 1" by default)."""
+    where = where or f"page {index + 1}"
+    upright, found = turn_upright(page)
+    if found is None:
+        tilt = tilt_angle(page)
+        if abs(tilt) <= SKEW_RANGE:
+            raise NotOurForm(not_our_form(where, index))
+        turned = page.rotate(tilt, resample=Image.Resampling.BICUBIC, fillcolor=255)
+        if form_page_of(page_title(turned)) is not None:
+            raise NotOurForm(tilted(where, tilt))
+        # The title may be cut off at a corner of a tilted scan: say both.
+        raise NotOurForm(f"{not_our_form(where, index)} {also_tilted(tilt)}")
+    if found != index:
+        raise NotOurForm(wrong_page(where, found, index))
+    tilt = tilt_angle(upright)
+    if abs(tilt) > SKEW_RANGE:
+        raise NotOurForm(tilted(where, tilt))
+    straight = straighten(upright)
+    problem = verdict(labels_seen(straight, index), index, where)
+    if problem:
+        raise NotOurForm(problem)
+    return straight
+
+
+def read_page(page: Image.Image, index: int, where: str | None = None) -> dict[str, FieldRead]:
     """Every non-blank box of page `index` (0: the claim, 1: its attachments) of a scanned form,
-    keyed by layout field path; the page is straightened first."""
-    straight = straighten(page)
+    keyed by layout field path; the page is checked, turned upright and straightened first
+    (NotOurForm when it is not our form's page `index` or not where the layout puts it)."""
+    straight = checked_page(page, index, where)
     found = {}
     for box in FORM_BOXES:
         if box.page == index and (read := read_box(straight, box)) is not None:
@@ -307,14 +446,16 @@ def read_page(page: Image.Image, index: int) -> dict[str, FieldRead]:
 
 def continued_notes(pages: list[Image.Image]) -> list[FieldRead]:
     """The notes read from each continuation page of a scan (pages 3 on, D-DOC-3), in page order;
-    the titles of pages 2 on are read and checked first (`check_continuation`)."""
-    if len(pages) >= FORM_PAGES:  # page 1's title is not needed: only pages 2 on are checked
-        check_continuation(["", *(page_title(page) for page in pages[1:])])
-    if len(pages) <= FORM_PAGES:
+    the titles of pages 2 on are read (each page turned upright first) and checked first
+    (`check_continuation`), and each continuation page is checked as page 2 is (`read_page`): it
+    prints the same labels."""
+    if len(pages) < FORM_PAGES:
         return []
+    upright = [turn_upright(page)[0] for page in pages[1:]]  # page 1's title is not needed
+    check_continuation(["", *(page_title(page) for page in upright)])
     reads = []
     for index in range(FORM_PAGES, len(pages)):
-        read = read_box(straighten(pages[index]), notes_box(index))
+        read = read_page(upright[index - 1], 1, f"page {index + 1}").get(NOTES_BOX.field)
         if read is not None:
             reads.append(read)
     return reads
