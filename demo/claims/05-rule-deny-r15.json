@@ -1,43 +1,44 @@
 {
   "claim_id": "CLM-DEMO-05",
-  "member_id": "MBR-000325",
+  "member_id": "MBR-000262",
   "patient": {
-    "first_name": "Nathaniel",
-    "last_name": "Williams",
-    "date_of_birth": "1979-11-13",
-    "sex": "M",
+    "first_name": "Margaret",
+    "last_name": "Arellano",
+    "date_of_birth": "1948-10-18",
+    "sex": "F",
     "address": {
-      "line1": "203 Brown Circle",
-      "city": "Nicholasfurt",
-      "state": "AR",
-      "zip_code": "38055"
+      "line1": "460 Joshua Circle",
+      "city": "South Mitchell",
+      "state": "NE",
+      "zip_code": "83505"
     }
   },
   "subscriber_is_patient": true,
-  "billing_npi": "1039186980",
-  "billing_tin": "626413097",
+  "billing_npi": "2149113906",
+  "billing_tin": "329215212",
   "referring_npi": null,
   "prior_auth_number": null,
   "diagnoses": [
-    "K5900"
+    "R011",
+    "J069"
   ],
   "service_lines": [
     {
       "line_no": 1,
-      "date_of_service": "2026-11-04",
-      "place_of_service": "11",
-      "procedure_code": "97110",
+      "date_of_service": "2026-11-13",
+      "place_of_service": "22",
+      "procedure_code": "93350",
       "modifiers": [],
       "diagnosis_pointers": [
-        "A"
+        "B"
       ],
-      "units": 3,
-      "charge_cents": 19700,
-      "rendering_npi": "1039186980"
+      "units": 1,
+      "charge_cents": 36900,
+      "rendering_npi": "2149113906"
     }
   ],
-  "clinical_notes": "The patient reports hard stools and infrequent bowel movements. Plan: therapeutic exercise to build strength, flexibility or endurance, each 15 minutes. Past medical history was reviewed without changes.",
-  "received_date": "2026-11-09",
+  "clinical_notes": "The patient is a 78-year-old female with a 4-day history of a sore throat, runny nose, and mild cough. She reports no significant heart symptoms and no known history of heart disease. Her recent echocardiogram is a routine check due to the ongoing cough and chest pressure with exertion noted during a treadmill stress test last month. No fever, chills, or unplanned weight loss is reported. She has a past medical history significant for smoking (quit years ago), nearsightedness managed by glasses, vitamin D deficiency treated with supplements, and osteoporosis under medical management. Current medications include loratadine 10 mg daily, hydrocortisone cream as needed, and vitamin D3 2000 units daily. She has allergies to Codeine, characterized by nausea. Social history is notable for retirement, living independently, and no recent hospitalizations or emergency department visits since her last clinic visit. During this consultation, we reviewed her medications, confirmed her understanding of the plan, and updated her emergency contact information. Patient portal access was reviewed, and she has full access. We discussed her lifestyle and adherence to her current medical regimen. She expressed understanding of the follow-up heart ultrasound plan through the chest wall and was provided with an after-visit summary and informational handout. The patient's vitamin D level was checked, and supplements were found to be adequate. Her cardiac murmur, unspecified (R01.1), and acute upper respiratory infection (J06.9) were discussed. We ensured she knows how to reach the clinic with questions and that she has a reliable means to contact us if needed. Her mood and sleep pattern are stable. Her vital signs and physical exam were within normal limits, confirming no acute distress. A plan for routine follow-up ultrasound was solidified, and the patient agrees with this approach. An after-visit summary was printed and given to her. The patient was educated on how to reach the clinic after hours and when to seek immediate care, further reinforcing her understanding and adherence to her health plan.",
+  "received_date": "2026-11-22",
   "frequency_code": "1",
   "other_coverage": null
 }

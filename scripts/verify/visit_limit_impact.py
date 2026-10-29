@@ -5,7 +5,7 @@
   reference's visit usage, against the same claim without R21 (no plan has a visit limit, which is
   rules 2.1.0). Counts the claims with a therapy line, the claims and lines R21 changes, and lists
   each change.
-- **Demo claims** (demo/claims/, with 08 and 09 from their corpus claims as
+- **Demo claims** (demo/claims/, with 08 and 09 from their v3 test records as
   scripts/demo/build_claims.py writes them): the whole engine in the demo's order (each claim on
   file for the next, as the duplicate check reads them; 01's approved visit counted for its
   member, as finalization does), with the reference `make demo-reset` seeds and
@@ -31,7 +31,7 @@ from app.domain.contracts import IntakeClaim, RulesOutcome
 from app.rules.engine import evaluate
 from app.rules.line_edits import check_line_edits
 from app.rules.reference import RulesReference
-from scripts.demo.build_claims import CLAIMS, broken_check_digit
+from scripts.demo.build_claims import CLAIMS, broken_check_digit, demo_claim, v3_records
 
 ROOT = Path(__file__).resolve().parents[2]
 DEMO = ROOT / "demo"
@@ -119,14 +119,14 @@ def dataset_impact(
 
 def demo_claims(generated: Path) -> list[tuple[str, dict[str, Any], dict[str, float]]]:
     """The nine demo claims in order: (file, claim, field confidences)."""
-    corpus = {r["claim"]["claim_id"]: r for r in read_jsonl(generated / "claims" / "claims.jsonl")}
+    records = v3_records()
     found = []
     for number, (name, (source, kind)) in enumerate(CLAIMS.items(), start=1):
         path = DEMO / "claims" / f"{name}.json"
         if path.exists():
             claim = json.loads(path.read_text(encoding="utf-8"))
-        else:  # a scanned form: its corpus claim, as build_claims renders it
-            claim = dict(corpus[source]["claim"], claim_id=f"CLM-DEMO-{number:02d}")
+        else:  # a scanned form: its v3 test record's claim, as build_claims renders it
+            claim = demo_claim(name, number, records[source])
         confidences: dict[str, float] = {}
         if kind == "scan-npi-typo":
             claim["billing_npi"] = broken_check_digit(claim["billing_npi"])

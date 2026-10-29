@@ -1,6 +1,10 @@
 # ClaimSense demo run-sheet
 
-Synthetic data only. The nine claims are in `demo/claims/`; run them in this order.
+Synthetic data only. The nine claims are in `demo/claims/`; run them in this order. Their notes are
+the realistic kind model v3 was built for: from v3's held-out test sets (messy notes with
+abbreviations, typos and copied text, a writing style v3 never trained on, and LLM-written
+human-style notes), never used in training (D-DEMO-1; `scripts/demo/build_claims.py`). The demo
+model is `claimsense-decision:v3`.
 
 ## Before
 
@@ -13,12 +17,12 @@ Synthetic data only. The nine claims are in `demo/claims/`; run them in this ord
 
 | Username | Who | Lands on |
 |---|---|---|
-| `provider1` | Gregory Hernandez, DPT (provider) | My claims |
+| `provider1` | Joshua Rodriguez, DPT (provider) | My claims |
 | `provider2` | Jennifer Dunn, DPM (provider) | My claims |
 | `reviewer1`, `reviewer2` | reviewers | Review queue |
 | `admin` | read-only admin | Overview |
-| `member1` | Timothy Townsend, a patient (member MBR-000152; claims 1 and 7) | My claims |
-| `member2` | Stephanie Wilson, a patient (member MBR-000150; claim 4) | My claims |
+| `member1` | Carl Sanchez, a patient (member MBR-000015; claims 1 and 7) | My claims |
+| `member2` | James Freeman, a patient (member MBR-000495; claim 4) | My claims |
 
 Passwords are in `.env` at the repository root (`DEMO_PASSWORD_PROVIDER1` and so on); `make
 demo-users` or `make demo-reset` writes any that are missing. Switch user with the menu at the
@@ -33,19 +37,19 @@ reviewer reviews: **Review queue** → the tier's tab → the claim → **Accept
 
 | # | Who | File and steps | Expected result |
 |---|---|---|---|
-| 1 | provider1 | `01-approve-quick.json`: file and process | **In review**; the strip shows "Waiting for a reviewer" |
+| 1 | provider1 | `01-approve-quick.json` (a physical therapy evaluation; terse notes full of abbreviations): file and process | **In review**; the strip shows "Waiting for a reviewer" |
 |   | reviewer1 | **Quick** tab → `CLM-DEMO-01`: the **Summary** tab on the right opens first → click a criterion's quote (the **Clinical note** tab opens at it) → **Accept all lines** → **Finalize claim** | **Approved**. provider1 → **My claims** → `CLM-DEMO-01`: **Claim approved** and the billing, with a sentence for each reduction |
-| 2 | provider1 | `02-pend-standard.json`: file and process | **In review** |
-| 3 | provider1 | `03-deny-full-override.json`: file and process | **In review** |
+| 2 | provider1 | `02-pend-standard.json` (a follow-up colonoscopy; long notes pasted from earlier visits): file and process | **In review**; the model pends it for missing documentation |
+| 3 | provider1 | `03-deny-full-override.json` (an ultrasound of a wrist lump; an addendum contradicts the copied text): file and process | **In review** |
 |   | reviewer1 | **Standard** tab → `CLM-DEMO-02` → **Accept all lines** → **Finalize claim** → **Next claim** | 2 **Pended**; **Next claim** opens `CLM-DEMO-03` |
 |   | reviewer1 | `CLM-DEMO-03` (full tier; the model recommends Deny) → **Override line** → New decision Approve, a reason → **Override line** → **Finalize claim** | **Approved**, amounts recomputed |
-| 4 | provider2 | `04-partial-ncci.json`: file and process | **In review** |
+| 4 | provider2 | `04-partial-ncci.json` (wound debridement and an office visit; notes in a style v3 never trained on): file and process | **In review** |
 |   | reviewer1 | `CLM-DEMO-04`: line 2 denied by an NCCI rule, CARC 236 (cannot be overridden) → **Accept all lines** → **Finalize claim** | **Partly approved** |
 | 5 | provider2 | `05-rule-deny-r15.json`: file and process → **Open claim result** | **Denied** at once: **Claim denied**, why in plain words, what to check, CARC 11, RARC N115, the billing article and its LCD |
 | 6 | provider2 | `06-reject-invalid-npi.json`: file and process → **Open claim result** | **Rejected**: **Claim rejected**, the NPI that is not valid under **Please review the following details**, CARC 16 with RARC N257 |
 | 7 | provider1 | `07-duplicate-of-01.json`: file and process | **Rejected**: duplicate of claim 1, CARC 18 |
 | 8 | provider2 | `08-scanned-clean.pdf`: **Read claim** (OCR, a few seconds) → the confidence column → process | **In review**; it waits in the queue |
-| 9 | provider2 | `09-scanned-low-confidence.pdf`: **Read claim** → the mistyped NPI is highlighted → process | **Rejected** for a low-confidence field, never denied: CARC 16 with RARC MA130 |
+| 9 | provider2 | `09-scanned-low-confidence.pdf` (human-style notes): **Read claim** → the mistyped NPI is highlighted → process | **Rejected** for a low-confidence field, never denied: CARC 16 with RARC MA130 |
 
 Then:
 
@@ -59,8 +63,9 @@ Then:
 - **provider2**: **My claims** → search `DEMO-08`, or filter by status; `CLM-DEMO-04` shows
   **Claim partly approved**: why line 2 was not paid, and the billing of line 1.
 - **admin**: **Overview** (demo data: final outcomes, queue by tier, decided by rules, accepted
-  or overridden) → **Claims** (search and filter, read only) → **Model metrics** (v1, v2 and
-  E4B side by side) → **Audit lookup** `CLM-DEMO-03` → **System status**. Everything is read
+  or overridden) → **Claims** (search and filter, read only) → **Model metrics** (v3 against v2
+  on four sets, each with the machine it was measured on; then v1, v2 and E4B side by side) →
+  **Audit lookup** `CLM-DEMO-03` → **System status**. Everything is read
   only; another role's page shows "You don't have access".
 
 A claim can also come as its form's two pages in two files (for example two scans, `page 1.png`

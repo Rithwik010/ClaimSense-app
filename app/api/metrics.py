@@ -1,7 +1,9 @@
 """Admin pages (D-AUTH-1, admin only). Evaluation results for the metrics page (P5.5): models v1, v2
-and E4B on the v2 test set (training/evaluate/compare_v2.py) and the OCR field accuracy on
-held-out scans (scripts/verify/ocr_accuracy.py), each with its target, read from the reports those
-scripts write under data/generated/eval/ (a report not yet written is left out); the P6.1 results
+and E4B on the v2 test set (training/evaluate/compare_v2.py), model v3 against v2 on four sets
+(scripts/verify/results_v3.py: each with the machine it was measured on) and the OCR field
+accuracy on held-out scans (scripts/verify/ocr_accuracy.py), each with its target, read from the
+reports those scripts write under data/generated/eval/ (a report not yet written is left out); the
+P6.1 results
 file; the overview counts of the claims on file (demo data); and the versions the decision
 records name, with the ones the API is set to use."""
 
@@ -36,6 +38,7 @@ MODEL_REPORTS = (
 )
 OCR_REPORT = EVAL / "ocr" / "heldout_summary.json"
 ERRORS_REPORT = EVAL / "v2" / "v2-errors.json"  # scripts/verify/v2_errors.py
+V3_REPORT = EVAL / "v3study" / "results-v3.json"  # scripts/verify/results_v3.py
 MACRO_F1_TARGET = 0.90  # P4.4
 OCR_TARGET = 0.90  # P5.1
 
@@ -91,12 +94,33 @@ class V2Errors(BaseModel):
     quick_claims_with_wrong_line: int
 
 
+class V3Scores(BaseModel):
+    macro_f1: float
+    valid_output: float
+    line_accuracy: float
+    deny_precision: float
+    wrong_approvals: int
+
+
+class V3Set(BaseModel):
+    """Model v3 against v2 on one set, both measured on the same machine (D-V3-34)."""
+
+    title: str
+    notes: str
+    claims: int
+    machine: str
+    v2: V3Scores
+    v3: V3Scores
+    macro_f1_difference_ci95: list[float] | None = None
+
+
 class Evaluation(BaseModel):
     models: list[ModelRow]
     macro_f1_target: float
     ocr: OcrRow | None
     ocr_target: float
     v2_errors: V2Errors | None = None
+    v3_sets: list[V3Set] = []
 
 
 def _model_row(report: dict[str, Any]) -> ModelRow:
@@ -149,12 +173,16 @@ def evaluation() -> Evaluation:
             quick_claims=quick["claims"],
             quick_claims_with_wrong_line=quick["with_wrong_line"],
         )
+    v3_sets = []
+    if V3_REPORT.exists():
+        v3_sets = [V3Set.model_validate(s) for s in json.loads(V3_REPORT.read_text())["sets"]]
     return Evaluation(
         models=models,
         macro_f1_target=MACRO_F1_TARGET,
         ocr=ocr,
         ocr_target=OCR_TARGET,
         v2_errors=errors,
+        v3_sets=v3_sets,
     )
 
 

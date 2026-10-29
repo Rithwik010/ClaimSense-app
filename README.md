@@ -18,7 +18,7 @@ trail.
    requirements (eligibility, filing window, network, authorization, NCCI, MUE, LCD and billing
    article limits). A rule that fails on a low-confidence field rejects, never denies.
 3. **Policy lookup** finds the coverage criteria for each remaining line's code, plan and date.
-4. **The model** (`claimsense-decision:v2`, a fine-tuned Gemma 4 E2B served by Ollama on the laptop)
+4. **The model** (`claimsense-decision:v3`, a fine-tuned Gemma 4 E2B served by Ollama on the laptop)
    marks each criterion met, not met, not documented or not applicable, with a quote from the note.
    The line decision is derived from those statuses by code; a quote not found in the note counts
    as not documented. The model never produces an amount.
@@ -51,7 +51,7 @@ flowchart LR
         end
         PG[("Postgres<br/>claims, records, audit,<br/>reference and code tables")]
         QD[("Qdrant<br/>coverage criteria")]
-        OL["Ollama<br/>claimsense-decision:v2"]
+        OL["Ollama<br/>claimsense-decision:v3"]
     end
     UI -- "HTTP, same origin (session cookie)" --> API
     API --> IN --> RU --> CX --> ML --> CA --> RV
@@ -107,12 +107,14 @@ explanation of benefits, their benefits this year and their profile, and cannot 
 - **Simple username and password login; no SSO, MFA, password reset or account lockout;
   prototype.** Providers see only the claims they filed, reviewers review, an admin reads
   everything (D-AUTH-1).
-- **Model accuracy is below its target.** On 300 synthetic test claims, `claimsense-decision:v2`
-  reaches a line-decision macro-F1 of 0.853 (0.849 with the evidence guard the pipeline uses)
-  against a target of 0.90; it never denied a line that should have been paid (DENY precision
-  1.000), and its errors lean towards approving or asking for more information. Every
-  recommendation therefore goes to a person. Details: [docs/results.md](docs/results.md),
-  [docs/results-v2-errors.md](docs/results-v2-errors.md).
+- **Model accuracy is below its target.** With the evidence guard the pipeline uses,
+  `claimsense-decision:v3` reaches a line-decision macro-F1 of 0.898 on 300 clean synthetic test
+  claims on the demo laptop (v2: 0.849; target 0.90). On realistic notes, measured on Kaggle's
+  T4 GPU, it reaches 0.832 on 588 messy notes, 0.816 on 151 notes in a writing style it never
+  trained on and 0.807 on 65 human-style notes (v2: 0.646, 0.623 and 0.514). Its valid output on
+  the laptop is 97.3%, under the 98% gate (accepted, D-V3-34): an unusable answer sends the claim
+  to full review. Every recommendation therefore goes to a person. Details:
+  [docs/results-v3.md](docs/results-v3.md), [docs/results.md](docs/results.md).
 - **OCR reads only our own synthetic form layout**, not the official printed CMS-1500. Field
   accuracy on held-out synthetic scans is 93.8%; a handwritten 1 is often read as 7. A field read
   with low confidence rejects the claim for resubmission rather than deciding it. Before any box

@@ -19,8 +19,8 @@ const DEMO_01 = fileURLToPath(new URL("../../demo/claims/01-approve-quick.json",
 // What a member page never shows: rule IDs, internal reason codes, criterion IDs, a reviewer.
 const HIDDEN = /\bR(?:0[1-9]|1\d|20)\b|\bDUP\b|\b(?:RJ|DN|PD|RV)_[A-Z0-9_]+\b|\bMODEL_OUTPUT_INVALID\b|\bPOL-[A-Z]+-\d{3}\.c\d+\b|reviewer\d/;
 const NEW_CLAIM = `CLM-MBR-${String(Date.now()).slice(-6)}`;
-const MEMBER1 = "MBR-000152";
-const MEMBER2 = "MBR-000150";
+const MEMBER1 = "MBR-000015";
+const MEMBER2 = "MBR-000495";
 
 test.describe.configure({ mode: "serial" });
 test.setTimeout(120_000);

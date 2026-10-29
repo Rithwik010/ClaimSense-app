@@ -1,43 +1,43 @@
 {
   "claim_id": "CLM-DEMO-03",
-  "member_id": "MBR-000495",
+  "member_id": "MBR-000094",
   "patient": {
-    "first_name": "James",
-    "last_name": "Freeman",
-    "date_of_birth": "1995-12-01",
-    "sex": "M",
+    "first_name": "Jessica",
+    "last_name": "Wilson",
+    "date_of_birth": "1974-07-27",
+    "sex": "F",
     "address": {
-      "line1": "67663 Beth Hills",
-      "city": "Lake Robert",
-      "state": "WI",
-      "zip_code": "63481"
+      "line1": "673 Mcmillan Unions Apt. 156",
+      "city": "Charlesshire",
+      "state": "VT",
+      "zip_code": "90965"
     }
   },
   "subscriber_is_patient": true,
-  "billing_npi": "1038710061",
-  "billing_tin": "830009852",
+  "billing_npi": "2503177513",
+  "billing_tin": "223942436",
   "referring_npi": null,
   "prior_auth_number": null,
   "diagnoses": [
-    "J4530"
+    "R2231"
   ],
   "service_lines": [
     {
       "line_no": 1,
-      "date_of_service": "2026-11-18",
-      "place_of_service": "11",
-      "procedure_code": "95004",
+      "date_of_service": "2026-10-01",
+      "place_of_service": "22",
+      "procedure_code": "76881",
       "modifiers": [],
       "diagnosis_pointers": [
         "A"
       ],
-      "units": 21,
-      "charge_cents": 17200,
-      "rendering_npi": "1038710061"
+      "units": 1,
+      "charge_cents": 12100,
+      "rendering_npi": "2503177513"
     }
   ],
-  "clinical_notes": "The patient is seen in the allergy clinic. Hives and lip swelling within minutes of eating shellfish suggest a food allergy. Vital signs are stable. A standard panel was run without linking the tests to the patient's history. Plan: skin prick allergy tests, per allergen.",
-  "received_date": "2026-12-07",
+  "clinical_notes": "COPY FROM A PRIOR NOTE: The ultrasound is to evaluate a 4 cm soft-tissue mass near the wrist.\n\nASSESSMENT: Addendum: No mass, effusion, tendon or joint problem is noted; the ultrasound is a general screen.\n\nHx: The patient is a 52-year-old woman.\n\nBACKGROUND: The pt has a hx of vitamin D deficiency, managed w/ supplements. She has a past medical hx of pneumonia in 2010, fully recovered. Current meds include metformin 500 mg twice daily, albuterol inhaler as needed, & sertraline 50 mg daily. There are no known drug allergies. The patient is a former smoker who quit years ago, does not consume alcohol, & works as an accountant. Review of systems is negative for fever, chills, and upnlanned weight loss. There are no skin changes, urinary symptoms, chest pain, palpitations, cough, SOB, easy bruising, or bleeding. The pt reports stable mood & is sleeping well. The assessment includes localized swelling, mass, and lump in the right upper limb (R22.31).\n\nPLAN: Complete ultrasound of one arm or leg joint. An after-visit summary was printed for the patient. Today's findings & the next steps were explained in plain language, & the patient repeated the plan back accurately. A copy of this note will be sent to the referring clinician. Outside laboratory results were reviewed and scanned into the chart. Outside records were requested and will be reviewed when they arrive. Constitutional: well developed, well nourished, in no distress. Patient portal access was reviewed.",
+  "received_date": "2026-10-17",
   "frequency_code": "1",
   "other_coverage": null
 }

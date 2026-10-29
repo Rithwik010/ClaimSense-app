@@ -1,16 +1,16 @@
 {
   "claim_id": "CLM-DEMO-04",
-  "member_id": "MBR-000150",
+  "member_id": "MBR-000495",
   "patient": {
-    "first_name": "Stephanie",
-    "last_name": "Wilson",
-    "date_of_birth": "1956-03-10",
-    "sex": "F",
+    "first_name": "James",
+    "last_name": "Freeman",
+    "date_of_birth": "1995-12-01",
+    "sex": "M",
     "address": {
-      "line1": "019 Lyons Grove Suite 183",
-      "city": "Andreborough",
-      "state": "UT",
-      "zip_code": "02349"
+      "line1": "67663 Beth Hills",
+      "city": "Lake Robert",
+      "state": "WI",
+      "zip_code": "63481"
     }
   },
   "subscriber_is_patient": true,
@@ -19,41 +19,42 @@
   "referring_npi": null,
   "prior_auth_number": null,
   "diagnoses": [
-    "E1140",
-    "B351"
+    "L97412",
+    "E039",
+    "E559",
+    "E785"
   ],
   "service_lines": [
     {
       "line_no": 1,
-      "date_of_service": "2026-10-02",
+      "date_of_service": "2026-11-03",
       "place_of_service": "11",
-      "procedure_code": "11721",
+      "procedure_code": "97597",
       "modifiers": [],
       "diagnosis_pointers": [
         "A",
-        "B"
+        "C"
       ],
       "units": 1,
-      "charge_cents": 11500,
+      "charge_cents": 27500,
       "rendering_npi": "1816701100"
     },
     {
       "line_no": 2,
-      "date_of_service": "2026-10-02",
+      "date_of_service": "2026-11-03",
       "place_of_service": "11",
-      "procedure_code": "11720",
+      "procedure_code": "99214",
       "modifiers": [],
       "diagnosis_pointers": [
-        "A",
-        "B"
+        "A"
       ],
       "units": 1,
-      "charge_cents": 7500,
+      "charge_cents": 22800,
       "rendering_npi": "1816701100"
     }
   ],
-  "clinical_notes": "Onychomycotic nails, painful. PMH reviewed, no change. Monofilament: absent at 5/5 sites right foot. Non-professional care unsafe. Plan -> trimming and cleaning of thickened toenails, 6 or more nails.",
-  "received_date": "2026-10-10",
+  "clinical_notes": "Visited for routine evaluation at Podiatry Associates on 11/03/2026. 30-year-old male with a 2 cm ulcer on his right heel extending to the fat layer, seen one on one. This visit was to address wound care, with a focus on off-loading, infection control, and blood-sugar management to facilitate wound closure. This is the fourth debridement since 07/31/2026 when sharp debridement was last performed; the ulcer has significantly reduced in size each week. The patient's previous care plan was reviewed and revised last week. \n\nThe patient has a history of hyperlipidemia managed with statin therapy, hypothyroidism controlled with levothyroxine, and vitamin D deficiency being supplemented. He also has a past medical history of a kidney stone treated in 2008 with no recurrence. Currently, he takes a multivitamin, loratadine, fish oil, calcium carbonate, levothyroxine, and is allergic to penicillin without rash since. \n\nThe patient is a former smoker who quit years ago, lives alone, and is independent at home. He works in an office setting, has no fever, chills, unplanned weight loss, urinary symptoms, changes in vision, chest pain, palpitations, cough, shortness of breath, nausea, vomiting, or change in bowel habits. His mood is stable, he sleeps well, and has no recent changes in his review of systems. \n\nAssessment included a psychiatric review showing the patient to be alert, oriented, with a normal mood and affect. Physical exam found an abdomen that was soft, nontender, nondistended with normal bowel sounds. An after-visit summary was printed for the patient. \n\nPatient portal access was reviewed, and a copy of this note was sent to the referring clinician. The patient came alone to the visit and understands how to reach the clinic for any questions. No prior hospital admissions were reported. The patient has no recent psychiatric concerns. \n\nPlan: Selective removal of dead tissue from the open wound, aiming to limit the initial debridement to 20 square cm or less. Off-loading strategies will be reinforced. Instructions for home care will include continued wound cleaning and daily application of a new dressing material selected for its debridement properties. Follow-up in two weeks to reassess the wound's progress.",
+  "received_date": "2026-11-16",
   "frequency_code": "1",
   "other_coverage": null
 }
