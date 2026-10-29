@@ -39,27 +39,19 @@ export function Login() {
   return (
     <main className="relative grid min-h-svh lg:grid-cols-[1.1fr_1fr]">
       {/* The story of a claim, for the wide screen: wordmark, one line, the pipeline. */}
-      <section aria-label="About ClaimSense" className="relative hidden flex-col justify-between overflow-hidden px-12 py-12 lg:flex xl:px-16">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -top-40 -left-32 size-[34rem] rounded-full bg-[radial-gradient(circle,rgb(67_97_238/0.35),transparent_65%)] blur-2xl"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute right-0 bottom-0 size-[28rem] rounded-full bg-[radial-gradient(circle,rgb(34_211_238/0.14),transparent_65%)] blur-2xl"
-        />
+      <section aria-label="About ClaimSense" className="relative hidden flex-col justify-between overflow-hidden bg-sidebar px-12 py-12 text-white lg:flex xl:px-16">
         <BlurFade className="relative flex items-center gap-3">
           <LogoMark size={36} />
-          <Wordmark className="text-[22px]" />
+          <Wordmark className="text-[26px] text-white" />
         </BlurFade>
         <div className="relative max-w-[560px]">
           <BlurFade delay={0.08}>
-            <h2 className="text-glow text-[40px] leading-[48px] font-semibold tracking-[-0.03em] xl:text-[46px] xl:leading-[54px]">
+            <h2 className="text-[40px] leading-[48px] font-bold text-white xl:text-[46px] xl:leading-[54px]">
               Claims checked by rules, explained by a model, decided by people.
             </h2>
           </BlurFade>
           <BlurFade delay={0.16}>
-            <p className="mt-5 max-w-[48ch] text-[17px] leading-7 text-ink-muted">
+            <p className="mt-5 max-w-[48ch] text-[17px] leading-7 text-[#e8ecff]">
               Every recommendation shows its evidence. A reviewer accepts or overrides each line, and every step
               is recorded.
             </p>
@@ -68,8 +60,8 @@ export function Login() {
             <PipelineBeam />
           </BlurFade>
         </div>
-        <p className="relative flex items-center gap-2 text-[13px] text-ink-muted">
-          <ShieldCheck aria-hidden className="size-4 text-glow-cyan" />
+        <p className="relative flex items-center gap-2 text-[13px] text-[#e8ecff]">
+          <ShieldCheck aria-hidden className="size-4 text-white" />
           Prototype · synthetic data only
         </p>
       </section>
@@ -78,10 +70,10 @@ export function Login() {
         <BlurFade delay={0.1} className="w-full max-w-[420px]">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <LogoMark size={32} />
-            <Wordmark className="text-[20px]" />
+            <Wordmark className="text-[24px] text-ink-strong" />
           </div>
           <form
-            className="glass edge-light rounded-xl p-7 sm:p-8"
+            className="rounded-xl border border-rules bg-white p-7 shadow-sm sm:p-8"
             onSubmit={(event) => {
               event.preventDefault();
               setPending(true);
@@ -92,7 +84,7 @@ export function Login() {
                 .finally(() => setPending(false));
             }}
           >
-            <h1 className="mb-1 text-[28px] leading-9 font-semibold tracking-[-0.02em]">Log in</h1>
+            <h1 className="mb-1 text-[32px] leading-10 font-bold">Log in</h1>
             <p className="mb-7 text-ink-muted">Synthetic data only. Not for real claims.</p>
             <label className="mb-5 grid gap-2 text-[14px] font-semibold" htmlFor="username">
               Username

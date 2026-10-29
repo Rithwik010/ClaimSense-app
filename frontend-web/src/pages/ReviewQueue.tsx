@@ -47,7 +47,7 @@ function Rows({ items, reviewer }: { items: QueueItem[]; reviewer: boolean }) {
             <TableRow key={item.claim_id}>
               <TableCell>
                 <Link
-                  className="font-semibold whitespace-nowrap text-link underline-offset-4 transition-colors hover:text-white hover:underline"
+                  className="font-semibold whitespace-nowrap text-link underline-offset-4 transition-colors hover:text-primary-hover hover:underline"
                   to={`/${reviewer ? "review" : "claims"}/${encodeURIComponent(item.claim_id)}`}
                 >
                   {item.claim_id}

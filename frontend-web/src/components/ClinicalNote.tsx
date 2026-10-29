@@ -56,7 +56,7 @@ export function ClinicalNote({
     if (!mark) return;
     mark.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
     if (!reduce) {
-      void animate(mark, { backgroundColor: ["#FFE79A", "#F5C84C", "#FFE79A"] }, { duration: 0.6, delay: 0.25 });
+      void animate(mark, { backgroundColor: ["#FFF2CC", "#FFD966", "#FFF2CC"] }, { duration: 0.6, delay: 0.25 });
     }
   }, [active, animate, reduce, scope]);
 
@@ -72,7 +72,7 @@ export function ClinicalNote({
       <mark
         key={part.start}
         data-keys={part.keys.join(" ")}
-        className={`evidence ${selected ? "underline decoration-[#1b2433] decoration-2 underline-offset-4 ring-2 ring-glow-cyan/70" : ""}`}
+        className={`evidence ${selected ? "underline decoration-[#2b2f38] decoration-2 underline-offset-4 ring-2 ring-primary/70" : ""}`}
       >
         {notes.slice(part.start, part.end)}
       </mark>,

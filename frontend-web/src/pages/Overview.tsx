@@ -21,7 +21,7 @@ function Tile({ title, children, link }: { title: string; children: ReactNode; l
       <div className="flex-1 px-5 py-3">{children}</div>
       {link && (
         <Link
-          className="group/link flex items-center gap-1.5 border-t border-rules px-5 py-3 text-[13px] font-semibold text-link transition-colors hover:text-white"
+          className="group/link flex items-center gap-1.5 border-t border-rules px-5 py-3 text-[13px] font-semibold text-link transition-colors hover:text-primary-hover"
           to={link.to}
         >
           {link.label}
@@ -48,7 +48,7 @@ function Kpi({ label, value, hint, icon: Icon }: { label: string; value: number;
   return (
     <Spotlight className="px-5 py-4">
       <p className="flex items-center gap-2 text-[14px] text-ink-muted">
-        <span className="grid size-7 place-items-center rounded-md border border-white/10 bg-white/[0.05]">
+        <span className="grid size-7 place-items-center rounded-md border border-rules bg-brand-tint text-ink-strong">
           <Icon aria-hidden className="size-4 text-link" />
         </span>
         {label}
@@ -77,9 +77,9 @@ function OutcomeBars({ outcomes }: { outcomes: Record<string, number> }) {
           <dd className="text-[18px] font-semibold">
             <NumberTicker value={outcomes[s] ?? 0} />
           </dd>
-          <div className="col-span-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]" aria-hidden>
+          <div className="col-span-2 h-1.5 overflow-hidden rounded-full bg-subtle" aria-hidden>
             <motion.div
-              className="h-full origin-left rounded-full bg-[linear-gradient(90deg,var(--color-glow-blue),var(--color-glow-cyan))]"
+              className="h-full origin-left rounded-full bg-ink-strong"
               style={{ width: `${((outcomes[s] ?? 0) / max) * 100}%` }}
               initial={reduce ? false : { scaleX: 0 }}
               animate={{ scaleX: 1 }}

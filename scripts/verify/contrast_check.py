@@ -1,5 +1,5 @@
-"""WCAG 2.2 contrast of the proposed light theme's colour pairs (docs/design-direction-light.md).
-Report only.
+"""WCAG 2.2 contrast of the light theme's colour pairs (D-UI-7, docs/design-direction-light.md):
+the white pages, the blue sidebar and the decision chips. Report only.
 
 Text needs at least 4.5:1 against its background, icons, control borders and focus rings at least
 3:1 (WCAG 1.4.3 and 1.4.11). Exits 1 when a pair falls short.
@@ -34,6 +34,14 @@ PAIRS = [
     ("deny icon on its tint", "#B3141F", "#FCE4E4", UI),
     ("rejected text on its tint", "#474D5B", "#ECEEF2", TEXT),
     ("in review text on its tint", "#1B1464", "#E8ECFF", TEXT),
+    ("sidebar link on the sidebar blue", "#E8ECFF", "#2442D6", TEXT),
+    ("sidebar page you are on: white on the darker blue", "#FFFFFF", "#1A2FA3", TEXT),
+    ("sidebar link on hover: white on the darker blue", "#FFFFFF", "#1A2FA3", TEXT),
+    ("focus outline in the sidebar: white on the sidebar blue", "#FFFFFF", "#2442D6", UI),
+    ("focus outline on the page: primary on paper", "#2442D6", PAPER, UI),
+    ("evidence quote: body text on the highlight", "#2B2F38", "#FFF2CC", TEXT),
+    ("evidence underline on the highlight", "#9A6A00", "#FFF2CC", UI),
+    ("muted text on a table header", "#5B6170", CANVAS, TEXT),
 ]
 
 

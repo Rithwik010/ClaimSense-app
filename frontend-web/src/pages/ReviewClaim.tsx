@@ -289,7 +289,7 @@ function Review({
           <ErrorNotice error={submit.error} />
         </div>
       )}
-      <div className="sticky bottom-0 z-10 mt-6 -mx-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/10 bg-[#0a1020]/80 px-4 py-3 shadow-[0_-16px_40px_-24px_rgb(0_0_0/0.8)] backdrop-blur-xl backdrop-saturate-150 md:-mx-8 md:px-8">
+      <div className="sticky bottom-0 z-10 mt-6 -mx-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-rules bg-white px-4 py-3 shadow-[0_-8px_16px_-12px_rgb(16_24_40/0.18)] md:-mx-8 md:px-8">
         <Button
           size="lg"
           disabled={submit.isPending}

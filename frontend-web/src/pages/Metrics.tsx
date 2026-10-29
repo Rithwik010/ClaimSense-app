@@ -260,7 +260,7 @@ function AlsoRecorded({ results }: { results: Results }) {
 }
 
 // v1 muted slate, v2 blue (the demo model), E4B cyan: each 3:1 or more against the panel.
-const SHADES = ["#7C8AA5", "#7B93FF", "#5FD8EA"];
+const SHADES = ["#9AA0AD", "#2442D6", "#1B1464"];
 
 function Chart({ models }: { models: ModelRow[] }) {
   const measures: { key: keyof ModelRow; label: string }[] = [
@@ -282,9 +282,9 @@ function Chart({ models }: { models: ModelRow[] }) {
       <h3 className="mb-2 font-semibold">The same measures as bars (0 to 1)</h3>
       <ChartContainer config={config} className="aspect-auto h-72 w-full">
         <BarChart data={data} margin={{ left: -16, right: 8 }}>
-          <CartesianGrid vertical={false} stroke="rgb(255 255 255 / 0.08)" />
-          <XAxis dataKey="measure" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 12, fill: "#A9B4CA" }} />
-          <YAxis domain={[0, 1]} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "#A9B4CA" }} />
+          <CartesianGrid vertical={false} stroke="#ECEEF2" />
+          <XAxis dataKey="measure" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 12, fill: "#5B6170" }} />
+          <YAxis domain={[0, 1]} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "#5B6170" }} />
           <ChartTooltip content={<ChartTooltipContent />} />
           <ChartLegend content={<ChartLegendContent />} />
           {Object.keys(config).map((key) => (

@@ -18,7 +18,7 @@ import { memberOutcome } from "@/lib/labels";
 function ClaimLink({ claim }: { claim: MemberClaim }) {
   return (
     <Link
-      className="font-semibold whitespace-nowrap text-link underline-offset-4 transition-colors hover:text-white hover:underline"
+      className="font-semibold whitespace-nowrap text-link underline-offset-4 transition-colors hover:text-primary-hover hover:underline"
       to={`/member/claims/${encodeURIComponent(claim.claim_id)}`}
     >
       {claim.claim_id}

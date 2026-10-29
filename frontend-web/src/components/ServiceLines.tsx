@@ -152,7 +152,7 @@ function LinePanel({
                             type="button"
                             onClick={() => onQuote(key)}
                             aria-pressed={activeKey === key}
-                            className="-m-1 block w-full rounded-md p-1 text-left transition-colors hover:bg-white/[0.05]"
+                            className="-m-1 block w-full rounded-md p-1 text-left transition-colors hover:bg-brand-tint/60"
                           >
                             {body}
                             <span className="sr-only">Show the quote in the clinical note</span>
