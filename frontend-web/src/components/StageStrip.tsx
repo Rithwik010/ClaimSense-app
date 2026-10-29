@@ -129,9 +129,9 @@ export function stages(view: StageView, events: Pick<AuditEvent, "event_type">[]
 }
 
 const LOOK: Record<StageState, { bar: string; Icon: typeof Check; icon: string }> = {
-  done: { bar: "bg-[linear-gradient(90deg,var(--color-glow-blue),var(--color-glow-cyan))]", Icon: Check, icon: "text-glow-cyan" },
+  done: { bar: "bg-primary", Icon: Check, icon: "text-primary" },
   problem: { bar: "bg-deny", Icon: X, icon: "text-deny" },
-  waiting: { bar: "bg-glow-violet/70 animate-glow-pulse", Icon: Clock, icon: "text-glow-violet" },
+  waiting: { bar: "bg-ink-strong/70 animate-glow-pulse", Icon: Clock, icon: "text-ink-strong" },
   "not-reached": { bar: "bg-transparent border-t border-dashed border-control", Icon: CircleDashed, icon: "text-ink-muted" },
 };
 

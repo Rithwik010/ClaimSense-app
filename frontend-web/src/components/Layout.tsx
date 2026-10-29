@@ -1,6 +1,6 @@
 // The app shell: sidebar, a header with the breadcrumb and the user menu (D-AUTH-1), and the page,
-// which fades in and rises 4 px on navigation (DESIGN.md). The header is frosted glass so the page
-// scrolls under it.
+// which fades in and rises 4 px on navigation (DESIGN.md). The header is white with a soft rule; the
+// page scrolls under it.
 
 import { motion, useReducedMotion } from "motion/react";
 import { Fragment, useId, type ReactNode } from "react";
@@ -55,7 +55,7 @@ export function Layout() {
     <SidebarProvider defaultOpen={wide}>
       <AppSidebar />
       <SidebarInset className="min-w-0 bg-transparent">
-        <header className="sticky top-0 z-20 flex h-14 print:hidden shrink-0 items-center gap-2 border-b border-rules bg-canvas/60 px-4 backdrop-blur-xl backdrop-saturate-150 md:px-6">
+        <header className="sticky top-0 z-20 flex h-14 print:hidden shrink-0 items-center gap-2 border-b border-rules bg-white px-4 md:px-6">
           <SidebarTrigger className="-ml-1" aria-label="Show or hide the navigation" />
           <Separator orientation="vertical" className="mr-2 h-4 bg-rules" />
           <Breadcrumb className="min-w-0 flex-1">
@@ -101,7 +101,7 @@ export function PageTitle({ title, hint, actions }: { title: string; hint?: stri
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-[26px] leading-[34px] font-semibold tracking-[-0.02em] break-words md:text-[30px] md:leading-[38px]">
+        <h1 className="text-[28px] leading-[36px] font-bold break-words md:text-[34px] md:leading-[42px]">
           {title}
         </h1>
         {hint && <p className="mt-2 max-w-[72ch] text-ink-muted">{hint}</p>}
@@ -116,7 +116,7 @@ export function Section({ title, children, aside }: { title: string; children: R
   return (
     <section className="mb-8" aria-labelledby={id}>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id={id} className="text-[18px] leading-[26px] font-semibold">{title}</h2>
+        <h2 id={id} className="text-[21px] leading-[28px] font-bold">{title}</h2>
         {aside}
       </div>
       {children}
@@ -124,7 +124,7 @@ export function Section({ title, children, aside }: { title: string; children: R
   );
 }
 
-/** A panel (14 px radius): a quiet surface by default, frosted glass for a page's summary. */
+/** A panel (12 px radius): white with a soft rule; `glass` (a page's summary) is the same panel. */
 export function Panel({
   children,
   className = "",

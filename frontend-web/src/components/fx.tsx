@@ -60,7 +60,7 @@ export function Spotlight({
         className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/spot:opacity-100"
         style={{
           background:
-            "radial-gradient(320px circle at var(--spot-x) var(--spot-y), rgb(111 140 255 / 0.14), transparent 65%)",
+            "radial-gradient(320px circle at var(--spot-x) var(--spot-y), rgb(36 66 214 / 0.06), transparent 65%)",
         }}
       />
       <div className="relative">{children}</div>
@@ -89,44 +89,36 @@ export function NumberTicker({ value, className = "" }: { value: number; classNa
   );
 }
 
-/** The ClaimSense mark: a shield (trust), a pulse (health), and a mint dot (a person confirms). */
+/** The ClaimSense mark: a shield (trust), a pulse (health), and a dot (a person confirms); white
+ * on the blue sidebar, the action blue on a white page. */
 export function LogoMark({ size = 28, className = "" }: { size?: number; className?: string }) {
-  const id = useId().replace(/:/g, "");
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden className={className}>
-      <defs>
-        <linearGradient id={`cs-${id}`} x1="6" y1="2" x2="42" y2="46" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#5B7CFF" />
-          <stop offset="1" stopColor="#3B2FB5" />
-        </linearGradient>
-      </defs>
-      <rect width="48" height="48" rx="13" fill={`url(#cs-${id})`} />
-      <rect x="0.5" y="0.5" width="47" height="47" rx="12.5" stroke="white" strokeOpacity="0.18" />
-      <path d="M24 9 36.5 13.8v9.6c0 7.4-5 12.7-12.5 15.6C16.5 36.1 11.5 30.8 11.5 23.4v-9.6z" fill="#FFFFFF" />
+      <rect width="48" height="48" rx="10" fill="#FFFFFF" />
+      <rect x="0.5" y="0.5" width="47" height="47" rx="9.5" stroke="#D9DCE3" />
+      <path d="M24 9 36.5 13.8v9.6c0 7.4-5 12.7-12.5 15.6C16.5 36.1 11.5 30.8 11.5 23.4v-9.6z" fill="#2442D6" />
       <path
         d="M15.8 24.2h4.3l2.7-6.8 4 12.6 2.7-5.8h3"
-        stroke="#3B4BD8"
+        stroke="#FFFFFF"
         strokeWidth="2.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="33.6" cy="24.2" r="2.3" fill="#2DD4BF" />
+      <circle cx="33.6" cy="24.2" r="2.3" fill="#E8ECFF" />
     </svg>
   );
 }
 
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
-    <span className={`font-semibold tracking-[-0.02em] ${className}`}>
-      Claim<span className="text-link">Sense</span>
-    </span>
+    <span className={`font-heading font-bold tracking-[-0.01em] ${className}`}>ClaimSense</span>
   );
 }
 
 const STAGES = ["Intake", "Rules", "Policy", "Model", "Amounts", "Explanation", "Review", "Audit"];
 
 /**
- * The pipeline on the login page: eight stages in two rows joined by one path; a short band of
+ * The pipeline on the login page's blue panel: eight stages in two rows joined by one path; a short band of
  * light travels along it slowly. Decorative: the stage names are also in the text beside it.
  */
 export function PipelineBeam() {
@@ -142,13 +134,13 @@ export function PipelineBeam() {
       <svg viewBox={`0 0 ${W} 220`} className="w-full overflow-visible">
         <defs>
           <linearGradient id={`beam-${id}`} x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0" stopColor="#6F8CFF" stopOpacity="0" />
-            <stop offset="0.4" stopColor="#8DA2FF" />
-            <stop offset="0.7" stopColor="#67E8F9" />
-            <stop offset="1" stopColor="#67E8F9" stopOpacity="0" />
+            <stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
+            <stop offset="0.4" stopColor="#FFFFFF" />
+            <stop offset="0.7" stopColor="#E8ECFF" />
+            <stop offset="1" stopColor="#E8ECFF" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={path} stroke="rgb(255 255 255 / 0.12)" strokeWidth="1.5" fill="none" />
+        <path d={path} stroke="rgb(255 255 255 / 0.35)" strokeWidth="1.5" fill="none" />
         <motion.path
           d={path}
           stroke={`url(#beam-${id})`}
@@ -170,13 +162,13 @@ export function PipelineBeam() {
           <span
             className={`grid size-11 place-items-center rounded-full border text-[12px] font-semibold ${
               STAGES[i] === "Review"
-                ? "border-glow-cyan/60 bg-glow-cyan/10 text-glow-cyan shadow-[0_0_24px_-4px_rgb(103_232_249/0.6)]"
-                : "border-white/15 bg-[#0d1528]/90 text-ink"
+                ? "border-white bg-ink-strong text-white"
+                : "border-white/60 bg-white text-ink-strong"
             }`}
           >
             {i + 1}
           </span>
-          <span className="text-[13px] font-semibold whitespace-nowrap text-ink-muted">{STAGES[i]}</span>
+          <span className="text-[13px] font-semibold whitespace-nowrap text-[#e8ecff]">{STAGES[i]}</span>
         </div>
       ))}
     </div>

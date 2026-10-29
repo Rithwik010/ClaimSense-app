@@ -63,11 +63,11 @@ export function DropZone({ files, onFiles }: { files: File[]; onFiles: (files: F
           if (dropped.length) choose(dropped);
         }}
         className={`group/drop flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-[border-color,background-color,box-shadow] duration-200 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-glow-cyan ${
-          over ? "border-glow-cyan bg-glow-cyan/[0.06] shadow-[0_0_0_4px_rgb(103_232_249/0.12)]" : "border-white/20 bg-white/[0.025] hover:border-white/35 hover:bg-white/[0.04]"
+          over ? "border-primary bg-brand-tint" : "border-control bg-white hover:border-primary hover:bg-brand-tint/50"
         }`}
       >
-        <span className="grid size-12 place-items-center rounded-full border border-white/15 bg-[linear-gradient(135deg,rgb(67_97_238/0.35),rgb(139_92_246/0.25))] shadow-[0_8px_24px_-10px_rgb(67_97_238/0.8)] transition-transform duration-200 group-hover/drop:-translate-y-0.5">
-          <FileUp aria-hidden className="size-5 text-white" />
+        <span className="grid size-12 place-items-center rounded-full bg-brand-tint transition-transform duration-200 group-hover/drop:-translate-y-0.5">
+          <FileUp aria-hidden className="size-5 text-primary" />
         </span>
         <span className="font-semibold">
           {several ? `${files.length} files: one claim, in page order` : first ? first.name : "Drop a claim file here, or choose one"}
@@ -154,7 +154,7 @@ export function DropZone({ files, onFiles }: { files: File[]; onFiles: (files: F
           />
           <label
             htmlFor={addId}
-            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/15 bg-white/[0.04] px-3 text-[13px] font-medium transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-glow-cyan hover:bg-white/[0.08]"
+            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-control bg-white px-3 text-[13px] font-semibold text-primary transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-glow-cyan hover:bg-brand-tint"
           >
             <FilePlus2 aria-hidden className="size-4" /> Add page {files.length + 1} as another file
           </label>

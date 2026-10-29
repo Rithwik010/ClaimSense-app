@@ -31,12 +31,12 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex h-11 items-center gap-2.5 px-1.5 group-data-[collapsible=icon]:px-0">
           <LogoMark size={28} className="shrink-0" />
-          <Wordmark className="truncate text-[17px] group-data-[collapsible=icon]:hidden" />
+          <Wordmark className="truncate text-[22px] text-white group-data-[collapsible=icon]:hidden" />
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[12px] font-semibold tracking-wide text-ink-muted">
+          <SidebarGroupLabel className="text-[12px] font-semibold tracking-[0.06em] text-[#e8ecff] uppercase">
             {ROLE_LABELS[role]}
           </SidebarGroupLabel>
           <SidebarMenu className="gap-1">
@@ -45,7 +45,7 @@ export function AppSidebar() {
                 <SidebarMenuButton
                   asChild
                   tooltip={item.label}
-                  className="h-9 text-[15px] text-ink-muted transition-colors hover:text-ink data-active:bg-[linear-gradient(90deg,rgb(67_97_238/0.32),rgb(67_97_238/0.06))] data-active:text-white data-active:shadow-[inset_2px_0_0_var(--color-glow-blue)] [&_svg]:size-[18px]"
+                  className="h-10 text-[15px] text-[#e8ecff] transition-colors hover:bg-sidebar-accent hover:text-white data-active:bg-sidebar-accent data-active:font-semibold data-active:text-white data-active:shadow-[inset_3px_0_0_#ffffff] [&_svg]:size-[18px]"
                   isActive={
                     pathname.startsWith(item.to) ||
                     (item.to === "/queue" && pathname.startsWith("/review"))
@@ -62,8 +62,8 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
-        <p className="flex items-center gap-2 rounded-md border border-rules bg-white/[0.03] px-3 py-2 text-[13px] text-ink-muted">
-          <ShieldCheck aria-hidden className="size-4 shrink-0 text-glow-cyan" />
+        <p className="flex items-center gap-2 rounded-md border border-[#c9d2ff]/40 bg-sidebar-accent px-3 py-2 text-[13px] text-white">
+          <ShieldCheck aria-hidden className="size-4 shrink-0 text-white" />
           Prototype · synthetic data only
         </p>
       </SidebarFooter>

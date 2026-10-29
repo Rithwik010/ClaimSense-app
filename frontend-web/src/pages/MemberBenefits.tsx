@@ -19,7 +19,7 @@ function Tile({ label, value, of }: { label: string; value: string; of: string }
     <div>
       <dt className="text-[13px] text-ink-muted">{label}</dt>
       <dd>
-        <span className="block text-[22px] leading-[30px] font-semibold tabular-nums">{value}</span>
+        <span className="block text-[22px] leading-[30px] font-bold text-ink-strong tabular-nums">{value}</span>
         <span className="text-[13px] text-ink-muted tabular-nums">{of}</span>
       </dd>
     </div>

@@ -2,44 +2,51 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/atkinson-hyperlegible-next";
+@import "@fontsource-variable/source-serif-4";
 
 /*
- * ClaimSense theme (DESIGN.md, D-UI-5): a deep navy canvas lit by soft blue, violet and cyan
- * light; frosted glass only where a surface floats (sidebar, header, overlays, a page's summary);
- * colour still means a decision. Every text pair keeps WCAG AA contrast on its surface.
+ * ClaimSense theme (DESIGN.md, D-UI-7): white pages, a blue sidebar, indigo serif headings and one
+ * blue for actions; cards are white with a soft grey rule, and floating layers (menus, dialogs,
+ * sheets) are solid white with a soft shadow. Colour still means a decision, as text and icon on
+ * a tint. Every text pair keeps WCAG AA contrast on its surface (scripts/verify/contrast_check.py).
+ * Inspired by the Cigna Group's sites, with our own values: no logo, name, font, image or copy.
  */
 
 @theme inline {
   --font-sans: "Atkinson Hyperlegible Next Variable", system-ui, sans-serif;
-  --font-heading: var(--font-sans);
+  --font-heading: "Source Serif 4 Variable", Georgia, serif;
   --font-mono: var(--font-sans); /* Atkinson tells O from 0 and I from l, which codes need */
 
-  /* Surfaces and text (names kept from the light theme so every page restyles from here). */
-  --color-canvas: #070b18;
-  --color-paper: rgb(255 255 255 / 0.045);
-  --color-raised: #0f1729;
-  --color-ink: #e9eef8;
-  --color-ink-muted: #a9b4ca;
-  --color-rules: rgb(255 255 255 / 0.09);
-  --color-control: #63749a;
-  --color-highlight: #ffe79a;
-  --color-on-highlight: #1b2433;
+  /* Surfaces and text. */
+  --color-canvas: #ffffff;
+  --color-subtle: #f5f6f8; /* table headers, quiet panels */
+  --color-paper: #ffffff;
+  --color-raised: #ffffff;
+  --color-ink: #2b2f38;
+  --color-ink-muted: #5b6170;
+  --color-ink-strong: #1b1464; /* headings, numbers that matter */
+  --color-rules: #d9dce3;
+  --color-control: #7a8091;
+  --color-highlight: #fff2cc;
+  --color-on-highlight: #2b2f38;
+  --color-brand-tint: #e8ecff; /* hover, selected, info notice */
 
-  /* Light sources: used for focus, the primary action, the stage strip and selected states. */
-  --color-glow-blue: #6f8cff;
-  --color-glow-violet: #a78bfa;
-  --color-glow-cyan: #67e8f9;
-  --color-link: #9db1ff;
+  /* The action blue and its partners (the old "light" names kept so every page restyles here). */
+  --color-glow-blue: #2442d6;
+  --color-glow-violet: #1b1464;
+  --color-glow-cyan: #2442d6;
+  --color-link: #2442d6;
+  --color-primary-hover: #1a2fa3;
 
-  /* Decisions: text and icon on a tint, never colour alone (6.3:1 or more on a panel). */
-  --color-approve: #5fdca0;
-  --color-approve-tint: rgb(52 211 153 / 0.14);
-  --color-pend: #f5c26b;
-  --color-pend-tint: rgb(245 180 69 / 0.14);
-  --color-deny: #ff9189;
-  --color-deny-tint: rgb(255 107 107 / 0.14);
-  --color-reject: #b7c0d0;
-  --color-reject-tint: rgb(183 192 208 / 0.12);
+  /* Decisions: text and icon on a tint, never colour alone (5.4:1 or more on the tint). */
+  --color-approve: #2e6b1f;
+  --color-approve-tint: #e3f0da;
+  --color-pend: #7a5300;
+  --color-pend-tint: #fff2cc;
+  --color-deny: #a1121b;
+  --color-deny-tint: #fce4e4;
+  --color-reject: #474d5b;
+  --color-reject-tint: #eceef2;
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -71,59 +78,60 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
 
-  /* Controls 8 px, panels 14 px, floating layers 18 px. */
-  --radius-sm: 6px;
+  /* Badges 4 px, controls and buttons 8 px, cards 12 px, floating layers 16 px; chips are pills. */
+  --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --radius-2xl: 18px;
-  --radius-3xl: 22px;
-  --radius-4xl: 22px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-4xl: 20px;
 
-  /* Soft, low shadows: depth comes from light and borders, not heavy drop shadows. */
-  --shadow-2xs: 0 1px 0 rgb(255 255 255 / 0.04) inset;
-  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.35);
-  --shadow-sm: 0 2px 8px -2px rgb(0 0 0 / 0.45);
-  --shadow: 0 8px 24px -12px rgb(0 0 0 / 0.55);
-  --shadow-md: 0 12px 32px -16px rgb(0 0 0 / 0.6);
-  --shadow-lg: 0 24px 48px -24px rgb(0 0 0 / 0.65);
-  --shadow-xl: 0 32px 64px -28px rgb(2 6 23 / 0.75);
-  --shadow-2xl: 0 40px 80px -32px rgb(2 6 23 / 0.8);
+  /* Small, soft shadows, only on what floats. */
+  --shadow-2xs: 0 1px 0 rgb(16 24 40 / 0.04);
+  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.08);
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.12);
+  --shadow: 0 6px 12px -4px rgb(16 24 40 / 0.14);
+  --shadow-md: 0 8px 16px -6px rgb(16 24 40 / 0.16);
+  --shadow-lg: 0 12px 24px -8px rgb(16 24 40 / 0.18);
+  --shadow-xl: 0 16px 32px -12px rgb(16 24 40 / 0.2);
+  --shadow-2xl: 0 24px 48px -16px rgb(16 24 40 / 0.22);
 
   --animate-glow-pulse: glow-pulse 2.4s ease-in-out infinite;
 }
 
 :root {
-  --background: #070b18;
-  --foreground: #e9eef8;
-  --card: #0f1729;
-  --card-foreground: #e9eef8;
-  --popover: rgb(14 21 40 / 0.94);
-  --popover-foreground: #e9eef8;
-  --primary: #4361ee;
+  --background: #ffffff;
+  --foreground: #2b2f38;
+  --card: #ffffff;
+  --card-foreground: #2b2f38;
+  --popover: #ffffff;
+  --popover-foreground: #2b2f38;
+  --primary: #2442d6;
   --primary-foreground: #ffffff;
-  --secondary: rgb(255 255 255 / 0.06);
-  --secondary-foreground: #e9eef8;
-  --muted: rgb(255 255 255 / 0.05);
-  --muted-foreground: #a9b4ca;
-  --accent: rgb(255 255 255 / 0.08);
-  --accent-foreground: #ffffff;
-  --destructive: #ff9189;
-  --border: rgb(255 255 255 / 0.09);
-  --input: #63749a;
-  --ring: #67e8f9;
-  --chart-1: #64748b;
-  --chart-2: #8da2ff;
-  --chart-3: #67e8f9;
-  --radius: 14px;
-  --sidebar: rgb(9 14 28 / 0.62);
-  --sidebar-foreground: #e9eef8;
-  --sidebar-primary: #4361ee;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgb(255 255 255 / 0.07);
+  --secondary: #f5f6f8;
+  --secondary-foreground: #2b2f38;
+  --muted: #f5f6f8;
+  --muted-foreground: #5b6170;
+  --accent: #e8ecff;
+  --accent-foreground: #1b1464;
+  --destructive: #a1121b;
+  --border: #d9dce3;
+  --input: #7a8091;
+  --ring: #2442d6;
+  --chart-1: #9aa0ad;
+  --chart-2: #1b1464;
+  --chart-3: #2442d6;
+  --radius: 12px;
+  /* The sidebar: the action blue, white text; the page you are on a darker blue with a white bar. */
+  --sidebar: #2442d6;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #1b1464;
+  --sidebar-accent: #1a2fa3;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgb(255 255 255 / 0.08);
-  --sidebar-ring: #67e8f9;
+  --sidebar-border: #1a2fa3;
+  --sidebar-ring: #ffffff;
 }
 
 @keyframes glow-pulse {
@@ -141,48 +149,34 @@
     @apply border-border;
   }
   html {
-    color-scheme: dark;
-    background: #070b18;
+    color-scheme: light;
+    background: #ffffff;
   }
   body {
     @apply text-ink font-sans antialiased;
     font-size: 15px;
     line-height: 24px;
     min-height: 100svh;
-    background-color: #070b18;
-    /* Atmosphere: three soft light sources, fixed so content scrolls over them. */
-    background-image:
-      radial-gradient(56rem 36rem at 8% -12%, rgb(67 97 238 / 0.24), transparent 62%),
-      radial-gradient(48rem 32rem at 100% -6%, rgb(139 92 246 / 0.17), transparent 60%),
-      radial-gradient(60rem 38rem at 55% 115%, rgb(34 211 238 / 0.09), transparent 60%);
-    background-attachment: fixed;
-  }
-  /* A faint grid behind everything, fading out toward the edges. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image:
-      linear-gradient(rgb(255 255 255 / 0.028) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(255 255 255 / 0.028) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black, transparent 75%);
+    background-color: #ffffff;
   }
   h1,
   h2,
   h3 {
-    letter-spacing: -0.01em;
+    font-family: var(--font-heading);
+    color: var(--color-ink-strong);
+    letter-spacing: -0.005em;
     text-wrap: balance;
   }
   :focus-visible {
-    outline: 2px solid var(--color-glow-cyan);
+    outline: 2px solid var(--color-glow-blue);
     outline-offset: 2px;
   }
+  [data-slot="sidebar"] :focus-visible {
+    outline-color: #ffffff;
+  }
   ::selection {
-    background: rgb(111 140 255 / 0.38);
-    color: #ffffff;
+    background: #c9d2ff;
+    color: #1b1464;
   }
   a {
     text-underline-offset: 4px;
@@ -194,72 +188,48 @@
   }
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgb(255 255 255 / 0.16) transparent;
+    scrollbar-color: #c3c7d1 transparent;
   }
 }
 
-/* Frosted glass, for surfaces that float above the canvas. Text on it keeps 14:1 or more. */
+/* Floating surfaces (the top bar, a page's summary card): white with a soft rule. The names are
+   kept from the glass theme so the pages restyle from here. */
 @utility glass {
-  background-color: rgb(12 18 34 / 0.58);
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.025));
-  border: 1px solid rgb(255 255 255 / 0.1);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.07),
-    0 24px 48px -28px rgb(0 0 0 / 0.7);
-}
-
-/* Denser glass for menus, dialogs and sheets, so what is behind never competes with them. */
-@utility glass-strong {
-  background-color: rgb(13 20 38 / 0.9);
-  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.015));
-  border: 1px solid rgb(255 255 255 / 0.12);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  backdrop-filter: blur(24px) saturate(1.5);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.08),
-    0 32px 64px -24px rgb(2 6 23 / 0.8);
-}
-
-/* A plain panel: a quiet lift off the canvas without blur. Lists and tables sit on it. */
-@utility surface {
-  background-color: rgb(255 255 255 / 0.035);
+  background-color: #ffffff;
   border: 1px solid var(--color-rules);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
 }
 
-/* A hairline of light along the top edge of a glass card. */
+/* Menus, dialogs and sheets: solid white with a soft shadow. */
+@utility glass-strong {
+  background-color: #ffffff;
+  border: 1px solid var(--color-rules);
+  box-shadow: var(--shadow-lg);
+}
+
+/* A plain panel for lists and tables: white with a soft grey rule. */
+@utility surface {
+  background-color: #ffffff;
+  border: 1px solid var(--color-rules);
+}
+
+/* Kept for the pages that use it; the light theme has no edge light. */
 @utility edge-light {
   position: relative;
-  &::after {
-    content: "";
-    position: absolute;
-    inset-inline: 12%;
-    top: -1px;
-    height: 1px;
-    pointer-events: none;
-    background: linear-gradient(90deg, transparent, rgb(157 177 255 / 0.7), rgb(103 232 249 / 0.6), transparent);
-  }
 }
 
-/* Calm hover for cards and rows that open something: lift 1 px, border brightens. */
+/* Calm hover for cards and rows that open something: the border darkens. */
 @utility hover-lift {
   transition:
-    transform 160ms ease,
     border-color 160ms ease,
     background-color 160ms ease;
   &:hover {
-    transform: translateY(-1px);
-    border-color: rgb(255 255 255 / 0.16);
+    border-color: var(--color-control);
   }
 }
 
+/* Was a gradient title; now the heading indigo. */
 @utility text-glow {
-  background-image: linear-gradient(92deg, #e9eef8 10%, #c7d2fe 55%, #a5f3fc 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--color-ink-strong);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -272,13 +242,16 @@
   }
 }
 
-/* Evidence quotes in the clinical note: dark text on the highlight, 12.7:1. */
+/* Evidence quotes in the clinical note: dark text on the highlight, underlined so the quote is not
+   marked by colour alone. */
 mark.evidence {
   background: var(--color-highlight);
   color: var(--color-on-highlight);
   border-radius: 3px;
   padding: 0 2px;
-  box-shadow: 0 0 0 1px rgb(255 231 154 / 0.25);
+  text-decoration: underline;
+  text-decoration-color: #9a6a00;
+  text-underline-offset: 3px;
 }
 
 /* The explanation is an HTML fragment rendered by the API from the decision record (§8.7). */
@@ -330,15 +303,13 @@ mark.evidence {
   color: var(--color-link);
 }
 
-/* Toasts (sonner) sit on dense glass. */
+/* Toasts (sonner): white with a soft shadow. */
 .cn-toast {
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  backdrop-filter: blur(20px) saturate(1.4);
-  box-shadow: 0 24px 48px -24px rgb(2 6 23 / 0.8);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Printing (the patient's EOB, D-EOB-1): black text on white paper, without the app around the
-   page, the glass or the lights. Decisions keep their text and icon. */
+   page. Decisions keep their text and icon. */
 @media print {
   @page {
     margin: 14mm;
@@ -349,7 +320,6 @@ mark.evidence {
     background: #ffffff !important;
     background-image: none !important;
   }
-  body::before,
   [data-slot="sidebar"],
   [data-slot="sidebar-gap"],
   [data-slot="sidebar-container"],

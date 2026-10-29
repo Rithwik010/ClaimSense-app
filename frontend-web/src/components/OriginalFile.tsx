@@ -91,7 +91,7 @@ function Viewer({ claimId, document }: { claimId: string; document: DocumentInfo
         href={url}
         target="_blank"
         rel="noopener"
-        className="inline-flex w-fit items-center gap-1.5 text-[14px] font-semibold text-link underline-offset-4 hover:text-white hover:underline"
+        className="inline-flex w-fit items-center gap-1.5 text-[14px] font-semibold text-link underline-offset-4 hover:text-primary-hover hover:underline"
       >
         Open in new tab <ExternalLink aria-hidden className="size-3.5" />
       </a>
@@ -146,7 +146,7 @@ export function OriginalFileButton({ claimId, documents }: { claimId: string; do
                   variant="outline"
                   size="sm"
                   aria-pressed={d.file_no === shown?.file_no}
-                  className="aria-pressed:border-glow-blue aria-pressed:bg-glow-blue/15 aria-pressed:text-white"
+                  className="aria-pressed:border-primary aria-pressed:bg-brand-tint aria-pressed:text-ink-strong"
                   onClick={() => setChosen(d.file_no)}
                 >
                   File {d.file_no}
@@ -158,7 +158,7 @@ export function OriginalFileButton({ claimId, documents }: { claimId: string; do
           {shown ? (
             <Viewer claimId={claimId} document={shown} />
           ) : (
-            <p className="rounded-md border border-dashed border-white/15 px-4 py-10 text-center text-ink-muted">
+            <p className="rounded-md border border-dashed border-control px-4 py-10 text-center text-ink-muted">
               Original file not available
             </p>
           )}

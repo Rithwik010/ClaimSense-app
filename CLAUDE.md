@@ -30,7 +30,7 @@ ClaimSense: CMS-1500 claims → deterministic rules → fine-tuned Gemma 4 SLM r
 - Explanations are built from the decision record, never from model free text.
 
 ## Frontend (`frontend-web/`)
-- React + Vite + TypeScript, shadcn/ui (Radix), Tailwind v4, TanStack Query, Motion; dark glass theme (D-UI-5, amends D-UI-2).
+- React + Vite + TypeScript, shadcn/ui (Radix), Tailwind v4, TanStack Query, Motion; light theme with a blue sidebar and serif headings (D-UI-7, amends D-UI-5).
 - Follow `DESIGN.md` (tokens, type, spacing, components, motion, breakpoints); it wins over the
   `frontend-design` project skill where they differ.
 - Talks only to the API on its own origin (the Vite dev proxy, or the API serving the build in
@@ -38,7 +38,7 @@ ClaimSense: CMS-1500 claims → deterministic rules → fine-tuned Gemma 4 SLM r
   The UI computes no amounts and no decisions: it formats what the API returns.
 - Add components with `npx shadcn@latest add <name>`; pin every npm package to an exact version at
   least two weeks old.
-- Colour only for decisions (text + icon on a tint, never colour alone); glass only on floating surfaces, soft shadows;
+- Colour only for decisions (text + icon on a tint, never colour alone); no glass, soft shadows only on floating surfaces;
   sentence case; buttons say what happens; motion only for the moments listed in `DESIGN.md`.
 - Before calling UI work done: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`,
   the Playwright smoke test, and a look at every page at 390, 768 and 1440 px.
