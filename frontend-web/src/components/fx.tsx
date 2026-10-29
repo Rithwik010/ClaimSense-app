@@ -96,7 +96,7 @@ export function LogoMark({ size = 28, className = "" }: { size?: number; classNa
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden className={className}>
       <rect width="48" height="48" rx="10" fill="#FFFFFF" />
       <rect x="0.5" y="0.5" width="47" height="47" rx="9.5" stroke="#D9DCE3" />
-      <path d="M24 9 36.5 13.8v9.6c0 7.4-5 12.7-12.5 15.6C16.5 36.1 11.5 30.8 11.5 23.4v-9.6z" fill="#2442D6" />
+      <path d="M24 9 36.5 13.8v9.6c0 7.4-5 12.7-12.5 15.6C16.5 36.1 11.5 30.8 11.5 23.4v-9.6z" fill="#0033ff" />
       <path
         d="M15.8 24.2h4.3l2.7-6.8 4 12.6 2.7-5.8h3"
         stroke="#FFFFFF"
@@ -104,7 +104,7 @@ export function LogoMark({ size = 28, className = "" }: { size?: number; classNa
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="33.6" cy="24.2" r="2.3" fill="#E8ECFF" />
+      <circle cx="33.6" cy="24.2" r="2.3" fill="#e6ebff" />
     </svg>
   );
 }
@@ -136,8 +136,8 @@ export function PipelineBeam() {
           <linearGradient id={`beam-${id}`} x1="0" x2="1" y1="0" y2="0">
             <stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
             <stop offset="0.4" stopColor="#FFFFFF" />
-            <stop offset="0.7" stopColor="#E8ECFF" />
-            <stop offset="1" stopColor="#E8ECFF" stopOpacity="0" />
+            <stop offset="0.7" stopColor="#e6ebff" />
+            <stop offset="1" stopColor="#e6ebff" stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={path} stroke="rgb(255 255 255 / 0.35)" strokeWidth="1.5" fill="none" />
@@ -168,7 +168,7 @@ export function PipelineBeam() {
           >
             {i + 1}
           </span>
-          <span className="text-[13px] font-semibold whitespace-nowrap text-[#e8ecff]">{STAGES[i]}</span>
+          <span className="text-[13px] font-semibold whitespace-nowrap text-[#e6ebff]">{STAGES[i]}</span>
         </div>
       ))}
     </div>

@@ -2,7 +2,6 @@
 // only (D-AUTH-1). Collapses to icons; a sheet on small screens. Who is logged in is in the user
 // menu at the top right.
 
-import { ShieldCheck } from "lucide-react";
 import { NavLink, useLocation } from "react-router";
 
 import { LogoMark, Wordmark } from "@/components/fx";
@@ -10,7 +9,6 @@ import { LogoMark, Wordmark } from "@/components/fx";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
@@ -29,23 +27,23 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex h-11 items-center gap-2.5 px-1.5 group-data-[collapsible=icon]:px-0">
-          <LogoMark size={28} className="shrink-0" />
-          <Wordmark className="truncate text-[22px] text-white group-data-[collapsible=icon]:hidden" />
+        <div className="flex h-16 items-center gap-3 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <LogoMark size={36} className="shrink-0" />
+          <Wordmark className="truncate text-[28px] text-white group-data-[collapsible=icon]:hidden" />
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[12px] font-semibold tracking-[0.06em] text-[#e8ecff] uppercase">
+          <SidebarGroupLabel className="mb-1 text-[13px] font-semibold tracking-[0.08em] text-[#ccd6ff] uppercase">
             {ROLE_LABELS[role]}
           </SidebarGroupLabel>
-          <SidebarMenu className="gap-1">
+          <SidebarMenu className="gap-1.5">
             {pagesFor(role).map((item) => (
               <SidebarMenuItem key={item.to}>
                 <SidebarMenuButton
                   asChild
                   tooltip={item.label}
-                  className="h-10 text-[15px] text-[#e8ecff] transition-colors hover:bg-sidebar-accent hover:text-white data-active:bg-sidebar-accent data-active:font-semibold data-active:text-white data-active:shadow-[inset_3px_0_0_#ffffff] [&_svg]:size-[18px]"
+                  className="h-12 gap-3 px-3 text-[17px] font-medium text-white transition-colors hover:bg-sidebar-accent hover:text-white data-active:bg-sidebar-accent data-active:font-bold data-active:text-white data-active:shadow-[inset_4px_0_0_#ffffff] group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:p-3! [&_svg]:size-[22px]"
                   isActive={
                     pathname.startsWith(item.to) ||
                     (item.to === "/queue" && pathname.startsWith("/review"))
@@ -61,12 +59,6 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="group-data-[collapsible=icon]:hidden">
-        <p className="flex items-center gap-2 rounded-md border border-[#c9d2ff]/40 bg-sidebar-accent px-3 py-2 text-[13px] text-white">
-          <ShieldCheck aria-hidden className="size-4 shrink-0 text-white" />
-          Prototype · synthetic data only
-        </p>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

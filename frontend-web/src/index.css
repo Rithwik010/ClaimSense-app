@@ -9,7 +9,8 @@
  * blue for actions; cards are white with a soft grey rule, and floating layers (menus, dialogs,
  * sheets) are solid white with a soft shadow. Colour still means a decision, as text and icon on
  * a tint. Every text pair keeps WCAG AA contrast on its surface (scripts/verify/contrast_check.py).
- * Inspired by the Cigna Group's sites, with our own values: no logo, name, font, image or copy.
+ * The blue family is the Cigna Group's public palette, at the team's request (D-UI-8); no Cigna
+ * logo, name, font, image or copy.
  */
 
 @theme inline {
@@ -19,24 +20,24 @@
 
   /* Surfaces and text. */
   --color-canvas: #ffffff;
-  --color-subtle: #f5f6f8; /* table headers, quiet panels */
+  --color-subtle: #f4f4f4; /* table headers, quiet panels */
   --color-paper: #ffffff;
   --color-raised: #ffffff;
-  --color-ink: #2b2f38;
-  --color-ink-muted: #5b6170;
-  --color-ink-strong: #1b1464; /* headings, numbers that matter */
+  --color-ink: #333333;
+  --color-ink-muted: #5a5a5a;
+  --color-ink-strong: #110081; /* headings, numbers that matter */
   --color-rules: #d9dce3;
   --color-control: #7a8091;
   --color-highlight: #fff2cc;
-  --color-on-highlight: #2b2f38;
-  --color-brand-tint: #e8ecff; /* hover, selected, info notice */
+  --color-on-highlight: #333333;
+  --color-brand-tint: #e6ebff; /* hover, selected, info notice */
 
   /* The action blue and its partners (the old "light" names kept so every page restyles here). */
-  --color-glow-blue: #2442d6;
-  --color-glow-violet: #1b1464;
-  --color-glow-cyan: #2442d6;
-  --color-link: #2442d6;
-  --color-primary-hover: #1a2fa3;
+  --color-glow-blue: #0033ff;
+  --color-glow-violet: #110081;
+  --color-glow-cyan: #0033ff;
+  --color-link: #0033ff;
+  --color-primary-hover: #001f99;
 
   /* Decisions: text and icon on a tint, never colour alone (5.4:1 or more on the tint). */
   --color-approve: #2e6b1f;
@@ -102,35 +103,35 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #2b2f38;
+  --foreground: #333333;
   --card: #ffffff;
-  --card-foreground: #2b2f38;
+  --card-foreground: #333333;
   --popover: #ffffff;
-  --popover-foreground: #2b2f38;
-  --primary: #2442d6;
+  --popover-foreground: #333333;
+  --primary: #0033ff;
   --primary-foreground: #ffffff;
-  --secondary: #f5f6f8;
-  --secondary-foreground: #2b2f38;
-  --muted: #f5f6f8;
-  --muted-foreground: #5b6170;
-  --accent: #e8ecff;
-  --accent-foreground: #1b1464;
+  --secondary: #f4f4f4;
+  --secondary-foreground: #333333;
+  --muted: #f4f4f4;
+  --muted-foreground: #5a5a5a;
+  --accent: #e6ebff;
+  --accent-foreground: #110081;
   --destructive: #a1121b;
   --border: #d9dce3;
   --input: #7a8091;
-  --ring: #2442d6;
+  --ring: #0033ff;
   --chart-1: #9aa0ad;
-  --chart-2: #1b1464;
-  --chart-3: #2442d6;
+  --chart-2: #110081;
+  --chart-3: #0033ff;
   --radius: 12px;
   /* The sidebar: the action blue, white text; the page you are on a darker blue with a white bar. */
-  --sidebar: #2442d6;
+  --sidebar: #0033ff;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #1b1464;
-  --sidebar-accent: #1a2fa3;
+  --sidebar-primary-foreground: #110081;
+  --sidebar-accent: #001f99;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1a2fa3;
+  --sidebar-border: #001f99;
   --sidebar-ring: #ffffff;
 }
 
@@ -175,8 +176,8 @@
     outline-color: #ffffff;
   }
   ::selection {
-    background: #c9d2ff;
-    color: #1b1464;
+    background: #ccd6ff;
+    color: #110081;
   }
   a {
     text-underline-offset: 4px;
