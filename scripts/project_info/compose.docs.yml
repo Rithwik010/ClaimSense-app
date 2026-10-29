@@ -1,0 +1,41 @@
+# The docs measurement stack (docs/PROJECT_INFO.md sections 5.1 and 7.2): Postgres and Qdrant
+# under their own project name, ports and volumes, so the demo's containers ("claimsense") and its
+# database are never touched. Start, seed, measure, then remove it:
+#
+#   docker compose -p claimsense-docs -f scripts/project_info/compose.docs.yml up -d --wait
+#   docker compose -p claimsense-docs -f scripts/project_info/compose.docs.yml down -v
+#
+# The worktree's .env (git-ignored) points the app at these ports:
+#   DATABASE_URL=postgresql+psycopg://claimsense:claimsense@localhost:5445/claimsense
+#   QDRANT_URL=http://localhost:6345
+name: claimsense-docs
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: claimsense
+      POSTGRES_PASSWORD: claimsense
+      POSTGRES_DB: claimsense
+    ports:
+      - "127.0.0.1:5445:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claimsense -d claimsense"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  qdrant:
+    image: qdrant/qdrant:v1.19.1
+    ports:
+      - "127.0.0.1:6345:6333" # REST
+      - "127.0.0.1:6346:6334" # gRPC
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true"
+    volumes:
+      - qdrant-data:/qdrant/storage
+
+volumes:
+  postgres-data:
+  qdrant-data:
