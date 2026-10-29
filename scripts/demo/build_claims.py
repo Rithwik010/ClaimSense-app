@@ -70,8 +70,10 @@ def v3_records() -> dict[str, dict[str, Any]]:
 
 
 def demo_claim(name: str, number: int, record: dict[str, Any]) -> dict[str, Any]:
-    """The record's claim as demo claim `number`: its demo claim ID, and only the lines kept."""
+    """The record's claim as demo claim `number`: its demo claim ID, only the lines kept, and its
+    notes without trailing blanks (a form cannot print them, so a claim read from one has none)."""
     claim = dict(record["claim"], claim_id=f"CLM-DEMO-{number:02d}")
+    claim["clinical_notes"] = claim["clinical_notes"].rstrip()
     keep = KEEP_LINES.get(name)
     if keep:
         lines = [line for line in claim["service_lines"] if line["line_no"] in keep]
