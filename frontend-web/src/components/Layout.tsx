@@ -7,6 +7,7 @@ import { Fragment, useId, type ReactNode } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { MemberAssistant } from "@/components/MemberAssistant";
 import { UserMenu } from "@/components/UserMenu";
 import {
   Breadcrumb,
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { PAGES } from "@/lib/auth";
+import { PAGES, useUser } from "@/lib/auth";
 import { ErrorBoundary } from "./ErrorBoundary";
 
 function crumbs(pathname: string): { label: string; to?: string }[] {
@@ -50,6 +51,7 @@ export function Layout() {
   const { pathname } = useLocation();
   const reduce = useReducedMotion();
   const trail = crumbs(pathname);
+  const { role } = useUser();
   const wide = typeof window === "undefined" || window.innerWidth >= 1200;
   return (
     <SidebarProvider defaultOpen={wide}>
@@ -92,6 +94,7 @@ export function Layout() {
             </ErrorBoundary>
           </div>
         </motion.div>
+        {role === "member" && <MemberAssistant />}
       </SidebarInset>
     </SidebarProvider>
   );
