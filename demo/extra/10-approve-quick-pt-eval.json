@@ -1,0 +1,46 @@
+{
+  "claim_id": "CLM-EXTRA-10",
+  "member_id": "MBR-000388",
+  "patient": {
+    "first_name": "Brianna",
+    "last_name": "Freeman",
+    "date_of_birth": "1991-06-25",
+    "sex": "F",
+    "address": {
+      "line1": "382 Lori Prairie Apt. 636",
+      "city": "Michelleton",
+      "state": "UT",
+      "zip_code": "95488"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "1039186980",
+  "billing_tin": "626413097",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "R262",
+    "E785",
+    "I10"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-11-29",
+      "place_of_service": "11",
+      "procedure_code": "97161",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A",
+        "C"
+      ],
+      "units": 1,
+      "charge_cents": 25500,
+      "rendering_npi": "1039186980"
+    }
+  ],
+  "clinical_notes": "Pt starts PT w/ initial eval. Sessions incl. strengthening & balance training, prog'd based on resp. Conditions: hyperlipidemia, hypertension, obesity. Meds: calcium carbonate 500 mg bid, hydrocortisone cream prn, artificial tears prn. Allergy: penicillin (rash). Social: retired, lives w/ spouse in single-story home. ROS: no fever, chills, weight loss, rash, skin changes, urinary symptoms, vision change, chest pain, palpitations, cough, SOB, nausea, vomiting, bowel changes, easy bruising, bleeding. Mood stable, sleeping well. Dx: difficulty in walking (R26.2), hyperlipidemia (E78.5), essential hypertension (I10). Pt wks well. Plan: low complexity PT eval. A copy of this note will be sent to the ref clinician. Questions answered, pt agrees w/ plan. Psych: alert, oriented, normal mood & affect. Outside labs reviewed, scanned. HEENT: normocephalic, atraumatic; oral mucosa moist. Immunizations up to date. No prior hospital admissions. Return precautions reviewed.",
+  "received_date": "2026-12-14",
+  "frequency_code": "1",
+  "other_coverage": null
+}

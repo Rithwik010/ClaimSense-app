@@ -1,0 +1,61 @@
+{
+  "claim_id": "CLM-EXTRA-13",
+  "member_id": "MBR-000275",
+  "patient": {
+    "first_name": "John",
+    "last_name": "Miller",
+    "date_of_birth": "1979-10-29",
+    "sex": "M",
+    "address": {
+      "line1": "36652 Crosby Springs Suite 239",
+      "city": "Rileyfurt",
+      "state": "RI",
+      "zip_code": "62638"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "2522103581",
+  "billing_tin": "436479290",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "K625",
+    "E785",
+    "E559",
+    "M810"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-10-09",
+      "place_of_service": "24",
+      "procedure_code": "45385",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A",
+        "C",
+        "D"
+      ],
+      "units": 1,
+      "charge_cents": 102600,
+      "rendering_npi": "2522103581"
+    },
+    {
+      "line_no": 2,
+      "date_of_service": "2026-10-09",
+      "place_of_service": "11",
+      "procedure_code": "99212",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A"
+      ],
+      "units": 1,
+      "charge_cents": 14800,
+      "rendering_npi": "2522103581"
+    }
+  ],
+  "clinical_notes": "PRESENTING PROBLEM:\nThe patient is seen for a colonoscopy.\n\nHISTORY:\nToday's visit is a procedure visit for a 46-year-old man. Colonoscopy is needed to find the source of black, tarry stools. Accompanied today by a family member.\n(Text from the 08/31/2026 note follows.) Vital signs at that visit were stable. Interval hx at that visit: no hospital stays or emergency visits. Vital signs at that visit: blood pressure 124/83, pulse 78.\n\nMEDICAL HISTORY:\nHyperlipidemia, on a statin.\nVitamin D deficiency, on supplements.\nOsteoporosis, on tx. Present since 2006.\n\nMEDICATION LIST:\nsertraline 50 mg daily, no side effects reported\nmelatonin 3 mg qhs\nfish oil 1 g daily\ncalcium carbonate 500 mg BID\n\nDRUG ALLERGIES:\nSulfa drugs (hives).\n\nSOCIAL HISTORY:\nDrinks two cups of coffee a day and no alcohol.\n\nSYSTEMS REVIEW:\nOn review of systems, no rash & headache or new weakness.\n\nEXAM:\nBlood pressure 130/78, pulse 65, temperature 98.4 F, oxygen saturation 97% on room air. Alert, oriented and in no acute distress. Heart rate is regular.\n\nRESULTS:\nOutside laboratory results were reviewed and scanned into the chart.\n\nASSESSMENT:\n1. Hemorrhage of anus and rectum (K62.5)\n2. Hyperlipidemia, unspecified (E78.5)\n3. Vitamin D deficiency, unspecified (E55.9)\n4. Age-related osteoporosis without current pathological fracture (M81.0)\n\nPLAN OF CARE:\nProcedure planned: colonoscopy with polyp removal using a wire snare. Continue current medications.",
+  "received_date": "2026-10-29",
+  "frequency_code": "1",
+  "other_coverage": null
+}

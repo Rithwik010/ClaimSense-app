@@ -1,0 +1,60 @@
+{
+  "claim_id": "CLM-EXTRA-14",
+  "member_id": "MBR-000146",
+  "patient": {
+    "first_name": "George",
+    "last_name": "Ibarra",
+    "date_of_birth": "2005-03-17",
+    "sex": "M",
+    "address": {
+      "line1": "32738 Rodriguez Pike Suite 117",
+      "city": "North Julie",
+      "state": "MS",
+      "zip_code": "73431"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "1499656001",
+  "billing_tin": "303179321",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "R55",
+    "K5900",
+    "M810",
+    "E039"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-11-01",
+      "place_of_service": "11",
+      "procedure_code": "99203",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A"
+      ],
+      "units": 1,
+      "charge_cents": 19200,
+      "rendering_npi": "1499656001"
+    },
+    {
+      "line_no": 2,
+      "date_of_service": "2026-11-10",
+      "place_of_service": "11",
+      "procedure_code": "93268",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A",
+        "D"
+      ],
+      "units": 1,
+      "charge_cents": 33800,
+      "rendering_npi": "1499656001"
+    }
+  ],
+  "clinical_notes": "S: The patient is a 21-year-old man with a history of present illness characterized by short spells of a pounding heartbeat occurring roughly once every 6 days. \n\nO: The patient has a past medical history significant for hypothyroidism, osteoporosis, and constipation. Medications include sertraline, metformin, atorvastatin, fish oil, calcium carbonate, melatonin, hydrocortisone cream, and a stable dose of levothyroxine. No known drug allergies. The patient lives with his spouse, has quit smoking, and drinks no alcohol. Physical examination reveals a stable vital signs, skin warm and dry with no rash, and a negative review of systems. \n\nA: During the visit, the patient reported no fever, chills, or weight loss. No new rash or skin changes were observed. No urinary symptoms were reported. The patient's vision and bowel habits are unchanged. No new headaches or weakness were noted. The patient's mood remains stable, and sleep is reported as good. Return precautions were discussed, and the patient has a reliable medical history. \n\nP: A plan was made for the patient to use an event monitor for up to 30 days to capture potential arrhythmias. Medication management was reviewed, and the patient was given a written summary of their care plan, which includes upcoming follow-up. A copy of this note has been sent to the referring clinician. All outside records from the prior clinic visit were incorporated into the chart. Immunizations are confirmed to be up to date, and the patient was reminded of upcoming screenings and preventive measures.",
+  "received_date": "2026-11-15",
+  "frequency_code": "1",
+  "other_coverage": null
+}
