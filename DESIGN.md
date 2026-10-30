@@ -78,7 +78,7 @@ claim shown in the original-file sheet is pretty-printed in the system monospace
 
 | Role | Size / line height | Weight |
 |---|---|---|
-| Login band headline (serif, white on the blue band) | 31 / 36 px (52 / 57 from 768 px) | 700 |
+| Login band headline (serif, white on the blue band) | 31 / 36 px (48 / 53 from 768 px) | 700 |
 | Page title (serif) | 28 / 36 px (34 / 42 from 768 px) | 700 |
 | Section title (serif) | 21 / 28 px | 700 |
 | Body | 15 / 24 px | 400 |

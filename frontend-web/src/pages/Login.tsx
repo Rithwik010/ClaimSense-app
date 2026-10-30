@@ -45,17 +45,17 @@ export function Login() {
 
   return (
     <main className="min-h-svh bg-white">
-      <header className="flex h-16 items-center gap-3 border-b border-rules px-4 md:h-[72px] md:px-16">
+      <header className="flex h-16 items-center gap-3 border-b border-rules px-4 md:px-16">
         <LogoMark size={36} />
         <Wordmark className="text-[26px] text-ink-strong md:text-[28px]" />
       </header>
       {/* The claim's journey, on the blue band (D-UI-9): the pipeline's steps, the review step marked. */}
-      <section aria-labelledby="login-story" className="bg-sidebar px-4 pt-7 pb-28 text-white md:px-16 md:pt-11 md:pb-32">
-        <h2 id="login-story" className="max-w-[900px] text-[31px] leading-[1.15] font-bold text-white md:text-[52px] md:leading-[1.1]">
+      <section aria-labelledby="login-story" className="bg-sidebar px-4 pt-7 pb-28 text-white md:px-16 md:pt-9">
+        <h2 id="login-story" className="max-w-[900px] text-[31px] leading-[1.15] font-bold text-white md:text-[48px] md:leading-[1.1]">
           From claim to decision, every step on the record.
         </h2>
         <p className="mt-3 text-[15px] text-[#e6ebff] md:hidden">Rules, evidence from the notes, and a person decides.</p>
-        <ol aria-label="The pipeline" className="mt-6 hidden flex-wrap items-center gap-2 md:flex">
+        <ol aria-label="The pipeline" className="mt-5 hidden flex-wrap items-center gap-2 md:flex">
           {STAGES.map((stage, i) => (
             <li key={stage} className="flex items-center gap-2">
               <span
@@ -75,10 +75,10 @@ export function Login() {
         </ol>
       </section>
 
-      <div className="relative z-10 mx-4 -mt-20 mb-10 md:mx-16 md:-mt-24">
+      <div className="relative z-10 mx-4 -mt-20 mb-10 md:mx-16">
         <BlurFade className="mx-auto grid max-w-[1152px] overflow-hidden rounded-xl border border-rules bg-white shadow-lg lg:grid-cols-2">
           <form
-            className="p-6 sm:p-9 lg:px-12"
+            className="p-6 sm:p-9 lg:px-12 lg:py-8"
             onSubmit={(event) => {
               event.preventDefault();
               setPending(true);
@@ -91,7 +91,7 @@ export function Login() {
           >
             <h1 className="mb-1.5 text-[32px] leading-10 font-bold md:text-[34px]">Log in</h1>
             <p className="mb-6 text-[15px] text-ink-muted">
-              Providers, reviewers, admins and members each land on their own pages.
+              Each role lands on its own pages.
             </p>
             <label className="mb-5 grid gap-2 text-[14px] font-semibold" htmlFor="username">
               Username
@@ -136,7 +136,7 @@ export function Login() {
           </form>
           <aside
             aria-label="About ClaimSense"
-            className="hidden flex-col gap-5 border-t border-rules p-6 sm:flex sm:p-9 lg:border-t-0 lg:border-l lg:px-12"
+            className="hidden flex-col gap-5 border-t border-rules p-6 sm:flex sm:p-9 lg:border-t-0 lg:border-l lg:px-12 lg:py-8"
           >
             <div className="rounded-lg bg-brand-tint p-5">
               <p className="text-[13px] font-bold tracking-[0.06em] text-ink-strong uppercase">New: model v3</p>
