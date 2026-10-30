@@ -1,11 +1,11 @@
 // Small, restrained motion pieces (DESIGN.md, D-UI-5), written here on Motion and Tailwind rather
-// than installed: a blur-fade entrance, a spotlight card, a count-up for counts, the logo, and the
-// login page's pipeline beam (ideas from Magic UI's Blur Fade, Magic Card, Number Ticker and
-// Animated Beam). Every one respects prefers-reduced-motion through MotionConfig in main.tsx.
+// than installed: a blur-fade entrance, a spotlight card, a count-up for counts and the logo (ideas
+// from Magic UI's Blur Fade, Magic Card and Number Ticker). Every one respects
+// prefers-reduced-motion through MotionConfig in main.tsx.
 // Money and decisions are never animated: NumberTicker is for counts only.
 
 import { animate, motion, useReducedMotion } from "motion/react";
-import { useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 
 /** Fades and un-blurs its children once, rising 6 px. */
 export function BlurFade({
@@ -112,65 +112,5 @@ export function LogoMark({ size = 28, className = "" }: { size?: number; classNa
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`font-heading font-bold tracking-[-0.01em] ${className}`}>ClaimSense</span>
-  );
-}
-
-const STAGES = ["Intake", "Rules", "Policy", "Model", "Amounts", "Explanation", "Review", "Audit"];
-
-/**
- * The pipeline on the login page's blue panel: eight stages in two rows joined by one path; a short band of
- * light travels along it slowly. Decorative: the stage names are also in the text beside it.
- */
-export function PipelineBeam() {
-  const reduce = useReducedMotion();
-  const id = useId().replace(/:/g, "");
-  // Two rows of four, read like the claim moves: left to right, down, then right to left.
-  const W = 520;
-  const col = (i: number) => 40 + (i % 4) * ((W - 80) / 3);
-  const pos = STAGES.map((_, i) => (i < 4 ? { x: col(i), y: 40 } : { x: col(7 - i), y: 168 }));
-  const path = `M${pos[0]!.x} 40 H${pos[3]!.x} C ${pos[3]!.x + 70} 40, ${pos[4]!.x + 70} 168, ${pos[4]!.x} 168 H${pos[7]!.x}`;
-  return (
-    <div className="relative mx-auto w-full max-w-[520px]" aria-hidden>
-      <svg viewBox={`0 0 ${W} 220`} className="w-full overflow-visible">
-        <defs>
-          <linearGradient id={`beam-${id}`} x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
-            <stop offset="0.4" stopColor="#FFFFFF" />
-            <stop offset="0.7" stopColor="#e6ebff" />
-            <stop offset="1" stopColor="#e6ebff" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={path} stroke="rgb(255 255 255 / 0.35)" strokeWidth="1.5" fill="none" />
-        <motion.path
-          d={path}
-          stroke={`url(#beam-${id})`}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray="90 1400"
-          initial={{ strokeDashoffset: reduce ? -400 : 90 }}
-          animate={reduce ? undefined : { strokeDashoffset: -1400 }}
-          transition={{ duration: 7, ease: "linear", repeat: Infinity, repeatDelay: 1 }}
-        />
-      </svg>
-      {pos.map((p, i) => (
-        <div
-          key={STAGES[i]}
-          className="absolute flex -translate-x-1/2 -translate-y-[22px] flex-col items-center gap-2"
-          style={{ left: `${(p.x / W) * 100}%`, top: `${(p.y / 220) * 100}%` }}
-        >
-          <span
-            className={`grid size-11 place-items-center rounded-full border text-[12px] font-semibold ${
-              STAGES[i] === "Review"
-                ? "border-white bg-ink-strong text-white"
-                : "border-white/60 bg-white text-ink-strong"
-            }`}
-          >
-            {i + 1}
-          </span>
-          <span className="text-[13px] font-semibold whitespace-nowrap text-[#e6ebff]">{STAGES[i]}</span>
-        </div>
-      ))}
-    </div>
   );
 }
