@@ -1,0 +1,43 @@
+{
+  "claim_id": "CLM-EXTRA-15",
+  "member_id": "MBR-000021",
+  "patient": {
+    "first_name": "John",
+    "last_name": "Barrett",
+    "date_of_birth": "1978-06-26",
+    "sex": "M",
+    "address": {
+      "line1": "669 Perry Drive Apt. 209",
+      "city": "Moralesfort",
+      "state": "NM",
+      "zip_code": "39028"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "2615054733",
+  "billing_tin": "900142579",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "M5416"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-11-04",
+      "place_of_service": "11",
+      "procedure_code": "97140",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A"
+      ],
+      "units": 1,
+      "charge_cents": 5600,
+      "rendering_npi": "2615054733"
+    }
+  ],
+  "clinical_notes": "Copied from a prior note: Pt continues outpatient PT w/o a written plan of care.\n\nPt reports no new complaints. Treatment will go on w/ a written plan of care. Addendum: The written plan of care sets the goal to return to work lifting 20 pounds and schedules therapeutic exercise 2 times a week for 4 weeks.\n\nPt last seen 11/04/2026. Plan of care signed and certified by the referring physician.\n\nAssess: Radiculopathy, lumbar region (M54.16). Pt reports no change since last visit.\n\nPlan: Continue current plan of care. Include strengthening and balance training, progress based on pt's response. Hands-on manual therapy such as joint mobilization, each 15 minutes.\n\nHistory: Pt has occasional constipation, anxiety managed w/ counseling, and type 2 diabetes without complications. Treated for kidney stone in 2018; no problems since. On meds: lisinopril 10 mg daily, multivvitamin daily, docusate 100 mg prn, loratadine 10 mg daily, fish oil 1 g daily, atorvastatin 20 mg nightly, artificial tears prn. Allergies: latex (itching).\n\nSocial: Drinks 2 cups of coffee a day, no alcohol. Retired, lives w/ spouse in single-story home. Return precautions reviewed. Advance directive on file reviewed.\n\nAbdomen: soft, nontender, nondistended, normal bowel sounds. Lymphatic: no cervical or supraclavicular nodes.\n\nExamination: Lumbosacral area tenderness to palpation. Range of motion normal. No motor or sensory deficits.\n\nPt was given written info about the visit, including how to reach the clinic after hours and when to call. The patient's questions about scheduling and transportation were answered. The front desk will help arrange the next appointment.\n\nNo relevant admissions. No change in psychiatric status. Pt alert, oriented, normal mood & affect. No fever, chills, unplanned weight loss, rash, skin changes, urinary sx, change in vision, chest pain, palpitations, cough, shortness of breath, nausea, vomiting, change in bowel habits, easy bruising, or bleeding.",
+  "received_date": "2026-11-29",
+  "frequency_code": "1",
+  "other_coverage": null
+}

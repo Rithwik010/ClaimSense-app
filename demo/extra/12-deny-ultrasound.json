@@ -1,0 +1,43 @@
+{
+  "claim_id": "CLM-EXTRA-12",
+  "member_id": "MBR-000062",
+  "patient": {
+    "first_name": "April",
+    "last_name": "Anderson",
+    "date_of_birth": "1970-04-07",
+    "sex": "F",
+    "address": {
+      "line1": "490 Wilson Overpass",
+      "city": "West Johnborough",
+      "state": "NM",
+      "zip_code": "84430"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "1309254625",
+  "billing_tin": "616836195",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "M67432"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-11-10",
+      "place_of_service": "11",
+      "procedure_code": "76882",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A"
+      ],
+      "units": 1,
+      "charge_cents": 17700,
+      "rendering_npi": "1309254625"
+    }
+  ],
+  "clinical_notes": "CC:\nCC: lump/swelling.\n\nHistory of present illness:\nThe patient is a 56-y/o woman seen today for an ordering visit.\n\nPast medical history:\nAnxiety, managed w/ counseling. First noted in 2023.\nObesity.\nMild anemia, followed by primary care.\nVitamin D deficiency, on supplements.\nNo prior hospital admissions.\nFamily hx is noncontributory.\nMother w/ high blood pressure.\nFather with an underactive thyroid.\nWisdom teeth removed in 2008.\n\nMeds:\nfish oil 1 g daily, no side effects reported\nmetformin 500 mg twice daily, no side effects reported\n\nDrug allergies:\nNo known drug allergies.\n\nSocial:\nLives with a spouse in a single-story home. Nonsmoker. Drinks alcohol socially.\n\nROS:\nOn review of systems, no chest pain or palpitations, fever, chills or weight loss, cough or shortness of breath, low mood & rash.\n\nExam:\nBP 118/82, pulse 81, temperature 98.1 F, oxygen saturation 98% on room air. Well-appearing & in no distress. There is no obvious abscess on exam. No mass, effusion, tendon or joint problem is noted; the ultrasound is a general screen. Skin is warm and dry. Patient is alert & in no distress. Skin: warm and dry, no rash on exposd areas. Blood pressure at earlier visits: 128/84 (12/23/2025). Constitutional: well developed, well nourished, in no distress. Lymphatic: no cervical or supraclavicular nodes. Heart: regular rhythm, normal S1 and S2, no murmur.\n\nResults:\nNo new labs since the last visit. Basic metabolic panel on 09/27/2026: sodium 141, potassium 3.9, creatinine 0.8.\n\nA/P:\n1. Ganglion, L wrist (M67.432)\n\nPlan:\nProcedure planned: limited ultrasound of an arm or leg joint or soft tissue area. The options were reviewed with the pt, who wishes to proceed. Return precautions reviewed & questions answered and the plan agreed. Fish oil 1 g daily was renewed for 90 days. A refill of metformin 500 mg twice daily was sent to the pharmacy. The pt's preferred contact method was updated. The patient's questions about schedulinng and transportation were answered, & the front desk will help arrange the next appointment. Outside records from the prior clinic were scanned into the chart.",
+  "received_date": "2026-11-29",
+  "frequency_code": "1",
+  "other_coverage": null
+}

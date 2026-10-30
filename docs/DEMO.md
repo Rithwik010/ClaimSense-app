@@ -51,6 +51,25 @@ reviewer reviews: **Review queue** → the tier's tab → the claim → **Accept
 | 8 | provider2 | `08-scanned-clean.pdf`: **Read claim** (OCR, a few seconds) → the confidence column → process | **In review**; it waits in the queue |
 | 9 | provider2 | `09-scanned-low-confidence.pdf` (human-style notes): **Read claim** → the mistyped NPI is highlighted → process | **Rejected** for a low-confidence field, never denied: CARC 16 with RARC MA130 |
 
+### Extra claims (`demo/extra/`)
+
+Nine more claims of v3's held-out test sets (`scripts/demo/build_extra_claims.py`), for showing more
+claims through the whole pipeline after the nine above. Any provider can file them, in any order;
+none needs a prior authorization and none is a duplicate. Their paths, run through the pipeline on
+the laptop with v3:
+
+| File | Claim | Expected result |
+|---|---|---|
+| `10-approve-quick-pt-eval.json` | physical therapy evaluation | v3 **Approve**, quick tier |
+| `11-pend-psych-testing.json` | psychological testing | v3 **Pend** (missing documentation), standard tier |
+| `12-deny-ultrasound.json` | soft-tissue ultrasound | v3 **Deny**, full tier |
+| `13-partial-colonoscopy-ncci.json` | colonoscopy and an office visit | v3 **Approve** line 1; line 2 **denied by the NCCI rule**, full tier |
+| `14-approve-visit-and-holter.json` | office visit and a heart monitor (unseen writing style) | v3 **Approve** both lines, quick tier |
+| `15-pend-manual-therapy.json` | manual therapy | v3 **Pend**, standard tier |
+| `16-digital-partial-debridement-ncci.pdf` | digital PDF: debridement and an office visit | v3 **Approve** line 1; line 2 **denied by the NCCI rule**, full tier |
+| `17-digital-deny-ultrasound.pdf` | digital PDF: soft-tissue ultrasound | v3 **Deny**, full tier |
+| `18-scanned-approve-ultrasound.pdf` | scanned PDF (OCR): ultrasound | v3 **Approve**, standard tier (fields read with low confidence) |
+
 Then:
 
 - **reviewer1**: **Returned and auto-denied** lists claims 5, 6, 7 and 9 with a one-line

@@ -1,0 +1,48 @@
+{
+  "claim_id": "CLM-EXTRA-11",
+  "member_id": "MBR-000467",
+  "patient": {
+    "first_name": "Wendy",
+    "last_name": "Ramos",
+    "date_of_birth": "1989-04-29",
+    "sex": "F",
+    "address": {
+      "line1": "14654 Patricia Trail",
+      "city": "Averytown",
+      "state": "PW",
+      "zip_code": "38734"
+    }
+  },
+  "subscriber_is_patient": true,
+  "billing_npi": "1281094353",
+  "billing_tin": "427289864",
+  "referring_npi": null,
+  "prior_auth_number": null,
+  "diagnoses": [
+    "G3184",
+    "D649",
+    "M810",
+    "J45909"
+  ],
+  "service_lines": [
+    {
+      "line_no": 1,
+      "date_of_service": "2026-10-05",
+      "place_of_service": "11",
+      "procedure_code": "96130",
+      "modifiers": [],
+      "diagnosis_pointers": [
+        "A",
+        "B",
+        "D"
+      ],
+      "units": 1,
+      "charge_cents": 25900,
+      "rendering_npi": "1281094353"
+    }
+  ],
+  "clinical_notes": "The patient returns for repeat psychological testing.\n\nThe patient is a pleasant 37-year-old woman who is seen today for a feedback visit and who tells me the following. The testing will be given in person by the psychologist, not as self-scored questionnaires.\n[Carried forward from 06/16/2026] At that time the patient reported doing about the same. At that visit the patient had no new problems and the med list was unchanged. Vital signs at that visit: blood pressure 112/83, pulse 83.\nThe patient brought a written list of questions, which were reviewed.\n[Carried forward from 09/18/2026] The med list was reviewed at that visit with no changes. At that visit the patient had no new problems & the med list was unchanged. Vital signs at that visit: BP 126/71, pulse 79.\n\nDrug allergies:\nCodeine (nausea).\n\nMedical history:\nMild asthma, rarely uses an inhaler.\nOsteoporosis, on treatment. Stable since 2012.\nMild anemia, followed by primary care. Stable since 2005.\nNearsightedness, wears glasses. Diagnosed in 2014.\n\nSocial:\nLives alone and is independent at home. Works as a teacher.\n\nPhysical exam:\nBP 138/70, pulse 70, temperature 98.1 F, oxygen saturation 96% on room air. Appears stated age; no acute distress. Speech is normal in rate and volume.\n\nResults:\nNo outstanding orders from the last visit.\n\nImpression:\n1. Mild cognitive impairment of uncertain or unknown etiology (G31.84)\n2. Anemia, unspecified (D64.9)\n3. Age-related osteoporosis without current pathological fracture (M81.0)\n4. Unspecified asthma, uncomplicated (J45.909)\n\nDisposition:\nProcedure planned: psychological test eval by a psychologist or physician, first hour. The primary care office will receive a summary of today's visit. The plan was reviewed together & the patient voiced understanding. The advance directive on file was reviewed.",
+  "received_date": "2026-10-20",
+  "frequency_code": "1",
+  "other_coverage": null
+}
