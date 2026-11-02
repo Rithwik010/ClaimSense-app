@@ -1,7 +1,8 @@
 // The search box and status filter every claims list uses (D-UI-6), kept in the URL (?q= and
 // ?status=) so a refresh or the back button keeps them, with the number of claims shown and an
 // empty state that clears them. The provider's My claims searches claim IDs; reviewers and admins
-// search claim ID, member ID, provider name or NPI (src/lib/filters.ts).
+// search claim ID, member ID, provider name or NPI (src/lib/filters.ts). Claims also takes
+// ?reviewed=1, the Overview's reviewed counts (D-UI-10): the claims a reviewer finalized.
 
 import { Search } from "lucide-react";
 import { useId } from "react";
@@ -18,6 +19,8 @@ import type { Label } from "@/lib/labels";
 export interface Filters {
   query: string;
   status: StatusFilter;
+  /** ?reviewed=1: only the claims a reviewer finalized (the Claims page reads it). */
+  reviewed: boolean;
   active: boolean;
   setQuery: (value: string) => void;
   setStatus: (value: string) => void;
@@ -29,6 +32,7 @@ export function useClaimFilters(options: readonly Outcome[] | null): Filters {
   const [params, setParams] = useSearchParams();
   const query = params.get("q") ?? "";
   const status = options ? statusParam(params.get("status"), options) : ALL;
+  const reviewed = params.get("reviewed") === "1";
   const change = (edit: (next: URLSearchParams) => void) =>
     setParams(
       (now) => {
@@ -43,13 +47,15 @@ export function useClaimFilters(options: readonly Outcome[] | null): Filters {
   return {
     query,
     status,
-    active: query.trim() !== "" || status !== ALL,
+    reviewed,
+    active: query.trim() !== "" || status !== ALL || reviewed,
     setQuery: (value) => set("q", value),
     setStatus: (value) => set("status", value),
     clear: () =>
       change((next) => {
         next.delete("q");
         next.delete("status");
+        next.delete("reviewed");
       }),
   };
 }

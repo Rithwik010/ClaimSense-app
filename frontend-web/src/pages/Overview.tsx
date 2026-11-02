@@ -1,5 +1,6 @@
 // Overview (an admin's home, D-AUTH-1): counts over the claims on file in this demo database (GET
-// /v1/metrics/overview). Labelled as demo data: they describe what was filed here, not results.
+// /v1/metrics/overview). Each headline count opens the list behind it, as the tiles' links do
+// (D-UI-10): the claims, the review queue, the rule outcomes and the claims a reviewer finalized.
 
 import { ArrowRight, ClipboardCheck, Files, Scale, UserCheck } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
@@ -8,7 +9,7 @@ import { Link } from "react-router";
 
 import { useOverview } from "@/api/hooks";
 import type { ClaimStatus, ReviewTier } from "@/api/types";
-import { PlainBadge, StatusChip } from "@/components/Chip";
+import { StatusChip } from "@/components/Chip";
 import { BlurFade, NumberTicker, Spotlight } from "@/components/fx";
 import { PageTitle } from "@/components/Layout";
 import { EmptyState, ErrorNotice, Skeleton } from "@/components/States";
@@ -43,23 +44,47 @@ function Count({ label, value }: { label: ReactNode; value: number }) {
   );
 }
 
-/** A headline count: what an admin wants to see first. */
-function Kpi({ label, value, hint, icon: Icon }: { label: string; value: number; hint: string; icon: typeof Files }) {
+/** A headline count: what an admin wants to see first; the whole tile opens the list behind it. */
+function Kpi({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  to,
+}: {
+  label: string;
+  value: number;
+  hint: string;
+  icon: typeof Files;
+  to: string;
+}) {
   return (
-    <Spotlight className="px-5 py-4">
-      <p className="flex items-center gap-2 text-[14px] text-ink-muted">
-        <span className="grid size-7 place-items-center rounded-md border border-rules bg-brand-tint text-ink-strong">
-          <Icon aria-hidden className="size-4 text-link" />
-        </span>
-        {label}
-      </p>
-      <p className="mt-3 font-heading text-[34px] leading-10 font-bold text-ink-strong">
-        <NumberTicker value={value} />
-      </p>
-      <p className="mt-1 text-[13px] text-ink-muted">{hint}</p>
-    </Spotlight>
+    <Link
+      to={to}
+      className="group/kpi block h-full rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
+    >
+      <Spotlight className="hover-lift h-full px-5 py-4">
+        <p className="flex items-center gap-2 text-[14px] text-ink-muted">
+          <span className="grid size-7 place-items-center rounded-md border border-rules bg-brand-tint text-ink-strong">
+            <Icon aria-hidden className="size-4 text-link" />
+          </span>
+          {label}
+          <ArrowRight
+            aria-hidden
+            className="ml-auto size-4 text-link transition-transform group-hover/kpi:translate-x-0.5"
+          />
+        </p>
+        <p className="mt-3 font-heading text-[34px] leading-10 font-bold text-ink-strong">
+          <NumberTicker value={value} />
+        </p>
+        <p className="mt-1 text-[13px] text-ink-muted">{hint}</p>
+      </Spotlight>
+    </Link>
   );
 }
+
+/** The claims list kept to the claims a reviewer finalized (Claims, ?reviewed=1). */
+const REVIEWED_CLAIMS = "/claims?reviewed=1";
 
 /** Final outcomes as short bars (counts, so they may grow in once). */
 function OutcomeBars({ outcomes }: { outcomes: Record<string, number> }) {
@@ -109,7 +134,6 @@ export function Overview() {
       <PageTitle
         title="Overview"
         hint="Counts over the claims filed in this demo. You can read everything; filing and reviewing are for providers and reviewers."
-        actions={<PlainBadge>Demo data</PlainBadge>}
       />
       {overview.isPending ? (
         <Skeleton lines={6} />
@@ -121,15 +145,28 @@ export function Overview() {
         <div className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              { label: "Claims on file", value: overview.data.claims, hint: "Filed in this demo", icon: Files },
+              { label: "Claims on file", value: overview.data.claims, hint: "Filed in this demo", icon: Files, to: "/claims" },
               {
                 label: "Waiting for review",
                 value: Object.values(overview.data.queue_by_tier).reduce((n, v) => n + (v ?? 0), 0),
                 hint: "Across the three tiers",
                 icon: ClipboardCheck,
+                to: "/queue",
               },
-              { label: "Decided by rules", value: overview.data.decided_by_rules, hint: "Final without a model", icon: Scale },
-              { label: "Lines overridden", value: overview.data.reviewed_overridden, hint: "By a reviewer", icon: UserCheck },
+              {
+                label: "Decided by rules",
+                value: overview.data.decided_by_rules,
+                hint: "Final without a model",
+                icon: Scale,
+                to: "/rule-outcomes",
+              },
+              {
+                label: "Lines overridden",
+                value: overview.data.reviewed_overridden,
+                hint: "By a reviewer",
+                icon: UserCheck,
+                to: REVIEWED_CLAIMS,
+              },
             ].map((kpi, i) => (
               <BlurFade key={kpi.label} delay={i * 0.05}>
                 <Kpi {...kpi} />
@@ -157,7 +194,7 @@ export function Overview() {
                 {STATUS.PENDED_BY_RULE.label.toLowerCase()}: final without a model or a reviewer.
               </p>
             </Tile>
-            <Tile title="Reviewed claims">
+            <Tile title="Reviewed claims" link={{ to: REVIEWED_CLAIMS, label: "Open reviewed claims" }}>
               <dl>
                 <Count label="Recommendation accepted" value={overview.data.reviewed_accepted} />
                 <Count label="Lines overridden" value={overview.data.reviewed_overridden} />
