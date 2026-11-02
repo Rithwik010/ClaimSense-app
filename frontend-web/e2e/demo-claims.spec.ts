@@ -180,9 +180,20 @@ test("provider: my claims, searched and filtered", async ({ page }) => {
 test("admin: overview, model metrics, audit lookup and system status, read-only", async ({ page }) => {
   await loginAs(page, "admin");
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
-  await expect(page.getByText("Demo data")).toBeVisible();
+  await expect(page.getByText("Demo data")).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Review queue by tier" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Reviewed claims" }).getByText("Lines overridden")).toBeVisible();
+  // Each headline count opens the list behind it (D-UI-10).
+  for (const [tile, href] of [
+    ["Claims on file", "/claims"],
+    ["Waiting for review", "/queue"],
+    ["Decided by rules", "/rule-outcomes"],
+    ["Lines overridden", "/claims?reviewed=1"],
+  ] as const) {
+    await expect(page.getByRole("link", { name: new RegExp(tile) })).toHaveAttribute("href", href);
+  }
+  await page.getByRole("link", { name: "Open reviewed claims" }).click();
+  await expect(page.getByText("Showing the claims a reviewer finalized.", { exact: false })).toBeVisible();
 
   await page.goto("/metrics");
   await expect(page.getByRole("heading", { name: "Side by side" })).toBeVisible();
