@@ -1,0 +1,794 @@
+{
+  "E2E-17": {
+    "case_id": "E2E-17",
+    "title": "Diagnosis does not support the procedure",
+    "given": {
+      "source_format": "JSON",
+      "claim": {
+        "claim_id": "CLM-E2E-17",
+        "member_id": "MBR-000325",
+        "patient": {
+          "first_name": "Nathaniel",
+          "last_name": "Williams",
+          "date_of_birth": "1979-11-13",
+          "sex": "M",
+          "address": {
+            "line1": "203 Brown Circle",
+            "city": "Nicholasfurt",
+            "state": "AR",
+            "zip_code": "38055"
+          }
+        },
+        "subscriber_is_patient": true,
+        "billing_npi": "2031387733",
+        "billing_tin": "181339326",
+        "referring_npi": null,
+        "prior_auth_number": "AUTH-S04101-00008",
+        "diagnoses": [
+          "F419"
+        ],
+        "service_lines": [
+          {
+            "line_no": 1,
+            "date_of_service": "2026-10-04",
+            "place_of_service": "24",
+            "procedure_code": "15822",
+            "modifiers": [],
+            "diagnosis_pointers": [
+              "A"
+            ],
+            "units": 1,
+            "charge_cents": 120900,
+            "rendering_npi": "2031387733"
+          }
+        ],
+        "clinical_notes": "The patient reports worry, restlessness and poor sleep for several months. The patient understands the plan and wants to go ahead. Past medical history was reviewed without changes. Plan: upper eyelid surgery (blepharoplasty).",
+        "received_date": "2026-10-16",
+        "frequency_code": "1",
+        "other_coverage": null
+      },
+      "field_confidences": {},
+      "reference_additions": {
+        "members": [
+          {
+            "member_id": "MBR-000325",
+            "plan_id": "PLN-PPO-SILVER",
+            "first_name": "Nathaniel",
+            "last_name": "Williams",
+            "date_of_birth": "1979-11-13",
+            "sex": "M",
+            "address_line": "203 Brown Circle",
+            "city": "Nicholasfurt",
+            "state": "AR",
+            "zip_code": "38055",
+            "coverage_start": "2026-01-01",
+            "coverage_end": null
+          }
+        ],
+        "providers": [
+          {
+            "npi": "2031387733",
+            "tin": "181339326",
+            "name": "Angela Taylor, DO",
+            "provider_type": "PLASTIC_SURGERY",
+            "enrollment_status": "ENROLLED"
+          }
+        ],
+        "provider_networks": [
+          {
+            "npi": "2031387733",
+            "plan_id": "PLN-PPO-SILVER",
+            "in_network": true
+          }
+        ],
+        "authorizations": [
+          {
+            "auth_number": "AUTH-S04101-00008",
+            "member_id": "MBR-000325",
+            "provider_npi": "2031387733",
+            "procedure_code": "15822",
+            "start_date": "2026-09-25",
+            "end_date": "2026-12-24",
+            "units_approved": null
+          }
+        ],
+        "accumulators": [
+          {
+            "member_id": "MBR-000325",
+            "period_start": "2026-01-01",
+            "network": "IN_NETWORK",
+            "period_end": "2026-12-31",
+            "deductible_met_cents": 0,
+            "oop_met_cents": 0
+          }
+        ],
+        "existing_claims": []
+      },
+      "model_answer": null,
+      "review_action": null
+    },
+    "expected": {
+      "rules": {
+        "claim_outcome": "DENY",
+        "failures": [
+          {
+            "rule_id": "R15",
+            "outcome": "DENY",
+            "reason_code": "DN_DX_NOT_SUPPORTED",
+            "line_no": 1
+          }
+        ]
+      },
+      "status_after_processing": "DENIED_BY_RULE",
+      "recommendation": null,
+      "final": {
+        "status": "DENIED_BY_RULE",
+        "note": "Rule outcomes are final and never reach review (\u00a78.8)."
+      }
+    },
+    "worked_steps": [
+      "Intake: JSON; member MBR-000325 on PLN-PPO-SILVER, provider 2031387733 (PLASTIC_SURGERY, IN_NETWORK).",
+      "Rules: R15: 15822 -> A56439 groups 1 or 2; F41.9 is in neither -> line 1 DENY DN_DX_NOT_SUPPORTED.",
+      "Every line denied by Group C -> claim DENY (DENIED_BY_RULE); the model is not called and the claim never reaches review."
+    ]
+  },
+  "E2E-23": {
+    "case_id": "E2E-23",
+    "title": "Two policies: one approved, one denied",
+    "given": {
+      "source_format": "JSON",
+      "claim": {
+        "claim_id": "CLM-E2E-23",
+        "member_id": "MBR-000112",
+        "patient": {
+          "first_name": "Sarah",
+          "last_name": "Reese",
+          "date_of_birth": "1946-02-25",
+          "sex": "F",
+          "address": {
+            "line1": "822 Lucero Station Apt. 156",
+            "city": "Lake Annette",
+            "state": "LA",
+            "zip_code": "30971"
+          }
+        },
+        "subscriber_is_patient": true,
+        "billing_npi": "1400608695",
+        "billing_tin": "697143376",
+        "referring_npi": null,
+        "prior_auth_number": null,
+        "diagnoses": [
+          "I10",
+          "I4891"
+        ],
+        "service_lines": [
+          {
+            "line_no": 1,
+            "date_of_service": "2026-10-17",
+            "place_of_service": "11",
+            "procedure_code": "93350",
+            "modifiers": [],
+            "diagnosis_pointers": [
+              "A"
+            ],
+            "units": 1,
+            "charge_cents": 36900,
+            "rendering_npi": "1400608695"
+          },
+          {
+            "line_no": 2,
+            "date_of_service": "2026-10-17",
+            "place_of_service": "11",
+            "procedure_code": "93241",
+            "modifiers": [],
+            "diagnosis_pointers": [
+              "B"
+            ],
+            "units": 1,
+            "charge_cents": 47200,
+            "rendering_npi": "1400608695"
+          }
+        ],
+        "clinical_notes": "The patient reports chest discomfort. Blood pressure is high, but there are no heart symptoms and the heart exam is normal. A treadmill stress test last month did not give a clear answer, and chest pressure with exertion continues. Current medications were reviewed and updated. The patient returns after atrial fibrillation treatment. Monitoring is to look for a return of the irregular rhythm 11 weeks after a catheter ablation. The episodes happen only about once every 10 days, too rarely to catch on a 48-hour recording. Plan: heart ultrasound during an exercise or drug stress test; wearable heart rhythm recording for 2 to 7 days, with analysis and report.",
+        "received_date": "2026-10-28",
+        "frequency_code": "1",
+        "other_coverage": null
+      },
+      "field_confidences": {},
+      "reference_additions": {
+        "members": [
+          {
+            "member_id": "MBR-000112",
+            "plan_id": "PLN-HDHP",
+            "first_name": "Sarah",
+            "last_name": "Reese",
+            "date_of_birth": "1946-02-25",
+            "sex": "F",
+            "address_line": "822 Lucero Station Apt. 156",
+            "city": "Lake Annette",
+            "state": "LA",
+            "zip_code": "30971",
+            "coverage_start": "2024-01-01",
+            "coverage_end": null
+          }
+        ],
+        "providers": [
+          {
+            "npi": "1400608695",
+            "tin": "697143376",
+            "name": "Sara Davies, MD",
+            "provider_type": "CARDIOLOGY",
+            "enrollment_status": "ENROLLED"
+          }
+        ],
+        "provider_networks": [
+          {
+            "npi": "1400608695",
+            "plan_id": "PLN-HDHP",
+            "in_network": true
+          }
+        ],
+        "authorizations": [],
+        "accumulators": [
+          {
+            "member_id": "MBR-000112",
+            "period_start": "2026-01-01",
+            "network": "IN_NETWORK",
+            "period_end": "2026-12-31",
+            "deductible_met_cents": 0,
+            "oop_met_cents": 0
+          }
+        ],
+        "existing_claims": []
+      },
+      "model_answer": {
+        "lines": [
+          {
+            "line_no": 2,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-CAR-002.c2",
+                "status": "MET",
+                "evidence": "Monitoring is to look for a return of the irregular rhythm 11 weeks after a catheter ablation."
+              },
+              {
+                "criterion_id": "POL-CAR-002.c3",
+                "status": "MET",
+                "evidence": "The episodes happen only about once every 10 days, too rarely to catch on a 48-hour recording."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "review_action": {
+        "claim_id": "CLM-E2E-23",
+        "reviewer_id": "reviewer-golden",
+        "action": "ACCEPT",
+        "line_overrides": [],
+        "reason": null,
+        "timestamp": "2026-12-20T10:00:00Z"
+      }
+    },
+    "expected": {
+      "rules": {
+        "claim_outcome": "PASS",
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "DENY",
+            "reason_codes": [
+              "DN_DX_NOT_SUPPORTED"
+            ],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": [],
+        "failures": [
+          {
+            "rule_id": "R15",
+            "outcome": "DENY",
+            "reason_code": "DN_DX_NOT_SUPPORTED",
+            "line_no": 1
+          }
+        ]
+      },
+      "status_after_processing": "AWAITING_REVIEW",
+      "recommendation": {
+        "output_valid": true,
+        "line_decisions": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "source": "RULE",
+            "reason_codes": [
+              "DN_DX_NOT_SUPPORTED"
+            ]
+          },
+          {
+            "line_no": 2,
+            "decision": "APPROVE",
+            "source": "MODEL",
+            "reason_codes": []
+          }
+        ],
+        "claim_decision": "PARTIAL",
+        "review_tier": "FULL",
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 36900,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            },
+            {
+              "line_no": 2,
+              "billed_cents": 47200,
+              "allowed_cents": 34904,
+              "contractual_adjustment_cents": 12296,
+              "deductible_cents": 34904,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 34904,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 84100,
+            "allowed_cents": 34904,
+            "contractual_adjustment_cents": 12296,
+            "deductible_cents": 34904,
+            "copay_cents": 0,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 34904,
+            "balance_bill_exposure_cents": 0
+          }
+        }
+      },
+      "final": {
+        "status": "FINAL_PARTIAL",
+        "claim_decision": "PARTIAL",
+        "line_decisions": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "source": "RULE",
+            "reason_codes": [
+              "DN_DX_NOT_SUPPORTED"
+            ]
+          },
+          {
+            "line_no": 2,
+            "decision": "APPROVE",
+            "source": "MODEL",
+            "reason_codes": []
+          }
+        ],
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 36900,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            },
+            {
+              "line_no": 2,
+              "billed_cents": 47200,
+              "allowed_cents": 34904,
+              "contractual_adjustment_cents": 12296,
+              "deductible_cents": 34904,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 34904,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 84100,
+            "allowed_cents": 34904,
+            "contractual_adjustment_cents": 12296,
+            "deductible_cents": 34904,
+            "copay_cents": 0,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 34904,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "network": "IN_NETWORK",
+          "deductible_met_cents": 34904,
+          "oop_met_cents": 34904
+        }
+      }
+    },
+    "worked_steps": [
+      "Intake: JSON; member MBR-000112 on PLN-HDHP, provider 1400608695 (CARDIOLOGY, IN_NETWORK).",
+      "Rules: R15: 93350 -> A56625 group 4; I10 is in groups 2 and 3 only -> line 1 DENY DN_DX_NOT_SUPPORTED; line 2 PASS -> claim continues with line 2.",
+      "Model answer (stub) validates: line 2 APPROVE DIAGNOSTIC_TESTS; complexity HIGH (the line decisions differ, the rule-denied line counting as DENY).",
+      "Calculator on the recommendation (approved lines only):",
+      "  Plan PLN-HDHP, IN_NETWORK: deductible 320000, coinsurance 1000 bps, OOP max 650000.",
+      "  Accumulators before: deductible met 0 -> remaining 320000; OOP met 0 -> remaining 650000.",
+      "  Line 1 93350: decision DENY -> plan pays 0, no cost share; only billed 36900 reported (A7).",
+      "  Line 2 93241 x1: fee 93241: RVU 8.36 x CF 33.4009 = 279.231524 -> national 27923; in-network 27923 x 1.25 = 34903.75 -> 34904; out-of-network 27923.",
+      "    fee for line = 34904 x 1 units = 34904 (A1); allowed = min(billed 47200, 34904) = 34904.",
+      "    contractual adjustment = 12296; balance-bill exposure = 0 (A9).",
+      "    DIAGNOSTIC_TESTS DEDUCTIBLE_COINSURANCE: deductible = min(remaining 320000, 34904) = 34904; coinsurance = (34904 - 34904) x 1000 / 10000 = 0 -> 0.",
+      "    OOP: cost share 34904 <= remaining 650000 -> no cap.",
+      "    plan pays = 34904 - 34904 = 0; member pays = 34904.",
+      "    working accumulators: deductible remaining 285096, OOP remaining 615096.",
+      "  Totals: plan pays 0, member pays 34904. Working accumulators after (IN_NETWORK): deductible met 34904, OOP met 34904 (A5).",
+      "Claim decision (derived) PARTIAL (line 1 DENY by rule, line 2 APPROVE); review tier: model line decisions ['APPROVE'], complexity HIGH -> FULL (HIGH complexity).",
+      "Review ACCEPT: final decisions equal the recommendation.",
+      "Final claim decision PARTIAL -> status FINAL_PARTIAL; stored accumulators (IN_NETWORK) become deductible 34904, OOP 34904."
+    ]
+  },
+  "E2E-32": {
+    "case_id": "E2E-32",
+    "title": "Two policies: one approved, one denied by the model",
+    "given": {
+      "source_format": "JSON",
+      "claim": {
+        "claim_id": "CLM-E2E-32",
+        "member_id": "MBR-000112",
+        "patient": {
+          "first_name": "Sarah",
+          "last_name": "Reese",
+          "date_of_birth": "1946-02-25",
+          "sex": "F",
+          "address": {
+            "line1": "822 Lucero Station Apt. 156",
+            "city": "Lake Annette",
+            "state": "LA",
+            "zip_code": "30971"
+          }
+        },
+        "subscriber_is_patient": true,
+        "billing_npi": "1400608695",
+        "billing_tin": "697143376",
+        "referring_npi": null,
+        "prior_auth_number": null,
+        "diagnoses": [
+          "I2510",
+          "I4891"
+        ],
+        "service_lines": [
+          {
+            "line_no": 1,
+            "date_of_service": "2026-10-17",
+            "place_of_service": "11",
+            "procedure_code": "93350",
+            "modifiers": [],
+            "diagnosis_pointers": [
+              "A"
+            ],
+            "units": 1,
+            "charge_cents": 36900,
+            "rendering_npi": "1400608695"
+          },
+          {
+            "line_no": 2,
+            "date_of_service": "2026-10-17",
+            "place_of_service": "11",
+            "procedure_code": "93241",
+            "modifiers": [],
+            "diagnosis_pointers": [
+              "B"
+            ],
+            "units": 1,
+            "charge_cents": 47200,
+            "rendering_npi": "1400608695"
+          }
+        ],
+        "clinical_notes": "Known coronary artery disease, followed yearly. Blood pressure is high, but there are no heart symptoms and the heart exam is normal. A treadmill stress test last month did not give a clear answer. Current medications were reviewed and updated. The patient returns after atrial fibrillation treatment. Monitoring is to look for a return of the irregular rhythm 11 weeks after a catheter ablation. The episodes happen only about once every 10 days, too rarely to catch on a 48-hour recording. Plan: heart ultrasound during an exercise or drug stress test; wearable heart rhythm recording for 2 to 7 days, with analysis and report.",
+        "received_date": "2026-10-28",
+        "frequency_code": "1",
+        "other_coverage": null
+      },
+      "field_confidences": {},
+      "reference_additions": {
+        "members": [
+          {
+            "member_id": "MBR-000112",
+            "plan_id": "PLN-HDHP",
+            "first_name": "Sarah",
+            "last_name": "Reese",
+            "date_of_birth": "1946-02-25",
+            "sex": "F",
+            "address_line": "822 Lucero Station Apt. 156",
+            "city": "Lake Annette",
+            "state": "LA",
+            "zip_code": "30971",
+            "coverage_start": "2024-01-01",
+            "coverage_end": null
+          }
+        ],
+        "providers": [
+          {
+            "npi": "1400608695",
+            "tin": "697143376",
+            "name": "Sara Davies, MD",
+            "provider_type": "CARDIOLOGY",
+            "enrollment_status": "ENROLLED"
+          }
+        ],
+        "provider_networks": [
+          {
+            "npi": "1400608695",
+            "plan_id": "PLN-HDHP",
+            "in_network": true
+          }
+        ],
+        "authorizations": [],
+        "accumulators": [
+          {
+            "member_id": "MBR-000112",
+            "period_start": "2026-01-01",
+            "network": "IN_NETWORK",
+            "period_end": "2026-12-31",
+            "deductible_met_cents": 0,
+            "oop_met_cents": 0
+          }
+        ],
+        "existing_claims": []
+      },
+      "model_answer": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-CAR-001.c1",
+                "status": "NOT_MET",
+                "evidence": "Blood pressure is high, but there are no heart symptoms and the heart exam is normal."
+              },
+              {
+                "criterion_id": "POL-CAR-001.c3",
+                "status": "MET",
+                "evidence": "A treadmill stress test last month did not give a clear answer."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          },
+          {
+            "line_no": 2,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-CAR-002.c2",
+                "status": "MET",
+                "evidence": "Monitoring is to look for a return of the irregular rhythm 11 weeks after a catheter ablation."
+              },
+              {
+                "criterion_id": "POL-CAR-002.c3",
+                "status": "MET",
+                "evidence": "The episodes happen only about once every 10 days, too rarely to catch on a 48-hour recording."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "review_action": {
+        "claim_id": "CLM-E2E-32",
+        "reviewer_id": "reviewer-golden",
+        "action": "ACCEPT",
+        "line_overrides": [],
+        "reason": null,
+        "timestamp": "2026-12-20T10:00:00Z"
+      }
+    },
+    "expected": {
+      "rules": {
+        "claim_outcome": "PASS",
+        "line_outcomes": [
+          {
+            "line_no": 1,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          },
+          {
+            "line_no": 2,
+            "outcome": "PASS",
+            "reason_codes": [],
+            "flags": []
+          }
+        ],
+        "flags": []
+      },
+      "status_after_processing": "AWAITING_REVIEW",
+      "recommendation": {
+        "output_valid": true,
+        "line_decisions": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "source": "MODEL",
+            "reason_codes": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ]
+          },
+          {
+            "line_no": 2,
+            "decision": "APPROVE",
+            "source": "MODEL",
+            "reason_codes": []
+          }
+        ],
+        "claim_decision": "PARTIAL",
+        "review_tier": "FULL",
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 36900,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            },
+            {
+              "line_no": 2,
+              "billed_cents": 47200,
+              "allowed_cents": 34904,
+              "contractual_adjustment_cents": 12296,
+              "deductible_cents": 34904,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 34904,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 84100,
+            "allowed_cents": 34904,
+            "contractual_adjustment_cents": 12296,
+            "deductible_cents": 34904,
+            "copay_cents": 0,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 34904,
+            "balance_bill_exposure_cents": 0
+          }
+        }
+      },
+      "final": {
+        "status": "FINAL_PARTIAL",
+        "claim_decision": "PARTIAL",
+        "line_decisions": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "source": "MODEL",
+            "reason_codes": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ]
+          },
+          {
+            "line_no": 2,
+            "decision": "APPROVE",
+            "source": "MODEL",
+            "reason_codes": []
+          }
+        ],
+        "amounts": {
+          "lines": [
+            {
+              "line_no": 1,
+              "billed_cents": 36900,
+              "allowed_cents": 0,
+              "contractual_adjustment_cents": 0,
+              "deductible_cents": 0,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 0,
+              "balance_bill_exposure_cents": 0
+            },
+            {
+              "line_no": 2,
+              "billed_cents": 47200,
+              "allowed_cents": 34904,
+              "contractual_adjustment_cents": 12296,
+              "deductible_cents": 34904,
+              "copay_cents": 0,
+              "coinsurance_cents": 0,
+              "cob_primary_paid_cents": 0,
+              "plan_pays_cents": 0,
+              "member_pays_cents": 34904,
+              "balance_bill_exposure_cents": 0
+            }
+          ],
+          "totals": {
+            "billed_cents": 84100,
+            "allowed_cents": 34904,
+            "contractual_adjustment_cents": 12296,
+            "deductible_cents": 34904,
+            "copay_cents": 0,
+            "coinsurance_cents": 0,
+            "cob_primary_paid_cents": 0,
+            "plan_pays_cents": 0,
+            "member_pays_cents": 34904,
+            "balance_bill_exposure_cents": 0
+          }
+        },
+        "accumulators_after": {
+          "network": "IN_NETWORK",
+          "deductible_met_cents": 34904,
+          "oop_met_cents": 34904
+        }
+      }
+    },
+    "worked_steps": [
+      "Intake: JSON; member MBR-000112 on PLN-HDHP, provider 1400608695 (CARDIOLOGY, IN_NETWORK).",
+      "Rules: R15: 93350 -> A56625 group 4; I25.10 is in group 4 -> line 1 PASS; line 2 PASS -> claim continues to context assembly.",
+      "Model answer (stub) validates: line 1 DENY DIAGNOSTIC_TESTS DN_NOT_MEDICALLY_NECESSARY; line 2 APPROVE DIAGNOSTIC_TESTS; complexity HIGH.",
+      "Calculator on the recommendation (approved lines only):",
+      "  Plan PLN-HDHP, IN_NETWORK: deductible 320000, coinsurance 1000 bps, OOP max 650000.",
+      "  Accumulators before: deductible met 0 -> remaining 320000; OOP met 0 -> remaining 650000.",
+      "  Line 1 93350: decision DENY -> plan pays 0, no cost share; only billed 36900 reported (A7).",
+      "  Line 2 93241 x1: fee 93241: RVU 8.36 x CF 33.4009 = 279.231524 -> national 27923; in-network 27923 x 1.25 = 34903.75 -> 34904; out-of-network 27923.",
+      "    fee for line = 34904 x 1 units = 34904 (A1); allowed = min(billed 47200, 34904) = 34904.",
+      "    contractual adjustment = 12296; balance-bill exposure = 0 (A9).",
+      "    DIAGNOSTIC_TESTS DEDUCTIBLE_COINSURANCE: deductible = min(remaining 320000, 34904) = 34904; coinsurance = (34904 - 34904) x 1000 / 10000 = 0 -> 0.",
+      "    OOP: cost share 34904 <= remaining 650000 -> no cap.",
+      "    plan pays = 34904 - 34904 = 0; member pays = 34904.",
+      "    working accumulators: deductible remaining 285096, OOP remaining 615096.",
+      "  Totals: plan pays 0, member pays 34904. Working accumulators after (IN_NETWORK): deductible met 34904, OOP met 34904 (A5).",
+      "Claim decision (derived) PARTIAL; review tier: model line decisions ['APPROVE', 'DENY'], complexity HIGH -> FULL (any model DENY or HIGH).",
+      "Review ACCEPT: final decisions equal the recommendation.",
+      "Final claim decision PARTIAL -> status FINAL_PARTIAL; stored accumulators (IN_NETWORK) become deductible 34904, OOP 34904."
+    ]
+  }
+}

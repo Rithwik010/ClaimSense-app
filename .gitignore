@@ -2,14 +2,14 @@ __pycache__/
 *.pyc
 .venv/
 .env
-data/raw/
-data/generated/
+# Model weights stay out of git (GitHub's 100 MB file limit; D-DATA-2); data/raw/,
+# data/generated/ and confidential/ are in this private repository (D-DATA-2)
+data/generated/models/
 *.gguf
 *.safetensors
 models/
 outputs/
 checkpoints/
-confidential/
 .DS_Store
 .vscode/
 .idea/
@@ -24,6 +24,3 @@ frontend-web/dist/
 frontend-web/test-results/
 frontend-web/playwright-report/
 frontend-web/*.tsbuildinfo
-
-# The old backup demo recording (no longer made; kept out of git)
-demo-video/

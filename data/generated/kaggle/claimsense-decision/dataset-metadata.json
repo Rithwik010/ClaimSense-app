@@ -1,0 +1,10 @@
+{
+  "title": "ClaimSense decision dataset (private)",
+  "id": "manideep3183/claimsense",
+  "isPrivate": true,
+  "licenses": [
+    {
+      "name": "other"
+    }
+  ]
+}

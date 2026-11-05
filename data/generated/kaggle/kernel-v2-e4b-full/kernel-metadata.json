@@ -1,0 +1,17 @@
+{
+  "id": "manideep3183/claimsense-finetune-v2-e4b",
+  "title": "claimsense-finetune-v2-e4b",
+  "code_file": "claimsense-finetune-v2-e4b.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "manideep3183/claimsense-decision-v2"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

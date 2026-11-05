@@ -1,0 +1,13 @@
+forms: 25/230
+forms: 50/230
+forms: 75/230
+forms: 100/230
+forms: 125/230
+forms: 150/230
+forms: 175/230
+forms: 200/230
+forms: 225/230
+forms: 230/230
+wrote 230 claims to /Users/manideep/Projects/ClaimSense/data/generated/claims
+{'by_scenario': {'approve_single': 34, 'deny_dx': 12, 'deny_criterion': 14, 'deny_exclusion': 8, 'pend_missing': 16, 'office_visit': 10, 'office_plus_procedure': 10, 'office_same_day': 6, 'same_profile_multi': 10, 'two_policy': 8, 'ncci_bypass': 8, 'rule_denied_line': 8, 'R04_member_not_found': 8, 'R05_not_eligible': 10, 'R06_enrollment_pending': 8, 'R06_provider_not_found': 6, 'R07_late_filing': 10, 'R08_out_of_network': 10, 'R09_missing_referral': 8, 'R10_no_auth': 6, 'R10_expired_auth': 6, 'excluded_only': 6, 'mue_only': 4, 'DUP_duplicate': 4}, 'by_rule_outcome': {'PASS': 144, 'REJECT': 18, 'DENY': 60, 'PEND': 8}, 'by_claim_decision': {'APPROVE': 58, 'DENY': 54, 'PEND': 27, 'PARTIAL': 15, '-': 76}}
+uv run python -m training.generate.claims  34.83s user 0.37s system 175% cpu 20.108 total

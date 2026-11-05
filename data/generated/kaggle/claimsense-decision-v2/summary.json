@@ -1,0 +1,791 @@
+{
+  "generator_version": "decision-dataset-v3",
+  "scenario_version": "scenarios-v3",
+  "policy_set": "v2",
+  "prompt_version": "decision_v3",
+  "rules_version": "2.1.0",
+  "retrieval": "exact lookup v2: plan or ALL, effective date, criterion codes; no cap; file order; knowledge e47509cd64c4",
+  "seed": 20260921,
+  "sizes": {
+    "train": 2000,
+    "validation": 300,
+    "test": 300
+  },
+  "distribution": {
+    "train": {
+      "records": 2000,
+      "model_lines": 2843,
+      "line_decisions": {
+        "APPROVE": 1584,
+        "PEND": 689,
+        "DENY": 570
+      },
+      "reasons": {
+        "PD_MISSING_DOCUMENTATION": 689,
+        "DN_NOT_MEDICALLY_NECESSARY": 411,
+        "DN_CONDITIONAL_EXCLUSION": 159
+      },
+      "benefit_categories": {
+        "DIAGNOSTIC_TESTS": 587,
+        "MINOR_PROCEDURES": 424,
+        "PAIN_MANAGEMENT": 378,
+        "MENTAL_HEALTH_OUTPATIENT": 373,
+        "OUTPATIENT_SURGERY": 287,
+        "ENDOSCOPY": 282,
+        "OFFICE_VISIT_SPECIALIST": 277,
+        "REHAB_THERAPY": 170,
+        "OFFICE_VISIT_PCP": 65
+      },
+      "criterion_statuses": {
+        "MET": 3852,
+        "NOT_APPLICABLE": 3772,
+        "NOT_MET": 748,
+        "NOT_DOCUMENTED": 522
+      },
+      "claim_decisions": {
+        "APPROVE": 816,
+        "PEND": 547,
+        "DENY": 451,
+        "PARTIAL": 186
+      },
+      "complexity": {
+        "HIGH": 793,
+        "MEDIUM": 722,
+        "LOW": 485
+      },
+      "scenario_types": {
+        "approve_single": 357,
+        "pend_missing": 217,
+        "deny_criterion": 201,
+        "ncci_bypass": 167,
+        "rule_denied_line": 155,
+        "office_same_day": 147,
+        "deny_exclusion": 133,
+        "same_profile_multi": 125,
+        "office_plus_procedure": 108,
+        "two_policy": 99,
+        "office_visit": 84,
+        "ncs_without_emg": 80,
+        "extended_testing": 67,
+        "facet_two_regions": 60
+      },
+      "policies": {
+        "POL-WOUND-001": 217,
+        "POL-PAIN-002": 205,
+        "POL-SURG-002": 193,
+        "POL-BH-001": 182,
+        "POL-DX-003": 162,
+        "POL-FOOT-001": 160,
+        "POL-SURG-004": 150,
+        "POL-CAR-001": 137,
+        "POL-SURG-001": 137,
+        "POL-DX-002": 121,
+        "POL-REHAB-001": 119,
+        "POL-CAR-002": 119,
+        "POL-PAIN-001": 113
+      },
+      "template_sets": {
+        "A": 684,
+        "B": 673,
+        "C": 643
+      },
+      "out_of_network": 130,
+      "records_with_missed_criteria": 0,
+      "lines_denied_by_rules": 186
+    },
+    "validation": {
+      "records": 300,
+      "model_lines": 421,
+      "line_decisions": {
+        "APPROVE": 246,
+        "PEND": 98,
+        "DENY": 77
+      },
+      "reasons": {
+        "PD_MISSING_DOCUMENTATION": 98,
+        "DN_NOT_MEDICALLY_NECESSARY": 54,
+        "DN_CONDITIONAL_EXCLUSION": 23
+      },
+      "benefit_categories": {
+        "DIAGNOSTIC_TESTS": 94,
+        "MINOR_PROCEDURES": 77,
+        "PAIN_MANAGEMENT": 50,
+        "ENDOSCOPY": 46,
+        "MENTAL_HEALTH_OUTPATIENT": 39,
+        "OUTPATIENT_SURGERY": 35,
+        "OFFICE_VISIT_SPECIALIST": 34,
+        "REHAB_THERAPY": 32,
+        "OFFICE_VISIT_PCP": 14
+      },
+      "criterion_statuses": {
+        "MET": 593,
+        "NOT_APPLICABLE": 539,
+        "NOT_MET": 107,
+        "NOT_DOCUMENTED": 63
+      },
+      "claim_decisions": {
+        "APPROVE": 129,
+        "PEND": 82,
+        "DENY": 63,
+        "PARTIAL": 26
+      },
+      "complexity": {
+        "HIGH": 116,
+        "MEDIUM": 107,
+        "LOW": 77
+      },
+      "scenario_types": {
+        "approve_single": 57,
+        "deny_criterion": 30,
+        "pend_missing": 29,
+        "office_same_day": 28,
+        "ncci_bypass": 24,
+        "two_policy": 22,
+        "rule_denied_line": 22,
+        "deny_exclusion": 18,
+        "same_profile_multi": 18,
+        "office_visit": 14,
+        "office_plus_procedure": 13,
+        "ncs_without_emg": 10,
+        "facet_two_regions": 9,
+        "extended_testing": 6
+      },
+      "policies": {
+        "POL-WOUND-001": 43,
+        "POL-SURG-002": 35,
+        "POL-CAR-001": 31,
+        "POL-PAIN-002": 26,
+        "POL-DX-003": 25,
+        "POL-FOOT-001": 23,
+        "POL-REHAB-001": 22,
+        "POL-BH-001": 20,
+        "POL-SURG-004": 19,
+        "POL-DX-002": 17,
+        "POL-CAR-002": 16,
+        "POL-SURG-001": 16,
+        "POL-PAIN-001": 15
+      },
+      "template_sets": {
+        "B": 107,
+        "A": 103,
+        "C": 90
+      },
+      "out_of_network": 18,
+      "records_with_missed_criteria": 0,
+      "lines_denied_by_rules": 32
+    },
+    "test": {
+      "records": 300,
+      "model_lines": 416,
+      "line_decisions": {
+        "APPROVE": 222,
+        "PEND": 106,
+        "DENY": 88
+      },
+      "reasons": {
+        "PD_MISSING_DOCUMENTATION": 106,
+        "DN_NOT_MEDICALLY_NECESSARY": 59,
+        "DN_CONDITIONAL_EXCLUSION": 29
+      },
+      "benefit_categories": {
+        "DIAGNOSTIC_TESTS": 128,
+        "OUTPATIENT_SURGERY": 55,
+        "MINOR_PROCEDURES": 47,
+        "ADVANCED_IMAGING": 43,
+        "OFFICE_VISIT_SPECIALIST": 38,
+        "MENTAL_HEALTH_OUTPATIENT": 37,
+        "ENDOSCOPY": 26,
+        "PAIN_MANAGEMENT": 23,
+        "REHAB_THERAPY": 14,
+        "OFFICE_VISIT_PCP": 5
+      },
+      "criterion_statuses": {
+        "NOT_APPLICABLE": 550,
+        "MET": 481,
+        "NOT_MET": 109,
+        "NOT_DOCUMENTED": 90
+      },
+      "claim_decisions": {
+        "APPROVE": 119,
+        "PEND": 86,
+        "DENY": 68,
+        "PARTIAL": 27
+      },
+      "complexity": {
+        "MEDIUM": 119,
+        "HIGH": 106,
+        "LOW": 75
+      },
+      "scenario_types": {
+        "approve_single": 58,
+        "pend_missing": 42,
+        "deny_criterion": 30,
+        "two_policy": 24,
+        "deny_exclusion": 23,
+        "rule_denied_line": 22,
+        "same_profile_multi": 22,
+        "office_plus_procedure": 20,
+        "ncci_bypass": 18,
+        "office_same_day": 16,
+        "ncs_without_emg": 8,
+        "office_visit": 7,
+        "extended_testing": 6,
+        "facet_two_regions": 4
+      },
+      "policies": {
+        "POL-IMG-001": 39,
+        "POL-IMG-002": 25,
+        "POL-DX-001": 24,
+        "POL-WOUND-001": 23,
+        "POL-CAR-002": 21,
+        "POL-SURG-003": 20,
+        "POL-DX-003": 20,
+        "POL-SURG-002": 20,
+        "POL-CAR-001": 19,
+        "POL-BH-001": 19,
+        "POL-SURG-001": 17,
+        "POL-SURG-004": 16,
+        "POL-DX-002": 13,
+        "POL-FOOT-001": 13,
+        "POL-PAIN-002": 11,
+        "POL-REHAB-001": 9,
+        "POL-PAIN-001": 8
+      },
+      "template_sets": {
+        "D": 150,
+        "A": 53,
+        "B": 49,
+        "C": 48
+      },
+      "out_of_network": 12,
+      "records_with_missed_criteria": 0,
+      "lines_denied_by_rules": 25
+    }
+  },
+  "labels": {
+    "train": {
+      "by_policy": {
+        "POL-BH-001": {
+          "MODEL DENY": 84,
+          "MODEL APPROVE": 209,
+          "MODEL PEND": 80,
+          "RULE DENY": 6
+        },
+        "POL-CAR-001": {
+          "MODEL APPROVE": 90,
+          "MODEL DENY": 58,
+          "MODEL PEND": 38,
+          "RULE DENY": 8
+        },
+        "POL-CAR-002": {
+          "MODEL PEND": 25,
+          "MODEL APPROVE": 52,
+          "RULE DENY": 2,
+          "MODEL DENY": 20
+        },
+        "POL-DX-002": {
+          "MODEL DENY": 71,
+          "MODEL APPROVE": 50,
+          "MODEL PEND": 21,
+          "RULE DENY": 3
+        },
+        "POL-DX-003": {
+          "MODEL DENY": 59,
+          "MODEL APPROVE": 113,
+          "MODEL PEND": 54,
+          "RULE DENY": 19
+        },
+        "POL-FOOT-001": {
+          "MODEL APPROVE": 146,
+          "MODEL PEND": 35,
+          "RULE DENY": 45,
+          "MODEL DENY": 23
+        },
+        "POL-PAIN-001": {
+          "MODEL DENY": 34,
+          "MODEL APPROVE": 67,
+          "MODEL PEND": 34,
+          "RULE DENY": 10
+        },
+        "POL-PAIN-002": {
+          "MODEL APPROVE": 167,
+          "MODEL PEND": 71,
+          "MODEL DENY": 65,
+          "RULE DENY": 10
+        },
+        "POL-REHAB-001": {
+          "MODEL DENY": 28,
+          "MODEL APPROVE": 85,
+          "RULE DENY": 34,
+          "MODEL PEND": 57
+        },
+        "POL-SURG-001": {
+          "MODEL APPROVE": 119,
+          "MODEL DENY": 32,
+          "MODEL PEND": 38,
+          "RULE DENY": 5
+        },
+        "POL-SURG-002": {
+          "MODEL PEND": 122,
+          "RULE DENY": 20,
+          "MODEL APPROVE": 181,
+          "MODEL DENY": 6
+        },
+        "POL-SURG-004": {
+          "MODEL APPROVE": 57,
+          "MODEL DENY": 58,
+          "MODEL PEND": 18,
+          "RULE DENY": 13
+        },
+        "POL-WOUND-001": {
+          "MODEL APPROVE": 164,
+          "MODEL PEND": 96,
+          "MODEL DENY": 32,
+          "RULE DENY": 11
+        },
+        "office visit": {
+          "MODEL APPROVE": 84
+        }
+      },
+      "by_scenario": {
+        "approve_single": {
+          "MODEL APPROVE": 357
+        },
+        "deny_criterion": {
+          "MODEL DENY": 201
+        },
+        "deny_exclusion": {
+          "MODEL DENY": 133
+        },
+        "extended_testing": {
+          "MODEL APPROVE": 129,
+          "MODEL PEND": 39,
+          "MODEL DENY": 33
+        },
+        "facet_two_regions": {
+          "MODEL PEND": 24,
+          "MODEL APPROVE": 72,
+          "MODEL DENY": 24
+        },
+        "ncci_bypass": {
+          "MODEL APPROVE": 190,
+          "MODEL PEND": 144
+        },
+        "ncs_without_emg": {
+          "MODEL DENY": 49,
+          "MODEL APPROVE": 22,
+          "MODEL PEND": 9
+        },
+        "office_plus_procedure": {
+          "MODEL APPROVE": 168,
+          "MODEL PEND": 27,
+          "MODEL DENY": 21
+        },
+        "office_same_day": {
+          "MODEL APPROVE": 166,
+          "MODEL PEND": 76,
+          "MODEL DENY": 21,
+          "RULE DENY": 31
+        },
+        "office_visit": {
+          "MODEL APPROVE": 84
+        },
+        "pend_missing": {
+          "MODEL PEND": 217
+        },
+        "rule_denied_line": {
+          "RULE DENY": 155,
+          "MODEL APPROVE": 114,
+          "MODEL PEND": 21,
+          "MODEL DENY": 20
+        },
+        "same_profile_multi": {
+          "MODEL DENY": 40,
+          "MODEL APPROVE": 155,
+          "MODEL PEND": 89
+        },
+        "two_policy": {
+          "MODEL APPROVE": 127,
+          "MODEL DENY": 28,
+          "MODEL PEND": 43
+        }
+      },
+      "flags_shown": {
+        "NCCI_BYPASS": 283,
+        "NCS_WITHOUT_EMG": 80,
+        "FACET_TWO_REGIONS": 120,
+        "EXTENDED_TESTING": 201
+      },
+      "note_styles": {
+        "A": 684,
+        "C": 643,
+        "B": 673
+      }
+    },
+    "validation": {
+      "by_policy": {
+        "POL-BH-001": {
+          "MODEL DENY": 7,
+          "MODEL PEND": 7,
+          "MODEL APPROVE": 25,
+          "RULE DENY": 1
+        },
+        "POL-CAR-001": {
+          "MODEL DENY": 15,
+          "MODEL APPROVE": 21,
+          "MODEL PEND": 5,
+          "RULE DENY": 1
+        },
+        "POL-CAR-002": {
+          "MODEL DENY": 3,
+          "MODEL APPROVE": 6
+        },
+        "POL-DX-002": {
+          "MODEL PEND": 3,
+          "MODEL DENY": 9,
+          "MODEL APPROVE": 7
+        },
+        "POL-DX-003": {
+          "MODEL APPROVE": 24,
+          "MODEL PEND": 4,
+          "RULE DENY": 2,
+          "MODEL DENY": 7
+        },
+        "POL-FOOT-001": {
+          "MODEL APPROVE": 21,
+          "MODEL DENY": 4,
+          "MODEL PEND": 9,
+          "RULE DENY": 3
+        },
+        "POL-PAIN-001": {
+          "MODEL APPROVE": 9,
+          "MODEL DENY": 4,
+          "MODEL PEND": 4,
+          "RULE DENY": 2
+        },
+        "POL-PAIN-002": {
+          "MODEL DENY": 7,
+          "MODEL APPROVE": 23,
+          "RULE DENY": 2,
+          "MODEL PEND": 8
+        },
+        "POL-REHAB-001": {
+          "MODEL DENY": 4,
+          "MODEL APPROVE": 19,
+          "RULE DENY": 8,
+          "MODEL PEND": 9
+        },
+        "POL-SURG-001": {
+          "MODEL APPROVE": 13,
+          "MODEL DENY": 4,
+          "MODEL PEND": 7,
+          "RULE DENY": 3
+        },
+        "POL-SURG-002": {
+          "MODEL PEND": 20,
+          "MODEL APPROVE": 29,
+          "RULE DENY": 5,
+          "MODEL DENY": 1
+        },
+        "POL-SURG-004": {
+          "MODEL DENY": 6,
+          "MODEL APPROVE": 7,
+          "MODEL PEND": 3,
+          "RULE DENY": 2
+        },
+        "POL-WOUND-001": {
+          "MODEL PEND": 19,
+          "MODEL APPROVE": 28,
+          "MODEL DENY": 6,
+          "RULE DENY": 3
+        },
+        "office visit": {
+          "MODEL APPROVE": 14
+        }
+      },
+      "by_scenario": {
+        "approve_single": {
+          "MODEL APPROVE": 57
+        },
+        "deny_criterion": {
+          "MODEL DENY": 30
+        },
+        "deny_exclusion": {
+          "MODEL DENY": 18
+        },
+        "extended_testing": {
+          "MODEL DENY": 3,
+          "MODEL APPROVE": 12,
+          "MODEL PEND": 3
+        },
+        "facet_two_regions": {
+          "MODEL APPROVE": 10,
+          "MODEL DENY": 4,
+          "MODEL PEND": 4
+        },
+        "ncci_bypass": {
+          "MODEL APPROVE": 26,
+          "MODEL PEND": 22
+        },
+        "ncs_without_emg": {
+          "MODEL DENY": 7,
+          "MODEL APPROVE": 3
+        },
+        "office_plus_procedure": {
+          "MODEL APPROVE": 23,
+          "MODEL PEND": 2,
+          "MODEL DENY": 1
+        },
+        "office_same_day": {
+          "MODEL APPROVE": 25,
+          "MODEL PEND": 17,
+          "RULE DENY": 10,
+          "MODEL DENY": 4
+        },
+        "office_visit": {
+          "MODEL APPROVE": 14
+        },
+        "pend_missing": {
+          "MODEL PEND": 29
+        },
+        "rule_denied_line": {
+          "RULE DENY": 22,
+          "MODEL APPROVE": 14,
+          "MODEL PEND": 6,
+          "MODEL DENY": 2
+        },
+        "same_profile_multi": {
+          "MODEL PEND": 7,
+          "MODEL APPROVE": 34
+        },
+        "two_policy": {
+          "MODEL DENY": 8,
+          "MODEL APPROVE": 28,
+          "MODEL PEND": 8
+        }
+      },
+      "flags_shown": {
+        "NCCI_BYPASS": 42,
+        "NCS_WITHOUT_EMG": 10,
+        "FACET_TWO_REGIONS": 18,
+        "EXTENDED_TESTING": 18
+      },
+      "note_styles": {
+        "B": 107,
+        "A": 103,
+        "C": 90
+      }
+    },
+    "test": {
+      "by_policy": {
+        "POL-BH-001": {
+          "MODEL APPROVE": 19,
+          "MODEL PEND": 13,
+          "MODEL DENY": 5
+        },
+        "POL-CAR-001": {
+          "MODEL PEND": 4,
+          "MODEL DENY": 11,
+          "MODEL APPROVE": 13,
+          "RULE DENY": 1
+        },
+        "POL-CAR-002": {
+          "MODEL DENY": 5,
+          "MODEL APPROVE": 7,
+          "MODEL PEND": 2
+        },
+        "POL-DX-001": {
+          "MODEL PEND": 5,
+          "MODEL APPROVE": 15,
+          "MODEL DENY": 8,
+          "RULE DENY": 1
+        },
+        "POL-DX-002": {
+          "MODEL APPROVE": 6,
+          "MODEL DENY": 8,
+          "MODEL PEND": 2
+        },
+        "POL-DX-003": {
+          "MODEL APPROVE": 14,
+          "MODEL PEND": 10,
+          "MODEL DENY": 6,
+          "RULE DENY": 1
+        },
+        "POL-FOOT-001": {
+          "MODEL APPROVE": 14,
+          "RULE DENY": 3,
+          "MODEL DENY": 2,
+          "MODEL PEND": 3
+        },
+        "POL-IMG-001": {
+          "MODEL APPROVE": 22,
+          "RULE DENY": 1,
+          "MODEL DENY": 12,
+          "MODEL PEND": 17
+        },
+        "POL-IMG-002": {
+          "MODEL PEND": 6,
+          "RULE DENY": 3,
+          "MODEL DENY": 8,
+          "MODEL APPROVE": 3
+        },
+        "POL-PAIN-001": {
+          "MODEL DENY": 5,
+          "MODEL PEND": 3,
+          "MODEL APPROVE": 1
+        },
+        "POL-PAIN-002": {
+          "MODEL APPROVE": 6,
+          "RULE DENY": 2,
+          "MODEL PEND": 5,
+          "MODEL DENY": 4
+        },
+        "POL-REHAB-001": {
+          "MODEL APPROVE": 9,
+          "RULE DENY": 4,
+          "MODEL DENY": 4,
+          "MODEL PEND": 1
+        },
+        "POL-SURG-001": {
+          "MODEL APPROVE": 15,
+          "MODEL PEND": 7,
+          "RULE DENY": 1,
+          "MODEL DENY": 1
+        },
+        "POL-SURG-002": {
+          "MODEL PEND": 12,
+          "MODEL APPROVE": 13,
+          "MODEL DENY": 2,
+          "RULE DENY": 1
+        },
+        "POL-SURG-003": {
+          "MODEL DENY": 3,
+          "MODEL PEND": 4,
+          "RULE DENY": 3,
+          "MODEL APPROVE": 23
+        },
+        "POL-SURG-004": {
+          "MODEL APPROVE": 11,
+          "MODEL DENY": 4,
+          "RULE DENY": 2,
+          "MODEL PEND": 1
+        },
+        "POL-WOUND-001": {
+          "MODEL APPROVE": 24,
+          "MODEL PEND": 11,
+          "RULE DENY": 2
+        },
+        "office visit": {
+          "MODEL APPROVE": 7
+        }
+      },
+      "by_scenario": {
+        "approve_single": {
+          "MODEL APPROVE": 58
+        },
+        "deny_criterion": {
+          "MODEL DENY": 30
+        },
+        "deny_exclusion": {
+          "MODEL DENY": 23
+        },
+        "extended_testing": {
+          "MODEL PEND": 6,
+          "MODEL APPROVE": 12
+        },
+        "facet_two_regions": {
+          "MODEL APPROVE": 2,
+          "MODEL PEND": 4,
+          "MODEL DENY": 2
+        },
+        "ncci_bypass": {
+          "MODEL APPROVE": 20,
+          "MODEL PEND": 16
+        },
+        "ncs_without_emg": {
+          "MODEL DENY": 5,
+          "MODEL APPROVE": 1,
+          "MODEL PEND": 2
+        },
+        "office_plus_procedure": {
+          "MODEL APPROVE": 35,
+          "MODEL DENY": 3,
+          "MODEL PEND": 2
+        },
+        "office_same_day": {
+          "MODEL APPROVE": 22,
+          "MODEL PEND": 6,
+          "RULE DENY": 3,
+          "MODEL DENY": 1
+        },
+        "office_visit": {
+          "MODEL APPROVE": 7
+        },
+        "pend_missing": {
+          "MODEL PEND": 42
+        },
+        "rule_denied_line": {
+          "MODEL APPROVE": 13,
+          "RULE DENY": 22,
+          "MODEL PEND": 2,
+          "MODEL DENY": 7
+        },
+        "same_profile_multi": {
+          "MODEL PEND": 18,
+          "MODEL APPROVE": 24,
+          "MODEL DENY": 5
+        },
+        "two_policy": {
+          "MODEL APPROVE": 28,
+          "MODEL PEND": 8,
+          "MODEL DENY": 12
+        }
+      },
+      "flags_shown": {
+        "NCCI_BYPASS": 31,
+        "NCS_WITHOUT_EMG": 8,
+        "FACET_TWO_REGIONS": 8,
+        "EXTENDED_TESTING": 18
+      },
+      "note_styles": {
+        "D": 150,
+        "A": 53,
+        "B": 49,
+        "C": 48
+      }
+    }
+  },
+  "lengths": {
+    "train": {
+      "p50": 7491,
+      "p95": 10138,
+      "max": 10933,
+      "longest_record": "DV2-TR-00801",
+      "tokens_max_estimate": 3124
+    },
+    "validation": {
+      "p50": 7520,
+      "p95": 10136,
+      "max": 10719,
+      "longest_record": "DV2-VA-00008",
+      "tokens_max_estimate": 3063
+    },
+    "test": {
+      "p50": 7205,
+      "p95": 9738,
+      "max": 10663,
+      "longest_record": "DV2-TE-00218",
+      "tokens_max_estimate": 3047
+    }
+  },
+  "checks": {
+    "problems": 0,
+    "test_records_with_unseen_policies": 100,
+    "test_styles": {
+      "D": 150,
+      "A": 53,
+      "B": 49,
+      "C": 48
+    }
+  }
+}

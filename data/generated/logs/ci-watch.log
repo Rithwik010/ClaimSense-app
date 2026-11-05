@@ -1,0 +1,2225 @@
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  * Run astral-sh/setup-uv@v10.1.0
+  * Install dependencies
+  * Tesseract
+  * Cache the embedding model
+  * Embedding model (fetch on a cache miss, check the SHA-256)
+  * Ruff check
+  * Ruff format
+  * Import contracts
+  * Tests
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  * Lint
+  * Typecheck
+  * Unit tests
+  * Build
+  * Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  * Tesseract
+  * Cache the embedding model
+  * Embedding model (fetch on a cache miss, check the SHA-256)
+  * Ruff check
+  * Ruff format
+  * Import contracts
+  * Tests
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  * Lint
+  * Typecheck
+  * Unit tests
+  * Build
+  * Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  * Tesseract
+  * Cache the embedding model
+  * Embedding model (fetch on a cache miss, check the SHA-256)
+  * Ruff check
+  * Ruff format
+  * Import contracts
+  * Tests
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  * Typecheck
+  * Unit tests
+  * Build
+  * Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  * Tesseract
+  * Cache the embedding model
+  * Embedding model (fetch on a cache miss, check the SHA-256)
+  * Ruff check
+  * Ruff format
+  * Import contracts
+  * Tests
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  * Typecheck
+  * Unit tests
+  * Build
+  * Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  * Unit tests
+  * Build
+  * Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  * Unit tests
+  * Build
+  * Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch less than a minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  * Unit tests
+  * Build
+  * Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  * Build
+  * Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  * Build
+  * Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+* Web app (lint, typecheck, unit tests, build) (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  * Post Run actions/checkout@v7
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 1 minute ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 2 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 3 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 4 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 5 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 5 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 5 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 5 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 5 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  * Tests
+  * Post Cache the embedding model
+  * Post Run astral-sh/setup-uv@v10.1.0
+  * Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+Refreshing run status every 3 seconds. Press Ctrl+C to quit.
+
+* p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 5 minutes ago
+
+JOBS
+* Lint, import checks and tests (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  ✓ Tests
+  ✓ Post Cache the embedding model
+  ✓ Post Run astral-sh/setup-uv@v10.1.0
+  ✓ Post Run actions/checkout@v7
+  * Stop containers
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job
+✓ p8.3-ui-team-changes CI · 38684248794
+Triggered via workflow_dispatch about 5 minutes ago
+
+JOBS
+✓ Lint, import checks and tests in 5m25s (ID 116255376649)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v7
+  ✓ Run astral-sh/setup-uv@v10.1.0
+  ✓ Install dependencies
+  ✓ Tesseract
+  ✓ Cache the embedding model
+  ✓ Embedding model (fetch on a cache miss, check the SHA-256)
+  ✓ Ruff check
+  ✓ Ruff format
+  ✓ Import contracts
+  ✓ Tests
+  ✓ Post Cache the embedding model
+  ✓ Post Run astral-sh/setup-uv@v10.1.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Stop containers
+  ✓ Complete job
+✓ Web app (lint, typecheck, unit tests, build) in 1m11s (ID 116255376931)
+  ✓ Set up job
+  ✓ Run actions/checkout@v7
+  ✓ Run actions/setup-node@v7.0.0
+  ✓ Install dependencies
+  ✓ Lint
+  ✓ Typecheck
+  ✓ Unit tests
+  ✓ Build
+  ✓ Post Run actions/setup-node@v7.0.0
+  ✓ Post Run actions/checkout@v7
+  ✓ Complete job

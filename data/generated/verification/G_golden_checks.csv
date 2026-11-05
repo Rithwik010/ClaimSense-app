@@ -1,0 +1,38 @@
+kind,check,case_id,line_no,detail
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R10-01,,62323 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R10-02,,62323 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R10-03,,62323 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R10-04,,62323 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R10-05,,62323 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R10-09,,62323 on 2026-12-31
+conflict,R15 (D-DX-1) would deny this line,R11-15,1,66982 with H2513
+conflict,R15 (D-DX-1) would deny this line,R11-16,1,66982 with H2513
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R14-01,,64483 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R14-02,,64483 on 2026-10-06
+conflict,R14 (D-ESI-3) would deny this ESI line,R14-03,1,64483 with 64493 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R14-03,,64483 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R14-04,,64483 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R14-05,,"64483, 64483 on 2026-10-06"
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R14-06,,64483 on 2026-10-06
+conflict,R15 (D-DX-1) would deny this line,R15-03,1,66982 with H2513
+conflict,R15 (D-DX-1) would deny this line,R15-06,1,11720 with E1151
+review,D-RULE-1 candidate POL-DX-001.F7 may change this case,R16-01,,95806 on 2026-10-06
+review,D-RULE-1 candidate POL-DX-002.F2 may change this case,R17-01,,95910 on 2026-10-06
+review,D-RULE-1 candidate POL-DX-002.F3 may change this case,R17-01,,95910 on 2026-10-06
+review,D-RULE-1 candidate POL-DX-002.F2 may change this case,R17-02,,95910 on 2026-10-06
+review,D-RULE-1 candidate POL-DX-002.F3 may change this case,R17-02,,95910 on 2026-10-06
+review,D-RULE-1 candidate POL-DX-002.F4 may change this case,R17-02,,95886 on 2026-10-08
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R18-01,,62323 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R18-02,,62323 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R18-03,,64483 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R18-04,,64483 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,R18-05,,64483 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-002.F9 may change this case,R19-03,,"64490, 64493 on 2026-10-06"
+review,D-RULE-1 candidate POL-BH-001.F3 may change this case,R20-01,,"96130, 96131, 96136 on 2026-10-06"
+review,D-RULE-1 candidate POL-BH-001.F3 may change this case,R20-02,,"96130, 96131 on 2026-10-06"
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,B-03,,62323 on 2026-10-06
+review,D-RULE-1 candidate POL-PAIN-002.F9 may change this case,X-01,,"64635, 64493 on 2026-10-06"
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,X-03,,"62323, 64483 on 2026-10-06"
+review,D-RULE-1 candidate POL-IMG-001.F2 may change this case,X-04,,"70450, 72141 on 2026-10-06"
+review,D-RULE-1 candidate POL-SURG-003.F4 may change this case,X-05,,"36478, 37765 on 2026-10-06"
+review,D-RULE-1 candidate POL-PAIN-001.F6 may change this case,H5-02,,62323 on 2026-10-06

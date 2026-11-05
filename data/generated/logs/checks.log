@@ -1,0 +1,134 @@
+All checks passed!
+342 files already formatted
+
+╔══╗─────────▶╔╗ ╔╗      ╔╗◀───┐
+╚╣╠╝◀─────┐  ╔╝╚╗║║────▶╔╝╚╗   │
+ ║║   ╔══╦══╦╩╗╔╝║║  ╔╦═╩╗╔╝╔═╦══╗
+ ║║╔══╣╔╗║╔╗║╔╣║ ║║ ╔╬╣╔╗║║ ║│║╔═╝
+╔╣╠╣║║║╚╝║╚╝║║║╚╗║╚═╝║║║║║╚╗║═╣║
+╚══╩╩╩╣╔═╩══╩╝╚═╝╚═══╩╩╝╚╩═╩╩═╩╝
+  └──▶║║                    ▲ 
+      ╚╝────────────────────┘
+
+
+---------
+Contracts
+---------
+
+Analyzed 123 files, 449 dependencies.
+-------------------------------------
+
+app.rules and app.calculator must not import ML, RAG or model libraries (H1, H3)KEPT
+app.domain must not import any other app package KEPT
+app.explain renders from the decision record only (H15) KEPT
+
+Contracts: 3 kept, 0 broken.
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+................................................................s....... [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+........................................................................ [ 69%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 91%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+................                                                         [100%]
+=============================== warnings summary ===============================
+<frozen importlib._bootstrap>:241
+<frozen importlib._bootstrap>:241
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute
+
+<frozen importlib._bootstrap>:241
+<frozen importlib._bootstrap>:241
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute
+
+<frozen importlib._bootstrap>:241
+  <frozen importlib._bootstrap>:241: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+
+.venv/lib/python3.11/site-packages/fastapi/testclient.py:1
+  /Users/manideep/Projects/ClaimSense/.venv/lib/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.11/site-packages/starlette/testclient.py:53
+  /Users/manideep/Projects/ClaimSense/.venv/lib/python3.11/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+.venv/lib/python3.11/site-packages/jwt/api_jwt.py:149
+  /Users/manideep/Projects/ClaimSense/.venv/lib/python3.11/site-packages/jwt/api_jwt.py:149: InsecureKeyLengthWarning: The HMAC key is 43 bytes long, which is below the minimum recommended length of 64 bytes for SHA512. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+tests/e2e/test_access.py::test_a_tampered_token_is_401
+  /Users/manideep/Projects/ClaimSense/.venv/lib/python3.11/site-packages/jwt/api_jwt.py:149: InsecureKeyLengthWarning: The HMAC key is 1 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+tests/e2e/test_documents.py: 228 warnings
+tests/e2e/test_intake_file.py: 152 warnings
+tests/unit/test_ocr.py: 342 warnings
+  /Users/manideep/Projects/ClaimSense/app/intake/ocr.py:88: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    rows = list(rotated.resize((1, rotated.height), Image.Resampling.BOX).getdata())
+
+tests/e2e/test_documents.py: 326 warnings
+tests/e2e/test_intake_file.py: 170 warnings
+tests/unit/test_ocr.py: 340 warnings
+  /Users/manideep/Projects/ClaimSense/app/intake/ocr.py:118: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    rows = list(dark.resize((1, crop.height), Image.Resampling.BOX).getdata())
+
+tests/e2e/test_documents.py: 326 warnings
+tests/e2e/test_intake_file.py: 170 warnings
+tests/unit/test_ocr.py: 340 warnings
+  /Users/manideep/Projects/ClaimSense/app/intake/ocr.py:119: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    cols = list(dark.resize((crop.width, 1), Image.Resampling.BOX).getdata())
+
+tests/e2e/test_documents.py: 92 warnings
+tests/e2e/test_intake_file.py: 46 warnings
+tests/unit/test_ocr.py: 304 warnings
+  /Users/manideep/Projects/ClaimSense/app/intake/ocr.py:170: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    cols = list(ink.resize((crop.width, 1), Image.Resampling.BOX).getdata())
+
+tests/e2e/test_documents.py: 92 warnings
+tests/e2e/test_intake_file.py: 46 warnings
+tests/unit/test_ocr.py: 304 warnings
+  /Users/manideep/Projects/ClaimSense/app/intake/ocr.py:174: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+    rows = list(band.resize((1, crop.height), Image.Resampling.BOX).getdata())
+
+tests/e2e/test_e2e_explanation.py::test_the_explanation_matches_the_record[E2E-18-V2]
+  /Users/manideep/Projects/ClaimSense/app/rag/knowledge.py:135: UserWarning: Payload indexes have no effect in the local Qdrant. Please use server Qdrant if you need payload indexes.
+    client.create_payload_index(collection, field, field_schema=schema)
+
+tests/e2e/test_parity.py::test_live_pipeline_rebuilds_the_training_prompts
+  /Users/manideep/Projects/ClaimSense/app/rag/retrieve.py:116: UserWarning: Local mode performs exact (brute-force) search, so `search_params` has no effect, with the exception of `idf`.
+    points = self.client.query_points(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] tests/e2e/test_live_model.py:28: set CLAIMSENSE_LIVE_MODEL=1
+2607 passed, 1 skipped, 3289 warnings in 216.30s (0:03:36)
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
+EXIT 0

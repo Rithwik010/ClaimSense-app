@@ -1,0 +1,6 @@
+{
+  "records": 300,
+  "valid_output_rate": 0.73,
+  "claim_decision_accuracy": 0.4333,
+  "macro_f1": 0.3449
+}

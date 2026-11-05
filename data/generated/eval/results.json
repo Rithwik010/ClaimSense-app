@@ -1,0 +1,170 @@
+{
+  "generated": "2026-10-11T21:35:08",
+  "rules_and_calculator": {
+    "rules golden cases": {
+      "passed": 270,
+      "failed": 0,
+      "skipped": 0,
+      "error": 0
+    },
+    "calculator golden cases": {
+      "passed": 113,
+      "failed": 0,
+      "skipped": 0,
+      "error": 0
+    },
+    "end-to-end golden claims": {
+      "passed": 64,
+      "failed": 0,
+      "skipped": 0,
+      "error": 0
+    }
+  },
+  "extraction": {
+    "held_out_claims": 205,
+    "fields": 5193,
+    "field_accuracy": 0.9378,
+    "blank_read_as_blank": 1.0,
+    "target": 0.9
+  },
+  "retrieval_recall_at_3": "not applicable: policy set v2 is an exact lookup by code (D-RAG-1, D-RAG-2)",
+  "models": [
+    {
+      "model": "Base gemma4:e2b (v1 test set)",
+      "records": 300,
+      "valid_output": 0.73,
+      "line_accuracy": 0.4223,
+      "macro_f1": 0.3449,
+      "deny_precision": 0.9524,
+      "criterion_accuracy": 0.6329,
+      "latency_p50_ms": 9617,
+      "latency_p95_ms": 19126
+    },
+    {
+      "model": "Model v1 (v1 test set)",
+      "records": 300,
+      "valid_output": 0.94,
+      "line_accuracy": 0.6995,
+      "macro_f1": 0.672,
+      "deny_precision": 1.0,
+      "criterion_accuracy": 0.8041,
+      "latency_p50_ms": 5471,
+      "latency_p95_ms": 11005
+    },
+    {
+      "model": "Model v1 (v2 test set)",
+      "records": 300,
+      "valid_output": 0.9167,
+      "line_accuracy": 0.7188,
+      "macro_f1": 0.694,
+      "deny_precision": 0.7966,
+      "criterion_accuracy": 0.7608,
+      "latency_p50_ms": 6444,
+      "latency_p95_ms": 46738
+    },
+    {
+      "model": "Model v2 (v2 test set)",
+      "records": 300,
+      "valid_output": 0.98,
+      "line_accuracy": 0.8726,
+      "macro_f1": 0.8532,
+      "deny_precision": 1.0,
+      "criterion_accuracy": 0.9261,
+      "latency_p50_ms": 5738,
+      "latency_p95_ms": 13263
+    },
+    {
+      "model": "Model E4B (v2 test set, evidence guard on)",
+      "records": 300,
+      "valid_output": 0.9633,
+      "line_accuracy": 0.899,
+      "macro_f1": 0.8859,
+      "deny_precision": 0.987,
+      "criterion_accuracy": 0.932,
+      "latency_p50_ms": 13932,
+      "latency_p95_ms": 32880
+    }
+  ],
+  "evidence_guard": [
+    {
+      "model": "v1",
+      "line_accuracy": 0.7188,
+      "macro_f1": 0.694,
+      "deny_precision": 0.7966,
+      "wrong_approvals": 40,
+      "wrong_denials": 12
+    },
+    {
+      "model": "v1 + guard",
+      "line_accuracy": 0.6899,
+      "macro_f1": 0.6727,
+      "deny_precision": 0.7966,
+      "wrong_approvals": 38,
+      "wrong_denials": 12
+    },
+    {
+      "model": "v2",
+      "line_accuracy": 0.8726,
+      "macro_f1": 0.8532,
+      "deny_precision": 1.0,
+      "wrong_approvals": 29,
+      "wrong_denials": 0
+    },
+    {
+      "model": "v2 + guard",
+      "line_accuracy": 0.8678,
+      "macro_f1": 0.8487,
+      "deny_precision": 1.0,
+      "wrong_approvals": 28,
+      "wrong_denials": 0
+    },
+    {
+      "model": "e4b",
+      "line_accuracy": 0.899,
+      "macro_f1": 0.8859,
+      "deny_precision": 0.987,
+      "wrong_approvals": 21,
+      "wrong_denials": 1
+    },
+    {
+      "model": "e4b + guard",
+      "line_accuracy": 0.899,
+      "macro_f1": 0.8859,
+      "deny_precision": 0.987,
+      "wrong_approvals": 21,
+      "wrong_denials": 1
+    }
+  ],
+  "macro_f1_target": 0.9,
+  "latency_per_stage_ms": {
+    "source": "data/generated/logs/api.log",
+    "claims": 22,
+    "rules_ms": {
+      "claims": 22,
+      "median": 27.8,
+      "max": 60.8
+    },
+    "context_ms": {
+      "claims": 17,
+      "median": 9.6,
+      "max": 35.6
+    },
+    "model_ms": {
+      "claims": 17,
+      "median": 1874.7,
+      "max": 5280.6
+    },
+    "calculator_ms": {
+      "claims": 17,
+      "median": 5.0,
+      "max": 8.5
+    },
+    "duration_ms": {
+      "claims": 22,
+      "median": 1703.4,
+      "max": 5334.8
+    }
+  },
+  "reviewer_agreement": "not measured",
+  "review_time": "not measured"
+}

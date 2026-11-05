@@ -1,0 +1,1623 @@
+{
+  "generator_version": "blind-review-v2",
+  "seed": 7310001,
+  "key": {
+    "CLM-BLIND-001": {
+      "scenario_type": "ncci_bypass",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "MINOR_PROCEDURES",
+            "criteria": [
+              {
+                "criterion_id": "POL-WOUND-001.c1",
+                "status": "MET",
+                "evidence": "Sharp debridement left foot ulcer 6 cm to subcut; 1:1 contact."
+              },
+              {
+                "criterion_id": "POL-WOUND-001.c3",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-WOUND-001.c2",
+                "status": "MET",
+                "evidence": "POC: offloading, infection ctrl, glycemic mgmt; goal closure."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          },
+          {
+            "line_no": 2,
+            "decision": "APPROVE",
+            "benefit_category": "MINOR_PROCEDURES",
+            "criteria": [
+              {
+                "criterion_id": "POL-WOUND-001.c1",
+                "status": "MET",
+                "evidence": "Sharp debridement left foot ulcer 6 cm to subcut; 1:1 contact."
+              },
+              {
+                "criterion_id": "POL-WOUND-001.c3",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-WOUND-001.c2",
+                "status": "MET",
+                "evidence": "POC: offloading, infection ctrl, glycemic mgmt; goal closure."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "MINOR_PROCEDURES"
+        },
+        {
+          "line_no": 2,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "MINOR_PROCEDURES"
+        }
+      ]
+    },
+    "CLM-BLIND-002": {
+      "scenario_type": "pend_missing",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "PEND",
+            "benefit_category": "OUTPATIENT_SURGERY",
+            "criteria": [
+              {
+                "criterion_id": "POL-SURG-001.c2",
+                "status": "MET",
+                "evidence": "Symptomatic cataract, not incidental finding."
+              },
+              {
+                "criterion_id": "POL-SURG-001.c1",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-SURG-001.c3",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "How the cataract limits daily activities and the best-corrected vision"
+            ]
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "OUTPATIENT_SURGERY"
+        }
+      ]
+    },
+    "CLM-BLIND-003": {
+      "scenario_type": "approve_single",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "ENDOSCOPY",
+            "criteria": [
+              {
+                "criterion_id": "POL-SURG-002.c1",
+                "status": "MET",
+                "evidence": "Indication: black, tarry stools."
+              },
+              {
+                "criterion_id": "POL-SURG-002.c3",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-SURG-002.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "LOW"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "ENDOSCOPY"
+        }
+      ]
+    },
+    "CLM-BLIND-004": {
+      "scenario_type": "pend_missing",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "PEND",
+            "benefit_category": "PAIN_MANAGEMENT",
+            "criteria": [
+              {
+                "criterion_id": "POL-PAIN-001.c1",
+                "status": "MET",
+                "evidence": "MRI: L5-S1 HNP compressing right S1 root; concordant w/ exam."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c4",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c2",
+                "status": "MET",
+                "evidence": "Pain 8/10; Oswestry 48%; unable to work full days."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c5",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c3",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "How long symptoms have lasted and which conservative treatments were tried"
+            ]
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "PAIN_MANAGEMENT"
+        }
+      ]
+    },
+    "CLM-BLIND-005": {
+      "scenario_type": "office_plus_procedure",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "OFFICE_VISIT_SPECIALIST",
+            "criteria": [],
+            "reasons": [],
+            "missing_information": []
+          },
+          {
+            "line_no": 2,
+            "decision": "PEND",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-DX-001.c3",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-DX-001.c1",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-DX-001.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "Why a repeat facility study is needed (inadequate first study, titration or inconclusive results)",
+              "The sleep evaluation findings that led to the test"
+            ]
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "OFFICE_VISIT_SPECIALIST"
+        },
+        {
+          "line_no": 2,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "DIAGNOSTIC_TESTS"
+        }
+      ]
+    },
+    "CLM-BLIND-006": {
+      "scenario_type": "deny_criterion",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-DX-003.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-DX-003.c1",
+                "status": "MET",
+                "evidence": "Seasonal rhinitis sx each spring, worse outdoors."
+              },
+              {
+                "criterion_id": "POL-DX-003.c3",
+                "status": "NOT_MET",
+                "evidence": "Std panel run, not tied to hx."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_NOT_MEDICALLY_NECESSARY"
+          ],
+          "benefit_category": "DIAGNOSTIC_TESTS"
+        }
+      ]
+    },
+    "CLM-BLIND-007": {
+      "scenario_type": "approve_single",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "MENTAL_HEALTH_OUTPATIENT",
+            "criteria": [
+              {
+                "criterion_id": "POL-BH-001.c1",
+                "status": "MET",
+                "evidence": "Memory decline x17 mo; dementia vs depression unclear; results to guide tx."
+              },
+              {
+                "criterion_id": "POL-BH-001.c3",
+                "status": "MET",
+                "evidence": "Re-test: sx changed, results drive tx plan."
+              },
+              {
+                "criterion_id": "POL-BH-001.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "LOW"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "MENTAL_HEALTH_OUTPATIENT"
+        }
+      ]
+    },
+    "CLM-BLIND-008": {
+      "scenario_type": "rule_denied_line",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "REHAB_THERAPY",
+            "criteria": [
+              {
+                "criterion_id": "POL-REHAB-001.c2",
+                "status": "MET",
+                "evidence": "POC from eval; goals: walk 30 minutes without a cane."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c3",
+                "status": "MET",
+                "evidence": "patient-specific function scale 40 -> 63 over 6wk; further gains expected."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c1",
+                "status": "MET",
+                "evidence": "Skilled tx: progressive strengthening, balance/gait training."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "REHAB_THERAPY"
+        },
+        {
+          "line_no": 2,
+          "decision": "DENY",
+          "source": "RULE",
+          "reason_codes": [
+            "DN_MUE_EXCEEDED"
+          ]
+        }
+      ]
+    },
+    "CLM-BLIND-009": {
+      "scenario_type": "approve_single",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "OUTPATIENT_SURGERY",
+            "criteria": [
+              {
+                "criterion_id": "POL-SURG-003.c1",
+                "status": "MET",
+                "evidence": "R GSV varicosities w/ aching, swelling, heaviness; duplex: reflux."
+              },
+              {
+                "criterion_id": "POL-SURG-003.c2",
+                "status": "MET",
+                "evidence": "Sx persist after 3 mo compression, elevation, exercise."
+              },
+              {
+                "criterion_id": "POL-SURG-003.c3",
+                "status": "MET",
+                "evidence": "Treating GSV trunk, not spider veins."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "LOW"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "OUTPATIENT_SURGERY"
+        }
+      ]
+    },
+    "CLM-BLIND-010": {
+      "scenario_type": "rule_denied_line",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "REHAB_THERAPY",
+            "criteria": [
+              {
+                "criterion_id": "POL-REHAB-001.c2",
+                "status": "MET",
+                "evidence": "POC from eval; goals: walk 30 minutes without a cane."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c3",
+                "status": "MET",
+                "evidence": "lower extremity function scale 36 -> 67 over 6wk; further gains expected."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c1",
+                "status": "MET",
+                "evidence": "Skilled tx: progressive strengthening, balance/gait training."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "REHAB_THERAPY"
+        },
+        {
+          "line_no": 2,
+          "decision": "DENY",
+          "source": "RULE",
+          "reason_codes": [
+            "DN_MUE_EXCEEDED"
+          ]
+        }
+      ]
+    },
+    "CLM-BLIND-011": {
+      "scenario_type": "pend_missing",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "PEND",
+            "benefit_category": "MINOR_PROCEDURES",
+            "criteria": [
+              {
+                "criterion_id": "POL-WOUND-001.c1",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-WOUND-001.c3",
+                "status": "MET",
+                "evidence": "Debridement #fourth; POC reassessed last wk."
+              },
+              {
+                "criterion_id": "POL-WOUND-001.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "What was removed from the wound, how deep, and the wound size"
+            ]
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "MINOR_PROCEDURES"
+        }
+      ]
+    },
+    "CLM-BLIND-012": {
+      "scenario_type": "deny_exclusion",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "OUTPATIENT_SURGERY",
+            "criteria": [
+              {
+                "criterion_id": "POL-SURG-003.c1",
+                "status": "MET",
+                "evidence": "L GSV varicosities w/ aching, swelling, heaviness; duplex: reflux."
+              },
+              {
+                "criterion_id": "POL-SURG-003.c3",
+                "status": "MET",
+                "evidence": "Treating GSV trunk, not spider veins."
+              },
+              {
+                "criterion_id": "POL-SURG-003.c2",
+                "status": "NOT_MET",
+                "evidence": "Compression never tried; pt wants procedure now."
+              }
+            ],
+            "reasons": [
+              "DN_CONDITIONAL_EXCLUSION"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_CONDITIONAL_EXCLUSION"
+          ],
+          "benefit_category": "OUTPATIENT_SURGERY"
+        }
+      ]
+    },
+    "CLM-BLIND-013": {
+      "scenario_type": "office_visit",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "OFFICE_VISIT_PCP",
+            "criteria": [],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "LOW"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "OFFICE_VISIT_PCP"
+        }
+      ]
+    },
+    "CLM-BLIND-014": {
+      "scenario_type": "deny_dx",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-CAR-001.c3",
+                "status": "NOT_MET",
+                "evidence": "Seasonal sneezing/itchy eyes each spring."
+              },
+              {
+                "criterion_id": "POL-CAR-001.c1",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-CAR-001.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_NOT_MEDICALLY_NECESSARY"
+          ],
+          "benefit_category": "DIAGNOSTIC_TESTS"
+        }
+      ]
+    },
+    "CLM-BLIND-015": {
+      "scenario_type": "office_same_day",
+      "target": {
+        "lines": [
+          {
+            "line_no": 2,
+            "decision": "DENY",
+            "benefit_category": "OUTPATIENT_SURGERY",
+            "criteria": [
+              {
+                "criterion_id": "POL-SURG-004.c1",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-SURG-004.c3",
+                "status": "MET",
+                "evidence": "VF: 23 deg superior improvement w/ lids taped."
+              },
+              {
+                "criterion_id": "POL-SURG-004.c2",
+                "status": "NOT_MET",
+                "evidence": "No visual complaints."
+              },
+              {
+                "criterion_id": "POL-SURG-004.c4",
+                "status": "MET",
+                "evidence": "Goal: restore superior VF (functional)."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "RULE",
+          "reason_codes": [
+            "DN_NCCI_BUNDLED"
+          ]
+        },
+        {
+          "line_no": 2,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_NOT_MEDICALLY_NECESSARY"
+          ],
+          "benefit_category": "OUTPATIENT_SURGERY"
+        }
+      ]
+    },
+    "CLM-BLIND-016": {
+      "scenario_type": "approve_single",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-IMG-002.c3",
+                "status": "MET",
+                "evidence": "Heel pain persists after 15wk stretching, orthotics, NSAIDs; dx still uncertain."
+              },
+              {
+                "criterion_id": "POL-IMG-002.c1",
+                "status": "MET",
+                "evidence": "US to eval 2 cm soft-tissue mass near heel."
+              },
+              {
+                "criterion_id": "POL-IMG-002.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-IMG-002.c4",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "LOW"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "DIAGNOSTIC_TESTS"
+        }
+      ]
+    },
+    "CLM-BLIND-017": {
+      "scenario_type": "rule_denied_line",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "PEND",
+            "benefit_category": "REHAB_THERAPY",
+            "criteria": [
+              {
+                "criterion_id": "POL-REHAB-001.c2",
+                "status": "MET",
+                "evidence": "POC from eval; goals: walk 30 minutes without a cane."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c3",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c1",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "Measured progress and the expected improvement",
+              "Why the services need a physical therapist's skills"
+            ]
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "REHAB_THERAPY"
+        },
+        {
+          "line_no": 2,
+          "decision": "DENY",
+          "source": "RULE",
+          "reason_codes": [
+            "DN_EXCLUDED"
+          ]
+        }
+      ]
+    },
+    "CLM-BLIND-018": {
+      "scenario_type": "two_policy",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "PEND",
+            "benefit_category": "PAIN_MANAGEMENT",
+            "criteria": [
+              {
+                "criterion_id": "POL-PAIN-001.c1",
+                "status": "MET",
+                "evidence": "MRI: L4-L5 HNP compressing right L5 root; concordant w/ exam."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c4",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c2",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c5",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c3",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "A pain or function score recorded before treatment",
+              "How long symptoms have lasted and which conservative treatments were tried"
+            ]
+          },
+          {
+            "line_no": 2,
+            "decision": "PEND",
+            "benefit_category": "PAIN_MANAGEMENT",
+            "criteria": [
+              {
+                "criterion_id": "POL-PAIN-002.c1",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-PAIN-002.c3",
+                "status": "MET",
+                "evidence": "No radicular sx; imaging neg for fx/tumor/infection."
+              },
+              {
+                "criterion_id": "POL-PAIN-002.c4",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-PAIN-002.c2",
+                "status": "MET",
+                "evidence": "Sx x4 mo, failed PT + meds."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "Severity of axial pain and the functional deficit on a pain or disability scale"
+            ]
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "PAIN_MANAGEMENT"
+        },
+        {
+          "line_no": 2,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "PAIN_MANAGEMENT"
+        }
+      ]
+    },
+    "CLM-BLIND-019": {
+      "scenario_type": "deny_criterion",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "MINOR_PROCEDURES",
+            "criteria": [
+              {
+                "criterion_id": "POL-FOOT-001.c1",
+                "status": "NOT_MET",
+                "evidence": "Monofilament intact 5/5 bilat."
+              },
+              {
+                "criterion_id": "POL-FOOT-001.c3",
+                "status": "MET",
+                "evidence": "Non-professional care unsafe."
+              },
+              {
+                "criterion_id": "POL-FOOT-001.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_NOT_MEDICALLY_NECESSARY"
+          ],
+          "benefit_category": "MINOR_PROCEDURES"
+        }
+      ]
+    },
+    "CLM-BLIND-020": {
+      "scenario_type": "deny_dx",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-CAR-002.c3",
+                "status": "NOT_MET",
+                "evidence": "Pruritic forearm rash after yard work."
+              },
+              {
+                "criterion_id": "POL-CAR-002.c1",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-CAR-002.c2",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_NOT_MEDICALLY_NECESSARY"
+          ],
+          "benefit_category": "DIAGNOSTIC_TESTS"
+        }
+      ]
+    },
+    "CLM-BLIND-021": {
+      "scenario_type": "same_profile_multi",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "REHAB_THERAPY",
+            "criteria": [
+              {
+                "criterion_id": "POL-REHAB-001.c2",
+                "status": "MET",
+                "evidence": "POC from eval; goals: climb stairs without pain."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c3",
+                "status": "MET",
+                "evidence": "lower extremity function scale 38 -> 63 over 5wk; further gains expected."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c1",
+                "status": "MET",
+                "evidence": "Skilled tx: progressive strengthening, balance/gait training."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          },
+          {
+            "line_no": 2,
+            "decision": "APPROVE",
+            "benefit_category": "REHAB_THERAPY",
+            "criteria": [
+              {
+                "criterion_id": "POL-REHAB-001.c2",
+                "status": "MET",
+                "evidence": "POC from eval; goals: climb stairs without pain."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c3",
+                "status": "MET",
+                "evidence": "lower extremity function scale 38 -> 63 over 5wk; further gains expected."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c1",
+                "status": "MET",
+                "evidence": "Skilled tx: progressive strengthening, balance/gait training."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          },
+          {
+            "line_no": 3,
+            "decision": "APPROVE",
+            "benefit_category": "REHAB_THERAPY",
+            "criteria": [
+              {
+                "criterion_id": "POL-REHAB-001.c2",
+                "status": "MET",
+                "evidence": "POC from eval; goals: climb stairs without pain."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c3",
+                "status": "MET",
+                "evidence": "lower extremity function scale 38 -> 63 over 5wk; further gains expected."
+              },
+              {
+                "criterion_id": "POL-REHAB-001.c1",
+                "status": "MET",
+                "evidence": "Skilled tx: progressive strengthening, balance/gait training."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "REHAB_THERAPY"
+        },
+        {
+          "line_no": 2,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "REHAB_THERAPY"
+        },
+        {
+          "line_no": 3,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "REHAB_THERAPY"
+        }
+      ]
+    },
+    "CLM-BLIND-022": {
+      "scenario_type": "pend_missing",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "PEND",
+            "benefit_category": "ADVANCED_IMAGING",
+            "criteria": [
+              {
+                "criterion_id": "POL-IMG-001.c1",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-IMG-001.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-IMG-001.c3",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-IMG-001.c4",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "Symptoms and provisional diagnosis that support the scan as ordered"
+            ]
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "ADVANCED_IMAGING"
+        }
+      ]
+    },
+    "CLM-BLIND-023": {
+      "scenario_type": "deny_criterion",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-DX-001.c1",
+                "status": "MET",
+                "evidence": "Sleep eval: loud snoring, witnessed apneas, daytime sleepiness (ESS 17)."
+              },
+              {
+                "criterion_id": "POL-DX-001.c3",
+                "status": "NOT_MET",
+                "evidence": "Prior study adequate/complete; doing well on CPAP."
+              },
+              {
+                "criterion_id": "POL-DX-001.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_NOT_MEDICALLY_NECESSARY"
+          ],
+          "benefit_category": "DIAGNOSTIC_TESTS"
+        }
+      ]
+    },
+    "CLM-BLIND-024": {
+      "scenario_type": "office_plus_procedure",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "OFFICE_VISIT_SPECIALIST",
+            "criteria": [],
+            "reasons": [],
+            "missing_information": []
+          },
+          {
+            "line_no": 2,
+            "decision": "APPROVE",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-CAR-002.c3",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-CAR-002.c1",
+                "status": "MET",
+                "evidence": "Episodic palpitations with lightheadedness."
+              },
+              {
+                "criterion_id": "POL-CAR-002.c2",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "LOW"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "OFFICE_VISIT_SPECIALIST"
+        },
+        {
+          "line_no": 2,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "DIAGNOSTIC_TESTS"
+        }
+      ]
+    },
+    "CLM-BLIND-025": {
+      "scenario_type": "office_same_day",
+      "target": {
+        "lines": [
+          {
+            "line_no": 2,
+            "decision": "PEND",
+            "benefit_category": "PAIN_MANAGEMENT",
+            "criteria": [
+              {
+                "criterion_id": "POL-PAIN-001.c1",
+                "status": "MET",
+                "evidence": "MRI: C5-C6 HNP compressing left C6 root; concordant w/ exam."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c4",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c2",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c5",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c3",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "A pain or function score recorded before treatment",
+              "How long symptoms have lasted and which conservative treatments were tried"
+            ]
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "RULE",
+          "reason_codes": [
+            "DN_NCCI_BUNDLED"
+          ]
+        },
+        {
+          "line_no": 2,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "PAIN_MANAGEMENT"
+        }
+      ]
+    },
+    "CLM-BLIND-026": {
+      "scenario_type": "approve_single",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "APPROVE",
+            "benefit_category": "PAIN_MANAGEMENT",
+            "criteria": [
+              {
+                "criterion_id": "POL-PAIN-002.c1",
+                "status": "MET",
+                "evidence": "Axial neck pain 8/10, worse w/ extension/rotation; disability 32%."
+              },
+              {
+                "criterion_id": "POL-PAIN-002.c3",
+                "status": "MET",
+                "evidence": "No radicular sx; imaging neg for fx/tumor/infection."
+              },
+              {
+                "criterion_id": "POL-PAIN-002.c2",
+                "status": "MET",
+                "evidence": "Sx x9 mo, failed PT + meds."
+              },
+              {
+                "criterion_id": "POL-PAIN-002.c4",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [],
+            "missing_information": []
+          }
+        ],
+        "complexity": "LOW"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "APPROVE",
+          "source": "MODEL",
+          "reason_codes": [],
+          "benefit_category": "PAIN_MANAGEMENT"
+        }
+      ]
+    },
+    "CLM-BLIND-027": {
+      "scenario_type": "deny_exclusion",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "OUTPATIENT_SURGERY",
+            "criteria": [
+              {
+                "criterion_id": "POL-SURG-003.c1",
+                "status": "MET",
+                "evidence": "L GSV varicosities w/ aching, swelling, heaviness; duplex: reflux."
+              },
+              {
+                "criterion_id": "POL-SURG-003.c3",
+                "status": "MET",
+                "evidence": "Treating GSV trunk, not spider veins."
+              },
+              {
+                "criterion_id": "POL-SURG-003.c2",
+                "status": "NOT_MET",
+                "evidence": "Compression never tried; pt wants procedure now."
+              }
+            ],
+            "reasons": [
+              "DN_CONDITIONAL_EXCLUSION"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_CONDITIONAL_EXCLUSION"
+          ],
+          "benefit_category": "OUTPATIENT_SURGERY"
+        }
+      ]
+    },
+    "CLM-BLIND-028": {
+      "scenario_type": "deny_dx",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "OUTPATIENT_SURGERY",
+            "criteria": [
+              {
+                "criterion_id": "POL-SURG-003.c1",
+                "status": "NOT_MET",
+                "evidence": "Pruritic forearm rash after yard work."
+              },
+              {
+                "criterion_id": "POL-SURG-003.c3",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-SURG-003.c2",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_NOT_MEDICALLY_NECESSARY"
+          ],
+          "benefit_category": "OUTPATIENT_SURGERY"
+        }
+      ]
+    },
+    "CLM-BLIND-029": {
+      "scenario_type": "two_policy",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "PEND",
+            "benefit_category": "PAIN_MANAGEMENT",
+            "criteria": [
+              {
+                "criterion_id": "POL-PAIN-001.c1",
+                "status": "MET",
+                "evidence": "MRI: L3-L4 HNP compressing left L4 root; concordant w/ exam."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c4",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c2",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c5",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-PAIN-001.c3",
+                "status": "MET",
+                "evidence": "Sx x6wk despite a home exercise program + NSAIDs."
+              }
+            ],
+            "reasons": [
+              "PD_MISSING_DOCUMENTATION"
+            ],
+            "missing_information": [
+              "A pain or function score recorded before treatment"
+            ]
+          },
+          {
+            "line_no": 2,
+            "decision": "DENY",
+            "benefit_category": "PAIN_MANAGEMENT",
+            "criteria": [
+              {
+                "criterion_id": "POL-PAIN-002.c1",
+                "status": "MET",
+                "evidence": "Axial neck pain 9/10, worse w/ extension/rotation; disability 42%."
+              },
+              {
+                "criterion_id": "POL-PAIN-002.c3",
+                "status": "NOT_MET",
+                "evidence": "Untreated radicular pain to left leg below knee w/ numbness."
+              },
+              {
+                "criterion_id": "POL-PAIN-002.c2",
+                "status": "MET",
+                "evidence": "Sx x12 mo, failed PT + meds."
+              },
+              {
+                "criterion_id": "POL-PAIN-002.c4",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "HIGH"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "PEND",
+          "source": "MODEL",
+          "reason_codes": [
+            "PD_MISSING_DOCUMENTATION"
+          ],
+          "benefit_category": "PAIN_MANAGEMENT"
+        },
+        {
+          "line_no": 2,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_NOT_MEDICALLY_NECESSARY"
+          ],
+          "benefit_category": "PAIN_MANAGEMENT"
+        }
+      ]
+    },
+    "CLM-BLIND-030": {
+      "scenario_type": "deny_dx",
+      "target": {
+        "lines": [
+          {
+            "line_no": 1,
+            "decision": "DENY",
+            "benefit_category": "DIAGNOSTIC_TESTS",
+            "criteria": [
+              {
+                "criterion_id": "POL-CAR-002.c3",
+                "status": "NOT_MET",
+                "evidence": "R knee OA pain/stiffness, worse w/ ambulation."
+              },
+              {
+                "criterion_id": "POL-CAR-002.c1",
+                "status": "NOT_APPLICABLE",
+                "evidence": "Does not apply to this service."
+              },
+              {
+                "criterion_id": "POL-CAR-002.c2",
+                "status": "NOT_DOCUMENTED",
+                "evidence": "Not documented in the clinical notes."
+              }
+            ],
+            "reasons": [
+              "DN_NOT_MEDICALLY_NECESSARY"
+            ],
+            "missing_information": []
+          }
+        ],
+        "complexity": "MEDIUM"
+      },
+      "line_labels": [
+        {
+          "line_no": 1,
+          "decision": "DENY",
+          "source": "MODEL",
+          "reason_codes": [
+            "DN_NOT_MEDICALLY_NECESSARY"
+          ],
+          "benefit_category": "DIAGNOSTIC_TESTS"
+        }
+      ]
+    }
+  }
+}

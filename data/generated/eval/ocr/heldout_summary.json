@@ -1,0 +1,92 @@
+{
+  "claims": 205,
+  "fields_written": 5193,
+  "field_accuracy": 0.9378,
+  "blank_boxes": 12027,
+  "blank_read_as_blank": 1.0,
+  "claims_all_fields_correct": 33,
+  "wrong_reads_flagged_low": 0.805,
+  "right_reads_at_or_above_threshold": 0.8423,
+  "by_kind": {
+    "amount": 0.9922,
+    "date": 0.9909,
+    "diagnosis": 0.9211,
+    "frequency": 0.7902,
+    "identifier": 0.9574,
+    "modifiers": 1.0,
+    "npi": 0.9919,
+    "place": 0.6822,
+    "pointers": 0.9961,
+    "procedure": 0.9763,
+    "relationship": 1.0,
+    "sex": 1.0,
+    "state": 0.961,
+    "text": 0.8988,
+    "tin": 0.9951,
+    "units": 0.8217,
+    "zip": 0.9854
+  },
+  "fields_per_kind": {
+    "amount": 258,
+    "date": 661,
+    "diagnosis": 228,
+    "frequency": 205,
+    "identifier": 469,
+    "modifiers": 8,
+    "npi": 492,
+    "place": 258,
+    "pointers": 258,
+    "procedure": 253,
+    "relationship": 205,
+    "sex": 205,
+    "state": 205,
+    "text": 820,
+    "tin": 205,
+    "units": 258,
+    "zip": 205
+  },
+  "notes_exact": 0.7805,
+  "notes_similarity_mean": 0.9859,
+  "most_missed_fields": [
+    [
+      "service_lines.0.place_of_service",
+      69
+    ],
+    [
+      "frequency_code",
+      43
+    ],
+    [
+      "service_lines.0.units",
+      37
+    ],
+    [
+      "patient.address.line1",
+      35
+    ],
+    [
+      "patient.address.city",
+      25
+    ],
+    [
+      "diagnoses.0",
+      16
+    ],
+    [
+      "patient.first_name",
+      13
+    ],
+    [
+      "service_lines.1.place_of_service",
+      12
+    ],
+    [
+      "patient.last_name",
+      10
+    ],
+    [
+      "service_lines.1.units",
+      9
+    ]
+  ]
+}

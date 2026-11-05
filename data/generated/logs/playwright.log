@@ -1,0 +1,49 @@
+
+Running 44 tests using 1 worker
+
+[1/44] e2e/demo-claims.spec.ts:57:1 › 01 clean approve: in review for the provider, accepted by reviewer1, then approved
+[2/44] e2e/demo-claims.spec.ts:83:1 › 02 model pend: filed now, reviewed once claim 3 waits too
+[3/44] e2e/demo-claims.spec.ts:87:1 › 03 model deny: after accepting claim 2, Next claim opens it; a line overridden with a reason
+[4/44] e2e/demo-claims.spec.ts:108:1 › 04 partial: a rule denies one line with its CARC, the model approves the other
+[5/44] e2e/demo-claims.spec.ts:118:1 › 05 every line denied by R15: final at once, with CARC 11, RARC N115, the article and its LCD
+[6/44] e2e/demo-claims.spec.ts:125:1 › 06 invalid NPI: rejected with CARC 16 and RARC N257
+[7/44] e2e/demo-claims.spec.ts:131:1 › 07 duplicate of 01: rejected as a duplicate with CARC 18
+[8/44] e2e/demo-claims.spec.ts:136:1 › 08 clean scanned form: read by OCR, in review
+[9/44] e2e/demo-claims.spec.ts:141:1 › 09 scanned form with a mistyped NPI: rejected for a low-confidence field
+[10/44] e2e/demo-claims.spec.ts:146:1 › reviewer: returned and auto-denied claims with codes, a claim's explanation and audit trail
+[11/44] e2e/demo-claims.spec.ts:166:1 › provider: my claims, searched and filtered
+[12/44] e2e/demo-claims.spec.ts:180:1 › admin: overview, model metrics, audit lookup and system status, read-only
+[13/44] e2e/demo-claims.spec.ts:210:1 › roles: another provider's claim and another role's page are out of reach
+[14/44] e2e/layout.spec.ts:54:5 › 390x844 › login page
+[15/44] e2e/layout.spec.ts:67:7 › 390x844 › provider1's pages
+[16/44] e2e/layout.spec.ts:67:7 › 390x844 › provider2's pages
+[17/44] e2e/layout.spec.ts:67:7 › 390x844 › reviewer1's pages
+[18/44] e2e/layout.spec.ts:67:7 › 390x844 › admin's pages
+[19/44] e2e/layout.spec.ts:54:5 › 768x1024 › login page
+[20/44] e2e/layout.spec.ts:67:7 › 768x1024 › provider1's pages
+[21/44] e2e/layout.spec.ts:67:7 › 768x1024 › provider2's pages
+[22/44] e2e/layout.spec.ts:67:7 › 768x1024 › reviewer1's pages
+[23/44] e2e/layout.spec.ts:67:7 › 768x1024 › admin's pages
+[24/44] e2e/layout.spec.ts:54:5 › 1440x900 › login page
+[25/44] e2e/layout.spec.ts:67:7 › 1440x900 › provider1's pages
+[26/44] e2e/layout.spec.ts:67:7 › 1440x900 › provider2's pages
+[27/44] e2e/layout.spec.ts:67:7 › 1440x900 › reviewer1's pages
+[28/44] e2e/layout.spec.ts:67:7 › 1440x900 › admin's pages
+[29/44] e2e/layout.spec.ts:54:5 › 1280x720 › login page
+[30/44] e2e/layout.spec.ts:67:7 › 1280x720 › provider1's pages
+[31/44] e2e/layout.spec.ts:67:7 › 1280x720 › provider2's pages
+[32/44] e2e/layout.spec.ts:67:7 › 1280x720 › reviewer1's pages
+[33/44] e2e/layout.spec.ts:67:7 › 1280x720 › admin's pages
+[34/44] e2e/pages.spec.ts:69:1 › provider: a rejected claim in plain words, what to check and its codes, no rule IDs
+[35/44] e2e/pages.spec.ts:88:1 › provider: a paid claim shows its billing with a sentence for each reduction
+[36/44] e2e/pages.spec.ts:106:1 › reviewer: the Claims page searches and filters, kept in the URL
+[37/44] e2e/pages.spec.ts:168:1 › admin: the Claims page reads and filters every claim, view only
+[38/44] e2e/pages.spec.ts:185:1 › the Reason column and the renamed page
+[39/44] e2e/pages.spec.ts:215:1 › the original file: a JSON claim, a PDF and an image, in the sheet and a new tab
+[40/44] e2e/pages.spec.ts:279:1 › one claim from its form's two pages in two files (D-DOC-2)
+[41/44] e2e/pages.spec.ts:326:1 › claim page: the summary first, then the clinical note and the audit trail as tabs
+[42/44] e2e/pages.spec.ts:354:1 › the filters and tabs by keyboard
+[43/44] e2e/pages.spec.ts:372:3 › with reduced motion › the evidence still opens the note at its quote, the sheet still opens
+[44/44] e2e/smoke.spec.ts:22:1 › submit, process, review and explain a claim
+  44 passed (1.5m)
+EXIT 0

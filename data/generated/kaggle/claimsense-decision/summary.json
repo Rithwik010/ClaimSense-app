@@ -1,0 +1,255 @@
+{
+  "generator_version": "decision-dataset-v2",
+  "prompt_version": "decision_v2",
+  "retrieval": "procedure+diagnoses+notes-v1; code filter; top 5; min score 0.0; BAAI/bge-small-en-v1.5; knowledge 36cfc77305a5",
+  "seed": 20260921,
+  "sizes": {
+    "train": 2000,
+    "validation": 300,
+    "test": 300
+  },
+  "distribution": {
+    "train": {
+      "records": 2000,
+      "model_lines": 2572,
+      "line_decisions": {
+        "APPROVE": 1302,
+        "DENY": 733,
+        "PEND": 537
+      },
+      "reasons": {
+        "DN_NOT_MEDICALLY_NECESSARY": 627,
+        "PD_MISSING_DOCUMENTATION": 537,
+        "DN_CONDITIONAL_EXCLUSION": 106
+      },
+      "benefit_categories": {
+        "MINOR_PROCEDURES": 465,
+        "DIAGNOSTIC_TESTS": 438,
+        "PAIN_MANAGEMENT": 318,
+        "OUTPATIENT_SURGERY": 266,
+        "ENDOSCOPY": 257,
+        "REHAB_THERAPY": 228,
+        "ADVANCED_IMAGING": 201,
+        "OFFICE_VISIT_SPECIALIST": 168,
+        "MENTAL_HEALTH_OUTPATIENT": 132,
+        "OFFICE_VISIT_PCP": 99
+      },
+      "criterion_statuses": {
+        "MET": 3121,
+        "NOT_APPLICABLE": 2867,
+        "NOT_DOCUMENTED": 900,
+        "NOT_MET": 887
+      },
+      "claim_decisions": {
+        "APPROVE": 774,
+        "DENY": 589,
+        "PEND": 465,
+        "PARTIAL": 172
+      },
+      "complexity": {
+        "MEDIUM": 902,
+        "LOW": 563,
+        "HIGH": 535
+      },
+      "scenario_types": {
+        "approve_single": 408,
+        "pend_missing": 256,
+        "deny_criterion": 223,
+        "deny_dx": 174,
+        "same_profile_multi": 160,
+        "ncci_bypass": 141,
+        "office_plus_procedure": 137,
+        "office_visit": 122,
+        "deny_exclusion": 106,
+        "two_policy": 106,
+        "rule_denied_line": 104,
+        "office_same_day": 63
+      },
+      "policies": {
+        "POL-WOUND-001": 224,
+        "POL-SURG-002": 187,
+        "POL-PAIN-001": 179,
+        "POL-FOOT-001": 170,
+        "POL-REHAB-001": 167,
+        "POL-SURG-004": 162,
+        "POL-CAR-002": 158,
+        "POL-IMG-001": 157,
+        "POL-PAIN-002": 139,
+        "POL-DX-003": 130,
+        "POL-CAR-001": 122,
+        "POL-SURG-001": 104,
+        "POL-BH-001": 85
+      },
+      "template_sets": {
+        "A": 2000
+      },
+      "out_of_network": 117,
+      "records_with_missed_criteria": 0,
+      "lines_denied_by_rules": 167
+    },
+    "validation": {
+      "records": 300,
+      "model_lines": 377,
+      "line_decisions": {
+        "APPROVE": 194,
+        "DENY": 107,
+        "PEND": 76
+      },
+      "reasons": {
+        "DN_NOT_MEDICALLY_NECESSARY": 98,
+        "PD_MISSING_DOCUMENTATION": 76,
+        "DN_CONDITIONAL_EXCLUSION": 9
+      },
+      "benefit_categories": {
+        "DIAGNOSTIC_TESTS": 66,
+        "MINOR_PROCEDURES": 55,
+        "OUTPATIENT_SURGERY": 53,
+        "PAIN_MANAGEMENT": 48,
+        "ENDOSCOPY": 35,
+        "ADVANCED_IMAGING": 33,
+        "OFFICE_VISIT_SPECIALIST": 32,
+        "REHAB_THERAPY": 30,
+        "MENTAL_HEALTH_OUTPATIENT": 13,
+        "OFFICE_VISIT_PCP": 12
+      },
+      "criterion_statuses": {
+        "MET": 467,
+        "NOT_APPLICABLE": 417,
+        "NOT_DOCUMENTED": 124,
+        "NOT_MET": 121
+      },
+      "claim_decisions": {
+        "APPROVE": 112,
+        "DENY": 85,
+        "PEND": 70,
+        "PARTIAL": 33
+      },
+      "complexity": {
+        "MEDIUM": 136,
+        "LOW": 86,
+        "HIGH": 78
+      },
+      "scenario_types": {
+        "approve_single": 62,
+        "pend_missing": 43,
+        "deny_criterion": 40,
+        "office_plus_procedure": 22,
+        "deny_dx": 21,
+        "office_visit": 19,
+        "same_profile_multi": 18,
+        "rule_denied_line": 17,
+        "ncci_bypass": 17,
+        "office_same_day": 16,
+        "two_policy": 16,
+        "deny_exclusion": 9
+      },
+      "policies": {
+        "POL-WOUND-001": 34,
+        "POL-DX-003": 28,
+        "POL-SURG-004": 28,
+        "POL-IMG-001": 27,
+        "POL-PAIN-002": 27,
+        "POL-SURG-002": 26,
+        "POL-SURG-001": 25,
+        "POL-CAR-002": 22,
+        "POL-PAIN-001": 21,
+        "POL-REHAB-001": 20,
+        "POL-CAR-001": 14,
+        "POL-FOOT-001": 13,
+        "POL-BH-001": 12
+      },
+      "template_sets": {
+        "A": 300
+      },
+      "out_of_network": 16,
+      "records_with_missed_criteria": 0,
+      "lines_denied_by_rules": 33
+    },
+    "test": {
+      "records": 300,
+      "model_lines": 386,
+      "line_decisions": {
+        "APPROVE": 202,
+        "DENY": 120,
+        "PEND": 64
+      },
+      "reasons": {
+        "DN_NOT_MEDICALLY_NECESSARY": 102,
+        "PD_MISSING_DOCUMENTATION": 64,
+        "DN_CONDITIONAL_EXCLUSION": 18
+      },
+      "benefit_categories": {
+        "DIAGNOSTIC_TESTS": 124,
+        "OUTPATIENT_SURGERY": 59,
+        "PAIN_MANAGEMENT": 38,
+        "OFFICE_VISIT_SPECIALIST": 33,
+        "ENDOSCOPY": 31,
+        "MINOR_PROCEDURES": 29,
+        "REHAB_THERAPY": 23,
+        "ADVANCED_IMAGING": 18,
+        "MENTAL_HEALTH_OUTPATIENT": 18,
+        "OFFICE_VISIT_PCP": 13
+      },
+      "criterion_statuses": {
+        "MET": 458,
+        "NOT_APPLICABLE": 393,
+        "NOT_MET": 142,
+        "NOT_DOCUMENTED": 141
+      },
+      "claim_decisions": {
+        "APPROVE": 117,
+        "DENY": 97,
+        "PEND": 55,
+        "PARTIAL": 31
+      },
+      "complexity": {
+        "MEDIUM": 133,
+        "LOW": 89,
+        "HIGH": 78
+      },
+      "scenario_types": {
+        "approve_single": 65,
+        "office_plus_procedure": 32,
+        "deny_criterion": 31,
+        "deny_dx": 31,
+        "pend_missing": 30,
+        "same_profile_multi": 23,
+        "deny_exclusion": 18,
+        "ncci_bypass": 16,
+        "rule_denied_line": 15,
+        "office_visit": 14,
+        "office_same_day": 13,
+        "two_policy": 12
+      },
+      "policies": {
+        "POL-DX-002": 33,
+        "POL-SURG-003": 31,
+        "POL-PAIN-001": 22,
+        "POL-IMG-002": 19,
+        "POL-SURG-002": 19,
+        "POL-REHAB-001": 18,
+        "POL-DX-001": 17,
+        "POL-CAR-001": 17,
+        "POL-CAR-002": 17,
+        "POL-SURG-004": 17,
+        "POL-PAIN-002": 16,
+        "POL-IMG-001": 15,
+        "POL-DX-003": 14,
+        "POL-FOOT-001": 13,
+        "POL-WOUND-001": 12,
+        "POL-BH-001": 11,
+        "POL-SURG-001": 7
+      },
+      "template_sets": {
+        "B": 300
+      },
+      "out_of_network": 14,
+      "records_with_missed_criteria": 0,
+      "lines_denied_by_rules": 28
+    }
+  },
+  "checks": {
+    "problems": 0,
+    "test_records_with_unseen_policies": 100
+  }
+}

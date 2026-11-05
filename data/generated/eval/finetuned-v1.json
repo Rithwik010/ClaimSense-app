@@ -1,0 +1,264 @@
+{
+  "label": "finetuned-v1",
+  "model": "claimsense-decision:v1",
+  "engine": "ollama 0.34.1",
+  "dataset": {
+    "generator_version": "decision-dataset-v2",
+    "prompt_version": "decision_v2",
+    "retrieval": "procedure+diagnoses+notes-v1; code filter; top 5; min score 0.0; BAAI/bge-small-en-v1.5; knowledge 36cfc77305a5",
+    "seed": 20260921,
+    "test_records": 300
+  },
+  "metrics": {
+    "records": 300,
+    "valid_output_rate": 0.94,
+    "top_errors": [
+      [
+        "line 2 is missing from the output",
+        11
+      ],
+      [
+        "EOF while parsing a string at line 1 column 13929)",
+        1
+      ],
+      [
+        "EOF while parsing a string at line 1 column 15494)",
+        1
+      ],
+      [
+        "EOF while parsing a string at line 1 column 14382)",
+        1
+      ],
+      [
+        "PEND needs the missing information",
+        1
+      ],
+      [
+        "EOF while parsing a string at line 1 column 11958)",
+        1
+      ],
+      [
+        "EOF while parsing a string at line 1 column 12779)",
+        1
+      ],
+      [
+        "APPROVE with criterion POL-PAIN-001.c1 NOT_MET",
+        1
+      ]
+    ],
+    "decisions": {
+      "lines": 386,
+      "accuracy": 0.6995,
+      "macro_f1": 0.672,
+      "per_class": {
+        "APPROVE": {
+          "precision": 0.8779,
+          "recall": 0.7475,
+          "f1": 0.8075,
+          "support": 202
+        },
+        "PEND": {
+          "precision": 0.3448,
+          "recall": 0.7812,
+          "f1": 0.4785,
+          "support": 64
+        },
+        "DENY": {
+          "precision": 1.0,
+          "recall": 0.575,
+          "f1": 0.7302,
+          "support": 120
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "APPROVE",
+          "PEND",
+          "DENY"
+        ],
+        "rows_gold_columns_predicted": [
+          [
+            151,
+            51,
+            0
+          ],
+          [
+            14,
+            50,
+            0
+          ],
+          [
+            7,
+            44,
+            69
+          ]
+        ]
+      }
+    },
+    "decisions_valid_only": {
+      "lines": 354,
+      "accuracy": 0.7486,
+      "macro_f1": 0.7169,
+      "per_class": {
+        "APPROVE": {
+          "precision": 0.8779,
+          "recall": 0.7947,
+          "f1": 0.8343,
+          "support": 190
+        },
+        "PEND": {
+          "precision": 0.3982,
+          "recall": 0.7627,
+          "f1": 0.5233,
+          "support": 59
+        },
+        "DENY": {
+          "precision": 1.0,
+          "recall": 0.6571,
+          "f1": 0.7931,
+          "support": 105
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "APPROVE",
+          "PEND",
+          "DENY"
+        ],
+        "rows_gold_columns_predicted": [
+          [
+            151,
+            39,
+            0
+          ],
+          [
+            14,
+            45,
+            0
+          ],
+          [
+            7,
+            29,
+            69
+          ]
+        ]
+      }
+    },
+    "criterion_status_accuracy": 0.8041,
+    "criterion_status_confusion": [
+      [
+        "MET->NOT_DOCUMENTED",
+        47
+      ],
+      [
+        "MET->NOT_APPLICABLE",
+        31
+      ],
+      [
+        "NOT_DOCUMENTED->NOT_APPLICABLE",
+        29
+      ],
+      [
+        "NOT_APPLICABLE->NOT_DOCUMENTED",
+        19
+      ],
+      [
+        "NOT_MET->NOT_DOCUMENTED",
+        19
+      ],
+      [
+        "NOT_DOCUMENTED->MET",
+        14
+      ],
+      [
+        "NOT_MET->MET",
+        14
+      ],
+      [
+        "MET->NOT_MET",
+        13
+      ]
+    ],
+    "evidence_quoted_rate": 0.9806,
+    "benefit_category_accuracy": 1.0,
+    "reasons_accuracy": 0.5989,
+    "complexity_accuracy": 0.7199,
+    "claim_decision_accuracy": 0.68,
+    "latency_ms": {
+      "p50": 5471,
+      "p95": 11005
+    },
+    "groups": {
+      "scenario:approve_single": {
+        "records": 65,
+        "valid_output_rate": 0.9846,
+        "line_accuracy": 0.6923
+      },
+      "scenario:deny_criterion": {
+        "records": 31,
+        "valid_output_rate": 0.9677,
+        "line_accuracy": 0.5161
+      },
+      "scenario:deny_dx": {
+        "records": 31,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.9032
+      },
+      "scenario:deny_exclusion": {
+        "records": 18,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8333
+      },
+      "scenario:ncci_bypass": {
+        "records": 16,
+        "valid_output_rate": 0.875,
+        "line_accuracy": 0.8125
+      },
+      "scenario:office_plus_procedure": {
+        "records": 32,
+        "valid_output_rate": 0.9688,
+        "line_accuracy": 0.7812
+      },
+      "scenario:office_same_day": {
+        "records": 13,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8462
+      },
+      "scenario:office_visit": {
+        "records": 14,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:pend_missing": {
+        "records": 30,
+        "valid_output_rate": 0.9333,
+        "line_accuracy": 0.8667
+      },
+      "scenario:rule_denied_line": {
+        "records": 15,
+        "valid_output_rate": 0.9333,
+        "line_accuracy": 0.4
+      },
+      "scenario:same_profile_multi": {
+        "records": 23,
+        "valid_output_rate": 0.6087,
+        "line_accuracy": 0.449
+      },
+      "scenario:two_policy": {
+        "records": 12,
+        "valid_output_rate": 0.9167,
+        "line_accuracy": 0.4583
+      },
+      "seen_policies": {
+        "records": 200,
+        "valid_output_rate": 0.93,
+        "line_accuracy": 0.7034
+      },
+      "unseen_policies": {
+        "records": 100,
+        "valid_output_rate": 0.96,
+        "line_accuracy": 0.6911
+      }
+    }
+  }
+}

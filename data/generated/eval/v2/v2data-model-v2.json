@@ -1,0 +1,286 @@
+{
+  "label": "v2data-model-v2",
+  "model": "claimsense-decision:v2",
+  "engine": "ollama 0.34.1",
+  "split": "test",
+  "context": "full",
+  "prompt": "decision_v3",
+  "retried_records": 8,
+  "dataset": {
+    "generator_version": "decision-dataset-v3",
+    "prompt_version": "decision_v3",
+    "retrieval": "exact lookup v2: plan or ALL, effective date, criterion codes; no cap; file order; knowledge e47509cd64c4",
+    "seed": 20260921,
+    "test_records": 300
+  },
+  "metrics": {
+    "records": 300,
+    "valid_output_rate": 0.98,
+    "top_errors": [
+      [
+        "criterion POL-DX-003.c5 was not retrieved for this line",
+        2
+      ],
+      [
+        "criterion POL-DX-001.c1 was not retrieved for this line",
+        1
+      ],
+      [
+        "APPROVE with criterion POL-PAIN-001.c1 NOT_DOCUMENTED",
+        1
+      ],
+      [
+        "criterion POL-WOUND-001.c1 was not retrieved for this line",
+        1
+      ],
+      [
+        "line 2 is missing from the output",
+        1
+      ]
+    ],
+    "decisions": {
+      "lines": 416,
+      "accuracy": 0.8726,
+      "macro_f1": 0.8532,
+      "per_class": {
+        "APPROVE": {
+          "precision": 0.8797,
+          "recall": 0.955,
+          "f1": 0.9158,
+          "support": 222
+        },
+        "PEND": {
+          "precision": 0.7838,
+          "recall": 0.8208,
+          "f1": 0.8018,
+          "support": 106
+        },
+        "DENY": {
+          "precision": 1.0,
+          "recall": 0.7273,
+          "f1": 0.8421,
+          "support": 88
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "APPROVE",
+          "PEND",
+          "DENY"
+        ],
+        "rows_gold_columns_predicted": [
+          [
+            212,
+            10,
+            0
+          ],
+          [
+            19,
+            87,
+            0
+          ],
+          [
+            10,
+            14,
+            64
+          ]
+        ]
+      }
+    },
+    "decisions_valid_only": {
+      "lines": 405,
+      "accuracy": 0.879,
+      "macro_f1": 0.8578,
+      "per_class": {
+        "APPROVE": {
+          "precision": 0.8797,
+          "recall": 0.968,
+          "f1": 0.9217,
+          "support": 219
+        },
+        "PEND": {
+          "precision": 0.8,
+          "recall": 0.8081,
+          "f1": 0.804,
+          "support": 99
+        },
+        "DENY": {
+          "precision": 1.0,
+          "recall": 0.7356,
+          "f1": 0.8477,
+          "support": 87
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "APPROVE",
+          "PEND",
+          "DENY"
+        ],
+        "rows_gold_columns_predicted": [
+          [
+            212,
+            7,
+            0
+          ],
+          [
+            19,
+            80,
+            0
+          ],
+          [
+            10,
+            13,
+            64
+          ]
+        ]
+      }
+    },
+    "criterion_status_accuracy": 0.9261,
+    "criterion_status_confusion": [
+      [
+        "MET->NOT_DOCUMENTED",
+        17
+      ],
+      [
+        "NOT_MET->NOT_DOCUMENTED",
+        12
+      ],
+      [
+        "NOT_DOCUMENTED->NOT_APPLICABLE",
+        10
+      ],
+      [
+        "NOT_MET->NOT_APPLICABLE",
+        10
+      ],
+      [
+        "MET->NOT_APPLICABLE",
+        10
+      ],
+      [
+        "NOT_APPLICABLE->NOT_DOCUMENTED",
+        9
+      ],
+      [
+        "NOT_DOCUMENTED->MET",
+        8
+      ],
+      [
+        "NOT_MET->MET",
+        5
+      ]
+    ],
+    "evidence_quoted_rate": 0.9853,
+    "benefit_category_accuracy": 1.0,
+    "reasons_accuracy": 0.8272,
+    "complexity_accuracy": 0.8231,
+    "claim_decision_accuracy": 0.8733,
+    "latency_ms": {
+      "p50": 5738,
+      "p95": 13263
+    },
+    "groups": {
+      "scenario:approve_single": {
+        "records": 58,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.9828
+      },
+      "scenario:deny_criterion": {
+        "records": 30,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8
+      },
+      "scenario:deny_exclusion": {
+        "records": 23,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8261
+      },
+      "scenario:extended_testing": {
+        "records": 6,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:facet_two_regions": {
+        "records": 4,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:ncci_bypass": {
+        "records": 18,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8333
+      },
+      "scenario:ncs_without_emg": {
+        "records": 8,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.75
+      },
+      "scenario:office_plus_procedure": {
+        "records": 20,
+        "valid_output_rate": 0.9,
+        "line_accuracy": 0.85
+      },
+      "scenario:office_same_day": {
+        "records": 16,
+        "valid_output_rate": 0.9375,
+        "line_accuracy": 0.931
+      },
+      "scenario:office_visit": {
+        "records": 7,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:pend_missing": {
+        "records": 42,
+        "valid_output_rate": 0.9762,
+        "line_accuracy": 0.8571
+      },
+      "scenario:rule_denied_line": {
+        "records": 22,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.9545
+      },
+      "scenario:same_profile_multi": {
+        "records": 22,
+        "valid_output_rate": 0.9091,
+        "line_accuracy": 0.8298
+      },
+      "scenario:two_policy": {
+        "records": 24,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.7708
+      },
+      "seen_policies": {
+        "records": 200,
+        "valid_output_rate": 0.975,
+        "line_accuracy": 0.9
+      },
+      "style:A": {
+        "records": 53,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.9231
+      },
+      "style:B": {
+        "records": 49,
+        "valid_output_rate": 0.9796,
+        "line_accuracy": 0.92
+      },
+      "style:C": {
+        "records": 48,
+        "valid_output_rate": 0.9792,
+        "line_accuracy": 0.746
+      },
+      "style:D": {
+        "records": 150,
+        "valid_output_rate": 0.9733,
+        "line_accuracy": 0.875
+      },
+      "unseen_policies": {
+        "records": 100,
+        "valid_output_rate": 0.99,
+        "line_accuracy": 0.8095
+      }
+    }
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "generator_version": "sbc-v1",
+  "chunks": [
+    {
+      "plan_id": "PLN-PPO-GOLD",
+      "section": "Important questions",
+      "text": "- **Overall deductible:** $500.00 per person in network; $1,000.00 out of network.\n- **Services covered before you meet the deductible:** Primary care visit, Specialist visit, Preventive care and screening, Outpatient mental health services, Physical therapy. Copays for these services do not count toward the deductible.\n- **Out-of-pocket limit:** $3,000.00 per person in network; $6,000.00 out of network.\n- **What counts toward the out-of-pocket limit:** deductible, copays and coinsurance. Amounts above the allowed amount billed by out-of-network providers do not count.\n- **Benefit period:** calendar year; the deductible and out-of-pocket totals reset on 1 January.\n- **Do you need a referral to see a specialist?** No. You can see a specialist without a referral.\n- **Does this plan use a provider network?** Yes. You pay less with in-network providers.",
+      "source": "SBC PLN-PPO-GOLD"
+    },
+    {
+      "plan_id": "PLN-PPO-GOLD",
+      "section": "What you pay for covered services",
+      "text": "| Service | In-network cost | Out-of-network cost | Limitations |\n|---|---|---|---|\n| Primary care visit | $25.00 copay per service; deductible does not apply | 40% coinsurance after deductible | None |\n| Specialist visit | $50.00 copay per service; deductible does not apply | 40% coinsurance after deductible | None |\n| Preventive care and screening | No charge; deductible does not apply | 40% coinsurance after deductible | None |\n| Advanced imaging (CT, MRI) | 20% coinsurance after deductible | 40% coinsurance after deductible | Prior authorization required |\n| Diagnostic tests (heart, sleep, nerve, allergy, ultrasound) | 20% coinsurance after deductible | 40% coinsurance after deductible | None |\n| Outpatient mental health services | $25.00 copay per service; deductible does not apply | 40% coinsurance after deductible | None |\n| Pain management injections | 20% coinsurance after deductible | 40% coinsurance after deductible | Prior authorization required |\n| Outpatient surgery | 20% coinsurance after deductible | 40% coinsurance after deductible | Prior authorization required |\n| Endoscopy (colonoscopy) | 20% coinsurance after deductible | 40% coinsurance after deductible | None |\n| Minor procedures (foot care, wound care) | 20% coinsurance after deductible | 40% coinsurance after deductible | None |\n| Physical therapy | $30.00 copay per service; deductible does not apply | 40% coinsurance after deductible | Limited to 30 visits per calendar year |",
+      "source": "SBC PLN-PPO-GOLD"
+    },
+    {
+      "plan_id": "PLN-PPO-GOLD",
+      "section": "Prior authorization",
+      "text": "Your provider must get approval from the plan before these services, or the claim is denied: Advanced imaging (CT, MRI), Pain management injections, Outpatient surgery.",
+      "source": "SBC PLN-PPO-GOLD"
+    },
+    {
+      "plan_id": "PLN-PPO-GOLD",
+      "section": "Excluded services",
+      "text": "- No procedure is excluded by name. Services must still meet the plan's coverage policies.\n- Cosmetic procedures, and services that do not meet a coverage policy's criteria.",
+      "source": "SBC PLN-PPO-GOLD"
+    },
+    {
+      "plan_id": "PLN-PPO-GOLD",
+      "section": "Filing a claim",
+      "text": "In-network providers must file within 90 days of the date of service. Out-of-network claims must be filed within 180 days. Claims filed later are denied.",
+      "source": "SBC PLN-PPO-GOLD"
+    },
+    {
+      "plan_id": "PLN-PPO-SILVER",
+      "section": "Important questions",
+      "text": "- **Overall deductible:** $1,500.00 per person in network; $3,000.00 out of network.\n- **Services covered before you meet the deductible:** Primary care visit, Specialist visit, Preventive care and screening, Outpatient mental health services, Physical therapy. Copays for these services do not count toward the deductible.\n- **Out-of-pocket limit:** $5,500.00 per person in network; $11,000.00 out of network.\n- **What counts toward the out-of-pocket limit:** deductible, copays and coinsurance. Amounts above the allowed amount billed by out-of-network providers do not count.\n- **Benefit period:** calendar year; the deductible and out-of-pocket totals reset on 1 January.\n- **Do you need a referral to see a specialist?** No. You can see a specialist without a referral.\n- **Does this plan use a provider network?** Yes. You pay less with in-network providers.",
+      "source": "SBC PLN-PPO-SILVER"
+    },
+    {
+      "plan_id": "PLN-PPO-SILVER",
+      "section": "What you pay for covered services",
+      "text": "| Service | In-network cost | Out-of-network cost | Limitations |\n|---|---|---|---|\n| Primary care visit | $40.00 copay per service; deductible does not apply | 50% coinsurance after deductible | None |\n| Specialist visit | $75.00 copay per service; deductible does not apply | 50% coinsurance after deductible | None |\n| Preventive care and screening | No charge; deductible does not apply | 50% coinsurance after deductible | None |\n| Advanced imaging (CT, MRI) | 30% coinsurance after deductible | 50% coinsurance after deductible | Prior authorization required |\n| Diagnostic tests (heart, sleep, nerve, allergy, ultrasound) | 30% coinsurance after deductible | 50% coinsurance after deductible | None |\n| Outpatient mental health services | $40.00 copay per service; deductible does not apply | 50% coinsurance after deductible | None |\n| Pain management injections | 30% coinsurance after deductible | 50% coinsurance after deductible | Prior authorization required |\n| Outpatient surgery | 30% coinsurance after deductible | 50% coinsurance after deductible | Prior authorization required |\n| Endoscopy (colonoscopy) | 30% coinsurance after deductible | 50% coinsurance after deductible | None |\n| Minor procedures (foot care, wound care) | 30% coinsurance after deductible | 50% coinsurance after deductible | None |\n| Physical therapy | $50.00 copay per service; deductible does not apply | 50% coinsurance after deductible | Limited to 20 visits per calendar year |",
+      "source": "SBC PLN-PPO-SILVER"
+    },
+    {
+      "plan_id": "PLN-PPO-SILVER",
+      "section": "Prior authorization",
+      "text": "Your provider must get approval from the plan before these services, or the claim is denied: Advanced imaging (CT, MRI), Pain management injections, Outpatient surgery.",
+      "source": "SBC PLN-PPO-SILVER"
+    },
+    {
+      "plan_id": "PLN-PPO-SILVER",
+      "section": "Excluded services",
+      "text": "- Radiofrequency destruction of facet joint nerves, lower back, first joint (Radiofrequency destruction of facet joint nerves is not a plan benefit)\n- Cosmetic procedures, and services that do not meet a coverage policy's criteria.",
+      "source": "SBC PLN-PPO-SILVER"
+    },
+    {
+      "plan_id": "PLN-PPO-SILVER",
+      "section": "Filing a claim",
+      "text": "In-network providers must file within 90 days of the date of service. Out-of-network claims must be filed within 180 days. Claims filed later are denied.",
+      "source": "SBC PLN-PPO-SILVER"
+    },
+    {
+      "plan_id": "PLN-HMO",
+      "section": "Important questions",
+      "text": "- **Overall deductible:** $250.00 per person in network. Out-of-network care is not covered.\n- **Services covered before you meet the deductible:** Primary care visit, Specialist visit, Preventive care and screening, Outpatient mental health services, Physical therapy. Copays for these services do not count toward the deductible.\n- **Out-of-pocket limit:** $4,000.00 per person in network.\n- **What counts toward the out-of-pocket limit:** deductible, copays and coinsurance. Amounts above the allowed amount billed by out-of-network providers do not count.\n- **Benefit period:** calendar year; the deductible and out-of-pocket totals reset on 1 January.\n- **Do you need a referral to see a specialist?** Yes. You need a referral from your primary care provider to see: allergy immunology, cardiology, gastroenterology, neurology, ophthalmology, pain medicine, physical therapy, plastic surgery, podiatry, psychology, radiology, sleep medicine, vascular surgery, wound care.\n- **Does this plan use a provider network?** Yes. Only in-network providers are covered.",
+      "source": "SBC PLN-HMO"
+    },
+    {
+      "plan_id": "PLN-HMO",
+      "section": "What you pay for covered services",
+      "text": "| Service | In-network cost | Out-of-network cost | Limitations |\n|---|---|---|---|\n| Primary care visit | $20.00 copay per service; deductible does not apply | Not covered | None |\n| Specialist visit | $40.00 copay per service; deductible does not apply | Not covered | None |\n| Preventive care and screening | No charge; deductible does not apply | Not covered | None |\n| Advanced imaging (CT, MRI) | 20% coinsurance after deductible | Not covered | Prior authorization required |\n| Diagnostic tests (heart, sleep, nerve, allergy, ultrasound) | 20% coinsurance after deductible | Not covered | Prior authorization required |\n| Outpatient mental health services | $20.00 copay per service; deductible does not apply | Not covered | None |\n| Pain management injections | 20% coinsurance after deductible | Not covered | Prior authorization required |\n| Outpatient surgery | 20% coinsurance after deductible | Not covered | Prior authorization required |\n| Endoscopy (colonoscopy) | 20% coinsurance after deductible | Not covered | None |\n| Minor procedures (foot care, wound care) | 20% coinsurance after deductible | Not covered | None |\n| Physical therapy | $30.00 copay per service; deductible does not apply | Not covered | Prior authorization required; Limited to 20 visits per calendar year |",
+      "source": "SBC PLN-HMO"
+    },
+    {
+      "plan_id": "PLN-HMO",
+      "section": "Prior authorization",
+      "text": "Your provider must get approval from the plan before these services, or the claim is denied: Advanced imaging (CT, MRI), Diagnostic tests (heart, sleep, nerve, allergy, ultrasound), Pain management injections, Outpatient surgery, Physical therapy.",
+      "source": "SBC PLN-HMO"
+    },
+    {
+      "plan_id": "PLN-HMO",
+      "section": "Excluded services",
+      "text": "- Skin patch allergy tests, per patch (Patch allergy testing is not a plan benefit)\n- Cosmetic procedures, and services that do not meet a coverage policy's criteria.",
+      "source": "SBC PLN-HMO"
+    },
+    {
+      "plan_id": "PLN-HMO",
+      "section": "Filing a claim",
+      "text": "In-network providers must file within 90 days of the date of service. Claims filed later are denied.",
+      "source": "SBC PLN-HMO"
+    },
+    {
+      "plan_id": "PLN-EPO",
+      "section": "Important questions",
+      "text": "- **Overall deductible:** $1,000.00 per person in network. Out-of-network care is not covered.\n- **Services covered before you meet the deductible:** Primary care visit, Specialist visit, Preventive care and screening, Outpatient mental health services, Physical therapy. Copays for these services do not count toward the deductible.\n- **Out-of-pocket limit:** $4,500.00 per person in network.\n- **What counts toward the out-of-pocket limit:** deductible, copays and coinsurance. Amounts above the allowed amount billed by out-of-network providers do not count.\n- **Benefit period:** calendar year; the deductible and out-of-pocket totals reset on 1 January.\n- **Do you need a referral to see a specialist?** No. You can see a specialist without a referral.\n- **Does this plan use a provider network?** Yes. Only in-network providers are covered.",
+      "source": "SBC PLN-EPO"
+    },
+    {
+      "plan_id": "PLN-EPO",
+      "section": "What you pay for covered services",
+      "text": "| Service | In-network cost | Out-of-network cost | Limitations |\n|---|---|---|---|\n| Primary care visit | $30.00 copay per service; deductible does not apply | Not covered | None |\n| Specialist visit | $60.00 copay per service; deductible does not apply | Not covered | None |\n| Preventive care and screening | No charge; deductible does not apply | Not covered | None |\n| Advanced imaging (CT, MRI) | 25% coinsurance after deductible | Not covered | Prior authorization required |\n| Diagnostic tests (heart, sleep, nerve, allergy, ultrasound) | 25% coinsurance after deductible | Not covered | None |\n| Outpatient mental health services | $30.00 copay per service; deductible does not apply | Not covered | None |\n| Pain management injections | 25% coinsurance after deductible | Not covered | Prior authorization required |\n| Outpatient surgery | 25% coinsurance after deductible | Not covered | Prior authorization required |\n| Endoscopy (colonoscopy) | 25% coinsurance after deductible | Not covered | None |\n| Minor procedures (foot care, wound care) | 25% coinsurance after deductible | Not covered | None |\n| Physical therapy | $40.00 copay per service; deductible does not apply | Not covered | Prior authorization required; Limited to 25 visits per calendar year |",
+      "source": "SBC PLN-EPO"
+    },
+    {
+      "plan_id": "PLN-EPO",
+      "section": "Prior authorization",
+      "text": "Your provider must get approval from the plan before these services, or the claim is denied: Advanced imaging (CT, MRI), Pain management injections, Outpatient surgery, Physical therapy.",
+      "source": "SBC PLN-EPO"
+    },
+    {
+      "plan_id": "PLN-EPO",
+      "section": "Excluded services",
+      "text": "- Hands-on manual therapy such as joint mobilization, each 15 minutes (Manual therapy is not a plan benefit)\n- Cosmetic procedures, and services that do not meet a coverage policy's criteria.",
+      "source": "SBC PLN-EPO"
+    },
+    {
+      "plan_id": "PLN-EPO",
+      "section": "Filing a claim",
+      "text": "In-network providers must file within 120 days of the date of service. Claims filed later are denied.",
+      "source": "SBC PLN-EPO"
+    },
+    {
+      "plan_id": "PLN-HDHP",
+      "section": "Important questions",
+      "text": "- **Overall deductible:** $3,200.00 per person in network; $6,400.00 out of network.\n- **Services covered before you meet the deductible:** Preventive care and screening. Copays for these services do not count toward the deductible.\n- **Out-of-pocket limit:** $6,500.00 per person in network; $13,000.00 out of network.\n- **What counts toward the out-of-pocket limit:** deductible, copays and coinsurance. Amounts above the allowed amount billed by out-of-network providers do not count.\n- **Benefit period:** calendar year; the deductible and out-of-pocket totals reset on 1 January.\n- **Do you need a referral to see a specialist?** No. You can see a specialist without a referral.\n- **Does this plan use a provider network?** Yes. You pay less with in-network providers.",
+      "source": "SBC PLN-HDHP"
+    },
+    {
+      "plan_id": "PLN-HDHP",
+      "section": "What you pay for covered services",
+      "text": "| Service | In-network cost | Out-of-network cost | Limitations |\n|---|---|---|---|\n| Primary care visit | 10% coinsurance after deductible | 40% coinsurance after deductible | None |\n| Specialist visit | 10% coinsurance after deductible | 40% coinsurance after deductible | None |\n| Preventive care and screening | No charge; deductible does not apply | 40% coinsurance after deductible | None |\n| Advanced imaging (CT, MRI) | 10% coinsurance after deductible | 40% coinsurance after deductible | Prior authorization required |\n| Diagnostic tests (heart, sleep, nerve, allergy, ultrasound) | 10% coinsurance after deductible | 40% coinsurance after deductible | None |\n| Outpatient mental health services | 10% coinsurance after deductible | 40% coinsurance after deductible | None |\n| Pain management injections | 10% coinsurance after deductible | 40% coinsurance after deductible | Prior authorization required |\n| Outpatient surgery | 10% coinsurance after deductible | 40% coinsurance after deductible | Prior authorization required |\n| Endoscopy (colonoscopy) | 10% coinsurance after deductible | 40% coinsurance after deductible | None |\n| Minor procedures (foot care, wound care) | 10% coinsurance after deductible | 40% coinsurance after deductible | None |\n| Physical therapy | 10% coinsurance after deductible | 40% coinsurance after deductible | Limited to 20 visits per calendar year |",
+      "source": "SBC PLN-HDHP"
+    },
+    {
+      "plan_id": "PLN-HDHP",
+      "section": "Prior authorization",
+      "text": "Your provider must get approval from the plan before these services, or the claim is denied: Advanced imaging (CT, MRI), Pain management injections, Outpatient surgery.",
+      "source": "SBC PLN-HDHP"
+    },
+    {
+      "plan_id": "PLN-HDHP",
+      "section": "Excluded services",
+      "text": "- No procedure is excluded by name. Services must still meet the plan's coverage policies.\n- Cosmetic procedures, and services that do not meet a coverage policy's criteria.",
+      "source": "SBC PLN-HDHP"
+    },
+    {
+      "plan_id": "PLN-HDHP",
+      "section": "Filing a claim",
+      "text": "In-network providers must file within 90 days of the date of service. Out-of-network claims must be filed within 180 days. Claims filed later are denied.",
+      "source": "SBC PLN-HDHP"
+    }
+  ]
+}

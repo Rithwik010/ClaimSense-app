@@ -1,0 +1,186 @@
+{
+  "api": "http://localhost:8001",
+  "log": "token-run-api.log",
+  "claims_processed": 11,
+  "decided_by_rules": 4,
+  "model_calls": 7,
+  "stages_model_routed_ms": {
+    "rules_ms": {
+      "n": 7,
+      "mean": 28.7,
+      "median": 29.0,
+      "p95": 43.1,
+      "max": 43.1
+    },
+    "context_ms": {
+      "n": 7,
+      "mean": 12.8,
+      "median": 13.2,
+      "p95": 17.6,
+      "max": 17.6
+    },
+    "model_ms": {
+      "n": 7,
+      "mean": 4493.1,
+      "median": 4788.7,
+      "p95": 5935.8,
+      "max": 5935.8
+    },
+    "calculator_ms": {
+      "n": 7,
+      "mean": 7.0,
+      "median": 7.0,
+      "p95": 10.6,
+      "max": 10.6
+    },
+    "duration_ms": {
+      "n": 7,
+      "mean": 4566.4,
+      "median": 4865.0,
+      "p95": 5985.4,
+      "max": 5985.4
+    }
+  },
+  "stages_by_rules_ms": {
+    "rules_ms": {
+      "n": 4,
+      "mean": 30.2,
+      "median": 29.8,
+      "p95": 32.6,
+      "max": 32.6
+    },
+    "context_ms": null,
+    "model_ms": null,
+    "calculator_ms": null,
+    "duration_ms": {
+      "n": 4,
+      "mean": 53.1,
+      "median": 36.5,
+      "p95": 106.5,
+      "max": 106.5
+    }
+  },
+  "written_without_a_model": {
+    "explanation_tokens": {
+      "n": 11,
+      "mean": 1028.6,
+      "median": 1040,
+      "p95": 1897,
+      "max": 1897
+    },
+    "eob_tokens": {
+      "n": 7,
+      "mean": 461.7,
+      "median": 461,
+      "p95": 625,
+      "max": 625
+    },
+    "calculation_tokens": {
+      "n": 7,
+      "mean": 256.4,
+      "median": 244,
+      "p95": 363,
+      "max": 363
+    }
+  },
+  "claims": [
+    {
+      "claim_id": "CLM-C00001",
+      "status": "FINAL_PENDED",
+      "explanation_tokens": 1897,
+      "eob_tokens": 452,
+      "calculation_tokens": 220
+    },
+    {
+      "claim_id": "CLM-FIX-584543",
+      "status": "FINAL_APPROVED",
+      "explanation_tokens": 1040,
+      "eob_tokens": 464,
+      "calculation_tokens": 252
+    },
+    {
+      "claim_id": "CLM-PGS-584542",
+      "status": "RECEIVED",
+      "explanation_tokens": null,
+      "eob_tokens": null,
+      "calculation_tokens": null
+    },
+    {
+      "claim_id": "CLM-IMG-584541",
+      "status": "RECEIVED",
+      "explanation_tokens": null,
+      "eob_tokens": null,
+      "calculation_tokens": null
+    },
+    {
+      "claim_id": "CLM-MBR-565237",
+      "status": "RECEIVED",
+      "explanation_tokens": null,
+      "eob_tokens": null,
+      "calculation_tokens": null
+    },
+    {
+      "claim_id": "CLM-DEMO-09",
+      "status": "REJECTED",
+      "explanation_tokens": 284,
+      "eob_tokens": null,
+      "calculation_tokens": null
+    },
+    {
+      "claim_id": "CLM-DEMO-08",
+      "status": "AWAITING_REVIEW",
+      "explanation_tokens": 1262,
+      "eob_tokens": null,
+      "calculation_tokens": 244
+    },
+    {
+      "claim_id": "CLM-DEMO-07",
+      "status": "REJECTED",
+      "explanation_tokens": 259,
+      "eob_tokens": null,
+      "calculation_tokens": null
+    },
+    {
+      "claim_id": "CLM-DEMO-06",
+      "status": "REJECTED",
+      "explanation_tokens": 224,
+      "eob_tokens": null,
+      "calculation_tokens": null
+    },
+    {
+      "claim_id": "CLM-DEMO-05",
+      "status": "DENIED_BY_RULE",
+      "explanation_tokens": 715,
+      "eob_tokens": 324,
+      "calculation_tokens": null
+    },
+    {
+      "claim_id": "CLM-DEMO-04",
+      "status": "FINAL_PARTIAL",
+      "explanation_tokens": 1602,
+      "eob_tokens": 625,
+      "calculation_tokens": 363
+    },
+    {
+      "claim_id": "CLM-DEMO-03",
+      "status": "FINAL_APPROVED",
+      "explanation_tokens": 1372,
+      "eob_tokens": 468,
+      "calculation_tokens": 244
+    },
+    {
+      "claim_id": "CLM-DEMO-02",
+      "status": "FINAL_PENDED",
+      "explanation_tokens": 1624,
+      "eob_tokens": 438,
+      "calculation_tokens": 220
+    },
+    {
+      "claim_id": "CLM-DEMO-01",
+      "status": "FINAL_APPROVED",
+      "explanation_tokens": 1036,
+      "eob_tokens": 461,
+      "calculation_tokens": 252
+    }
+  ]
+}

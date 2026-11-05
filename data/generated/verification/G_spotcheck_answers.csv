@@ -1,0 +1,37 @@
+sheet_no,case_id,kind,line_no,claim_outcome,status,failures,line_outcomes,flags,allowed_cents,deductible_cents,copay_cents,coinsurance_cents,plan_pays_cents,member_pays_cents,cob_primary_paid_cents,contractual_adjustment_cents,balance_bill_exposure_cents,accumulators_after
+Rules 1,H5-02,rules,,REJECT,REJECTED,R10 REJECT RJ_LOW_CONFIDENCE_FIELD,,,,,,,,,,,,
+Rules 2,DUP-01,rules,,REJECT,REJECTED,DUP REJECT RJ_DUPLICATE,,,,,,,,,,,,
+Rules 3,R07-04,rules,,DENY,DENIED_BY_RULE,R07 DENY DN_LATE_FILING,,OON,,,,,,,,,,
+Rules 4,R06-02,rules,,PEND,PENDED_BY_RULE,R06 PEND PD_PROVIDER_ENROLLMENT,,,,,,,,,,,,
+Rules 5,R18-01,rules,,DENY,DENIED_BY_RULE,R18 DENY DN_ESI_LEVELS line 1,line 1 DENY DN_ESI_LEVELS,,,,,,,,,,,
+Rules 6,R03-01,rules,,REJECT,REJECTED,R03 REJECT RJ_INVALID_NPI,,,,,,,,,,,,
+Rules 7,R02-01,rules,,REJECT,REJECTED,R02 REJECT RJ_INVALID_CODE,,,,,,,,,,,,
+Rules 8,R09-02,rules,,PASS,RECEIVED,,line 1 PASS ,,,,,,,,,,,
+Rules 9,R11-07,rules,,PASS,RECEIVED,R11 DENY DN_NCCI_BUNDLED line 1,line 1 DENY DN_NCCI_BUNDLED; line 2 PASS ,,,,,,,,,,,
+Rules 10,R19-03,rules,,PASS,RECEIVED,,line 1 PASS  flags FACET_TWO_REGIONS; line 2 PASS  flags FACET_TWO_REGIONS,,,,,,,,,,,
+Calculator 1,C04,calculator,1,,,,,,9000,0,2500,0,6500,2500,0,0,0,
+Calculator 1,C04,calculator,total,,,,,,9000,0,2500,0,6500,2500,0,0,0,"{""deductible_met_cents"": 0, ""oop_met_cents"": 2500}"
+Calculator 2,C10,calculator,1,,,,,,24425,24425,0,0,0,24425,0,14575,0,
+Calculator 2,C10,calculator,total,,,,,,24425,24425,0,0,0,24425,0,14575,0,"{""deductible_met_cents"": 24425, ""oop_met_cents"": 24425}"
+Calculator 3,C39,calculator,1,,,,,,24425,24425,0,0,0,9425,15000,14575,0,
+Calculator 3,C39,calculator,total,,,,,,24425,24425,0,0,0,9425,15000,14575,0,"{""deductible_met_cents"": 44425, ""oop_met_cents"": 44425}"
+Calculator 4,C25,calculator,1,,,,,,39621,0,0,10000,29621,10000,0,20379,0,
+Calculator 4,C25,calculator,2,,,,,,16951,0,0,0,16951,0,0,10049,0,
+Calculator 4,C25,calculator,3,,,,,,24591,0,0,0,24591,0,0,14909,0,
+Calculator 4,C25,calculator,total,,,,,,81163,0,0,10000,71163,10000,0,45337,0,"{""deductible_met_cents"": 150000, ""oop_met_cents"": 550000}"
+Calculator 5,C19,calculator,1,,,,,,39621,0,0,5000,34621,5000,0,20379,0,
+Calculator 5,C19,calculator,total,,,,,,39621,0,0,5000,34621,5000,0,20379,0,"{""deductible_met_cents"": 50000, ""oop_met_cents"": 300000}"
+Calculator 6,C21,calculator,1,,,,,,16951,0,1000,0,15951,1000,0,10049,0,
+Calculator 6,C21,calculator,total,,,,,,16951,0,1000,0,15951,1000,0,10049,0,"{""deductible_met_cents"": 50000, ""oop_met_cents"": 300000}"
+Calculator 7,C30,calculator,1,,,,,,13561,0,0,5424,8137,5424,0,0,13439,
+Calculator 7,C30,calculator,total,,,,,,13561,0,0,5424,8137,5424,0,0,13439,"{""deductible_met_cents"": 100000, ""oop_met_cents"": 125424}"
+Calculator 8,C55,calculator,1,,,,,,24591,20000,0,459,0,0,30000,16409,0,
+Calculator 8,C55,calculator,2,,,,,,16951,0,0,1695,15256,1695,0,10049,0,
+Calculator 8,C55,calculator,total,,,,,,41542,20000,0,2154,15256,1695,30000,26458,0,"{""deductible_met_cents"": 320000, ""oop_met_cents"": 322154}"
+Calculator 9,C26,calculator,1,,,,,,11899,0,2500,0,9399,2500,0,7101,0,
+Calculator 9,C26,calculator,2,,,,,,0,0,0,0,0,0,0,0,0,
+Calculator 9,C26,calculator,3,,,,,,24591,24591,0,0,0,24591,0,14909,0,
+Calculator 9,C26,calculator,total,,,,,,36490,24591,2500,0,9399,27091,0,22010,0,"{""deductible_met_cents"": 24591, ""oop_met_cents"": 27091}"
+Calculator 10,C53,calculator,1,,,,,,24591,24591,0,0,0,24591,0,16409,0,
+Calculator 10,C53,calculator,2,,,,,,39621,5409,0,10264,23948,15673,0,20379,0,
+Calculator 10,C53,calculator,total,,,,,,64212,30000,0,10264,23948,40264,0,36788,0,"{""deductible_met_cents"": 150000, ""oop_met_cents"": 160264}"

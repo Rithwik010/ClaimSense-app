@@ -1,0 +1,2 @@
+{"train": 2000, "validation": 300, "test": 300} checks passed
+uv run python -m training.generate.decision_dataset  243.45s user 1.47s system 467% cpu 52.402 total

@@ -1,0 +1,911 @@
+item_id,classification,reason,codes,by
+L34520-cov-008,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-009,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-010,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-011,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-012,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-013,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-014,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-015,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-016,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-017,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-018,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-019,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-020,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-021,out of scope,description or background; states no coverage requirement,,judgment
+L34520-cov-022,out of scope,describes what the testing codes include; no requirement,,judgment
+L34520-cov-023,out of scope,description or background; states no coverage requirement,,judgment
+L34520-cov-025,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-026,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-027,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-028,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-029,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-030,covered by POL-BH-001.c1 (paraphrase),a specific case of known or suspected involvement where the results affect diagnosis or management,,section
+L34520-cov-033,affects decisions,limitation missing: the patient cannot take part in testing meaningfully,96130 96131 96136,judgment
+L34520-cov-034,affects decisions,limitation missing: testing for educational or vocational purposes,96130 96131 96136,judgment
+L34520-cov-038,affects decisions,limitation missing: ongoing substance abuse or intoxication,96130 96131 96136,judgment
+L34520-cov-039,covered by POL-BH-001.c2 (paraphrase),c2 excludes testing when no problem is suspected,,judgment
+L34520-cov-040,affects decisions,limitation missing: brief questions that belong in the psychiatric evaluation,96130 96131 96136,judgment
+L34520-cov-041,affects decisions,limitation missing: adjustment reactions to nursing-home placement,96130 96131 96136,judgment
+L34520-cov-042,affects decisions,each test in a battery must be individually necessary; not in our criteria,96130 96131 96136,judgment
+L34520-cov-043,out of scope,who may report the codes for reading results; our claims do not carry it,,judgment
+L34520-cov-044,covered by POL-BH-001.c2 (paraphrase),c2 excludes repeat testing not needed for a medical decision,,judgment
+L34520-cov-045,out of scope,aphasia assessment uses a code outside our scope,,judgment
+L34520-cov-046,rule candidate,testing over eight hours needs documentation: checkable from units of 96131,96130 96131 96136,judgment
+L34520-cov-048,out of scope,states the LCD's legal basis (Program Integrity Manual); no requirement,,judgment
+L34520-doc-001,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L34520-doc-003,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L37379-cov-001,out of scope,contrast echocardiography uses agents and codes outside our scope,,section
+L37379-cov-002,out of scope,contrast echocardiography uses agents and codes outside our scope,,section
+L37379-cov-003,out of scope,contrast echocardiography uses agents and codes outside our scope,,section
+L37379-cov-004,out of scope,contrast echocardiography uses agents and codes outside our scope,,section
+L37379-cov-005,out of scope,contrast echocardiography uses agents and codes outside our scope,,section
+L37379-cov-006,out of scope,description or background; states no coverage requirement,,judgment
+L37379-cov-010,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-014,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-015,affects decisions,TTE in the emergency room for chest pain is not an established use; limitation missing,93306 93308,judgment
+L37379-cov-017,affects decisions,monitoring for cardiotoxic drugs is covered without heart symptoms; c1 would deny it,93306 93308,judgment
+L37379-cov-019,affects decisions,cardiac donor evaluation is covered without heart symptoms; c1 would deny it,93306,judgment
+L37379-cov-023,affects decisions,a baseline study soon after prosthetic valve implant is covered without new symptoms; c1 would deny it,93306 93308,judgment
+L37379-cov-025,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-027,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-029,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-031,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-033,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-035,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-037,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-039,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-041,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-043,covered by POL-CAR-001.c1 (paraphrase),"a heart condition with signs or symptoms, which c1 covers",,section
+L37379-cov-045,out of scope,description or background; states no coverage requirement,,judgment
+L37379-cov-047,out of scope,Doppler color flow mapping add-on uses a code outside our scope,,judgment
+L37379-cov-050,affects decisions,a prior exercise stress test is not required; c3's treadmill example could be read as a prerequisite,93350,judgment
+L37379-cov-053,affects decisions,limitation missing: stress echo in the acute phase of an MI,93350,judgment
+L37379-cov-055,covered by POL-CAR-001.c3 (paraphrase),"known or suspected coronary disease with symptoms, which c3 covers",,section
+L37379-cov-057,covered by POL-CAR-001.c3 (paraphrase),"known or suspected coronary disease with symptoms, which c3 covers",,section
+L37379-cov-058,covered by POL-CAR-001.c3 (paraphrase),"known or suspected coronary disease with symptoms, which c3 covers",,section
+L37379-cov-059,covered by POL-CAR-001.c3 (paraphrase),"known or suspected coronary disease with symptoms, which c3 covers",,section
+L37379-cov-060,covered by POL-CAR-001.c3 (paraphrase),"known or suspected coronary disease with symptoms, which c3 covers",,section
+L37379-cov-062,affects decisions,stress-echo indication outside suspected coronary disease; our c3 covers only suspected CAD,93350,judgment
+L37379-cov-063,affects decisions,stress-echo indication outside suspected coronary disease; our c3 covers only suspected CAD,93350,judgment
+L37379-cov-065,affects decisions,stress-echo indication outside suspected coronary disease; our c3 covers only suspected CAD,93350,judgment
+L37379-cov-067,covered by POL-CAR-001.c3 (paraphrase),"known or suspected coronary disease with symptoms, which c3 covers",,section
+L37379-cov-069,covered by POL-CAR-001.c3 (paraphrase),"known or suspected coronary disease with symptoms, which c3 covers",,section
+L37379-cov-070,affects decisions,stress-echo indication outside suspected coronary disease; our c3 covers only suspected CAD,93350,judgment
+L37379-cov-072,affects decisions,stress-echo indication outside suspected coronary disease; our c3 covers only suspected CAD,93350,judgment
+L37379-cov-074,affects decisions,pharmacologic stress only when the patient cannot reach the target heart rate by exercise,93350,judgment
+L37379-cov-075,out of scope,drug dosing; not on claims,,judgment
+L37379-cov-076,out of scope,drug dosing; not on claims,,judgment
+L37379-cov-078,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-079,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-080,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-081,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-082,out of scope,drug dosing; not on claims,,judgment
+L37379-cov-083,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-084,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-085,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-086,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-087,out of scope,drug dosing; not on claims,,judgment
+L37379-cov-088,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-089,out of scope,clinical safety guidance for the stress agent; not stated as a coverage condition,,section
+L37379-cov-090,out of scope,imaging equipment; not on claims,,judgment
+L37379-cov-091,out of scope,nuclear ventriculography codes are outside our scope,,judgment
+L37379-cov-093,out of scope,technical reliability caveats; not stated as coverage conditions,,section
+L37379-cov-094,out of scope,technical reliability caveats; not stated as coverage conditions,,section
+L37379-cov-095,out of scope,technical reliability caveats; not stated as coverage conditions,,section
+L37379-cov-096,out of scope,technical reliability caveats; not stated as coverage conditions,,section
+L37379-cov-097,out of scope,technical reliability caveats; not stated as coverage conditions,,section
+L37379-cov-098,out of scope,technical reliability caveats; not stated as coverage conditions,,section
+L37379-cov-099,out of scope,technical reliability caveats; not stated as coverage conditions,,section
+L37379-cov-101,out of scope,physician supervision requirements; not on claims,,section
+L37379-cov-102,out of scope,physician supervision requirements; not on claims,,section
+L37379-cov-103,out of scope,physician supervision requirements; not on claims,,section
+L37379-cov-104,out of scope,physician supervision requirements; not on claims,,section
+L37379-cov-105,out of scope,physician supervision requirements; not on claims,,section
+L37379-cov-107,out of scope,limited-evaluation equipment; not on claims,,judgment
+L37379-cov-108,covered by POL-CAR-001.c1 (paraphrase),"c1 requires signs or symptoms, so screening is not MET",,judgment
+L37379-cov-110,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-111,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-112,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-113,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-114,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-115,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-116,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-117,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-118,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-119,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-120,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-121,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-122,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-123,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-124,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-125,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-126,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-127,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-128,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-129,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-130,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-131,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-132,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-cov-133,out of scope,transesophageal echocardiography uses codes outside our scope,,section
+L37379-doc-001,out of scope,general documentation statement; no specific requirement,,judgment
+L37379-doc-002,affects decisions,pharmacologic stress needs documented evidence that exercise was not possible,93350,judgment
+L37379-doc-003,affects decisions,the reason a plain stress EKG cannot be interpreted must be documented,93350,judgment
+L37379-doc-004,affects decisions,TTE for chest pain in the emergency room needs documented signs of myocardial dysfunction,93306 93308,judgment
+L37379-doc-005,affects decisions,TTE for cardiotoxic exposure must name the agent,93306 93308,judgment
+L37379-doc-006,affects decisions,TTE as the first test for syncope needs findings of valvular or obstructive disease,93306 93308,judgment
+L37379-doc-007,affects decisions,pre-operative stress echo in patients without CAD symptoms needs a documented at-risk condition,93350,judgment
+L37379-doc-009,covered by POL-CAR-001.c2 (paraphrase),c2 limits how often the study is repeated,,judgment
+L37379-doc-010,rule candidate,one stress imaging study is usually enough: countable from codes and dates,93350,judgment
+L34636-cov-000,out of scope,description or background; states no coverage requirement,,judgment
+L34636-cov-001,out of scope,description or background; states no coverage requirement,,judgment
+L34636-cov-002,out of scope,description or background; states no coverage requirement,,judgment
+L34636-cov-004,covered by POL-CAR-002.c1 (paraphrase),general requirement that a listed indication is present; the criteria implement it,,judgment
+L34636-cov-017,affects decisions,covered indication missing: other acute and subacute ischemic heart disease,93224 93241,judgment
+L34636-cov-022,covered by POL-CAR-002.c1 (paraphrase),same symptom list as the 48-hour indications in c1,,judgment
+L34636-cov-023,covered by POL-CAR-002.c1 (paraphrase),same symptom list as the 48-hour indications in c1,,judgment
+L34636-cov-024,covered by POL-CAR-002.c1 (paraphrase),same symptom list as the 48-hour indications in c1,,judgment
+L34636-cov-025,covered by POL-CAR-002.c1 (paraphrase),same symptom list as the 48-hour indications in c1,,judgment
+L34636-cov-026,covered by POL-CAR-002.c1 (paraphrase),same symptom list as the 48-hour indications in c1,,judgment
+L34636-cov-027,covered by POL-CAR-002.c1 (paraphrase),same symptom list as the 48-hour indications in c1,,judgment
+L34636-cov-028,covered by POL-CAR-002.c1 (paraphrase),same symptom list as the 48-hour indications in c1,,judgment
+L34636-cov-029,covered by POL-CAR-002.c2 (paraphrase),c2 covers monitoring antiarrhythmic drug therapy,,judgment
+L34636-cov-030,affects decisions,the 30-day list has no ejection-fraction limit; our c2 applies the 48-hour 40% limit to every code,93268,judgment
+L34636-cov-031,affects decisions,covered indication missing for 30-day monitoring: acute and subacute ischemic heart disease,93268,judgment
+L34636-cov-032,covered by POL-CAR-002.c2 (paraphrase),c2 covers coronary artery disease with active symptoms,,judgment
+L34636-doc-001,covered by POL-CAR-002.c1 (paraphrase),documenting the evaluation and symptoms that led to monitoring,,judgment
+L34636-doc-002,covered by POL-CAR-002.c1 (paraphrase),symptoms documented in the visit note,,judgment
+L34636-doc-003,affects decisions,requires a full workup within the past month before monitoring; not in our criteria,93224 93241 93268,judgment
+L34636-doc-004,covered by POL-CAR-002.c2 (paraphrase),medication change documentation for antiarrhythmic monitoring,,judgment
+L34636-doc-005,out of scope,purchased-test billing arrangement; not on our claims,,judgment
+L34636-doc-007,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L34636-doc-008,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L34636-doc-009,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L35050-cov-000,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L35050-cov-024,covered by POL-DX-001.c2 (paraphrase),physician direction and accreditation,,judgment
+L35050-cov-026,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L35050-cov-029,out of scope,test content for narcolepsy; the MSLT code is outside our scope,,section
+L35050-cov-030,out of scope,test content for narcolepsy; the MSLT code is outside our scope,,section
+L35050-cov-031,out of scope,test content for narcolepsy; the MSLT code is outside our scope,,section
+L35050-cov-032,out of scope,test content for narcolepsy; the MSLT code is outside our scope,,section
+L35050-cov-033,out of scope,description or background; states no coverage requirement,,judgment
+L35050-cov-035,covered by POL-DX-001.c3 (paraphrase),the same repeat-study list as c3's source,,section
+L35050-cov-036,covered by POL-DX-001.c3 (paraphrase),the same repeat-study list as c3's source,,section
+L35050-cov-037,covered by POL-DX-001.c3 (paraphrase),the same repeat-study list as c3's source,,section
+L35050-cov-038,covered by POL-DX-001.c3 (paraphrase),the same repeat-study list as c3's source,,section
+L35050-cov-040,out of scope,description or background; states no coverage requirement,,judgment
+L35050-cov-042,out of scope,description or background; states no coverage requirement,,section
+L35050-cov-043,out of scope,description or background; states no coverage requirement,,section
+L35050-cov-044,out of scope,description or background; states no coverage requirement,,section
+L35050-cov-045,out of scope,description or background; states no coverage requirement,,section
+L35050-cov-046,out of scope,description or background; states no coverage requirement,,section
+L35050-cov-047,out of scope,description or background; states no coverage requirement,,section
+L35050-cov-048,out of scope,description or background; states no coverage requirement,,section
+L35050-cov-050,affects decisions,CPAP titration requires an OSA diagnosis meeting the AHI criteria; not in our criteria,95811,section
+L35050-cov-051,affects decisions,CPAP titration requires an OSA diagnosis meeting the AHI criteria; not in our criteria,95811,section
+L35050-cov-052,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L35050-cov-053,out of scope,CPAP devices are equipment outside our scope,,judgment
+L35050-cov-054,covered by POL-DX-001.c2 (paraphrase),setting and credentialing requirements,,judgment
+L35050-cov-055,affects decisions,split-night study requirements missing from our criteria,95811,section
+L35050-cov-056,affects decisions,split-night study requirements missing from our criteria,95811,section
+L35050-cov-057,affects decisions,split-night study requirements missing from our criteria,95811,section
+L35050-cov-063,affects decisions,follow-up studies are not routine for patients doing well on CPAP,95810 95811,judgment
+L35050-cov-064,affects decisions,follow-up indication missing: substantial weight loss on CPAP,95810 95811,judgment
+L35050-cov-065,affects decisions,follow-up indication missing: weight gain with returning symptoms on CPAP,95810 95811,judgment
+L35050-cov-066,covered by POL-DX-001.c3 (paraphrase),c3 covers confirming the effect of therapy,,judgment
+L35050-cov-067,out of scope,impotence testing uses codes outside our scope,,judgment
+L35050-cov-068,rule candidate,parasomnia studies must not be done at home: checkable from the home-test code and the diagnosis,95806,judgment
+L35050-cov-069,affects decisions,sleep-related epilepsy is usually diagnosed without polysomnography,95810,judgment
+L35050-cov-070,affects decisions,parasomnia indication missing; our c1 covers apnea and narcolepsy only,95810,section
+L35050-cov-071,affects decisions,parasomnia indication missing; our c1 covers apnea and narcolepsy only,95810,section
+L35050-cov-072,affects decisions,parasomnia indication missing; our c1 covers apnea and narcolepsy only,95810,section
+L35050-cov-073,out of scope,technical content of the study; not a coverage condition,,section
+L35050-cov-074,out of scope,technical content of the study; not a coverage condition,,section
+L35050-cov-075,out of scope,technical content of the study; not a coverage condition,,section
+L35050-cov-076,out of scope,technical content of the study; not a coverage condition,,section
+L35050-cov-077,out of scope,technical content of the study; not a coverage condition,,section
+L35050-cov-078,out of scope,technical content of the study; not a coverage condition,,section
+L35050-cov-079,affects decisions,limitation missing: polysomnography for chronic insomnia is not covered,95806 95810 95811,judgment
+L35050-cov-080,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L35050-cov-082,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L35050-cov-084,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L35050-cov-086,affects decisions,limitation missing from our criteria,95806 95810 95811,section
+L35050-cov-087,affects decisions,limitation missing from our criteria,95806 95810 95811,section
+L35050-cov-088,affects decisions,limitation missing from our criteria,95806 95810 95811,section
+L35050-cov-089,affects decisions,limitation missing from our criteria,95806 95810 95811,section
+L35050-cov-090,affects decisions,limitation missing from our criteria,95806 95810 95811,section
+L35050-cov-091,affects decisions,limitation missing from our criteria,95806 95810 95811,section
+L35050-cov-092,affects decisions,limitation missing from our criteria,95806 95810 95811,section
+L35050-cov-093,affects decisions,limitation missing from our criteria,95806 95810 95811,section
+L35050-cov-094,out of scope,description or background; states no coverage requirement,,judgment
+L35050-cov-095,out of scope,description or background; states no coverage requirement,,judgment
+L35050-cov-096,out of scope,description or background; states no coverage requirement,,judgment
+L35050-cov-097,out of scope,description or background; states no coverage requirement,,judgment
+L35050-cov-098,out of scope,"facility space, equipment and staffing; not on claims",,judgment
+L35050-cov-099,out of scope,technician training for device application; not on claims,,judgment
+L35050-cov-100,covered by POL-DX-001.c2 (paraphrase),supervision and over-read by accredited providers,,judgment
+L35050-cov-101,covered by POL-DX-001.c2 (paraphrase),direction by a qualifying center,,judgment
+L35050-cov-102,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-cov-103,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-cov-104,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-cov-105,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-cov-106,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-cov-107,affects decisions,"home sleep test conditions: c2 only refers to them, so the model is never shown them",95806,section
+L35050-cov-108,affects decisions,"home sleep test conditions: c2 only refers to them, so the model is never shown them",95806,section
+L35050-cov-109,affects decisions,"home sleep test conditions: c2 only refers to them, so the model is never shown them",95806,section
+L35050-cov-110,affects decisions,"home sleep test conditions: c2 only refers to them, so the model is never shown them",95806,section
+L35050-cov-111,affects decisions,"home sleep test conditions: c2 only refers to them, so the model is never shown them",95806,section
+L35050-cov-112,affects decisions,"home sleep test conditions: c2 only refers to them, so the model is never shown them",95806,section
+L35050-cov-113,affects decisions,"home sleep test conditions: c2 only refers to them, so the model is never shown them",95806,section
+L35050-cov-115,out of scope,description or background; states no coverage requirement,,judgment
+L35050-cov-116,out of scope,description or background; states no coverage requirement,,judgment
+L35050-cov-117,out of scope,description or background; states no coverage requirement,,judgment
+L35050-cov-118,out of scope,type 4 devices use codes outside our scope,,judgment
+L35050-cov-119,out of scope,peripheral arterial tone devices use codes outside our scope,,judgment
+L35050-cov-120,affects decisions,patient education for the home device must be documented,95806,judgment
+L35050-cov-121,out of scope,follow-up visit after the test; not a condition for the test claim,,judgment
+L35050-cov-122,covered by POL-DX-001.c1 (paraphrase),"c1 requires suspected apnea or narcolepsy, so screening without symptoms is not MET",,judgment
+L35050-cov-123,covered by POL-DX-001.c1 (paraphrase),same statement as c1's source,,judgment
+L35050-cov-124,out of scope,device channel requirements; not on claims,,judgment
+L35050-cov-125,out of scope,a named device using a code outside our scope,,judgment
+L35050-cov-126,out of scope,actigraphy accuracy; device outside our scope,,judgment
+L35050-cov-127,out of scope,heading only,,judgment
+L35050-cov-128,out of scope,contractor jurisdiction note; no requirement,,judgment
+L35050-cov-129,out of scope,financial liability notice (ABN); not a coverage condition,,judgment
+L35050-cov-130,out of scope,terminology note; no requirement,,judgment
+L35050-cov-131,out of scope,general notice; the criteria and limitations are listed separately,,judgment
+L35050-doc-000,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L35050-doc-002,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L35050-doc-003,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L35050-doc-004,out of scope,general documentation statement; no specific requirement,,judgment
+L35050-doc-005,covered by POL-DX-001.c2 (paraphrase),accreditation documentation,,judgment
+L35050-doc-006,covered by POL-DX-001.c2 (paraphrase),accreditation bodies,,judgment
+L35050-doc-007,covered by POL-DX-001.c2 (paraphrase),interpreting physician qualifications,,judgment
+L35050-doc-010,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-doc-011,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-doc-013,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-doc-014,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-doc-016,covered by POL-DX-001.c2 (paraphrase),"c2 requires the LCD's physician-direction, credentialing and accreditation",,section
+L35050-doc-018,affects decisions,narcolepsy testing needs documentation that the condition is severe enough,95810,judgment
+L35050-doc-019,rule candidate,more than two nights of testing needs documentation: countable from codes and dates,95810 95811,judgment
+L35050-doc-020,covered by POL-DX-001.c2 (paraphrase),allowed settings for the study,,judgment
+L35050-doc-021,affects decisions,"home sleep test conditions: c2 only refers to them, so the model is never shown them",95806,section
+L35050-doc-023,out of scope,general statement on local standards of practice,,judgment
+L34594-cov-000,out of scope,provider training or credentialing; claims do not carry it,,judgment
+L34594-cov-001,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-002,out of scope,provider training or credentialing; claims do not carry it,,judgment
+L34594-cov-003,out of scope,clinical guidance on testing extent; no coverage condition,,judgment
+L34594-cov-004,out of scope,requirement on the performer's real-time assessment; not on claims or notes,,judgment
+L34594-cov-005,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-006,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-007,out of scope,requirement on the performer's interaction with the patient; not on claims or notes,,judgment
+L34594-cov-009,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-010,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-011,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-012,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-013,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-014,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-015,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-017,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L34594-cov-019,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-020,covered by POL-DX-002.c1 (paraphrase),an example of a nerve disorder whose symptoms c1 requires to be documented,,judgment
+L34594-cov-021,covered by POL-DX-002.c1 (paraphrase),an example of a nerve disorder whose symptoms c1 requires to be documented,,judgment
+L34594-cov-022,covered by POL-DX-002.c1 (paraphrase),an example of a nerve disorder whose symptoms c1 requires to be documented,,judgment
+L34594-cov-023,out of scope,repetitive nerve stimulation uses a code outside our scope,,judgment
+L34594-cov-024,out of scope,open-ended statement; no condition,,judgment
+L34594-cov-026,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-027,out of scope,requirement on the performer's real-time assessment; not on claims or notes,,judgment
+L34594-cov-028,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-029,out of scope,lead-in sentence; its conditions are the list items,,judgment
+L34594-cov-030,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-031,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-032,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-033,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-034,out of scope,automated nerve conduction devices use a code outside our scope,,judgment
+L34594-cov-035,out of scope,automated nerve conduction devices use a code outside our scope,,judgment
+L34594-cov-036,out of scope,clinical guidance; the rule it implies is in the next item,,judgment
+L34594-cov-037,rule candidate,"nerve conduction without needle EMG is usually not necessary, except carpal tunnel syndrome with high pre-test probability: checkable from codes (95907 or 95910 without 95886) and the diagnosis",95907 95910 95886,judgment
+L34594-cov-039,out of scope,description or background; states no coverage requirement,,judgment
+L34594-cov-040,covered by POL-DX-002.c1 (paraphrase),an example of a nerve or muscle disorder whose symptoms c1 requires to be documented,,judgment
+L34594-cov-041,covered by POL-DX-002.c1 (paraphrase),an example of a nerve or muscle disorder whose symptoms c1 requires to be documented,,judgment
+L34594-cov-042,covered by POL-DX-002.c1 (paraphrase),an example of a nerve or muscle disorder whose symptoms c1 requires to be documented,,judgment
+L34594-cov-043,covered by POL-DX-002.c1 (paraphrase),an example of a nerve or muscle disorder whose symptoms c1 requires to be documented,,judgment
+L34594-cov-044,covered by POL-DX-002.c1 (paraphrase),an example of a nerve or muscle disorder whose symptoms c1 requires to be documented,,judgment
+L34594-cov-045,covered by POL-DX-002.c1 (paraphrase),an example of a nerve or muscle disorder whose symptoms c1 requires to be documented,,judgment
+L34594-cov-046,out of scope,EMG guidance for injections uses codes outside our scope,,judgment
+L34594-cov-047,out of scope,EMG guidance for injections uses codes outside our scope,,judgment
+L34594-cov-048,out of scope,open-ended statement; no condition,,judgment
+L34594-cov-050,out of scope,EMG with botulinum toxin uses codes outside our scope,,judgment
+L34594-cov-053,rule candidate,nerve conduction is paid once per nerve regardless of sites or methods: checkable from units,95907 95910,judgment
+L34594-cov-055,out of scope,psychophysical measurements are part of the visit; codes outside our scope,,judgment
+L34594-cov-056,out of scope,current perception threshold testing uses a code outside our scope,,judgment
+L34594-cov-057,out of scope,device capability; not on claims or notes,,judgment
+L34594-cov-058,out of scope,device output requirement; not on claims or notes,,judgment
+L34594-cov-059,out of scope,template-based devices; not on claims or notes,,judgment
+L34594-cov-061,rule candidate,paraspinal muscle sampling must use the correct EMG code: checkable from the codes billed together,95886,judgment
+L34594-cov-062,affects decisions,EMG limitation missing: foot muscles alone for a proximal lesion,95886,judgment
+L34594-cov-063,affects decisions,EMG limitation missing: paraspinal EMG in surgically scarred regions,95886,judgment
+L34594-cov-064,affects decisions,EMG limitation missing: limited limb exam without paraspinal testing for radiculopathy,95886,judgment
+L34594-cov-065,covered by POL-DX-002.c2 (paraphrase),c2 excludes testing soon after an injury,,judgment
+L34594-cov-066,out of scope,surface and macro EMG use codes outside our scope,,judgment
+L34594-cov-067,out of scope,EMG for botulinum toxin uses codes outside our scope,,judgment
+L34594-doc-001,covered by POL-DX-002.c1 (paraphrase),c1 requires the history and exam to document the need,,judgment
+L34594-doc-002,out of scope,content of the test report; not a pre-test condition,,judgment
+L33261-cov-000,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L33261-cov-011,out of scope,description or background; states no coverage requirement,,judgment
+L33261-cov-013,covered by POL-DX-003.c2 (paraphrase),examples of contact allergens for the dermatitis c2 covers,,judgment
+L33261-cov-014,out of scope,photo patch testing uses a code outside our scope,,judgment
+L33261-cov-015,out of scope,photo testing uses a code outside our scope,,judgment
+L33261-cov-016,out of scope,intradermal dilutional testing uses a code outside our scope,,judgment
+L33261-cov-017,out of scope,intradermal dilutional testing uses a code outside our scope,,judgment
+L33261-cov-018,out of scope,delayed-reaction intradermal testing uses a code outside our scope,,judgment
+L33261-cov-019,out of scope,tuberculin and other delayed-reaction skin tests use codes outside our scope,,judgment
+L33261-cov-021,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-022,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-023,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-024,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-025,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-026,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-027,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-028,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-029,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-030,out of scope,organ challenge or oral food challenge tests use codes outside our scope,,section
+L33261-cov-034,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-035,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-036,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-037,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-038,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-039,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-040,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-041,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-042,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-043,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-044,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-045,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-046,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-047,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-048,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-049,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-050,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-051,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-052,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-053,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-057,out of scope,in-vitro testing is a laboratory test outside our scope,,judgment
+L33261-cov-058,affects decisions,"intradermal testing for food allergy is not recommended; our c1 covers foods for intradermal testing too, while the LCD's intradermal indication omits foods",95024,judgment
+L33261-cov-059,affects decisions,limitation missing: allergy testing for chronic idiopathic urticaria or angioedema,95004 95024,judgment
+L33261-cov-060,affects decisions,c3 limits the number of tests but not routine annual repeats without an indication,95004 95024 95044,judgment
+L33261-cov-061,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L33261-cov-062,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L33261-cov-064,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-065,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-066,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-067,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-068,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-069,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-070,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-071,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-072,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-073,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-074,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-075,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-076,out of scope,"a test not covered, using a code outside our scope",,section
+L33261-cov-078,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-079,covered by POL-DX-003.c2 (paraphrase),"c2 covers patch testing only for contact dermatitis, so food-allergy patch testing is not MET",,judgment
+L33261-cov-080,affects decisions,intradermal testing to diagnose food allergy is not necessary; our c1 includes foods,95024,judgment
+L33261-cov-081,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-082,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-083,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-084,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-085,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-086,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-087,out of scope,"a test or code outside our scope (laboratory tests are excluded, DECISIONS 2026-09-21)",,section
+L33261-cov-088,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L33261-cov-091,out of scope,general notice; the criteria and limitations are listed separately,,judgment
+L33261-doc-000,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L33941-cov-005,out of scope,states the LCD's legal basis (Program Integrity Manual); no requirement,,judgment
+L33941-doc-001,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L33941-doc-003,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L37373-cov-000,out of scope,general note to consult national coverage determinations; no requirement,,judgment
+L37373-cov-001,out of scope,scope statement of the LCD,,judgment
+L37373-cov-003,out of scope,description or background; states no coverage requirement,,judgment
+L37373-cov-004,covered by POL-IMG-001.c1 (paraphrase),same statement as c1's source for CT,,judgment
+L37373-cov-006,out of scope,lead-in sentence; its content is the list items,,judgment
+L37373-cov-008,out of scope,why CT is chosen over MRI; no coverage condition,,judgment
+L37373-cov-009,out of scope,why CT is chosen over MRI; no coverage condition,,judgment
+L37373-cov-010,out of scope,why CT is chosen over MRI; no coverage condition,,judgment
+L37373-cov-011,out of scope,why CT is chosen over MRI; no coverage condition,,judgment
+L37373-cov-012,out of scope,lead-in sentence; its content is the list items,,judgment
+L37373-cov-013,covered by POL-IMG-001.c1 (paraphrase),an example of a condition where the scan is appropriate for the documented symptoms and diagnosis,,judgment
+L37373-cov-014,covered by POL-IMG-001.c1 (paraphrase),an example of a condition where the scan is appropriate for the documented symptoms and diagnosis,,judgment
+L37373-cov-015,covered by POL-IMG-001.c1 (paraphrase),an example of a condition where the scan is appropriate for the documented symptoms and diagnosis,,judgment
+L37373-cov-016,covered by POL-IMG-001.c1 (paraphrase),an example of a condition where the scan is appropriate for the documented symptoms and diagnosis,,judgment
+L37373-cov-017,out of scope,no concrete condition; case-by-case medical review,,judgment
+L37373-cov-027,covered by POL-IMG-001.c3 (paraphrase),c3 lists tumor as a reason for contrast,,judgment
+L37373-cov-029,affects decisions,contrast adds nothing after head trauma unless bleeding is suspected; not in c3,70553,judgment
+L37373-cov-037,out of scope,description or background; states no coverage requirement,,judgment
+L37373-cov-038,out of scope,FDA approval of the scanner; not on claims or notes,,judgment
+L37373-cov-039,out of scope,permissive note on follow-up CT or MRI; no condition,,judgment
+L37373-cov-040,covered by POL-IMG-001.c4 (paraphrase),c4 and c3 handle brain staging of cancers,,judgment
+L37373-cov-042,rule candidate,same-day scans of different areas are payable; a same-day rule must not deny them,70450 70551 70553 72141,judgment
+L33619-cov-005,covered by POL-IMG-002.c1 (paraphrase),c1 covers evaluating cysts and tumors,,judgment
+L33619-cov-009,out of scope,operator qualification and supervision; claims do not carry it,,judgment
+L33619-cov-010,out of scope,our codes are extremity ultrasound by definition; nothing to check,,judgment
+L33619-cov-021,rule candidate,"same extremity more than twice in six months: countable from codes, dates and laterality",76881 76882,judgment
+L33906-cov-000,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L33906-cov-008,already decided (D-ESI-1),every indication applies to every ESI,,judgment
+L33906-cov-018,"already decided (v2 bundle, R14 note)",bilateral transforaminal ESI is not another block,,judgment
+L33906-cov-020,already decided (D-ESI-7),contrast is part of c4,,judgment
+L33906-cov-021,affects decisions,ESI must be combined with conservative treatment; not in our criteria or D-ESI,62321 62323 64483,judgment
+L33906-cov-022,affects decisions,patient must be in an active rehabilitation or home exercise program; not in our criteria or D-ESI,62321 62323 64483,judgment
+L33906-cov-023,already decided (D-ESI-2),a documented score or named scale is required for c2,,judgment
+L33906-cov-025,already decided (D-ESI-7),guidance with contrast is part of c4,,judgment
+L33906-cov-026,out of scope,the injected substance is not on our claims or notes,,judgment
+L33906-cov-027,already decided (D-ESI-3),R14: no other block in the same session,,judgment
+L33906-cov-029,affects decisions,"limitation 5 beyond D-ESI-4: complex regional pain syndrome, widespread diffuse pain, neuropathy from other causes and cervicogenic headache are not named in D-ESI-4",62321 62323 64483,judgment
+L33906-cov-031,already decided (D-ESI-3),"R14 denies a second ESI in the same session, which covers two regions",,judgment
+L33906-cov-034,rule candidate,"caudal or interlaminar ESI performed bilaterally is not necessary: checkable from codes and modifiers (unlike bilateral transforaminal, which is allowed)",62321 62323,judgment
+L33906-cov-035,affects decisions,a predetermined series of ESIs is not necessary; notes can show it,62321 62323 64483,judgment
+L33906-cov-036,out of scope,steroid dose is not on our claims or notes,,judgment
+L33906-cov-037,rule candidate,"treatment beyond 12 months: needs the patient's ESI dates across claims, which one claim does not carry",62321 62323 64483,judgment
+L33906-cov-038,covered by POL-PAIN-001.c2 (paraphrase),c2 requires pain severe enough to affect function,,judgment
+L33906-cov-039,covered by POL-PAIN-001.c5 (paraphrase),c5 requires 50% improvement for repeat injections,,judgment
+L33906-cov-040,affects decisions,a documented rationale for continuing ESIs is required; not in our criteria,62321 62323 64483,judgment
+L33906-cov-041,out of scope,notifying the primary care provider; not on claims or notes,,judgment
+L33906-cov-042,affects decisions,"contraindications (spinal or systemic infection, cord compression, cancer risk) are not in our criteria",62321 62323 64483,judgment
+L33906-cov-044,out of scope,provider training or credentialing; claims do not carry it,,judgment
+L33906-cov-045,out of scope,provider training or credentialing; claims do not carry it,,judgment
+L33906-cov-046,out of scope,provider training or credentialing; claims do not carry it,,judgment
+L33906-cov-047,already decided (D-ESI-1),the LCD notice: all indications and limitations apply,,judgment
+L33906-doc-000,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L33930-cov-000,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L33930-cov-014,out of scope,description or background; states no coverage requirement,,judgment
+L33930-cov-015,out of scope,lead-in sentence; its criteria are c1 to c3,,judgment
+L33930-cov-020,affects decisions,pain and disability scores after each diagnostic block are required; not in our criteria,64490 64493 64635,judgment
+L33930-cov-022,affects decisions,intra-articular diagnostic blocks only when medial branch blocks are anatomically impossible or therapeutic injection is planned,64490 64493,judgment
+L33930-cov-025,covered by POL-PAIN-002.c1 (paraphrase),the first diagnostic injection must meet c1 to c3,,judgment
+L33930-cov-026,covered by POL-PAIN-002.c4 (paraphrase),"lead-in to the second diagnostic procedure, which c4 addresses",,judgment
+L33930-cov-027,covered by POL-PAIN-002.c1 (paraphrase),the second injection must meet the first injection's criteria,,judgment
+L33930-cov-028,affects decisions,the second diagnostic block requires at least 80% relief from the first; c4 gives only the timing,64490 64493,judgment
+L33930-cov-029,rule candidate,at most 4 diagnostic sessions per region per rolling 12 months: needs the patient's history of dates,64490 64493,judgment
+L33930-cov-031,out of scope,lead-in sentence; its conditions are the list items,,judgment
+L33930-cov-032,affects decisions,therapeutic injections require two diagnostic blocks with at least 80% relief,64490 64493,judgment
+L33930-cov-033,affects decisions,repeat therapeutic injections require at least 50% relief for 3 months,64490 64493,judgment
+L33930-cov-034,affects decisions,therapeutic injections require documentation of why radiofrequency ablation is not possible,64490 64493,judgment
+L33930-cov-035,rule candidate,at most 4 therapeutic sessions per region per rolling 12 months: needs the patient's history,64490 64493,judgment
+L33930-cov-037,out of scope,lead-in sentence; its conditions are the list items,,judgment
+L33930-cov-038,affects decisions,initial ablation requires two diagnostic blocks with at least 80% sustained relief,64635,judgment
+L33930-cov-039,affects decisions,repeat ablation requires at least 50% improvement for 6 months,64635,judgment
+L33930-cov-040,rule candidate,at most 2 ablation sessions per region per rolling 12 months: needs the patient's history,64635,judgment
+L33930-cov-042,out of scope,lead-in sentence; its conditions are the list items,,judgment
+L33930-cov-043,affects decisions,cyst aspiration requires imaging confirming nerve-root compression by the cyst,64490 64493,judgment
+L33930-cov-044,affects decisions,cyst aspiration requires documented symptoms from the cyst,64490 64493,judgment
+L33930-cov-045,affects decisions,"cyst aspiration repeated once, only after 50% improvement for 3 months",64490 64493,judgment
+L33930-cov-047,affects decisions,facet procedures without CT or fluoroscopic guidance are not necessary; not in our criteria,64490 64493 64635,judgment
+L33930-cov-049,out of scope,sedation; not a service in our scope,,judgment
+L33930-cov-050,rule candidate,cervical or thoracic and lumbar procedures in the same session are not expected: checkable from codes and dates,64490 64493 64635,judgment
+L33930-cov-051,rule candidate,multiple blocks on the same day are not routinely necessary: checkable from codes and dates,64490 64493 64635,judgment
+L33930-cov-052,out of scope,the injected substances are not on our claims or notes,,judgment
+L33930-cov-053,rule candidate,at most 2 levels per session per region: checkable from add-on level codes and units,64490 64493 64635,judgment
+L33930-cov-054,affects decisions,diagnostic procedures must be repeated when the source of recurrent pain is in question,64490 64493 64635,judgment
+L33930-cov-055,affects decisions,therapeutic injections need documented justification why ablation cannot be done,64490 64493,judgment
+L33930-cov-056,affects decisions,limitation missing: generalized or centralized pain such as fibromyalgia,64490 64493 64635,judgment
+L33930-cov-057,out of scope,device safety instructions; no coverage condition,,judgment
+L33930-cov-059,out of scope,prolotherapy is a procedure outside our scope,,judgment
+L33930-cov-060,affects decisions,non-thermal or low-temperature denervation is not necessary; the notes can name the method,64635,judgment
+L33930-cov-061,out of scope,intra-facet implants are a procedure outside our scope,,judgment
+L33930-cov-062,affects decisions,limitation missing: facet procedure after anterior lumbar interbody fusion,64490 64493 64635,judgment
+L33930-cov-063,covered by POL-PAIN-002.c3 (paraphrase),c3 excludes another cause of the pain,,judgment
+L33930-cov-064,covered by POL-PAIN-002.c1 (paraphrase),c1 requires a pain or disability scale,,judgment
+L33930-cov-065,out of scope,general notice; the criteria and limitations are listed separately,,judgment
+L33930-cov-067,out of scope,provider training or credentialing; claims do not carry it,,judgment
+L33930-cov-068,out of scope,provider training or credentialing; claims do not carry it,,judgment
+L33930-doc-000,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L34428-cov-000,out of scope,scope statement of the LCD,,judgment
+L34428-cov-002,covered by POL-REHAB-001.c1 (paraphrase),c1 allows services given under a physical therapist's supervision,,judgment
+L34428-cov-004,out of scope,provider training or credentialing; claims do not carry it,,judgment
+L34428-cov-005,out of scope,terminology note; no requirement,,judgment
+L34428-cov-006,out of scope,provider training or credentialing; claims do not carry it,,judgment
+L34428-cov-007,out of scope,which tasks a therapist assistant may do; not on claims,,section
+L34428-cov-008,out of scope,which tasks a therapist assistant may do; not on claims,,section
+L34428-cov-009,out of scope,which tasks a therapist assistant may do; not on claims,,section
+L34428-cov-010,out of scope,which tasks a therapist assistant may do; not on claims,,section
+L34428-cov-011,out of scope,which tasks a therapist assistant may do; not on claims,,section
+L34428-cov-018,affects decisions,PT must be under a physician's care with a certified plan; c2 requires a plan but not certification,97110 97140 97161 97162 97530,judgment
+L34428-cov-019,covered by POL-REHAB-001.c3 (paraphrase),c3 requires potential for improvement or a qualifying maintenance program,,judgment
+L34428-cov-021,affects decisions,"functional limitations must be documented in objective, measurable terms; not in our criteria",97110 97140 97161 97162 97530,judgment
+L34428-cov-024,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-025,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-028,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-033,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-035,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-037,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-038,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-040,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-042,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-045,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-047,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-049,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-052,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-054,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-056,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-059,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-061,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-063,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-065,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-067,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-070,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-072,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-074,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-077,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-079,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-082,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-084,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-086,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-088,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-090,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-092,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-095,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-097,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-100,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-102,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-103,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-105,covered by POL-REHAB-001.c1 (paraphrase),an evaluation requires professional skill,,judgment
+L34428-cov-107,affects decisions,required components of the initial examination; not in our criteria,97161 97162,section
+L34428-cov-108,affects decisions,required components of the initial examination; not in our criteria,97161 97162,section
+L34428-cov-109,affects decisions,required components of the initial examination; not in our criteria,97161 97162,section
+L34428-cov-110,affects decisions,required components of the initial examination; not in our criteria,97161 97162,section
+L34428-cov-111,affects decisions,complexity factors decide low (97161) versus moderate (97162); nothing checks the level billed,97161 97162,judgment
+L34428-cov-112,affects decisions,an evaluation is covered even when it finds therapy is not needed; c2 would require a plan,97161 97162,judgment
+L34428-cov-113,out of scope,re-evaluation uses a code outside our scope,,judgment
+L34428-cov-114,out of scope,re-evaluation uses a code outside our scope,,judgment
+L34428-cov-116,covered by POL-REHAB-001.c3 (paraphrase),c3's maintenance programs,,judgment
+L34428-cov-118,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-120,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-122,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-123,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-125,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-127,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-128,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-129,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-132,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-133,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-135,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-136,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-138,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-139,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-140,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-142,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-144,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-146,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-148,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-149,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-150,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-152,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-153,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-155,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-157,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-159,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-160,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-162,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-163,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-164,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-165,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-166,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-168,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-169,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-171,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-172,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-173,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-174,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-176,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-177,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-179,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-180,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-181,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-182,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-184,covered by POL-REHAB-001.c3 (paraphrase),therapeutic procedures aim to improve function,,judgment
+L34428-cov-185,covered by POL-REHAB-001.c1 (paraphrase),c1 allows services under a therapist's supervision,,judgment
+L34428-cov-186,covered by POL-REHAB-001.c2 (paraphrase),goals documented in the written plan,,judgment
+L34428-cov-187,out of scope,concerns occupational therapy billing; not in our claims,,judgment
+L34428-cov-188,affects decisions,timed procedures require one-on-one direct contact; not in our criteria,97110 97140 97530,judgment
+L34428-cov-190,out of scope,description or background; states no coverage requirement,,judgment
+L34428-cov-191,affects decisions,therapeutic exercise needs one of these documented conditions and objective measures; our criteria are generic,97110,section
+L34428-cov-192,affects decisions,therapeutic exercise needs one of these documented conditions and objective measures; our criteria are generic,97110,section
+L34428-cov-193,affects decisions,therapeutic exercise needs one of these documented conditions and objective measures; our criteria are generic,97110,section
+L34428-cov-194,affects decisions,therapeutic exercise needs one of these documented conditions and objective measures; our criteria are generic,97110,section
+L34428-cov-195,affects decisions,therapeutic exercise needs one of these documented conditions and objective measures; our criteria are generic,97110,section
+L34428-cov-197,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-198,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-200,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-201,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-202,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-203,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-204,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-205,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-206,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-207,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-208,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-209,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-210,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-212,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-214,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-215,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-216,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-217,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-218,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-219,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-220,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-222,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-223,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-224,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-225,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-226,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-227,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-228,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-229,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-230,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-232,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-233,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-234,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-235,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-236,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-237,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-238,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-239,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-240,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-241,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-242,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-243,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-244,affects decisions,manual therapy needs documented restricted motion or spasm (or lymphedema for drainage); not in our criteria,97140,section
+L34428-cov-247,out of scope,group therapy is billed with a code outside our scope,,section
+L34428-cov-248,out of scope,group therapy is billed with a code outside our scope,,section
+L34428-cov-250,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-251,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-252,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-253,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-255,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-256,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-257,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-259,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-260,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-261,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-263,affects decisions,therapeutic activities are for patients needing a broad range of movement-based techniques; not in our criteria,97530,judgment
+L34428-cov-265,covered by POL-REHAB-001.c3 (paraphrase),c3 requires potential for improvement,,judgment
+L34428-cov-266,covered by POL-REHAB-001.c1 (paraphrase),c1 requires skill that only a therapist provides,,judgment
+L34428-cov-267,affects decisions,a clear correlation between the activity and the medical condition is required; not in our criteria,97530,judgment
+L34428-cov-269,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-271,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-272,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-274,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-275,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-276,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-278,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-280,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-281,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-282,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-283,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-284,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-285,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-287,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-289,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-cov-291,out of scope,a physical therapy service billed with a code outside our scope,,section
+L34428-doc-001,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L34428-doc-002,out of scope,general documentation statement; no specific requirement,,judgment
+L34428-doc-003,out of scope,general documentation statement; no specific requirement,,judgment
+L34428-doc-006,covered by POL-REHAB-001.c2 (paraphrase),evaluation and plan of care,,judgment
+L34428-doc-007,affects decisions,PT must be under a physician's care with a certified plan; c2 requires a plan but not certification,97110 97140 97161 97162 97530,judgment
+L34428-doc-008,covered by POL-REHAB-001.c2 (paraphrase),the plan is developed from the history and examination,,judgment
+L34428-doc-009,covered by POL-REHAB-001.c1 (paraphrase),the skilled services provided,,judgment
+L34428-doc-010,covered by POL-REHAB-001.c1 (paraphrase),rationale for the need for skilled service,,judgment
+L34428-doc-011,covered by POL-REHAB-001.c1 (paraphrase),complexity of the service,,judgment
+L34428-doc-012,rule candidate,progress reports at least every 10 treatment days: needs the patient's visit history,97110 97140 97161 97162 97530,judgment
+L34428-doc-013,out of scope,record-keeping rule; every claim in our pipeline carries its note,,judgment
+L34428-doc-014,out of scope,discharge note at the end of an episode; not a condition for a treatment claim,,judgment
+L34428-doc-015,affects decisions,services more extensive than typical need a justification statement,97110 97140 97161 97162 97530,judgment
+L34428-doc-016,rule candidate,the plan must be recertified at least every 90 days: needs the plan's dates,97110 97140 97161 97162 97530,judgment
+L34428-doc-017,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L34428-doc-019,affects decisions,PT must be under a physician's care with a certified plan; c2 requires a plan but not certification,97110 97140 97161 97162 97530,judgment
+L34428-doc-020,covered by POL-REHAB-001.c1 (paraphrase),services require a therapist's skills,,judgment
+L34428-doc-021,covered by POL-REHAB-001.c2 (paraphrase),"the plan sets type, frequency and duration",,judgment
+L34428-doc-023,covered by POL-REHAB-001.c2 (paraphrase),variables considered in the evaluation,,judgment
+L34428-doc-024,out of scope,record-keeping rule; no coverage condition,,judgment
+L34428-doc-025,affects decisions,"objective progress toward goals must be documented; c3 requires potential for improvement, not measured progress",97110 97140 97161 97162 97530,judgment
+L34428-doc-026,affects decisions,"objective progress toward goals must be documented; c3 requires potential for improvement, not measured progress",97110 97140 97161 97162 97530,judgment
+L34428-doc-027,covered by POL-REHAB-001.c2 (paraphrase),changes to the plan of care,,judgment
+L34428-doc-028,affects decisions,"objective progress toward goals must be documented; c3 requires potential for improvement, not measured progress",97110 97140 97161 97162 97530,judgment
+L34428-doc-030,covered by POL-REHAB-001.c3 (paraphrase),maintenance therapy requirements,,judgment
+L34428-doc-031,out of scope,comprehensive outpatient rehabilitation facility setting; not in our claims,,judgment
+L34428-doc-032,out of scope,comprehensive outpatient rehabilitation facility services; not in our scope,,judgment
+L33558-cov-008,affects decisions,covered indication missing: expected acceleration of cataract by a planned procedure or irradiation,66982 66984,judgment
+L33558-cov-011,out of scope,description or background; states no coverage requirement,,judgment
+L33558-cov-012,covered by POL-SURG-001.c1 (paraphrase),"c1 decides on functional impairment, not a fixed acuity",,judgment
+L33558-cov-014,affects decisions,bilateral surgery: each eye needs its own documented necessity; our criteria are not per eye,66982 66984,judgment
+L33558-cov-015,out of scope,counselling guidance on same-day bilateral surgery; no coverage condition,,judgment
+L33558-cov-017,affects decisions,complex cataract (66982) is justified only by these intra- or post-operative factors; no criterion covers it,66982,section
+L33558-cov-018,affects decisions,complex cataract (66982) is justified only by these intra- or post-operative factors; no criterion covers it,66982,section
+L33558-cov-019,affects decisions,complex cataract (66982) is justified only by these intra- or post-operative factors; no criterion covers it,66982,section
+L33558-cov-020,affects decisions,complex cataract (66982) is justified only by these intra- or post-operative factors; no criterion covers it,66982,section
+L33558-cov-021,affects decisions,complex cataract (66982) is justified only by these intra- or post-operative factors; no criterion covers it,66982,section
+L34005-cov-014,affects decisions,covered indication missing from our criteria,45378 45380 45385,judgment
+L34005-cov-018,covered by POL-SURG-002.c3 (paraphrase),same sentence as c3's source (the LCD repeats it),,judgment
+L34005-cov-022,affects decisions,covered indication missing from our criteria,45378 45380 45385,judgment
+L34005-cov-024,affects decisions,covered indication missing from our criteria,45378 45380 45385,judgment
+L34005-cov-025,affects decisions,covered indication missing from our criteria,45378 45380 45385,judgment
+L34005-cov-026,affects decisions,covered indication missing from our criteria,45378 45380 45385,judgment
+L34005-cov-027,out of scope,therapeutic colonoscopy code outside our scope,,judgment
+L34005-cov-028,out of scope,therapeutic colonoscopy code outside our scope,,judgment
+L34005-cov-029,affects decisions,excision of colonic polyps is the indication for polyp removal (45385); no criterion states it,45385,judgment
+L34005-cov-030,out of scope,therapeutic colonoscopy code outside our scope,,judgment
+L34005-cov-031,out of scope,therapeutic colonoscopy code outside our scope,,judgment
+L34005-cov-032,affects decisions,covered indication missing from our criteria,45378 45380 45385,judgment
+L34005-cov-033,affects decisions,covered indication missing from our criteria,45378 45380 45385,judgment
+L34005-cov-034,out of scope,therapeutic colonoscopy code outside our scope,,judgment
+L34005-cov-036,out of scope,lead-in sentence; its conditions are the list items,,judgment
+L34005-cov-037,affects decisions,limitation missing from our criteria,45378 45380 45385,judgment
+L34005-cov-038,affects decisions,limitation missing from our criteria,45378 45380 45385,judgment
+L34005-cov-039,affects decisions,limitation missing from our criteria,45378 45380 45385,judgment
+L34005-cov-040,affects decisions,limitation missing from our criteria,45378 45380 45385,judgment
+L34005-cov-041,affects decisions,limitation missing from our criteria,45378 45380 45385,judgment
+L34005-cov-042,affects decisions,limitation missing from our criteria,45378 45380 45385,judgment
+L34005-cov-043,affects decisions,limitation missing from our criteria,45378 45380 45385,judgment
+L34005-cov-044,covered by POL-SURG-002.c1 (paraphrase),c1 covers bleeding only when it is not from a rectal source,,judgment
+L34005-cov-046,affects decisions,limitation missing from our criteria,45378 45380 45385,section
+L34005-cov-047,affects decisions,limitation missing from our criteria,45378 45380 45385,section
+L34005-cov-048,affects decisions,limitation missing from our criteria,45378 45380 45385,section
+L34005-cov-049,affects decisions,limitation missing from our criteria,45378 45380 45385,judgment
+L34005-cov-051,out of scope,contractor jurisdiction note; no requirement,,judgment
+L34005-cov-053,out of scope,financial liability notice (ABN); not a coverage condition,,judgment
+L34005-doc-000,out of scope,general documentation statement; no specific requirement,,judgment
+L34005-doc-001,affects decisions,covered indication missing from our criteria,45378 45380 45385,judgment
+L34005-doc-002,out of scope,records for an incomplete colonoscopy; no coverage condition,,judgment
+L34209-cov-000,out of scope,description or background; states no coverage requirement,,judgment
+L34209-cov-001,out of scope,description or background; states no coverage requirement,,judgment
+L34209-cov-002,out of scope,"describes sclerotherapy, a procedure outside our scope",,judgment
+L34209-cov-003,out of scope,description or background; states no coverage requirement,,judgment
+L34209-cov-004,out of scope,pre-procedure duplex mapping; the ultrasound codes are outside our scope,,judgment
+L34209-cov-005,out of scope,intra-procedure ultrasound guidance; code outside our scope,,judgment
+L34209-cov-006,out of scope,ultrasound guidance with sclerotherapy; outside our scope,,judgment
+L34209-cov-007,out of scope,lead-in sentence; its requirements are the list items,,judgment
+L34209-cov-010,affects decisions,qualifying symptom list (one or more required); our criteria say only 'symptomatic',36475 36478 37765,section
+L34209-cov-011,affects decisions,qualifying symptom list (one or more required); our criteria say only 'symptomatic',36475 36478 37765,section
+L34209-cov-012,affects decisions,qualifying symptom list (one or more required); our criteria say only 'symptomatic',36475 36478 37765,section
+L34209-cov-013,affects decisions,qualifying symptom list (one or more required); our criteria say only 'symptomatic',36475 36478 37765,section
+L34209-cov-014,affects decisions,qualifying symptom list (one or more required); our criteria say only 'symptomatic',36475 36478 37765,section
+L34209-cov-015,affects decisions,qualifying symptom list (one or more required); our criteria say only 'symptomatic',36475 36478 37765,section
+L34209-cov-017,affects decisions,anatomical requirement for ablation missing from our criteria,36475 36478,section
+L34209-cov-018,affects decisions,anatomical requirement for ablation missing from our criteria,36475 36478,section
+L34209-cov-019,affects decisions,anatomical requirement for ablation missing from our criteria,36475 36478,section
+L34209-cov-020,affects decisions,anatomical requirement for ablation missing from our criteria,36475 36478,section
+L34209-cov-023,out of scope,intra-operative ultrasound guidance code is outside our scope,,judgment
+L34209-cov-026,out of scope,FDA approval of the device; not on claims or notes,,judgment
+L34209-cov-027,out of scope,pre-operative duplex scan code is outside our scope,,judgment
+L34209-cov-028,rule candidate,same-day stab phlebectomy of the same vein with ablation is allowed when criteria are met; a same-day rule must not deny it,36475 36478 37765,judgment
+L34209-cov-029,out of scope,sclerotherapy codes are outside our scope,,judgment
+L34209-cov-030,covered by POL-SURG-003.c2 (paraphrase),c2 excludes asymptomatic veins,,judgment
+L34209-cov-031,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L34209-doc-001,covered by POL-SURG-003.c1 (paraphrase),c1 requires symptoms and 3 months of failed conservative care,,judgment
+L34209-doc-002,affects decisions,documentation of tests confirming the vascular pathology is not in our criteria,36475 36478 37765,judgment
+L34209-doc-003,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L34209-doc-005,out of scope,general statement that undocumented services are denied; no new requirement,,judgment
+L33944-cov-016,affects decisions,conditions in groups 2 and 3 are reconstructive without the visual-field review our c2-c3 require,15822 15823 67904,judgment
+L33944-cov-023,out of scope,brow ptosis repair is a procedure outside our scope,,judgment
+L33944-cov-029,affects decisions,"anophthalmic socket cases need complaints, exam findings and failed prosthesis modification",15822 15823 67904,judgment
+L33944-cov-030,affects decisions,"repair of defects from disease, palsy, trauma or tumor surgery is reconstructive; ptosis repair (67904) after a palsy would fail our visual-field criterion",67904,judgment
+L33944-cov-031,out of scope,eyelid repair treated by repair codes outside our scope,,judgment
+L33944-cov-032,out of scope,eyelid repair treated by repair codes outside our scope,,judgment
+L33944-cov-033,out of scope,eyelid repair treated by repair codes outside our scope,,judgment
+L33944-cov-034,out of scope,eyelid repair treated by repair codes outside our scope,,judgment
+L33944-cov-035,out of scope,eyelid repair treated by repair codes outside our scope,,judgment
+L33944-cov-036,out of scope,eyelid repair treated by repair codes outside our scope,,judgment
+L33944-cov-037,out of scope,eyelid repair treated by repair codes outside our scope,,judgment
+L33944-cov-038,affects decisions,congenital ptosis is reconstructive without a visual-field loss; our c3 would deny ptosis repair,67904,judgment
+L33944-cov-039,out of scope,eyelid repair treated by repair codes outside our scope,,judgment
+L33944-cov-040,affects decisions,covered indication missing: chronic dermatitis of pretarsal skin from redundant upper lid skin,15822 15823,judgment
+L33944-cov-041,covered by POL-SURG-004.c2 (paraphrase),c2 requires documented functional complaints,,judgment
+L33944-cov-042,out of scope,blepharospasm is treated by procedures outside our scope,,judgment
+L33944-cov-043,out of scope,blepharospasm documentation; procedures outside our scope,,judgment
+L38902-cov-000,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L38902-cov-042,covered by POL-WOUND-001.c1 (paraphrase),a type of wound whose dead tissue c1's debridement removes,,section
+L38902-cov-043,covered by POL-WOUND-001.c1 (paraphrase),a type of wound whose dead tissue c1's debridement removes,,section
+L38902-cov-044,covered by POL-WOUND-001.c1 (paraphrase),a type of wound whose dead tissue c1's debridement removes,,section
+L38902-cov-045,covered by POL-WOUND-001.c1 (paraphrase),a type of wound whose dead tissue c1's debridement removes,,section
+L38902-cov-046,covered by POL-WOUND-001.c1 (paraphrase),a type of wound whose dead tissue c1's debridement removes,,section
+L38902-cov-047,out of scope,heading only,,judgment
+L38902-cov-048,covered by POL-WOUND-001.c1 (paraphrase),c1 covers debridement to remove dead tissue and promote healing,,judgment
+L38902-cov-050,out of scope,description or background; states no coverage requirement,,judgment
+L38902-cov-052,out of scope,non-selective debridement uses a code outside our scope,,section
+L38902-cov-053,out of scope,non-selective debridement uses a code outside our scope,,section
+L38902-cov-054,out of scope,non-selective debridement uses a code outside our scope,,section
+L38902-cov-055,out of scope,non-selective debridement uses a code outside our scope,,section
+L38902-cov-056,out of scope,heading only,,judgment
+L38902-cov-057,affects decisions,conditions needing extensive surgical debridement; our criteria do not name them,11042,section
+L38902-cov-058,affects decisions,conditions needing extensive surgical debridement; our criteria do not name them,11042,section
+L38902-cov-059,affects decisions,conditions needing extensive surgical debridement; our criteria do not name them,11042,section
+L38902-cov-060,affects decisions,conditions needing extensive surgical debridement; our criteria do not name them,11042,section
+L38902-cov-061,affects decisions,conditions needing extensive surgical debridement; our criteria do not name them,11042,section
+L38902-cov-062,affects decisions,surgical debridement requires excised tissue; our criteria do not separate surgical from selective debridement,11042,judgment
+L38902-cov-063,out of scope,description or background; states no coverage requirement,,judgment
+L38902-cov-064,out of scope,heading only,,judgment
+L38902-cov-065,covered by POL-WOUND-001.c2 (paraphrase),c2 requires the plan to address underlying problems,,judgment
+L38902-cov-066,out of scope,negative pressure wound therapy uses codes outside our scope,,judgment
+L38902-cov-067,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L38902-cov-070,out of scope,low-frequency non-contact ultrasound uses a code outside our scope,,section
+L38902-cov-071,out of scope,low-frequency non-contact ultrasound uses a code outside our scope,,section
+L38902-cov-072,out of scope,low-frequency non-contact ultrasound uses a code outside our scope,,section
+L38902-cov-073,out of scope,low-frequency non-contact ultrasound uses a code outside our scope,,section
+L38902-cov-074,out of scope,low-frequency non-contact ultrasound uses a code outside our scope,,section
+L38902-cov-075,out of scope,low-frequency non-contact ultrasound uses a code outside our scope,,section
+L38902-cov-076,affects decisions,"indication for multi-layer compression (29581), especially venous leg ulcers; no criterion covers 29581",29581,judgment
+L38902-cov-078,covered by POL-WOUND-001.c2 (paraphrase),c2 requires control of complicating factors,,judgment
+L38902-cov-079,covered by POL-WOUND-001.c1 (paraphrase),"c1's debridement removes dead tissue, so a clean wound does not meet it",,judgment
+L38902-cov-080,affects decisions,debridement counts as surgical only when the record supports excision; code choice depends on it,11042,judgment
+L38902-cov-081,covered by POL-WOUND-001.c2 (paraphrase),c2 requires a plan of care,,judgment
+L38902-cov-082,affects decisions,continuing a type of wound care requires evidence of improvement; not in our criteria,11042 97597 29581,judgment
+L38902-cov-083,covered by POL-WOUND-001.c2 (paraphrase),"palliative goals when healing is not possible, as c2 allows",,section
+L38902-cov-084,covered by POL-WOUND-001.c2 (paraphrase),"palliative goals when healing is not possible, as c2 allows",,section
+L38902-cov-085,covered by POL-WOUND-001.c2 (paraphrase),"palliative goals when healing is not possible, as c2 allows",,section
+L38902-cov-086,covered by POL-WOUND-001.c2 (paraphrase),complicating factors must be documented,,judgment
+L38902-cov-087,out of scope,autolytic debridement uses a code outside our scope,,judgment
+L38902-cov-088,affects decisions,extensive eczematous or infected skin is not a localized debridement; code choice depends on extent,11042 97597,judgment
+L38902-cov-089,covered by POL-WOUND-001.c1 (paraphrase),no devitalized tissue means c1 is not met,,judgment
+L38902-cov-090,out of scope,evidence status of a debridement method; not on claims,,judgment
+L38902-cov-091,out of scope,financial liability notice (ABN); not a coverage condition,,judgment
+L38902-cov-092,out of scope,dressing changes use codes outside our scope,,judgment
+L38902-cov-093,affects decisions,"no progress after 30 days calls for reassessment; c3's trigger is frequency, not 30 days without progress",11042 97597 29581,judgment
+L38902-cov-094,affects decisions,limitation missing: care for cosmetic purposes,11042 97597 29581,judgment
+L38902-cov-095,out of scope,local anesthesia codes are outside our scope,,judgment
+L38902-cov-096,out of scope,lead-in sentence; its conditions are the list items,,judgment
+L38902-cov-097,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-098,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-099,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-100,out of scope,description or background; states no coverage requirement,,judgment
+L38902-cov-102,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-103,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-104,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-105,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-106,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-107,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-108,affects decisions,the notes may describe these; they are not billable debridement,11042 97597,section
+L38902-cov-109,out of scope,clinical caution on irrigation; no coverage condition,,judgment
+L38902-cov-110,out of scope,personnel skill level; not on claims,,judgment
+L38902-cov-112,affects decisions,"expected measurable progress (smaller wound, granulation); not in our criteria",11042 97597 29581,section
+L38902-cov-113,affects decisions,"expected measurable progress (smaller wound, granulation); not in our criteria",11042 97597 29581,section
+L38902-cov-114,covered by POL-WOUND-001.c3 (paraphrase),c3 addresses the interval and frequency of debridement,,judgment
+L38902-cov-115,covered by POL-WOUND-001.c2 (paraphrase),c2 includes poor circulation among the factors the plan addresses,,judgment
+L38902-cov-116,covered by POL-WOUND-001.c2 (paraphrase),c2 includes metabolic and nutritional problems,,judgment
+L38902-cov-117,affects decisions,30 days allowed to organize care before progress must be documented; not in our criteria,11042 97597 29581,judgment
+L38902-cov-118,affects decisions,no documented healing after 30 days requires a revised plan; not in our criteria,11042 97597 29581,judgment
+L38902-cov-120,out of scope,general notice; the criteria and limitations are listed separately,,judgment
+L38902-cov-121,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L38902-doc-000,out of scope,cross-reference to another document; states no requirement itself,,judgment
+L38902-doc-002,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L38902-doc-003,out of scope,"administrative (records on request, review, compliance); not on claims or notes",,judgment
+L38902-doc-004,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-005,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-006,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-007,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-008,covered by POL-WOUND-001.c1 (paraphrase),"necrotic tissue documented, as c1 needs",,judgment
+L38902-doc-009,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-010,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-011,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-012,out of scope,lead-in sentence; its conditions are the list items,,judgment
+L38902-doc-013,covered by POL-WOUND-001.c1 (paraphrase),c1's debridement aims to promote healing,,judgment
+L38902-doc-014,covered by POL-WOUND-001.c2 (paraphrase),c2 sets goals when closure is not possible,,judgment
+L38902-doc-015,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-016,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-017,covered by POL-WOUND-001.c1 (paraphrase),indication and necessity for the debridement,,judgment
+L38902-doc-019,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-020,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-021,covered by POL-WOUND-001.c2 (paraphrase),vascular status is one of c2's complicating factors,,judgment
+L38902-doc-022,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-023,covered by POL-WOUND-001.c2 (paraphrase),goals and response to treatment,,judgment
+L38902-doc-024,affects decisions,documentation the LCD requires that our criteria do not; a note without it would pend,11042 97597,section
+L38902-doc-025,covered by POL-WOUND-001.c1 (paraphrase),necrotic or devitalized tissue documented,,judgment
+L38902-doc-026,covered by POL-WOUND-001.c2 (paraphrase),goals and control of complicating factors,,judgment
+L38902-doc-027,covered by POL-WOUND-001.c2 (paraphrase),contributory conditions such as nutrition,,judgment
+L38902-doc-028,out of scope,personnel skill level; not on claims,,judgment
+L38902-doc-031,out of scope,general statement on local standards of practice,,judgment
+L38902-doc-032,covered by POL-WOUND-001.c3 (paraphrase),same statement on interval and frequency as c3's source,,judgment
+L38902-doc-033,rule candidate,more than twelve surgical debridements is unusual: needs the patient's history of dates,11042,judgment
+L38902-doc-034,out of scope,low-frequency ultrasound uses a code outside our scope,,judgment
+L38902-doc-035,out of scope,general statement on medical review,,judgment

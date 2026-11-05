@@ -1,0 +1,260 @@
+{
+  "label": "finetuned-v1-validation",
+  "model": "claimsense-decision:v1",
+  "engine": "ollama 0.34.1",
+  "split": "validation",
+  "dataset": {
+    "generator_version": "decision-dataset-v2",
+    "prompt_version": "decision_v2",
+    "retrieval": "procedure+diagnoses+notes-v1; code filter; top 5; min score 0.0; BAAI/bge-small-en-v1.5; knowledge 36cfc77305a5",
+    "seed": 20260921,
+    "test_records": 300
+  },
+  "metrics": {
+    "records": 300,
+    "valid_output_rate": 0.94,
+    "top_errors": [
+      [
+        "line 2 is missing from the output",
+        5
+      ],
+      [
+        "criterion POL-CAR-002.c3 was not retrieved for this line",
+        3
+      ],
+      [
+        "PEND needs the missing information",
+        1
+      ],
+      [
+        "APPROVE with criterion POL-DX-003.c3 NOT_DOCUMENTED",
+        1
+      ],
+      [
+        "APPROVE with criterion POL-WOUND-001.c1 NOT_DOCUMENTED",
+        1
+      ],
+      [
+        "APPROVE with criterion POL-SURG-004.c3 NOT_MET",
+        1
+      ],
+      [
+        "APPROVE with criterion POL-REHAB-001.c3 NOT_DOCUMENTED",
+        1
+      ],
+      [
+        "line 3 is not a line to decide",
+        1
+      ]
+    ],
+    "decisions": {
+      "lines": 377,
+      "accuracy": 0.8462,
+      "macro_f1": 0.8158,
+      "per_class": {
+        "APPROVE": {
+          "precision": 0.8911,
+          "recall": 0.9278,
+          "f1": 0.9091,
+          "support": 194
+        },
+        "PEND": {
+          "precision": 0.6044,
+          "recall": 0.7237,
+          "f1": 0.6587,
+          "support": 76
+        },
+        "DENY": {
+          "precision": 1.0,
+          "recall": 0.785,
+          "f1": 0.8796,
+          "support": 107
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "APPROVE",
+          "PEND",
+          "DENY"
+        ],
+        "rows_gold_columns_predicted": [
+          [
+            180,
+            14,
+            0
+          ],
+          [
+            21,
+            55,
+            0
+          ],
+          [
+            1,
+            22,
+            84
+          ]
+        ]
+      }
+    },
+    "decisions_valid_only": {
+      "lines": 344,
+      "accuracy": 0.8983,
+      "macro_f1": 0.8704,
+      "per_class": {
+        "APPROVE": {
+          "precision": 0.8911,
+          "recall": 0.9626,
+          "f1": 0.9254,
+          "support": 187
+        },
+        "PEND": {
+          "precision": 0.7759,
+          "recall": 0.6818,
+          "f1": 0.7258,
+          "support": 66
+        },
+        "DENY": {
+          "precision": 1.0,
+          "recall": 0.9231,
+          "f1": 0.96,
+          "support": 91
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "APPROVE",
+          "PEND",
+          "DENY"
+        ],
+        "rows_gold_columns_predicted": [
+          [
+            180,
+            7,
+            0
+          ],
+          [
+            21,
+            45,
+            0
+          ],
+          [
+            1,
+            6,
+            84
+          ]
+        ]
+      }
+    },
+    "criterion_status_accuracy": 0.9216,
+    "criterion_status_confusion": [
+      [
+        "NOT_DOCUMENTED->NOT_APPLICABLE",
+        20
+      ],
+      [
+        "NOT_DOCUMENTED->MET",
+        11
+      ],
+      [
+        "NOT_APPLICABLE->NOT_DOCUMENTED",
+        10
+      ],
+      [
+        "NOT_MET->NOT_APPLICABLE",
+        9
+      ],
+      [
+        "MET->NOT_MET",
+        6
+      ],
+      [
+        "MET->NOT_DOCUMENTED",
+        5
+      ],
+      [
+        "NOT_MET->NOT_DOCUMENTED",
+        5
+      ],
+      [
+        "NOT_DOCUMENTED->NOT_MET",
+        4
+      ]
+    ],
+    "evidence_quoted_rate": 1.0,
+    "benefit_category_accuracy": 1.0,
+    "reasons_accuracy": 0.7587,
+    "complexity_accuracy": 0.8511,
+    "claim_decision_accuracy": 0.86,
+    "latency_ms": {
+      "p50": 5043,
+      "p95": 10289
+    },
+    "groups": {
+      "scenario:approve_single": {
+        "records": 62,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.9839
+      },
+      "scenario:deny_criterion": {
+        "records": 40,
+        "valid_output_rate": 0.95,
+        "line_accuracy": 0.9
+      },
+      "scenario:deny_dx": {
+        "records": 21,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:deny_exclusion": {
+        "records": 9,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:ncci_bypass": {
+        "records": 17,
+        "valid_output_rate": 0.9412,
+        "line_accuracy": 0.7353
+      },
+      "scenario:office_plus_procedure": {
+        "records": 22,
+        "valid_output_rate": 0.7727,
+        "line_accuracy": 0.75
+      },
+      "scenario:office_same_day": {
+        "records": 16,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.9375
+      },
+      "scenario:office_visit": {
+        "records": 19,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:pend_missing": {
+        "records": 43,
+        "valid_output_rate": 0.9767,
+        "line_accuracy": 0.814
+      },
+      "scenario:rule_denied_line": {
+        "records": 17,
+        "valid_output_rate": 0.9412,
+        "line_accuracy": 0.7647
+      },
+      "scenario:same_profile_multi": {
+        "records": 18,
+        "valid_output_rate": 0.7222,
+        "line_accuracy": 0.775
+      },
+      "scenario:two_policy": {
+        "records": 16,
+        "valid_output_rate": 0.8125,
+        "line_accuracy": 0.6562
+      },
+      "seen_policies": {
+        "records": 300,
+        "valid_output_rate": 0.94,
+        "line_accuracy": 0.8462
+      }
+    }
+  }
+}

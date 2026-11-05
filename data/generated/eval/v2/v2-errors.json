@@ -1,0 +1,1202 @@
+{
+  "lines": 416,
+  "wrong_lines": 53,
+  "invalid_output_lines": 4,
+  "direction": {
+    "PEND->APPROVE": 19,
+    "DENY->PEND": 14,
+    "DENY->APPROVE": 10,
+    "APPROVE->PEND": 10
+  },
+  "by_policy": {
+    "POL-IMG-001": {
+      "lines": 43,
+      "wrong": 10,
+      "directions": {
+        "DENY->PEND": 2,
+        "DENY->APPROVE": 2,
+        "PEND->APPROVE": 5,
+        "APPROVE->PEND": 1
+      }
+    },
+    "POL-DX-001": {
+      "lines": 24,
+      "wrong": 6,
+      "directions": {
+        "PEND->APPROVE": 2,
+        "DENY->APPROVE": 3,
+        "DENY->PEND": 1
+      }
+    },
+    "POL-IMG-002": {
+      "lines": 25,
+      "wrong": 5,
+      "directions": {
+        "APPROVE->PEND": 3,
+        "DENY->PEND": 2
+      }
+    },
+    "POL-PAIN-001": {
+      "lines": 8,
+      "wrong": 5,
+      "directions": {
+        "DENY->APPROVE": 3,
+        "PEND->APPROVE": 1,
+        "DENY->PEND": 1
+      }
+    },
+    "POL-WOUND-001": {
+      "lines": 35,
+      "wrong": 5,
+      "directions": {
+        "PEND->APPROVE": 4,
+        "DENY->APPROVE": 1
+      }
+    },
+    "(no criteria)": {
+      "lines": 43,
+      "wrong": 4,
+      "directions": {
+        "PEND->APPROVE": 1,
+        "APPROVE->PEND": 3
+      }
+    },
+    "POL-DX-002": {
+      "lines": 16,
+      "wrong": 4,
+      "directions": {
+        "PEND->APPROVE": 2,
+        "DENY->PEND": 2
+      }
+    },
+    "POL-REHAB-001": {
+      "lines": 14,
+      "wrong": 3,
+      "directions": {
+        "DENY->PEND": 3
+      }
+    },
+    "POL-SURG-002": {
+      "lines": 26,
+      "wrong": 3,
+      "directions": {
+        "PEND->APPROVE": 1,
+        "APPROVE->PEND": 2
+      }
+    },
+    "POL-CAR-002": {
+      "lines": 21,
+      "wrong": 2,
+      "directions": {
+        "DENY->APPROVE": 1,
+        "APPROVE->PEND": 1
+      }
+    },
+    "POL-BH-001": {
+      "lines": 37,
+      "wrong": 2,
+      "directions": {
+        "DENY->PEND": 2
+      }
+    },
+    "POL-SURG-003": {
+      "lines": 22,
+      "wrong": 1,
+      "directions": {
+        "PEND->APPROVE": 1
+      }
+    },
+    "POL-DX-003": {
+      "lines": 23,
+      "wrong": 1,
+      "directions": {
+        "DENY->PEND": 1
+      }
+    },
+    "POL-SURG-001": {
+      "lines": 17,
+      "wrong": 1,
+      "directions": {
+        "PEND->APPROVE": 1
+      }
+    },
+    "POL-SURG-004": {
+      "lines": 16,
+      "wrong": 1,
+      "directions": {
+        "PEND->APPROVE": 1
+      }
+    }
+  },
+  "wrong_criteria_by_type": {
+    "requirement": 33,
+    "conditional": 12,
+    "exclusion": 6,
+    "conditional (indication group)": 4
+  },
+  "wrong_criterion_statuses": {
+    "NOT_MET->NOT_DOCUMENTED": 11,
+    "MET->NOT_DOCUMENTED": 9,
+    "NOT_DOCUMENTED->MET": 8,
+    "NOT_MET->NOT_APPLICABLE": 8,
+    "NOT_DOCUMENTED->NOT_APPLICABLE": 7,
+    "NOT_MET->MET": 5,
+    "MET->NOT_APPLICABLE": 4,
+    "NOT_APPLICABLE->NOT_DOCUMENTED": 2,
+    "NOT_APPLICABLE->MET": 1
+  },
+  "tiers": {
+    "FULL": {
+      "claims": 134,
+      "with_wrong_line": 15,
+      "wrong_lines": 19
+    },
+    "QUICK": {
+      "claims": 84,
+      "with_wrong_line": 14,
+      "wrong_lines": 15
+    },
+    "STANDARD": {
+      "claims": 82,
+      "with_wrong_line": 16,
+      "wrong_lines": 19
+    }
+  },
+  "guard": {
+    "met_criteria_changed": 3,
+    "rows": [
+      {
+        "model": "v2",
+        "line_accuracy": 0.8726,
+        "macro_f1": 0.8532,
+        "deny_precision": 1.0,
+        "wrong_approvals": 29,
+        "wrong_denials": 0
+      },
+      {
+        "model": "v2 + guard",
+        "line_accuracy": 0.8678,
+        "macro_f1": 0.8487,
+        "deny_precision": 1.0,
+        "wrong_approvals": 28,
+        "wrong_denials": 0
+      }
+    ],
+    "macro_f1_change": -0.0045
+  },
+  "wrong": [
+    {
+      "record_id": "DV2-TE-00009",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-001.c1",
+          "policy_id": "POL-DX-001",
+          "type": "requirement",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00014",
+      "line_no": 2,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "(no criteria)"
+      ],
+      "wrong_criteria": []
+    },
+    {
+      "record_id": "DV2-TE-00017",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-001.c4",
+          "policy_id": "POL-DX-001",
+          "type": "exclusion",
+          "gold": "NOT_MET",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00021",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c1",
+          "policy_id": "POL-IMG-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        },
+        {
+          "criterion_id": "POL-IMG-001.c5",
+          "policy_id": "POL-IMG-001",
+          "type": "requirement",
+          "gold": "MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00032",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-001.c4",
+          "policy_id": "POL-DX-001",
+          "type": "exclusion",
+          "gold": "NOT_MET",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00039",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c2",
+          "policy_id": "POL-IMG-001",
+          "type": "conditional",
+          "gold": "NOT_MET",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00044",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c2",
+          "policy_id": "POL-IMG-001",
+          "type": "conditional",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00044",
+      "line_no": 2,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c2",
+          "policy_id": "POL-IMG-001",
+          "type": "conditional",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00046",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c1",
+          "policy_id": "POL-IMG-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        },
+        {
+          "criterion_id": "POL-IMG-001.c2",
+          "policy_id": "POL-IMG-001",
+          "type": "conditional",
+          "gold": "MET",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00046",
+      "line_no": 2,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-002.c3",
+          "policy_id": "POL-IMG-002",
+          "type": "conditional",
+          "gold": "MET",
+          "predicted": "NOT_APPLICABLE"
+        },
+        {
+          "criterion_id": "POL-IMG-002.c6",
+          "policy_id": "POL-IMG-002",
+          "type": "requirement",
+          "gold": "MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00055",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c1",
+          "policy_id": "POL-IMG-001",
+          "type": "requirement",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00057",
+      "line_no": 2,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-002.c6",
+          "policy_id": "POL-IMG-002",
+          "type": "requirement",
+          "gold": "MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00059",
+      "line_no": 1,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c5",
+          "policy_id": "POL-IMG-001",
+          "type": "requirement",
+          "gold": "MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00059",
+      "line_no": 2,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-002.c4",
+          "policy_id": "POL-IMG-002",
+          "type": "conditional",
+          "gold": "NOT_APPLICABLE",
+          "predicted": "NOT_DOCUMENTED"
+        },
+        {
+          "criterion_id": "POL-IMG-002.c6",
+          "policy_id": "POL-IMG-002",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00062",
+      "line_no": 2,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-002.c5",
+          "policy_id": "POL-IMG-002",
+          "type": "exclusion",
+          "gold": "NOT_MET",
+          "predicted": "NOT_APPLICABLE"
+        },
+        {
+          "criterion_id": "POL-IMG-002.c6",
+          "policy_id": "POL-IMG-002",
+          "type": "requirement",
+          "gold": "MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00063",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-001.c4",
+          "policy_id": "POL-DX-001",
+          "type": "exclusion",
+          "gold": "NOT_MET",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00067",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-SURG-003"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-SURG-003.c1",
+          "policy_id": "POL-SURG-003",
+          "type": "requirement",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00071",
+      "line_no": 1,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": false,
+      "policies": [
+        "(no criteria)"
+      ],
+      "wrong_criteria": []
+    },
+    {
+      "record_id": "DV2-TE-00071",
+      "line_no": 2,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": false,
+      "policies": [
+        "POL-DX-001"
+      ],
+      "wrong_criteria": []
+    },
+    {
+      "record_id": "DV2-TE-00085",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c1",
+          "policy_id": "POL-IMG-001",
+          "type": "requirement",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00091",
+      "line_no": 1,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-002.c6",
+          "policy_id": "POL-IMG-002",
+          "type": "requirement",
+          "gold": "MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00095",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c4",
+          "policy_id": "POL-IMG-001",
+          "type": "exclusion",
+          "gold": "NOT_MET",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00096",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-IMG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-IMG-001.c1",
+          "policy_id": "POL-IMG-001",
+          "type": "requirement",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00097",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-001.c6",
+          "policy_id": "POL-DX-001",
+          "type": "conditional",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00104",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-PAIN-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-PAIN-001.c10",
+          "policy_id": "POL-PAIN-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00120",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-REHAB-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-REHAB-001.c7",
+          "policy_id": "POL-REHAB-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00120",
+      "line_no": 2,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-REHAB-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-REHAB-001.c7",
+          "policy_id": "POL-REHAB-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00120",
+      "line_no": 3,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-REHAB-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-REHAB-001.c7",
+          "policy_id": "POL-REHAB-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00130",
+      "line_no": 2,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-WOUND-001"
+      ],
+      "wrong_criteria": []
+    },
+    {
+      "record_id": "DV2-TE-00177",
+      "line_no": 1,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": false,
+      "policies": [
+        "(no criteria)"
+      ],
+      "wrong_criteria": []
+    },
+    {
+      "record_id": "DV2-TE-00181",
+      "line_no": 2,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-SURG-002"
+      ],
+      "wrong_criteria": []
+    },
+    {
+      "record_id": "DV2-TE-00184",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-PAIN-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-PAIN-001.c10",
+          "policy_id": "POL-PAIN-001",
+          "type": "requirement",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00191",
+      "line_no": 2,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-WOUND-001"
+      ],
+      "wrong_criteria": []
+    },
+    {
+      "record_id": "DV2-TE-00195",
+      "line_no": 2,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-CAR-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-CAR-002.c5",
+          "policy_id": "POL-CAR-002",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00196",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-002.c5",
+          "policy_id": "POL-DX-002",
+          "type": "requirement",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00197",
+      "line_no": 2,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-SURG-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-SURG-002.c7",
+          "policy_id": "POL-SURG-002",
+          "type": "conditional (indication group)",
+          "gold": "MET",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00205",
+      "line_no": 2,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-PAIN-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-PAIN-001.c6",
+          "policy_id": "POL-PAIN-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00218",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-WOUND-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-WOUND-001.c4",
+          "policy_id": "POL-WOUND-001",
+          "type": "conditional",
+          "gold": "NOT_MET",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00224",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-003"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-003.c5",
+          "policy_id": "POL-DX-003",
+          "type": "exclusion",
+          "gold": "NOT_MET",
+          "predicted": "NOT_APPLICABLE"
+        },
+        {
+          "criterion_id": "POL-DX-003.c7",
+          "policy_id": "POL-DX-003",
+          "type": "requirement",
+          "gold": "MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00225",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-BH-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-BH-001.c4",
+          "policy_id": "POL-BH-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00243",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-002.c5",
+          "policy_id": "POL-DX-002",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00243",
+      "line_no": 2,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-002.c5",
+          "policy_id": "POL-DX-002",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00252",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-SURG-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-SURG-001.c1",
+          "policy_id": "POL-SURG-001",
+          "type": "conditional (indication group)",
+          "gold": "NOT_APPLICABLE",
+          "predicted": "MET"
+        },
+        {
+          "criterion_id": "POL-SURG-001.c4",
+          "policy_id": "POL-SURG-001",
+          "type": "conditional (indication group)",
+          "gold": "NOT_MET",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00255",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-DX-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-DX-002.c5",
+          "policy_id": "POL-DX-002",
+          "type": "requirement",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00257",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-BH-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-BH-001.c4",
+          "policy_id": "POL-BH-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00266",
+      "line_no": 1,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-WOUND-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-WOUND-001.c4",
+          "policy_id": "POL-WOUND-001",
+          "type": "conditional",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00266",
+      "line_no": 2,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-WOUND-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-WOUND-001.c4",
+          "policy_id": "POL-WOUND-001",
+          "type": "conditional",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00271",
+      "line_no": 2,
+      "gold": "PEND",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-SURG-004"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-SURG-004.c5",
+          "policy_id": "POL-SURG-004",
+          "type": "requirement",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "NOT_APPLICABLE"
+        },
+        {
+          "criterion_id": "POL-SURG-004.c6",
+          "policy_id": "POL-SURG-004",
+          "type": "conditional",
+          "gold": "NOT_DOCUMENTED",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00272",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "APPROVE",
+      "valid_output": true,
+      "policies": [
+        "POL-PAIN-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-PAIN-001.c7",
+          "policy_id": "POL-PAIN-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "MET"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00273",
+      "line_no": 2,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": false,
+      "policies": [
+        "(no criteria)"
+      ],
+      "wrong_criteria": []
+    },
+    {
+      "record_id": "DV2-TE-00280",
+      "line_no": 1,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-SURG-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-SURG-002.c4",
+          "policy_id": "POL-SURG-002",
+          "type": "conditional (indication group)",
+          "gold": "MET",
+          "predicted": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00282",
+      "line_no": 2,
+      "gold": "APPROVE",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-CAR-002"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-CAR-002.c5",
+          "policy_id": "POL-CAR-002",
+          "type": "requirement",
+          "gold": "MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    },
+    {
+      "record_id": "DV2-TE-00298",
+      "line_no": 1,
+      "gold": "DENY",
+      "predicted": "PEND",
+      "valid_output": true,
+      "policies": [
+        "POL-PAIN-001"
+      ],
+      "wrong_criteria": [
+        {
+          "criterion_id": "POL-PAIN-001.c7",
+          "policy_id": "POL-PAIN-001",
+          "type": "requirement",
+          "gold": "NOT_MET",
+          "predicted": "NOT_DOCUMENTED"
+        },
+        {
+          "criterion_id": "POL-PAIN-001.c8",
+          "policy_id": "POL-PAIN-001",
+          "type": "conditional",
+          "gold": "NOT_APPLICABLE",
+          "predicted": "NOT_DOCUMENTED"
+        },
+        {
+          "criterion_id": "POL-PAIN-001.c10",
+          "policy_id": "POL-PAIN-001",
+          "type": "requirement",
+          "gold": "MET",
+          "predicted": "NOT_DOCUMENTED"
+        }
+      ]
+    }
+  ]
+}

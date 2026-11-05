@@ -1,0 +1,235 @@
+{
+  "label": "v2data-model-v2-limit30",
+  "model": "claimsense-decision:v2",
+  "engine": "ollama 0.34.1",
+  "split": "test",
+  "context": "full",
+  "prompt": "decision_v3",
+  "retried_records": 1,
+  "dataset": {
+    "generator_version": "decision-dataset-v3",
+    "prompt_version": "decision_v3",
+    "retrieval": "exact lookup v2: plan or ALL, effective date, criterion codes; no cap; file order; knowledge e47509cd64c4",
+    "seed": 20260921,
+    "test_records": 30
+  },
+  "metrics": {
+    "records": 30,
+    "valid_output_rate": 1.0,
+    "top_errors": [],
+    "decisions": {
+      "lines": 36,
+      "accuracy": 0.8611,
+      "macro_f1": 0.8556,
+      "per_class": {
+        "APPROVE": {
+          "precision": 0.8824,
+          "recall": 0.9375,
+          "f1": 0.9091,
+          "support": 16
+        },
+        "PEND": {
+          "precision": 0.75,
+          "recall": 0.8182,
+          "f1": 0.7826,
+          "support": 11
+        },
+        "DENY": {
+          "precision": 1.0,
+          "recall": 0.7778,
+          "f1": 0.875,
+          "support": 9
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "APPROVE",
+          "PEND",
+          "DENY"
+        ],
+        "rows_gold_columns_predicted": [
+          [
+            15,
+            1,
+            0
+          ],
+          [
+            2,
+            9,
+            0
+          ],
+          [
+            0,
+            2,
+            7
+          ]
+        ]
+      }
+    },
+    "decisions_valid_only": {
+      "lines": 36,
+      "accuracy": 0.8611,
+      "macro_f1": 0.8556,
+      "per_class": {
+        "APPROVE": {
+          "precision": 0.8824,
+          "recall": 0.9375,
+          "f1": 0.9091,
+          "support": 16
+        },
+        "PEND": {
+          "precision": 0.75,
+          "recall": 0.8182,
+          "f1": 0.7826,
+          "support": 11
+        },
+        "DENY": {
+          "precision": 1.0,
+          "recall": 0.7778,
+          "f1": 0.875,
+          "support": 9
+        }
+      },
+      "confusion_matrix": {
+        "labels": [
+          "APPROVE",
+          "PEND",
+          "DENY"
+        ],
+        "rows_gold_columns_predicted": [
+          [
+            15,
+            1,
+            0
+          ],
+          [
+            2,
+            9,
+            0
+          ],
+          [
+            0,
+            2,
+            7
+          ]
+        ]
+      }
+    },
+    "criterion_status_accuracy": 0.844,
+    "criterion_status_confusion": [
+      [
+        "MET->NOT_DOCUMENTED",
+        5
+      ],
+      [
+        "NOT_APPLICABLE->NOT_MET",
+        3
+      ],
+      [
+        "NOT_DOCUMENTED->NOT_APPLICABLE",
+        3
+      ],
+      [
+        "NOT_MET->NOT_DOCUMENTED",
+        2
+      ],
+      [
+        "NOT_APPLICABLE->NOT_DOCUMENTED",
+        1
+      ],
+      [
+        "NOT_DOCUMENTED->MET",
+        1
+      ],
+      [
+        "NOT_MET->NOT_APPLICABLE",
+        1
+      ],
+      [
+        "MET->NOT_APPLICABLE",
+        1
+      ]
+    ],
+    "evidence_quoted_rate": 0.9545,
+    "benefit_category_accuracy": 1.0,
+    "reasons_accuracy": 0.8056,
+    "complexity_accuracy": 0.8333,
+    "claim_decision_accuracy": 0.8667,
+    "latency_ms": {
+      "p50": 5332,
+      "p95": 8668
+    },
+    "groups": {
+      "scenario:approve_single": {
+        "records": 7,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8571
+      },
+      "scenario:deny_criterion": {
+        "records": 3,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:deny_exclusion": {
+        "records": 3,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:office_plus_procedure": {
+        "records": 1,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:office_same_day": {
+        "records": 1,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.5
+      },
+      "scenario:pend_missing": {
+        "records": 5,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8
+      },
+      "scenario:rule_denied_line": {
+        "records": 6,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8333
+      },
+      "scenario:same_profile_multi": {
+        "records": 2,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "scenario:two_policy": {
+        "records": 2,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.75
+      },
+      "style:A": {
+        "records": 6,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8333
+      },
+      "style:B": {
+        "records": 5,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 1.0
+      },
+      "style:C": {
+        "records": 7,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.6667
+      },
+      "style:D": {
+        "records": 12,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.9231
+      },
+      "unseen_policies": {
+        "records": 30,
+        "valid_output_rate": 1.0,
+        "line_accuracy": 0.8611
+      }
+    }
+  }
+}

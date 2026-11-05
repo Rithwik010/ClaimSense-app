@@ -1,0 +1,305 @@
+uv run python -m scripts.verify.offline_check
+set -o pipefail; uv run python -m scripts.demo.e2e_api 2>&1 | tee data/generated/logs/e2e-api.log
+Logins (D-AUTH-1)
+  ok   provider1 logs in as provider (2829620345)
+  ok   provider2 logs in as provider (1816701100)
+  ok   reviewer1 logs in as reviewer
+  ok   reviewer2 logs in as reviewer
+  ok   admin logs in as admin
+  ok   not logged in: GET /v1/claims is 401
+  ok   not logged in: GET /health is public
+  ok   a provider cannot see the queue (403)
+  ok   a reviewer cannot see metrics (403)
+  ok   an admin cannot file a claim (403)
+Endpoints
+  ok   GET /health: database, Qdrant and Ollama reachable
+  ok   GET /v1/plans/{plan_id}
+  ok   GET /v1/plans/{plan_id}: unknown plan is 404
+  ok   GET /v1/claims/{id}: unknown claim is 404
+  ok   GET /v1/metrics/evaluation (admin)
+Ollama stopped, then started again (a second API on :8001)
+  ok   process with Ollama stopped: answered 503, no server error
+  ok   process with Ollama stopped: 503 model claimsense-decision:v2 unavailable (ConnectionError)
+  ok   the claim is not lost: still RECEIVED, ready to process again
+  ok   nothing half-written by the failed run: audit ['INTAKE_COMPLETED']
+  ok   CLM-DEMO-02: process again after Ollama started (same API process): answered 200, no server error
+  ok   CLM-DEMO-02: processed on the same claim ID (200)
+  ok   CLM-DEMO-02 (digital PDF): finished normally, awaiting standard review
+  ok   CLM-DEMO-02: no duplicate rejection of its own earlier attempt
+  ok   CLM-DEMO-02: not processed twice (409)
+Demo claims
+  ok   CLM-DEMO-01: intake (json-body) by provider1: answered 201, no server error
+  ok   CLM-DEMO-01: filed (201) by provider1
+  ok   CLM-DEMO-01: process: answered 200, no server error
+  ok   CLM-DEMO-01: processed (200)
+  ok   CLM-DEMO-01: provider1 sees IN_REVIEW, no recommendation
+  ok   CLM-DEMO-01: awaiting quick review
+  ok   provider2 cannot open provider1's claim (404)
+  ok   provider1 gets no explanation while CLM-DEMO-01 is in review (409)
+  ok   CLM-DEMO-01: ACCEPT by reviewer1 -> FINAL_APPROVED
+  ok   provider1 sees CLM-DEMO-01's decision once final
+  ok   CLM-DEMO-01: therapy visits 12 -> 13
+  ok   CLM-DEMO-01: accumulators updated
+  ok   CLM-DEMO-01: full audit trail in order (10 events)
+  ok   CLM-DEMO-01: audit actors are the logged-in provider and reviewer
+  ok   CLM-DEMO-02: ACCEPT -> FINAL_PENDED
+  ok   CLM-DEMO-02: complete audit trail after the recovery, each stage once and the explanation built for the recommendation and the final decision (['INTAKE_COMPLETED', 'RULES_EVALUATED', 'CONTEXT_ASSEMBLED', 'SLM_RECOMMENDED', 'CALCULATED', 'EXPLANATION_BUILT', 'REVIEW_OPENED', 'REVIEW_ACCEPTED', 'FINALIZED', 'EXPLANATION_BUILT'])
+  ok   CLM-DEMO-03: intake (json-file) by provider1: answered 201, no server error
+  ok   CLM-DEMO-03: filed (201) by provider1
+  ok   CLM-DEMO-03: process: answered 200, no server error
+  ok   CLM-DEMO-03: processed (200)
+  ok   CLM-DEMO-03: provider1 sees IN_REVIEW, no recommendation
+  ok   CLM-DEMO-03: model DENY, full review
+  ok   CLM-DEMO-03: an override without a reason is refused (422)
+  ok   CLM-DEMO-03: OVERRIDE -> FINAL_APPROVED, amounts recomputed
+  ok   CLM-DEMO-04: intake (json-file) by provider2: answered 201, no server error
+  ok   CLM-DEMO-04: filed (201) by provider2
+  ok   CLM-DEMO-04: process: answered 200, no server error
+  ok   CLM-DEMO-04: processed (200)
+  ok   CLM-DEMO-04: provider2 sees IN_REVIEW, no recommendation
+  ok   CLM-DEMO-04: a line denied by NCCI
+  ok   CLM-DEMO-04: ACCEPT -> FINAL_PARTIAL
+  ok   CLM-DEMO-05: intake (json-file) by provider2: answered 201, no server error
+  ok   CLM-DEMO-05: filed (201) by provider2
+  ok   CLM-DEMO-05: process: answered 200, no server error
+  ok   CLM-DEMO-05: processed (200)
+  ok   CLM-DEMO-05: provider2 sees DENIED_BY_RULE with the decision (final)
+  ok   CLM-DEMO-05: DENIED_BY_RULE (R15)
+  ok   CLM-DEMO-05: a rule outcome cannot be reviewed (409)
+  ok   CLM-DEMO-05: CARC 11 with its billing article
+  ok   CLM-DEMO-06: intake (json-file) by provider2: answered 201, no server error
+  ok   CLM-DEMO-06: filed (201) by provider2
+  ok   CLM-DEMO-06: process: answered 200, no server error
+  ok   CLM-DEMO-06: processed (200)
+  ok   CLM-DEMO-06: provider2 sees REJECTED with the decision (final)
+  ok   CLM-DEMO-06: invalid NPI -> REJECTED
+  ok   CLM-DEMO-07: intake (json-file) by provider1: answered 201, no server error
+  ok   CLM-DEMO-07: filed (201) by provider1
+  ok   CLM-DEMO-07: process: answered 200, no server error
+  ok   CLM-DEMO-07: processed (200)
+  ok   CLM-DEMO-07: provider1 sees REJECTED with the decision (final)
+  ok   CLM-DEMO-07: duplicate -> REJECTED RJ_DUPLICATE
+  ok   CLM-DEMO-08: intake (scanned) by provider2: answered 201, no server error
+  ok   CLM-DEMO-08: filed (201) by provider2
+  ok   CLM-DEMO-08: process: answered 200, no server error
+  ok   CLM-DEMO-08: processed (200)
+  ok   CLM-DEMO-08: provider2 sees IN_REVIEW, no recommendation
+  ok   CLM-DEMO-08 (scanned): awaiting review
+  ok   CLM-DEMO-09: intake (scanned) by provider2: answered 201, no server error
+  ok   CLM-DEMO-09: filed (201) by provider2
+  ok   CLM-DEMO-09: process: answered 200, no server error
+  ok   CLM-DEMO-09: processed (200)
+  ok   CLM-DEMO-09: provider2 sees REJECTED with the decision (final)
+  ok   CLM-DEMO-09 (scanned): REJECTED RJ_LOW_CONFIDENCE_FIELD
+Explanations, versions, audit trails
+  ok   CLM-DEMO-01: explanation: answered 200, no server error
+  ok   CLM-DEMO-01: every amount and reason of the explanation matches the record
+  ok   CLM-DEMO-01: rules version recorded (2.1.0)
+  ok   CLM-DEMO-01: model, prompt and policy versions recorded (claimsense-decision:v2, decision_v3)
+  ok   CLM-DEMO-01: EXPLANATION_BUILT audited (2x); the explanation shown (text and HTML) is the one built for the latest record
+  ok   CLM-DEMO-01: audit trail in order
+  ok   CLM-DEMO-02: explanation: answered 200, no server error
+  ok   CLM-DEMO-02: every amount and reason of the explanation matches the record
+  ok   CLM-DEMO-02: rules version recorded (2.1.0)
+  ok   CLM-DEMO-02: model, prompt and policy versions recorded (claimsense-decision:v2, decision_v3)
+  ok   CLM-DEMO-02: EXPLANATION_BUILT audited (2x); the explanation shown (text and HTML) is the one built for the latest record
+  ok   CLM-DEMO-02: audit trail in order
+  ok   CLM-DEMO-03: explanation: answered 200, no server error
+  ok   CLM-DEMO-03: every amount and reason of the explanation matches the record
+  ok   CLM-DEMO-03: rules version recorded (2.1.0)
+  ok   CLM-DEMO-03: model, prompt and policy versions recorded (claimsense-decision:v2, decision_v3)
+  ok   CLM-DEMO-03: EXPLANATION_BUILT audited (2x); the explanation shown (text and HTML) is the one built for the latest record
+  ok   CLM-DEMO-03: audit trail in order
+  ok   CLM-DEMO-04: explanation: answered 200, no server error
+  ok   CLM-DEMO-04: every amount and reason of the explanation matches the record
+  ok   CLM-DEMO-04: rules version recorded (2.1.0)
+  ok   CLM-DEMO-04: model, prompt and policy versions recorded (claimsense-decision:v2, decision_v3)
+  ok   CLM-DEMO-04: EXPLANATION_BUILT audited (2x); the explanation shown (text and HTML) is the one built for the latest record
+  ok   CLM-DEMO-04: audit trail in order
+  ok   CLM-DEMO-05: explanation: answered 200, no server error
+  ok   CLM-DEMO-05: every amount and reason of the explanation matches the record
+  ok   CLM-DEMO-05: rules version recorded (2.1.0)
+  ok   CLM-DEMO-05: EXPLANATION_BUILT audited (1x); the explanation shown (text and HTML) is the one built for the latest record
+  ok   CLM-DEMO-05: audit trail in order
+  ok   CLM-DEMO-06: explanation: answered 200, no server error
+  ok   CLM-DEMO-06: every amount and reason of the explanation matches the record
+  ok   CLM-DEMO-06: rules version recorded (2.1.0)
+  ok   CLM-DEMO-06: EXPLANATION_BUILT audited (1x); the explanation shown (text and HTML) is the one built for the latest record
+  ok   CLM-DEMO-06: audit trail in order
+  ok   CLM-DEMO-07: explanation: answered 200, no server error
+  ok   CLM-DEMO-07: every amount and reason of the explanation matches the record
+  ok   CLM-DEMO-07: rules version recorded (2.1.0)
+  ok   CLM-DEMO-07: EXPLANATION_BUILT audited (1x); the explanation shown (text and HTML) is the one built for the latest record
+  ok   CLM-DEMO-07: audit trail in order
+  ok   CLM-DEMO-08: explanation: answered 200, no server error
+  ok   CLM-DEMO-08: every amount and reason of the explanation matches the record
+  ok   CLM-DEMO-08: rules version recorded (2.1.0)
+  ok   CLM-DEMO-08: model, prompt and policy versions recorded (claimsense-decision:v2, decision_v3)
+  ok   CLM-DEMO-08: EXPLANATION_BUILT audited (1x); the explanation shown (text and HTML) is the one built for the latest record
+  ok   CLM-DEMO-08: audit trail in order
+  ok   CLM-DEMO-09: explanation: answered 200, no server error
+  ok   CLM-DEMO-09: every amount and reason of the explanation matches the record
+  ok   CLM-DEMO-09: rules version recorded (2.1.0)
+  ok   CLM-DEMO-09: EXPLANATION_BUILT audited (1x); the explanation shown (text and HTML) is the one built for the latest record
+  ok   CLM-DEMO-09: audit trail in order
+CARC/RARC codes on DENY and REJECT lines (D-CARC-2)
+  ok   CLM-DEMO-04: DN_NCCI_BUNDLED -> 236 with official descriptions
+  ok   CLM-DEMO-05: DN_DX_NOT_SUPPORTED -> 11 + N115 with official descriptions
+  ok   CLM-DEMO-06: RJ_INVALID_NPI -> 16 + N257 with official descriptions
+  ok   CLM-DEMO-07: RJ_DUPLICATE -> 18 with official descriptions
+  ok   CLM-DEMO-09: RJ_LOW_CONFIDENCE_FIELD -> 16 + MA130 with official descriptions
+  ok   CLM-DEMO-02 (pended): no CARC/RARC codes
+  ok   CLM-DEMO-05: billing article A53065, LCD L34428
+  ok   provider2 sees CLM-DEMO-06's rejection codes at once (a rule outcome is final)
+Queue, lists and roles
+  ok   GET /v1/review/queue: only CLM-DEMO-08 still waits
+  ok   an admin can read the queue
+  ok   a provider cannot review a claim (403)
+  ok   an admin cannot review a claim (403)
+  ok   reviewer1 cannot review as reviewer2 (403)
+  ok   GET /v1/claims: no claim lost
+  ok   provider1 lists only their own claims (4)
+  ok   provider2 lists only their own claims (5)
+  ok   provider2 sees CLM-DEMO-08 as IN_REVIEW, without its recommendation
+Original files and the pages' explanations (D-DOC-1, D-UI-6)
+  ok   CLM-DEMO-01: original file served to provider1, reviewer1 and admin as application/json, its SHA-256 the upload's
+  ok   CLM-DEMO-01: another provider gets 404
+  ok   CLM-DEMO-01: the summary's outcome is the record's (APPROVED)
+  ok   CLM-DEMO-01: Reason column '—'
+  ok   CLM-DEMO-01: provider1's view holds no rule IDs or internal codes
+  ok   CLM-DEMO-01: provider1 sees 'Claim approved' with 0 reason(s)
+  ok   CLM-DEMO-01: the billing adds up to the cent 
+  ok   CLM-DEMO-02: original file served to provider1, reviewer1 and admin as application/pdf, its SHA-256 the upload's
+  ok   CLM-DEMO-02: another provider gets 404
+  ok   CLM-DEMO-02: the summary's outcome is the record's (PENDED)
+  ok   CLM-DEMO-02: Reason column 'More documentation needed'
+  ok   CLM-DEMO-02: provider1's view holds no rule IDs or internal codes
+  ok   CLM-DEMO-02: provider1 sees 'Claim on hold: more information needed' with 1 reason(s)
+  ok   CLM-DEMO-03: original file served to provider1, reviewer1 and admin as application/json, its SHA-256 the upload's
+  ok   CLM-DEMO-03: another provider gets 404
+  ok   CLM-DEMO-03: the summary's outcome is the record's (APPROVED)
+  ok   CLM-DEMO-03: Reason column '—'
+  ok   CLM-DEMO-03: provider1's view holds no rule IDs or internal codes
+  ok   CLM-DEMO-03: provider1 sees 'Claim approved' with 0 reason(s)
+  ok   CLM-DEMO-03: the billing adds up to the cent 
+  ok   CLM-DEMO-04: original file served to provider2, reviewer1 and admin as application/json, its SHA-256 the upload's
+  ok   CLM-DEMO-04: another provider gets 404
+  ok   CLM-DEMO-04: the summary's outcome is the record's (PARTLY_APPROVED)
+  ok   CLM-DEMO-04: Reason column 'Included in another service on the claim'
+  ok   CLM-DEMO-04: provider2's view holds no rule IDs or internal codes
+  ok   CLM-DEMO-04: provider2 sees 'Claim partly approved' with 1 reason(s)
+  ok   CLM-DEMO-04: the billing adds up to the cent 
+  ok   CLM-DEMO-05: original file served to provider2, reviewer1 and admin as application/json, its SHA-256 the upload's
+  ok   CLM-DEMO-05: another provider gets 404
+  ok   CLM-DEMO-05: the summary's outcome is the record's (DENIED)
+  ok   CLM-DEMO-05: Reason column 'Diagnoses do not support the service'
+  ok   CLM-DEMO-05: provider2's view holds no rule IDs or internal codes
+  ok   CLM-DEMO-05: provider2 sees 'Claim denied' with 1 reason(s)
+  ok   CLM-DEMO-06: original file served to provider2, reviewer1 and admin as application/json, its SHA-256 the upload's
+  ok   CLM-DEMO-06: another provider gets 404
+  ok   CLM-DEMO-06: the summary's outcome is the record's (REJECTED)
+  ok   CLM-DEMO-06: Reason column 'A provider NPI is not valid'
+  ok   CLM-DEMO-06: provider2's view holds no rule IDs or internal codes
+  ok   CLM-DEMO-06: provider2 sees 'Claim rejected' with 1 reason(s)
+  ok   CLM-DEMO-07: original file served to provider1, reviewer1 and admin as application/json, its SHA-256 the upload's
+  ok   CLM-DEMO-07: another provider gets 404
+  ok   CLM-DEMO-07: the summary's outcome is the record's (REJECTED)
+  ok   CLM-DEMO-07: Reason column 'Duplicate of a claim already on file'
+  ok   CLM-DEMO-07: provider1's view holds no rule IDs or internal codes
+  ok   CLM-DEMO-07: provider1 sees 'Claim rejected' with 1 reason(s)
+  ok   CLM-DEMO-08: original file served to provider2, reviewer1 and admin as application/pdf, its SHA-256 the upload's
+  ok   CLM-DEMO-08: another provider gets 404
+  ok   CLM-DEMO-08: the summary's outcome is the record's (IN_REVIEW)
+  ok   CLM-DEMO-08: Reason column '—'
+  ok   CLM-DEMO-08: provider2's view holds no rule IDs or internal codes
+  ok   CLM-DEMO-08: provider2 sees no explanation while in review
+  ok   CLM-DEMO-09: original file served to provider2, reviewer1 and admin as application/pdf, its SHA-256 the upload's
+  ok   CLM-DEMO-09: another provider gets 404
+  ok   CLM-DEMO-09: the summary's outcome is the record's (REJECTED)
+  ok   CLM-DEMO-09: Reason column 'Part of the claim could not be read clearly'
+  ok   CLM-DEMO-09: provider2's view holds no rule IDs or internal codes
+  ok   CLM-DEMO-09: provider2 sees 'Claim rejected' with 1 reason(s)
+One claim from its form's pages in two files (D-DOC-2)
+  ok   pages swapped: answered 422, no server error
+  ok   pages in the wrong order: 422, nothing filed (the first file is page 2 of the claim form (its attachments))
+  ok   two page files: answered 201, no server error
+  ok   CLM-E2E-PAGES: filed from two image files as one scanned claim (201)
+  ok   CLM-E2E-PAGES: its clinical note read from page 2 (405 characters)
+  ok   CLM-E2E-PAGES: both files kept, in page order
+  ok   CLM-E2E-PAGES: file 1 served with the upload's SHA-256; another provider 404
+  ok   CLM-E2E-PAGES: file 2 served with the upload's SHA-256; another provider 404
+Bad inputs
+  ok   wrong file type: answered 422, no server error
+  ok   wrong file type: 422 the file is not JSON, a PDF or an image
+  ok   empty file: answered 422, no server error
+  ok   empty file: 422 the file is empty
+  ok   corrupted PDF: answered 422, no server error
+  ok   corrupted PDF: 422 the PDF cannot be read: Failed to open stream
+  ok   JSON with a missing field: answered 201, no server error
+  ok   JSON with a missing field: filed with its contract errors
+  ok   JSON with a missing field: REJECTED after processing
+  ok   JSON without a claim ID: answered 422, no server error
+  ok   JSON without a claim ID: 422
+  ok   duplicate claim ID: answered 409, no server error
+  ok   the same claim ID twice: 409
+
+232 checks passed, 0 failed
+uv run python -m scripts.demo.e2e_api --privacy-only --log data/generated/logs/e2e-api.log \
+		--log data/generated/logs/api.log --log data/generated/logs/ollama.log --log /Users/manideep/.ollama/logs/server.log
+Privacy of data/generated/logs/e2e-api.log
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-01
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-02
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-03
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-04
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-05
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-06
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-07
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-08
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-09
+  ok   e2e-api.log holds no patient name, address, birth date, note text or stored file of CLM-E2E-PAGES
+Privacy of data/generated/logs/api.log
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-01
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-02
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-03
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-04
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-05
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-06
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-07
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-08
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-09
+  ok   api.log holds no patient name, address, birth date, note text or stored file of CLM-E2E-PAGES
+Privacy of data/generated/logs/ollama.log
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-01
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-02
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-03
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-04
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-05
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-06
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-07
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-08
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-09
+  ok   ollama.log holds no patient name, address, birth date, note text or stored file of CLM-E2E-PAGES
+Privacy of /Users/manideep/.ollama/logs/server.log
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-01
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-02
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-03
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-04
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-05
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-06
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-07
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-08
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-DEMO-09
+  ok   server.log holds no patient name, address, birth date, note text or stored file of CLM-E2E-PAGES
+
+40 checks passed, 0 failed
+
+Offline check during make e2e-api (0.5 min; 67 laptop samples, 26 container samples)
+  API                  remote addresses: 127.0.0.1
+  Ollama               remote addresses: 127.0.0.1
+  Web server           remote addresses: none
+  e2e client           remote addresses: 127.0.0.1
+  postgres container   remote addresses: 172.18.0.1
+  qdrant container     remote addresses: none
+OK   Qdrant telemetry off in its container: QDRANT__TELEMETRY_DISABLED=true; start-up log: Telemetry reporting disabled
+OK   no connection outside the laptop
+EXIT 0

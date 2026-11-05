@@ -1,0 +1,300 @@
+1/300 DV2-TE-00001 valid=True P>P 4808ms elapsed=5s
+2/300 DV2-TE-00002 valid=True A>A 2107ms elapsed=7s
+3/300 DV2-TE-00003 valid=True P>P 4569ms elapsed=11s
+4/300 DV2-TE-00004 valid=True D>D 4790ms elapsed=16s
+5/300 DV2-TE-00005 valid=True P>P P>P 9288ms elapsed=26s
+6/300 DV2-TE-00006 valid=True P>P 4921ms elapsed=30s
+7/300 DV2-TE-00007 valid=True D>D 4725ms elapsed=35s
+8/300 DV2-TE-00008 valid=True D>D 5932ms elapsed=41s
+9/300 DV2-TE-00009 valid=True P>P 6197ms elapsed=47s
+10/300 DV2-TE-00010 valid=False D>P 9917ms elapsed=57s
+11/300 DV2-TE-00011 valid=True A>A 2535ms elapsed=60s
+12/300 DV2-TE-00012 valid=True A>A 6436ms elapsed=66s
+13/300 DV2-TE-00013 valid=True A>A A>A 4963ms elapsed=71s
+14/300 DV2-TE-00014 valid=True A>A P>A 7124ms elapsed=78s
+15/300 DV2-TE-00015 valid=True A>A 6225ms elapsed=85s
+16/300 DV2-TE-00016 valid=True P>D 7245ms elapsed=92s
+17/300 DV2-TE-00017 valid=True D>A 6091ms elapsed=98s
+18/300 DV2-TE-00018 valid=True D>A 4686ms elapsed=103s
+19/300 DV2-TE-00019 valid=True A>A P>P 8684ms elapsed=111s
+20/300 DV2-TE-00020 valid=True D>D 6780ms elapsed=118s
+21/300 DV2-TE-00021 valid=True D>D P>P 12614ms elapsed=131s
+22/300 DV2-TE-00022 valid=True A>D 5731ms elapsed=136s
+23/300 DV2-TE-00023 valid=True A>A 3859ms elapsed=140s
+24/300 DV2-TE-00024 valid=True A>A 5570ms elapsed=146s
+25/300 DV2-TE-00025 valid=False P>P 6008ms elapsed=152s
+26/300 DV2-TE-00026 valid=True A>A 4917ms elapsed=157s
+27/300 DV2-TE-00027 valid=True A>P A>P 9134ms elapsed=166s
+28/300 DV2-TE-00028 valid=True A>P 5135ms elapsed=171s
+29/300 DV2-TE-00029 valid=True D>D 5885ms elapsed=177s
+30/300 DV2-TE-00030 valid=True A>A 3329ms elapsed=180s
+31/300 DV2-TE-00031 valid=True P>P 6276ms elapsed=187s
+32/300 DV2-TE-00032 valid=True D>A 6522ms elapsed=193s
+33/300 DV2-TE-00033 valid=True A>A 3047ms elapsed=196s
+34/300 DV2-TE-00034 valid=True D>D 6607ms elapsed=203s
+35/300 DV2-TE-00035 valid=True D>D 6407ms elapsed=209s
+36/300 DV2-TE-00036 valid=False A>P A>P 12520ms elapsed=222s
+37/300 DV2-TE-00037 valid=True A>A 5855ms elapsed=227s
+38/300 DV2-TE-00038 valid=True A>A 5854ms elapsed=233s
+39/300 DV2-TE-00039 valid=True D>D 5952ms elapsed=239s
+40/300 DV2-TE-00040 valid=True P>P 2938ms elapsed=242s
+41/300 DV2-TE-00041 valid=True D>A 4596ms elapsed=247s
+42/300 DV2-TE-00042 valid=True P>P 6330ms elapsed=253s
+43/300 DV2-TE-00043 valid=True D>P 2919ms elapsed=256s
+44/300 DV2-TE-00044 valid=True P>P P>P 13142ms elapsed=269s
+45/300 DV2-TE-00045 valid=True D>D 4842ms elapsed=274s
+46/300 DV2-TE-00046 valid=True D>D A>P 8480ms elapsed=283s
+47/300 DV2-TE-00047 valid=True D>A 4812ms elapsed=287s
+48/300 DV2-TE-00048 valid=False D>P 68993ms elapsed=356s
+49/300 DV2-TE-00049 valid=True A>A 4477ms elapsed=361s
+50/300 DV2-TE-00050 valid=True D>D 5413ms elapsed=366s
+51/300 DV2-TE-00051 valid=True P>P 3023ms elapsed=369s
+52/300 DV2-TE-00052 valid=True A>A 5137ms elapsed=374s
+53/300 DV2-TE-00053 valid=True A>D A>A 8431ms elapsed=383s
+54/300 DV2-TE-00054 valid=True P>P 2272ms elapsed=385s
+55/300 DV2-TE-00055 valid=True P>P 2315ms elapsed=387s
+56/300 DV2-TE-00056 valid=True A>A 4770ms elapsed=392s
+57/300 DV2-TE-00057 valid=False P>P A>P 8475ms elapsed=401s
+58/300 DV2-TE-00058 valid=True D>A 4412ms elapsed=405s
+59/300 DV2-TE-00059 valid=True A>A D>P 9575ms elapsed=415s
+60/300 DV2-TE-00060 valid=True D>D 3756ms elapsed=4s
+61/300 DV2-TE-00061 valid=True A>A A>A 5231ms elapsed=9s
+62/300 DV2-TE-00062 valid=True P>P D>A 5738ms elapsed=15s
+63/300 DV2-TE-00063 valid=True D>A 3498ms elapsed=18s
+64/300 DV2-TE-00064 valid=True P>P 3684ms elapsed=22s
+65/300 DV2-TE-00065 valid=True A>P 2274ms elapsed=24s
+66/300 DV2-TE-00066 valid=True A>A 1737ms elapsed=26s
+67/300 DV2-TE-00067 valid=True P>P A>A 5980ms elapsed=32s
+68/300 DV2-TE-00068 valid=True P>P 3703ms elapsed=36s
+69/300 DV2-TE-00069 valid=True A>P 3010ms elapsed=39s
+70/300 DV2-TE-00070 valid=True A>A 3267ms elapsed=42s
+71/300 DV2-TE-00071 valid=True A>A D>A 2702ms elapsed=45s
+72/300 DV2-TE-00072 valid=True P>P 3629ms elapsed=48s
+73/300 DV2-TE-00073 valid=True A>A 3345ms elapsed=52s
+74/300 DV2-TE-00074 valid=True D>A 3131ms elapsed=55s
+75/300 DV2-TE-00075 valid=True A>A A>P 3754ms elapsed=58s
+76/300 DV2-TE-00076 valid=True A>A 1029ms elapsed=59s
+77/300 DV2-TE-00077 valid=True A>A A>D 3620ms elapsed=63s
+78/300 DV2-TE-00078 valid=True A>A A>A 4090ms elapsed=67s
+79/300 DV2-TE-00079 valid=True A>A A>A 4195ms elapsed=71s
+80/300 DV2-TE-00080 valid=True A>A 3393ms elapsed=75s
+81/300 DV2-TE-00081 valid=True P>D 28427ms elapsed=103s
+82/300 DV2-TE-00082 valid=True A>A A>A 3204ms elapsed=106s
+83/300 DV2-TE-00083 valid=False D>P 4715ms elapsed=111s
+84/300 DV2-TE-00084 valid=True A>A 3478ms elapsed=115s
+85/300 DV2-TE-00085 valid=True P>A 4112ms elapsed=119s
+86/300 DV2-TE-00086 valid=True P>P P>P 10553ms elapsed=129s
+87/300 DV2-TE-00087 valid=True A>A 4342ms elapsed=134s
+88/300 DV2-TE-00088 valid=True A>A A>D 5073ms elapsed=139s
+89/300 DV2-TE-00089 valid=True A>A 3968ms elapsed=143s
+90/300 DV2-TE-00090 valid=True P>D 4818ms elapsed=147s
+91/300 DV2-TE-00091 valid=True A>D 7799ms elapsed=155s
+92/300 DV2-TE-00092 valid=True A>A A>A 8802ms elapsed=164s
+93/300 DV2-TE-00093 valid=True A>P A>A 8954ms elapsed=173s
+94/300 DV2-TE-00094 valid=False D>P 65406ms elapsed=238s
+95/300 DV2-TE-00095 valid=True D>A 3786ms elapsed=242s
+96/300 DV2-TE-00096 valid=True P>A 4122ms elapsed=246s
+97/300 DV2-TE-00097 valid=True P>P 3089ms elapsed=249s
+98/300 DV2-TE-00098 valid=True A>P 5424ms elapsed=255s
+99/300 DV2-TE-00099 valid=True A>A A>A 4059ms elapsed=259s
+100/300 DV2-TE-00100 valid=True D>D 5429ms elapsed=264s
+101/300 DV2-TE-00101 valid=True A>A 5035ms elapsed=269s
+102/300 DV2-TE-00102 valid=True A>P 4428ms elapsed=274s
+103/300 DV2-TE-00103 valid=True A>A 6378ms elapsed=280s
+104/300 DV2-TE-00104 valid=True D>A 7249ms elapsed=287s
+105/300 DV2-TE-00105 valid=True P>A D>D 6784ms elapsed=294s
+106/300 DV2-TE-00106 valid=True D>D 2680ms elapsed=297s
+107/300 DV2-TE-00107 valid=True A>A A>A 8201ms elapsed=305s
+108/300 DV2-TE-00108 valid=True A>A A>A 4177ms elapsed=309s
+109/300 DV2-TE-00109 valid=True A>A A>A 11069ms elapsed=320s
+110/300 DV2-TE-00110 valid=True A>A 5772ms elapsed=326s
+111/300 DV2-TE-00111 valid=True A>A 2223ms elapsed=328s
+112/300 DV2-TE-00112 valid=True P>P 4470ms elapsed=333s
+113/300 DV2-TE-00113 valid=True A>A 1332ms elapsed=334s
+114/300 DV2-TE-00114 valid=True A>A A>P 10933ms elapsed=345s
+115/300 DV2-TE-00115 valid=True D>D 5761ms elapsed=351s
+116/300 DV2-TE-00116 valid=True A>A A>P 10503ms elapsed=361s
+117/300 DV2-TE-00117 valid=True A>A 1431ms elapsed=363s
+118/300 DV2-TE-00118 valid=True A>P 5967ms elapsed=369s
+119/300 DV2-TE-00119 valid=False A>P 73810ms elapsed=443s
+120/300 DV2-TE-00120 valid=True D>A D>A D>A 15216ms elapsed=458s
+121/300 DV2-TE-00121 valid=True A>A 6396ms elapsed=464s
+122/300 DV2-TE-00122 valid=True A>A P>A 8937ms elapsed=473s
+123/300 DV2-TE-00123 valid=True A>A A>A 10517ms elapsed=484s
+124/300 DV2-TE-00124 valid=False P>P P>P 24122ms elapsed=508s
+125/300 DV2-TE-00125 valid=False P>P P>P 9414ms elapsed=517s
+126/300 DV2-TE-00126 valid=True D>P 5448ms elapsed=523s
+127/300 DV2-TE-00127 valid=True A>A 1480ms elapsed=524s
+128/300 DV2-TE-00128 valid=True A>P 2719ms elapsed=527s
+129/300 DV2-TE-00129 valid=True P>P 2676ms elapsed=530s
+130/300 DV2-TE-00130 valid=True A>A P>P 9198ms elapsed=539s
+131/300 DV2-TE-00131 valid=True P>A P>P 13334ms elapsed=552s
+132/300 DV2-TE-00132 valid=True D>D 9089ms elapsed=561s
+133/300 DV2-TE-00133 valid=True A>A A>A 4863ms elapsed=566s
+134/300 DV2-TE-00134 valid=True D>D 9825ms elapsed=576s
+135/300 DV2-TE-00135 valid=True A>A 1627ms elapsed=577s
+136/300 DV2-TE-00136 valid=True D>D 7638ms elapsed=585s
+137/300 DV2-TE-00137 valid=False P>P P>P 17887ms elapsed=603s
+138/300 DV2-TE-00138 valid=True A>A 7105ms elapsed=610s
+139/300 DV2-TE-00139 valid=True D>A 5748ms elapsed=616s
+140/300 DV2-TE-00140 valid=True A>A 8132ms elapsed=624s
+141/300 DV2-TE-00141 valid=True A>A A>A 12633ms elapsed=637s
+142/300 DV2-TE-00142 valid=True P>P 6412ms elapsed=643s
+143/300 DV2-TE-00143 valid=False P>P P>P P>P 46738ms elapsed=690s
+144/300 DV2-TE-00144 valid=True A>A A>A 6340ms elapsed=696s
+145/300 DV2-TE-00145 valid=True A>A A>P 4510ms elapsed=701s
+146/300 DV2-TE-00146 valid=False P>P 15463ms elapsed=716s
+147/300 DV2-TE-00147 valid=True P>P 45619ms elapsed=762s
+148/300 DV2-TE-00148 valid=True D>D 8500ms elapsed=770s
+149/300 DV2-TE-00149 valid=True A>P 6272ms elapsed=776s
+150/300 DV2-TE-00150 valid=True D>P 2970ms elapsed=779s
+151/300 DV2-TE-00151 valid=True A>A A>A 12381ms elapsed=792s
+152/300 DV2-TE-00152 valid=True A>A 6453ms elapsed=798s
+153/300 DV2-TE-00153 valid=True P>P P>P 9423ms elapsed=808s
+154/300 DV2-TE-00154 valid=True A>A 6270ms elapsed=814s
+155/300 DV2-TE-00155 valid=True D>D 3320ms elapsed=817s
+156/300 DV2-TE-00156 valid=False P>P P>P 10193ms elapsed=827s
+157/300 DV2-TE-00157 valid=True P>P 8607ms elapsed=836s
+158/300 DV2-TE-00158 valid=True P>A P>P 14819ms elapsed=851s
+159/300 DV2-TE-00159 valid=False A>P 14828ms elapsed=866s
+160/300 DV2-TE-00160 valid=True A>P 6630ms elapsed=872s
+161/300 DV2-TE-00161 valid=True A>A 5541ms elapsed=878s
+162/300 DV2-TE-00162 valid=True A>A P>A 6342ms elapsed=884s
+163/300 DV2-TE-00163 valid=True P>P 5400ms elapsed=890s
+164/300 DV2-TE-00164 valid=True P>D 2767ms elapsed=892s
+165/300 DV2-TE-00165 valid=True A>A 6330ms elapsed=899s
+166/300 DV2-TE-00166 valid=True D>D 5958ms elapsed=905s
+167/300 DV2-TE-00167 valid=True A>A A>P 14219ms elapsed=919s
+168/300 DV2-TE-00168 valid=True D>A 6130ms elapsed=925s
+169/300 DV2-TE-00169 valid=True P>P 6844ms elapsed=932s
+170/300 DV2-TE-00170 valid=True A>A 5951ms elapsed=938s
+171/300 DV2-TE-00171 valid=True A>P A>P 47669ms elapsed=986s
+172/300 DV2-TE-00172 valid=True A>A 7162ms elapsed=993s
+173/300 DV2-TE-00173 valid=True A>A A>A 5060ms elapsed=998s
+174/300 DV2-TE-00174 valid=True A>A A>P 7214ms elapsed=1005s
+175/300 DV2-TE-00175 valid=True A>A 5372ms elapsed=1010s
+176/300 DV2-TE-00176 valid=True P>P 3545ms elapsed=1014s
+177/300 DV2-TE-00177 valid=True A>A P>P 5942ms elapsed=1020s
+178/300 DV2-TE-00178 valid=True P>D 7352ms elapsed=1027s
+179/300 DV2-TE-00179 valid=True A>A 1419ms elapsed=1029s
+180/300 DV2-TE-00180 valid=True A>P 8444ms elapsed=1037s
+181/300 DV2-TE-00181 valid=True A>A P>P 14757ms elapsed=1052s
+182/300 DV2-TE-00182 valid=False A>P 78242ms elapsed=1130s
+183/300 DV2-TE-00183 valid=True P>P 9155ms elapsed=1139s
+184/300 DV2-TE-00184 valid=True P>A 9341ms elapsed=1149s
+185/300 DV2-TE-00185 valid=True A>A A>A 10458ms elapsed=1159s
+186/300 DV2-TE-00186 valid=True P>A 5102ms elapsed=1164s
+187/300 DV2-TE-00187 valid=True D>D 3245ms elapsed=1167s
+188/300 DV2-TE-00188 valid=True D>D 7157ms elapsed=1175s
+189/300 DV2-TE-00189 valid=True A>A 1556ms elapsed=1176s
+190/300 DV2-TE-00190 valid=True D>D 5080ms elapsed=1181s
+191/300 DV2-TE-00191 valid=True A>A P>P 11476ms elapsed=1193s
+192/300 DV2-TE-00192 valid=True A>A D>A 6238ms elapsed=1199s
+193/300 DV2-TE-00193 valid=True P>P P>P 13225ms elapsed=1212s
+194/300 DV2-TE-00194 valid=True A>A 6502ms elapsed=1219s
+195/300 DV2-TE-00195 valid=True A>P D>P 52460ms elapsed=1271s
+196/300 DV2-TE-00196 valid=True P>A 6006ms elapsed=1277s
+197/300 DV2-TE-00197 valid=True A>A A>A 8674ms elapsed=1286s
+198/300 DV2-TE-00198 valid=True D>D A>P 6289ms elapsed=1292s
+199/300 DV2-TE-00199 valid=True A>A A>P 7509ms elapsed=1300s
+200/300 DV2-TE-00200 valid=True P>P 5359ms elapsed=1305s
+201/300 DV2-TE-00201 valid=True P>P P>P P>P 16018ms elapsed=1321s
+202/300 DV2-TE-00202 valid=True A>A 7305ms elapsed=1328s
+203/300 DV2-TE-00203 valid=True A>A 4613ms elapsed=1333s
+204/300 DV2-TE-00204 valid=True A>A 5057ms elapsed=1338s
+205/300 DV2-TE-00205 valid=False A>P D>P 19100ms elapsed=1357s
+206/300 DV2-TE-00206 valid=True P>P 6332ms elapsed=1363s
+207/300 DV2-TE-00207 valid=True A>A 1688ms elapsed=1365s
+208/300 DV2-TE-00208 valid=False A>P A>P 17976ms elapsed=1383s
+209/300 DV2-TE-00209 valid=False A>P 82214ms elapsed=1465s
+210/300 DV2-TE-00210 valid=True D>D 7088ms elapsed=1472s
+211/300 DV2-TE-00211 valid=True A>A A>A 11025ms elapsed=1483s
+212/300 DV2-TE-00212 valid=True A>A 6079ms elapsed=1490s
+213/300 DV2-TE-00213 valid=True A>A A>A 6403ms elapsed=1496s
+214/300 DV2-TE-00214 valid=True A>A A>A A>A 15598ms elapsed=1512s
+215/300 DV2-TE-00215 valid=True A>A A>A 14793ms elapsed=1526s
+216/300 DV2-TE-00216 valid=True A>A A>A 9742ms elapsed=1536s
+217/300 DV2-TE-00217 valid=True A>A 2554ms elapsed=1539s
+218/300 DV2-TE-00218 valid=True D>A P>P 12735ms elapsed=1551s
+219/300 DV2-TE-00219 valid=False P>P A>P 7683ms elapsed=1559s
+220/300 DV2-TE-00220 valid=True D>D A>P 8414ms elapsed=1567s
+221/300 DV2-TE-00221 valid=True P>P 5412ms elapsed=1573s
+222/300 DV2-TE-00222 valid=True A>A 2503ms elapsed=1575s
+223/300 DV2-TE-00223 valid=True A>A 1520ms elapsed=1577s
+224/300 DV2-TE-00224 valid=True D>A 4923ms elapsed=1582s
+225/300 DV2-TE-00225 valid=True D>P 4968ms elapsed=1587s
+226/300 DV2-TE-00226 valid=True A>A A>A A>A 15409ms elapsed=1602s
+227/300 DV2-TE-00227 valid=True D>D 3015ms elapsed=1605s
+228/300 DV2-TE-00228 valid=True A>A 6620ms elapsed=1612s
+229/300 DV2-TE-00229 valid=True A>A A>A A>A 16402ms elapsed=1628s
+230/300 DV2-TE-00230 valid=True D>D 6283ms elapsed=1635s
+231/300 DV2-TE-00231 valid=True P>P P>P 12650ms elapsed=1647s
+232/300 DV2-TE-00232 valid=True D>D 8900ms elapsed=1656s
+233/300 DV2-TE-00233 valid=True D>D 5312ms elapsed=1661s
+234/300 DV2-TE-00234 valid=True D>D 9009ms elapsed=1670s
+235/300 DV2-TE-00235 valid=True A>P P>P 63768ms elapsed=1734s
+236/300 DV2-TE-00236 valid=True D>D 3950ms elapsed=1738s
+237/300 DV2-TE-00237 valid=True A>P 6473ms elapsed=1745s
+238/300 DV2-TE-00238 valid=True A>A A>A 9430ms elapsed=1754s
+239/300 DV2-TE-00239 valid=True D>A 6567ms elapsed=1761s
+240/300 DV2-TE-00240 valid=True A>A 8754ms elapsed=1769s
+241/300 DV2-TE-00241 valid=True D>D 59786ms elapsed=1829s
+242/300 DV2-TE-00242 valid=True A>A A>A 12331ms elapsed=1842s
+243/300 DV2-TE-00243 valid=True D>D D>D 21612ms elapsed=1863s
+244/300 DV2-TE-00244 valid=True A>A 5871ms elapsed=1869s
+245/300 DV2-TE-00245 valid=True P>P A>P 64962ms elapsed=1934s
+246/300 DV2-TE-00246 valid=True P>P 54113ms elapsed=1988s
+247/300 DV2-TE-00247 valid=True P>P 7728ms elapsed=1996s
+248/300 DV2-TE-00248 valid=True D>D D>D 13637ms elapsed=2009s
+249/300 DV2-TE-00249 valid=True A>A 7528ms elapsed=2017s
+250/300 DV2-TE-00250 valid=True P>P 61211ms elapsed=2078s
+251/300 DV2-TE-00251 valid=True A>A 6872ms elapsed=2085s
+252/300 DV2-TE-00252 valid=True P>P A>P 14513ms elapsed=2100s
+253/300 DV2-TE-00253 valid=True P>P 4580ms elapsed=2104s
+254/300 DV2-TE-00254 valid=True A>D 9517ms elapsed=2114s
+255/300 DV2-TE-00255 valid=True P>P 7435ms elapsed=2121s
+256/300 DV2-TE-00256 valid=True P>P P>P P>P 16916ms elapsed=2138s
+257/300 DV2-TE-00257 valid=True D>P 5870ms elapsed=2144s
+258/300 DV2-TE-00258 valid=True D>D 6885ms elapsed=2151s
+259/300 DV2-TE-00259 valid=True A>A D>D 8551ms elapsed=2159s
+260/300 DV2-TE-00260 valid=True D>D 6225ms elapsed=2166s
+261/300 DV2-TE-00261 valid=False A>P D>P 51886ms elapsed=2218s
+262/300 DV2-TE-00262 valid=True A>A 9374ms elapsed=2227s
+263/300 DV2-TE-00263 valid=True A>A A>A 12502ms elapsed=2239s
+264/300 DV2-TE-00264 valid=False A>P A>P 11425ms elapsed=2251s
+265/300 DV2-TE-00265 valid=True A>A 6982ms elapsed=2258s
+266/300 DV2-TE-00266 valid=True P>A P>A 11885ms elapsed=2270s
+267/300 DV2-TE-00267 valid=True D>D 7329ms elapsed=2277s
+268/300 DV2-TE-00268 valid=True P>A P>A 15398ms elapsed=2292s
+269/300 DV2-TE-00269 valid=True D>A 7131ms elapsed=2300s
+270/300 DV2-TE-00270 valid=True P>P 6633ms elapsed=2306s
+271/300 DV2-TE-00271 valid=True A>A P>P 15626ms elapsed=2322s
+272/300 DV2-TE-00272 valid=True D>A 11731ms elapsed=2334s
+273/300 DV2-TE-00273 valid=True P>A A>A 10169ms elapsed=2344s
+274/300 DV2-TE-00274 valid=True D>P 8244ms elapsed=2352s
+275/300 DV2-TE-00275 valid=True A>P 10172ms elapsed=2362s
+276/300 DV2-TE-00276 valid=True A>A A>A 10181ms elapsed=2372s
+277/300 DV2-TE-00277 valid=True A>A A>A 14900ms elapsed=2387s
+278/300 DV2-TE-00278 valid=True P>P 7110ms elapsed=2394s
+279/300 DV2-TE-00279 valid=True A>A A>A 12394ms elapsed=2407s
+280/300 DV2-TE-00280 valid=True A>A P>P 21234ms elapsed=2428s
+281/300 DV2-TE-00281 valid=True D>D 8995ms elapsed=2437s
+282/300 DV2-TE-00282 valid=True A>A A>P 7894ms elapsed=2445s
+283/300 DV2-TE-00283 valid=True A>A A>A 6113ms elapsed=2451s
+284/300 DV2-TE-00284 valid=True A>A P>P 10516ms elapsed=2462s
+285/300 DV2-TE-00285 valid=True D>D 4654ms elapsed=2466s
+286/300 DV2-TE-00286 valid=False D>P A>P 8150ms elapsed=2474s
+287/300 DV2-TE-00287 valid=True A>A 8787ms elapsed=2483s
+288/300 DV2-TE-00288 valid=True A>A A>A A>A 17019ms elapsed=2500s
+289/300 DV2-TE-00289 valid=True P>P 10560ms elapsed=2511s
+290/300 DV2-TE-00290 valid=True D>A 8166ms elapsed=2519s
+291/300 DV2-TE-00291 valid=True A>A A>A 15591ms elapsed=2535s
+292/300 DV2-TE-00292 valid=True A>A A>D 13514ms elapsed=2548s
+293/300 DV2-TE-00293 valid=True D>D 7101ms elapsed=2555s
+294/300 DV2-TE-00294 valid=True A>A 4304ms elapsed=2560s
+295/300 DV2-TE-00295 valid=False D>P A>P 22630ms elapsed=2582s
+296/300 DV2-TE-00296 valid=True P>P 48532ms elapsed=2631s
+297/300 DV2-TE-00297 valid=True A>A 5300ms elapsed=2636s
+298/300 DV2-TE-00298 valid=False D>P 80178ms elapsed=2716s
+299/300 DV2-TE-00299 valid=True A>A 1540ms elapsed=2718s
+300/300 DV2-TE-00300 valid=True A>A A>A A>A 17734ms elapsed=2735s

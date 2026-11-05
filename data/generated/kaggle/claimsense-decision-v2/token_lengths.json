@@ -1,0 +1,92 @@
+{
+  "model": "gemma4:e2b",
+  "training_max_length": 3072,
+  "longest_tokens": 2761,
+  "over_max_length": 0,
+  "records": [
+    {
+      "record_id": "DV2-TR-00801",
+      "split": "train",
+      "characters": 10933,
+      "tokens": 2761,
+      "characters_per_token": 3.96
+    },
+    {
+      "record_id": "DV2-TR-00695",
+      "split": "train",
+      "characters": 10851,
+      "tokens": 2761,
+      "characters_per_token": 3.93
+    },
+    {
+      "record_id": "DV2-TR-00810",
+      "split": "train",
+      "characters": 10839,
+      "tokens": 2759,
+      "characters_per_token": 3.93
+    },
+    {
+      "record_id": "DV2-TR-01041",
+      "split": "train",
+      "characters": 10793,
+      "tokens": 2755,
+      "characters_per_token": 3.92
+    },
+    {
+      "record_id": "DV2-TR-01235",
+      "split": "train",
+      "characters": 10778,
+      "tokens": 2751,
+      "characters_per_token": 3.92
+    },
+    {
+      "record_id": "DV2-TR-00005",
+      "split": "train",
+      "characters": 10762,
+      "tokens": 2741,
+      "characters_per_token": 3.93
+    },
+    {
+      "record_id": "DV2-TR-01934",
+      "split": "train",
+      "characters": 10762,
+      "tokens": 2739,
+      "characters_per_token": 3.93
+    },
+    {
+      "record_id": "DV2-TR-01491",
+      "split": "train",
+      "characters": 10745,
+      "tokens": 2747,
+      "characters_per_token": 3.91
+    },
+    {
+      "record_id": "DV2-TR-00259",
+      "split": "train",
+      "characters": 10727,
+      "tokens": 2736,
+      "characters_per_token": 3.92
+    },
+    {
+      "record_id": "DV2-TR-01580",
+      "split": "train",
+      "characters": 10726,
+      "tokens": 2739,
+      "characters_per_token": 3.92
+    },
+    {
+      "record_id": "DV2-VA-00008",
+      "split": "validation",
+      "characters": 10719,
+      "tokens": 2734,
+      "characters_per_token": 3.92
+    },
+    {
+      "record_id": "DV2-TR-00163",
+      "split": "train",
+      "characters": 10668,
+      "tokens": 2734,
+      "characters_per_token": 3.9
+    }
+  ]
+}

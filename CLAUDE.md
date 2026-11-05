@@ -18,8 +18,9 @@ ClaimSense: CMS-1500 claims → deterministic rules → fine-tuned Gemma 4 SLM r
   every criterion and CARC/RARC mapping cites its source in `data/raw/`. Plan and benefit
   values in `data/curated/` are fictional and synthesized (see `DECISIONS.md`).
 - No external model APIs. Inference runs locally via Ollama only.
-- Synthetic data only. Never commit `data/raw/`, `data/generated/`, `confidential/`,
-  model weights, `.env`, or secrets. Never copy AMA CPT descriptor text.
+- Synthetic data only. Never commit `.env`, secrets or model weights (`data/generated/models/`,
+  `*.gguf`). `data/raw/`, `data/generated/` and `confidential/` are committed to this private
+  repository (D-DATA-2). Never copy AMA CPT descriptor text into code or docs.
 - CPT text reproduced in CMS manuals (code descriptors, modifier definitions) counts as AMA text;
   paraphrase it and cite the page.
 - `app/domain/contracts.py` is frozen: propose changes, don't make them.

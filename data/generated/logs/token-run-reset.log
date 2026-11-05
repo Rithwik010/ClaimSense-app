@@ -1,0 +1,26 @@
+ollama: started 0.34.1 at http://localhost:11434 (OLLAMA_KEEP_ALIVE=-1 OLLAMA_NO_CLOUD=1); log data/generated/logs/ollama.log
+- database: dropping every table and migrating to the latest schema
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001, initial schema
+INFO  [alembic.runtime.migration] Running upgrade 0001 -> 0002, audit event type CALCULATION_FAILED (P2.4)
+INFO  [alembic.runtime.migration] Running upgrade 0002 -> 0003, rule tables: NCCI rows keyed by a surrogate id and source order; reference provenance (P2.1)
+INFO  [alembic.runtime.migration] Running upgrade 0003 -> 0004, audit event type REVIEW_OPENED (P5.3)
+INFO  [alembic.runtime.migration] Running upgrade 0004 -> 0005, billing articles' covered ICD-10-CM codes by group (P2.3b, R15)
+INFO  [alembic.runtime.migration] Running upgrade 0005 -> 0006, procedure codes: PFS global days (P2.3c, R11 modifiers 25 and 57)
+INFO  [alembic.runtime.migration] Running upgrade 0006 -> 0007, users and claim owners (D-AUTH-1)
+INFO  [alembic.runtime.migration] Running upgrade 0007 -> 0008, claim documents (D-DOC-1)
+INFO  [alembic.runtime.migration] Running upgrade 0008 -> 0009, claim documents numbered (D-DOC-2)
+INFO  [alembic.runtime.migration] Running upgrade 0009 -> 0010, audit event type FIELD_CORRECTED and the request ID of each audit event (D-FIX-1, D-OBS-1)
+INFO  [alembic.runtime.migration] Running upgrade 0010 -> 0011, member logins (D-MEM-1)
+- stored claim files deleted: 0
+- database: seeding curated data, code tables and reference data
+- seeded 2,792,506 rows; 0 demo authorizations
+- users: provider1, provider2, reviewer1, reviewer2, admin, member1, member2 (passwords in .env)
+- qdrant: coverage policy collections ready
+- ollama: claimsense-decision:v3 available
+- ollama: claimsense-decision:v3 loaded and kept loaded
+Ready. Start the app with: make demo-up (or make demo for the dev server)
+reset exit=0

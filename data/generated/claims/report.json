@@ -1,0 +1,47 @@
+{
+  "generator_version": "claims-v2",
+  "seed": 20260921,
+  "retrieval": "procedure+diagnoses+notes-v1; code filter; top 5; min score 0.0; BAAI/bge-small-en-v1.5; knowledge 36cfc77305a5",
+  "claims": 230,
+  "authorizations_extra": 89,
+  "by_scenario": {
+    "approve_single": 34,
+    "deny_dx": 12,
+    "deny_criterion": 14,
+    "deny_exclusion": 8,
+    "pend_missing": 16,
+    "office_visit": 10,
+    "office_plus_procedure": 10,
+    "office_same_day": 6,
+    "same_profile_multi": 10,
+    "two_policy": 8,
+    "ncci_bypass": 8,
+    "rule_denied_line": 8,
+    "R04_member_not_found": 8,
+    "R05_not_eligible": 10,
+    "R06_enrollment_pending": 8,
+    "R06_provider_not_found": 6,
+    "R07_late_filing": 10,
+    "R08_out_of_network": 10,
+    "R09_missing_referral": 8,
+    "R10_no_auth": 6,
+    "R10_expired_auth": 6,
+    "excluded_only": 6,
+    "mue_only": 4,
+    "DUP_duplicate": 4
+  },
+  "by_rule_outcome": {
+    "PASS": 144,
+    "REJECT": 18,
+    "DENY": 60,
+    "PEND": 8
+  },
+  "by_claim_decision": {
+    "APPROVE": 58,
+    "DENY": 54,
+    "PEND": 27,
+    "PARTIAL": 15,
+    "-": 76
+  },
+  "scans_with_value_noise": 52
+}

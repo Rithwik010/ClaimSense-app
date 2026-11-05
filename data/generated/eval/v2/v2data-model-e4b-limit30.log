@@ -1,0 +1,30 @@
+1/30 DV2-TE-00001 valid=True P>P 11308ms elapsed=11s
+2/30 DV2-TE-00002 valid=True A>A 5303ms elapsed=17s
+3/30 DV2-TE-00003 valid=True P>A 10486ms elapsed=27s
+4/30 DV2-TE-00004 valid=True D>D 8646ms elapsed=36s
+5/30 DV2-TE-00005 valid=True P>P P>P 19319ms elapsed=55s
+6/30 DV2-TE-00006 valid=True P>A 10053ms elapsed=65s
+7/30 DV2-TE-00007 valid=True D>D 9342ms elapsed=74s
+8/30 DV2-TE-00008 valid=True D>D 11236ms elapsed=86s
+9/30 DV2-TE-00009 valid=True P>A 10767ms elapsed=96s
+10/30 DV2-TE-00010 valid=True D>D 10481ms elapsed=107s
+11/30 DV2-TE-00011 valid=True A>A 4959ms elapsed=112s
+12/30 DV2-TE-00012 valid=True A>A 10488ms elapsed=122s
+13/30 DV2-TE-00013 valid=True A>A A>A 8472ms elapsed=131s
+14/30 DV2-TE-00014 valid=True A>A P>P 13151ms elapsed=144s
+15/30 DV2-TE-00015 valid=True A>A 10627ms elapsed=155s
+16/30 DV2-TE-00016 valid=True P>A 9782ms elapsed=164s
+17/30 DV2-TE-00017 valid=True D>D 12034ms elapsed=176s
+18/30 DV2-TE-00018 valid=True D>D 8602ms elapsed=185s
+19/30 DV2-TE-00019 valid=True A>P P>P 19223ms elapsed=204s
+20/30 DV2-TE-00020 valid=True D>D 9931ms elapsed=214s
+21/30 DV2-TE-00021 valid=True D>D P>P 26286ms elapsed=241s
+22/30 DV2-TE-00022 valid=True A>A 12394ms elapsed=253s
+23/30 DV2-TE-00023 valid=True A>A 7893ms elapsed=261s
+24/30 DV2-TE-00024 valid=False A>P 20647ms elapsed=281s
+25/30 DV2-TE-00025 valid=False P>P 13123ms elapsed=295s
+26/30 DV2-TE-00026 valid=True A>A 10722ms elapsed=305s
+27/30 DV2-TE-00027 valid=True A>A A>A 14546ms elapsed=320s
+28/30 DV2-TE-00028 valid=True A>A 10654ms elapsed=330s
+29/30 DV2-TE-00029 valid=True D>D 13712ms elapsed=344s
+30/30 DV2-TE-00030 valid=True A>A 9516ms elapsed=354s

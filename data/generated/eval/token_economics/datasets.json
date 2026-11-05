@@ -1,0 +1,431 @@
+{
+  "tokenizer": "tokenizer.json",
+  "policy_set_v2": {
+    "policies": 17,
+    "criteria": 69,
+    "all_criteria_tokens": 6038
+  },
+  "sets": [
+    {
+      "set": "clean",
+      "records": 300,
+      "file": "data/generated/decision_v2/test.jsonl",
+      "prompt_tokens": {
+        "n": 300,
+        "mean": 1673.6,
+        "median": 1632.5,
+        "p95": 2104,
+        "max": 2331
+      },
+      "system_prompt_tokens": {
+        "n": 300,
+        "mean": 970.0,
+        "median": 970.0,
+        "p95": 970,
+        "max": 970
+      },
+      "sections": {
+        "claim_fields": {
+          "n": 300,
+          "mean": 151.8,
+          "median": 132.5,
+          "p95": 216,
+          "max": 242
+        },
+        "clinical_notes": {
+          "n": 300,
+          "mean": 84.3,
+          "median": 76.0,
+          "p95": 149,
+          "max": 179
+        },
+        "rules_result": {
+          "n": 300,
+          "mean": 27.0,
+          "median": 16.0,
+          "p95": 59,
+          "max": 103
+        },
+        "plan_benefits": {
+          "n": 300,
+          "mean": 78.8,
+          "median": 63.0,
+          "p95": 141,
+          "max": 154
+        },
+        "coverage_criteria": {
+          "n": 300,
+          "mean": 342.5,
+          "median": 297.0,
+          "p95": 693,
+          "max": 830
+        },
+        "lines_to_decide": {
+          "n": 300,
+          "mean": 9.2,
+          "median": 8.0,
+          "p95": 11,
+          "max": 14
+        }
+      },
+      "criteria_sent_tokens": {
+        "n": 300,
+        "mean": 342.5,
+        "median": 297.0,
+        "p95": 693,
+        "max": 830
+      },
+      "criteria_tokens_saved_by_lookup": {
+        "n": 300,
+        "mean": 5695.5,
+        "median": 5741.0,
+        "p95": 5911,
+        "max": 6013
+      },
+      "answers": {
+        "v3_best_laptop": {
+          "machine": "the demo laptop",
+          "file": "v3_best_laptop-clean.jsonl",
+          "claims": 300,
+          "valid_output": 0.9733,
+          "retried": 10,
+          "answer_tokens": {
+            "n": 300,
+            "mean": 219.6,
+            "median": 195.0,
+            "p95": 430,
+            "max": 643
+          },
+          "latency_ms": {
+            "n": 300,
+            "mean": 6269.9,
+            "median": 5521.2,
+            "p95": 12306.8,
+            "max": 27102.9
+          }
+        },
+        "v3_best": {
+          "machine": "Kaggle, T4 GPU",
+          "file": "v3_best-clean.jsonl",
+          "claims": 300,
+          "valid_output": 0.9667,
+          "retried": 10,
+          "answer_tokens": {
+            "n": 300,
+            "mean": 220.2,
+            "median": 194.5,
+            "p95": 433,
+            "max": 643
+          },
+          "latency_ms": {
+            "n": 300,
+            "mean": 3902.9,
+            "median": 2915.7,
+            "p95": 6469.9,
+            "max": 67659.9
+          }
+        }
+      }
+    },
+    {
+      "set": "test_messy",
+      "records": 600,
+      "file": "data/generated/v3/final/test_messy.jsonl",
+      "prompt_tokens": {
+        "n": 600,
+        "mean": 2222.4,
+        "median": 2163.0,
+        "p95": 2784,
+        "max": 3968
+      },
+      "system_prompt_tokens": {
+        "n": 600,
+        "mean": 970.0,
+        "median": 970.0,
+        "p95": 970,
+        "max": 970
+      },
+      "sections": {
+        "claim_fields": {
+          "n": 600,
+          "mean": 191.9,
+          "median": 185.0,
+          "p95": 286,
+          "max": 415
+        },
+        "clinical_notes": {
+          "n": 600,
+          "mean": 556.4,
+          "median": 516.5,
+          "p95": 919,
+          "max": 1928
+        },
+        "rules_result": {
+          "n": 600,
+          "mean": 29.6,
+          "median": 22.0,
+          "p95": 67,
+          "max": 103
+        },
+        "plan_benefits": {
+          "n": 600,
+          "mean": 96.6,
+          "median": 98.0,
+          "p95": 181,
+          "max": 242
+        },
+        "coverage_criteria": {
+          "n": 600,
+          "mean": 357.5,
+          "median": 314.0,
+          "p95": 701,
+          "max": 850
+        },
+        "lines_to_decide": {
+          "n": 600,
+          "mean": 10.5,
+          "median": 11.0,
+          "p95": 17,
+          "max": 20
+        }
+      },
+      "criteria_sent_tokens": {
+        "n": 600,
+        "mean": 357.5,
+        "median": 314.0,
+        "p95": 701,
+        "max": 850
+      },
+      "criteria_tokens_saved_by_lookup": {
+        "n": 600,
+        "mean": 5680.5,
+        "median": 5724.0,
+        "p95": 5911,
+        "max": 6013
+      },
+      "answers": {
+        "v3_best": {
+          "machine": "Kaggle, T4 GPU",
+          "file": "v3_best-test_messy.jsonl",
+          "claims": 600,
+          "valid_output": 0.9617,
+          "retried": 29,
+          "answer_tokens": {
+            "n": 600,
+            "mean": 245.5,
+            "median": 223.0,
+            "p95": 451,
+            "max": 649
+          },
+          "latency_ms": {
+            "n": 600,
+            "mean": 4114.3,
+            "median": 3556.1,
+            "p95": 7311.7,
+            "max": 23687.7
+          }
+        }
+      }
+    },
+    {
+      "set": "test_unseen_style",
+      "records": 151,
+      "file": "data/generated/v3/final/test_unseen_style.jsonl",
+      "prompt_tokens": {
+        "n": 151,
+        "mean": 2194.7,
+        "median": 2144,
+        "p95": 2691,
+        "max": 3086
+      },
+      "system_prompt_tokens": {
+        "n": 151,
+        "mean": 970.0,
+        "median": 970,
+        "p95": 970,
+        "max": 970
+      },
+      "sections": {
+        "claim_fields": {
+          "n": 151,
+          "mean": 197.2,
+          "median": 194,
+          "p95": 288,
+          "max": 359
+        },
+        "clinical_notes": {
+          "n": 151,
+          "mean": 516.2,
+          "median": 512,
+          "p95": 685,
+          "max": 897
+        },
+        "rules_result": {
+          "n": 151,
+          "mean": 29.6,
+          "median": 22,
+          "p95": 60,
+          "max": 83
+        },
+        "plan_benefits": {
+          "n": 151,
+          "mean": 98.6,
+          "median": 99,
+          "p95": 182,
+          "max": 270
+        },
+        "coverage_criteria": {
+          "n": 151,
+          "mean": 362.6,
+          "median": 306,
+          "p95": 744,
+          "max": 847
+        },
+        "lines_to_decide": {
+          "n": 151,
+          "mean": 10.5,
+          "median": 11,
+          "p95": 17,
+          "max": 20
+        }
+      },
+      "criteria_sent_tokens": {
+        "n": 151,
+        "mean": 362.6,
+        "median": 306,
+        "p95": 744,
+        "max": 847
+      },
+      "criteria_tokens_saved_by_lookup": {
+        "n": 151,
+        "mean": 5675.4,
+        "median": 5732,
+        "p95": 5911,
+        "max": 6013
+      },
+      "answers": {
+        "v3_best": {
+          "machine": "Kaggle, T4 GPU",
+          "file": "v3_best-test_unseen_style.jsonl",
+          "claims": 151,
+          "valid_output": 0.9735,
+          "retried": 7,
+          "answer_tokens": {
+            "n": 151,
+            "mean": 248.9,
+            "median": 227,
+            "p95": 470,
+            "max": 556
+          },
+          "latency_ms": {
+            "n": 151,
+            "mean": 3996.1,
+            "median": 3594.1,
+            "p95": 7008.0,
+            "max": 13063.2
+          }
+        }
+      }
+    },
+    {
+      "set": "human_style",
+      "records": 65,
+      "file": "data/generated/v3/final/test_human_style.jsonl",
+      "prompt_tokens": {
+        "n": 65,
+        "mean": 1888.8,
+        "median": 1879,
+        "p95": 2271,
+        "max": 2468
+      },
+      "system_prompt_tokens": {
+        "n": 65,
+        "mean": 970.0,
+        "median": 970,
+        "p95": 970,
+        "max": 970
+      },
+      "sections": {
+        "claim_fields": {
+          "n": 65,
+          "mean": 193.9,
+          "median": 193,
+          "p95": 256,
+          "max": 353
+        },
+        "clinical_notes": {
+          "n": 65,
+          "mean": 272.5,
+          "median": 263,
+          "p95": 357,
+          "max": 533
+        },
+        "rules_result": {
+          "n": 65,
+          "mean": 32.6,
+          "median": 23,
+          "p95": 70,
+          "max": 103
+        },
+        "plan_benefits": {
+          "n": 65,
+          "mean": 90.3,
+          "median": 98,
+          "p95": 150,
+          "max": 222
+        },
+        "coverage_criteria": {
+          "n": 65,
+          "mean": 309.4,
+          "median": 297,
+          "p95": 684,
+          "max": 830
+        },
+        "lines_to_decide": {
+          "n": 65,
+          "mean": 10.1,
+          "median": 11,
+          "p95": 14,
+          "max": 20
+        }
+      },
+      "criteria_sent_tokens": {
+        "n": 65,
+        "mean": 309.4,
+        "median": 297,
+        "p95": 684,
+        "max": 830
+      },
+      "criteria_tokens_saved_by_lookup": {
+        "n": 65,
+        "mean": 5728.6,
+        "median": 5741,
+        "p95": 5996,
+        "max": 6013
+      },
+      "answers": {
+        "v3_best": {
+          "machine": "Kaggle, T4 GPU",
+          "file": "v3_best-human_style.jsonl",
+          "claims": 65,
+          "valid_output": 0.8769,
+          "retried": 12,
+          "answer_tokens": {
+            "n": 65,
+            "mean": 271.8,
+            "median": 209,
+            "p95": 470,
+            "max": 1536
+          },
+          "latency_ms": {
+            "n": 65,
+            "mean": 5931.2,
+            "median": 3253.4,
+            "p95": 23806.9,
+            "max": 39747.6
+          }
+        }
+      }
+    }
+  ]
+}

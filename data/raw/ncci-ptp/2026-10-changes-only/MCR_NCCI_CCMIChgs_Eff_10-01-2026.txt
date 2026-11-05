@@ -1,0 +1,19 @@
+"Current Procedural Terminology (CPT) codes, descriptions and other data only are copyright 2025 American Medical Association. All rights reserved. 
+
+CPT® is a registered trademark of the American Medical Association.
+
+Applicable FARS\DFARS Restrictions Apply to Government Use. 
+
+Fee schedules, relative value units, conversion factors and/or related components are not assigned by the AMA, are not part of CPT, and the AMA is not recommending their use.  The AMA does not directly or indirectly practice medicine or dispense medical services.  The AMA assumes no liability for the data contained or not contained herein. "		
+Column 1	Column 2	"Modifier
+Indicator
+0=not allowed
+1= allowed
+9= not applicable"
+33274	75820	0
+33275	75820	0
+36836	36005	1
+36836	36901	0
+36836	36902	0
+36836	36903	0
+36837	36005	1

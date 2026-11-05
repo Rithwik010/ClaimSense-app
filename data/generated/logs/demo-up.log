@@ -1,0 +1,43 @@
+uv run python -m scripts.demo.ollama_up
+ollama: 0.34.1 already running at http://localhost:11434
+docker compose up -d --wait
+ Container claimsense-postgres-1 Running 
+ Container claimsense-qdrant-1 Running 
+ Container claimsense-qdrant-1 Waiting 
+ Container claimsense-postgres-1 Waiting 
+ Container claimsense-qdrant-1 Healthy 
+ Container claimsense-postgres-1 Healthy 
+uv run alembic upgrade head
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+cd frontend-web && npm run build
+
+> claimsense-web@0.1.0 build
+> tsc -p tsconfig.json --noEmit && vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 3164 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                                  0.39 kB │ gzip:   0.26 kB
+dist/assets/source-serif-4-vietnamese-wght-normal-D-yuW59g.woff2                13.44 kB
+dist/assets/source-serif-4-cyrillic-ext-wght-normal-cHuGMAiY.woff2              18.06 kB
+dist/assets/atkinson-hyperlegible-next-latin-ext-wght-normal-C6vrW8VD.woff2     19.09 kB
+dist/assets/source-serif-4-greek-wght-normal-ece1310W.woff2                     20.22 kB
+dist/assets/atkinson-hyperlegible-next-latin-wght-normal-BcXVPD7q.woff2         33.99 kB
+dist/assets/source-serif-4-cyrillic-wght-normal-DwHjdM4S.woff2                  36.46 kB
+dist/assets/source-serif-4-latin-ext-wght-normal-CxNHBx-q.woff2                 42.04 kB
+dist/assets/source-serif-4-latin-wght-normal-D9elroTD.woff2                     50.82 kB
+dist/assets/index-DPURk0C3.css                                                  92.28 kB │ gzip:  16.65 kB
+dist/assets/index-Bb0yCh0h.js                                                1,181.10 kB │ gzip: 357.66 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 278ms
+ClaimSense http://localhost:8000 · model claimsense-decision:v3 · logins: docs/DEMO.md
+MODEL_NAME=claimsense-decision:v3 uv run uvicorn app.api.main:app --port 8000 > data/generated/logs/api.log 2>&1
+make: *** [demo-up] Terminated: 15

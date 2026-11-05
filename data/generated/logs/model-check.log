@@ -1,0 +1,5 @@
+MODEL_NAME=claimsense-decision:v3 uv run python -m scripts.verify.model_check
+OK   running model  claimsense-decision:v3: weights dd4cf0ffb8d9, template, renderer, parser, 4 parameters, no system prompt; same manifest
+OK   requests       first temperature 0 seed 20260921; retry temperature 0.7 seed 20261010
+OK   Modelfile      data/generated/models/claimsense-decision-v3/Modelfile builds weights dd4cf0ffb8d9, template, renderer, parser, 4 parameters, no system prompt; same manifest
+--   claimsense-decision:v3 loaded again (removing the throwaway model unloaded it)

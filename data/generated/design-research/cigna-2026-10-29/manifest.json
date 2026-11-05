@@ -1,0 +1,142 @@
+[
+ {
+  "file": "01-cigna-home-1440.png",
+  "url": "https://www.cigna.com/",
+  "width": 1440,
+  "status": 200,
+  "final_url": "https://www.cigna.com/",
+  "title": "Cigna Healthcare | Health Insurance and Dental Plans",
+  "styles": "01-cigna-home-1440-styles.json"
+ },
+ {
+  "file": "01-cigna-home-768.png",
+  "url": "https://www.cigna.com/",
+  "width": 768,
+  "status": 200,
+  "final_url": "https://www.cigna.com/",
+  "title": "Cigna Healthcare | Health Insurance and Dental Plans"
+ },
+ {
+  "file": "01-cigna-home-390.png",
+  "url": "https://www.cigna.com/",
+  "width": 390,
+  "status": 200,
+  "final_url": "https://www.cigna.com/",
+  "title": "Cigna Healthcare | Health Insurance and Dental Plans",
+  "styles": "01-cigna-home-390-styles.json"
+ },
+ {
+  "file": "02-explainer-how-to-buy-1440.png",
+  "url": "https://www.cigna.com/knowledge-center/how-to-buy-health-insurance",
+  "width": 1440,
+  "status": 200,
+  "final_url": "https://www.cigna.com/knowledge-center/how-to-buy-health-insurance",
+  "title": "How to Buy Health Insurance and Choose the Right Plan | Cigna Healthcare"
+ },
+ {
+  "file": "02-explainer-how-to-buy-390.png",
+  "url": "https://www.cigna.com/knowledge-center/how-to-buy-health-insurance",
+  "width": 390,
+  "status": 200,
+  "final_url": "https://www.cigna.com/knowledge-center/how-to-buy-health-insurance",
+  "title": "How to Buy Health Insurance and Choose the Right Plan | Cigna Healthcare"
+ },
+ {
+  "file": "03-providers-1440.png",
+  "url": "https://www.cigna.com/health-care-providers",
+  "width": 1440,
+  "status": 200,
+  "final_url": "https://www.cigna.com/health-care-providers",
+  "title": "Health Care Providers | Cigna Healthcare",
+  "styles": "03-providers-1440-styles.json"
+ },
+ {
+  "file": "03-providers-768.png",
+  "url": "https://www.cigna.com/health-care-providers",
+  "width": 768,
+  "status": 200,
+  "final_url": "https://www.cigna.com/health-care-providers",
+  "title": "Health Care Providers | Cigna Healthcare"
+ },
+ {
+  "file": "03-providers-390.png",
+  "url": "https://www.cigna.com/health-care-providers",
+  "width": 390,
+  "status": 200,
+  "final_url": "https://www.cigna.com/health-care-providers",
+  "title": "Health Care Providers | Cigna Healthcare",
+  "styles": "03-providers-390-styles.json"
+ },
+ {
+  "file": "04-contact-1440.png",
+  "url": "https://www.cigna.com/contact-us",
+  "width": 1440,
+  "status": 200,
+  "final_url": "https://www.cigna.com/contact-us",
+  "title": "Contact Us | Customer Service | Cigna Healthcare"
+ },
+ {
+  "file": "04-contact-390.png",
+  "url": "https://www.cigna.com/contact-us",
+  "width": 390,
+  "status": 200,
+  "final_url": "https://www.cigna.com/contact-us",
+  "title": "Contact Us | Customer Service | Cigna Healthcare"
+ },
+ {
+  "file": "06-find-a-doctor-1440.png",
+  "url": "https://hcpdirectory.cigna.com/web/public/consumer/directory",
+  "width": 1440,
+  "status": 200,
+  "final_url": "https://hcpdirectory.cigna.com/web/public/consumer/directory",
+  "title": "Cigna Health Care Provider Directory"
+ },
+ {
+  "file": "06-find-a-doctor-390.png",
+  "url": "https://hcpdirectory.cigna.com/web/public/consumer/directory",
+  "width": 390,
+  "status": 200,
+  "final_url": "https://hcpdirectory.cigna.com/web/public/consumer/directory",
+  "title": "Cigna Health Care Provider Directory"
+ },
+ {
+  "file": "07-evernorth-home-1440.png",
+  "url": "https://www.evernorth.com/",
+  "width": 1440,
+  "status": 200,
+  "final_url": "https://www.evernorth.com/",
+  "title": "Evernorth Health Services | Redefining Health Care",
+  "styles": "07-evernorth-home-1440-styles.json"
+ },
+ {
+  "file": "07-evernorth-home-390.png",
+  "url": "https://www.evernorth.com/",
+  "width": 390,
+  "status": 200,
+  "final_url": "https://www.evernorth.com/",
+  "title": "Evernorth Health Services | Redefining Health Care",
+  "styles": "07-evernorth-home-390-styles.json"
+ },
+ {
+  "file": "07-evernorth-solutions-1440.png",
+  "url": "https://www.evernorth.com/our-solutions/evicore",
+  "width": 1440,
+  "status": 200,
+  "final_url": "https://www.evernorth.com/our-solutions/evicore",
+  "title": "EviCore healthcare Solutions | Evernorth"
+ },
+ {
+  "file": "07-evernorth-solutions-390.png",
+  "url": "https://www.evernorth.com/our-solutions/evicore",
+  "width": 390,
+  "status": 200,
+  "final_url": "https://www.evernorth.com/our-solutions/evicore",
+  "title": "EviCore healthcare Solutions | Evernorth"
+ },
+ {
+  "file": "08-states-*.png",
+  "url": "https://www.cigna.com/health-care-providers",
+  "width": 1440,
+  "error": "TimeoutError: locator.hover: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('main a[class*=\"btn\"]:visible, main a[class*=\"button\"]:visible, main button:visible').first()\n    - locator res"
+ }
+]
