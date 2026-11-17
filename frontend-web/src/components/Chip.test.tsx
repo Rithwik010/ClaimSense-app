@@ -85,7 +85,9 @@ describe("what a provider sees", () => {
   });
 
   it("shows a claim not processed yet as in review, and a final outcome as the reviewer sees it", () => {
-    expect(providerOutcome("NOT_PROCESSED").label).toBe("In review");
+    expect(providerOutcome("NOT_PROCESSED").label).toBe("Not processed");
+    expect(providerOutcome("IN_REVIEW", "RECEIVED").label).toBe("Not processed"); // fix 1
+    expect(providerOutcome("IN_REVIEW", "IN_REVIEW").label).toBe("In review");
     expect(providerOutcome("APPROVED")).toBe(OUTCOME.APPROVED);
     expect(providerOutcome("REJECTED").label).toBe("Rejected");
   });

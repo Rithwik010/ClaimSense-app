@@ -37,6 +37,28 @@ export function dateTime(value: string | null | undefined): string {
     : when.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 }
 
+/** A time to the second, for the audit trail: "Nov 16, 2026, 4:33:11 PM". */
+export function dateTimeSeconds(value: string | null | undefined): string {
+  if (!value) return "—";
+  const when = new Date(value);
+  return Number.isNaN(when.getTime())
+    ? value
+    : when.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "medium" });
+}
+
+/** A duration in seconds in its largest sensible units: "45 s", "12 min", "3 h 5 min", "2 d 4 h". */
+export function duration(seconds: number | null | undefined): string {
+  if (seconds === null || seconds === undefined) return "—";
+  const whole = Math.max(0, Math.round(seconds));
+  if (whole < 60) return `${whole} s`;
+  const minutes = Math.round(whole / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return minutes % 60 ? `${hours} h ${minutes % 60} min` : `${hours} h`;
+  const days = Math.floor(hours / 24);
+  return hours % 24 ? `${days} d ${hours % 24} h` : `${days} d`;
+}
+
 /** How long ago, in the largest whole unit: "5 min", "3 h", "2 d". */
 export function age(value: string | null | undefined, now: Date = new Date()): string {
   if (!value) return "—";

@@ -10,7 +10,7 @@ import { ApiError } from "@/api/client";
 import { useEvaluation, useResults } from "@/api/hooks";
 import type { GuardRow, ModelRow, Results, V3Set } from "@/api/types";
 import { PageTitle, Section } from "@/components/Layout";
-import { EmptyState, ErrorNotice, Skeleton } from "@/components/States";
+import { EmptyState, ErrorNotice, Note, Skeleton } from "@/components/States";
 import {
   ChartContainer,
   ChartLegend,
@@ -302,7 +302,7 @@ export function Metrics() {
   const noResults = results.error instanceof ApiError && results.error.status === 404;
   if (evaluation.isPending) return <Skeleton lines={8} />;
   if (evaluation.error) return <ErrorNotice error={evaluation.error} onRetry={() => void evaluation.refetch()} />;
-  const { models, macro_f1_target, v3_sets } = evaluation.data;
+  const { models, macro_f1_target, v3_sets, missing = [] } = evaluation.data;
   const guard = results.data?.evidence_guard ?? [];
   return (
     <>
@@ -310,6 +310,19 @@ export function Metrics() {
         title="Model metrics"
         hint="v3 is the model the demo uses: first against v2 on four sets of synthetic claims, then models v1, v2 and E4B on the same 300 v2 test claims. Line decisions are derived from the criteria, as the pipeline derives them."
       />
+      {missing.length > 0 && (
+        <div className="mb-8">
+          <Note>
+            <p className="font-semibold">
+              {v3_sets.length === 0 ? "The model v3 results are not on this machine, so they are not shown." : "Some results are not on this machine."}
+            </p>
+            <p className="mt-1">
+              Missing under data/generated/eval/: {missing.join(", ")}. The scripts that write them (or the files from
+              the machine that ran them) bring them back; nothing else on this page depends on them.
+            </p>
+          </Note>
+        </div>
+      )}
       {v3_sets.length > 0 && (
         <Section title="Model v3 against v2">
           <V3AgainstV2 sets={v3_sets} />

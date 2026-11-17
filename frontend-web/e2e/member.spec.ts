@@ -92,7 +92,8 @@ test("member1: only their own claims; one not yet final shows nothing of its out
   await expect(waiting.getByText("Being processed")).toBeVisible();
   await expect(waiting.getByText(/\$/)).toHaveCount(0);
   await expect(table.getByRole("row", { name: /CLM-DEMO-01/ }).getByText("Approved")).toBeVisible();
-  await expect(table.getByRole("row", { name: /CLM-DEMO-07/ }).getByText("Rejected")).toBeVisible();
+  // A copy of claim 1: "Already sent", not returned to the provider (fix 11, D-MEM-5).
+  await expect(table.getByRole("row", { name: /CLM-DEMO-07/ }).getByText("Already sent")).toBeVisible();
   expect(await mainText(page)).not.toMatch(HIDDEN);
   await axeClean(page, "member: my claims");
 
@@ -103,7 +104,8 @@ test("member1: only their own claims; one not yet final shows nothing of its out
   await axeClean(page, "member: a claim being processed");
 
   await page.goto("/member/claims/CLM-DEMO-07");
-  await expect(page.getByRole("heading", { name: "Your claim was returned to your provider" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This claim was a copy" })).toBeVisible();
+  await expect(page.getByText(/correct and send again/)).toHaveCount(0);
   expect(await mainText(page)).not.toMatch(HIDDEN);
 });
 
@@ -156,7 +158,7 @@ test("member1: benefits and profile, as the API sends them", async ({ page }) =>
   const benefits = (await (await page.request.get("/v1/member/benefits")).json()) as {
     plan_name: string;
     networks: { network: string; deductible_met_cents: number; deductible_cents: number; oop_met_cents: number; oop_max_cents: number }[];
-    visits: { benefit_category: string; visit_limit: number; visits_used: number }[];
+    visits: { benefit_category: string; visit_limit: number; visits_used: number; visits_left: number }[];
   };
   await page.getByRole("link", { name: "My benefits" }).click();
   await expect(page.getByRole("heading", { name: "My benefits" })).toBeVisible();
@@ -171,6 +173,8 @@ test("member1: benefits and profile, as the API sends them", async ({ page }) =>
   const row = page.getByRole("table", { name: "Visits" }).getByRole("row", { name: /Rehab therapy/ });
   await expect(row).toContainText(String(rehab.visits_used));
   await expect(row).toContainText(String(rehab.visit_limit));
+  await expect(row).toContainText(String(rehab.visits_left)); // the calculator's, as sent (D-MEM-5)
+  await expect(page.getByRole("meter").first()).toBeVisible();
   await expect(page.getByText(benefits.plan_name, { exact: false }).first()).toBeVisible();
   await axeClean(page, "member: my benefits");
 
@@ -241,6 +245,7 @@ for (const size of [
       ["/member/claims/CLM-DEMO-01", "Explanation of benefits"],
       [`/member/claims/${NEW_CLAIM}`, "Your claim is being processed"],
       ["/member/benefits", "My benefits"],
+      ["/member/plan", "My plan"],
       ["/member/profile", "Profile"],
     ] as const) {
       await page.goto(path);

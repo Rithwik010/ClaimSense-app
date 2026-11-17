@@ -2,28 +2,34 @@
 and E4B on the v2 test set (training/evaluate/compare_v2.py), model v3 against v2 on four sets
 (scripts/verify/results_v3.py: each with the machine it was measured on) and the OCR field
 accuracy on held-out scans (scripts/verify/ocr_accuracy.py), each with its target, read from the
-reports those scripts write under data/generated/eval/ (a report not yet written is left out); the
-P6.1 results
-file; the overview counts of the claims on file (demo data); and the versions the decision
-records name, with the ones the API is set to use."""
+reports those scripts write under data/generated/eval/ (a report not yet written is left out, and
+named in `missing`); the P6.1 results file; the overview of the claims on file (demo data: counts,
+money, review times and the trend, D-QLT-1); how reviewers use the model's recommendations (the
+Review quality page, D-QLT-1); the reviewers' corrections as training examples (D-FBK-1); and the
+versions the decision records name, with the ones the API is set to use.
+
+The Overview's money is the sum of the totals the calculator stored on each decided claim, a
+report over the claims on file; no claim's amount is produced here (H1)."""
 
 import json
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_session, require
+from app.api.deps import SettingsDep, get_session, get_today, require
 from app.auth import Role
 from app.calculator import CALCULATOR_VERSION
 from app.core.settings import Settings, get_settings
 from app.db.models import AuditEvent, Claim, DecisionRecordRow
 from app.domain.contracts import ReviewTier
 from app.rules import RULES_VERSION
+from app.workflow.feedback import training_examples
+from app.workflow.quality import OverviewExtras, overview_extras, review_quality
 from app.workflow.review import review_queue
 
 # Admin only (D-AUTH-1).
@@ -121,6 +127,7 @@ class Evaluation(BaseModel):
     ocr_target: float
     v2_errors: V2Errors | None = None
     v3_sets: list[V3Set] = []
+    missing: list[str] = []  # reports not written on this machine, under data/generated/eval/
 
 
 def _model_row(report: dict[str, Any]) -> ModelRow:
@@ -141,6 +148,14 @@ def _model_row(report: dict[str, Any]) -> ModelRow:
             for name, scores in metrics["decisions"]["per_class"].items()
         },
     )
+
+
+def _report_name(path: Path) -> str:
+    """A report's path under data/generated/eval/, or its file name when it lives elsewhere."""
+    try:
+        return str(path.relative_to(EVAL))
+    except ValueError:
+        return path.name
 
 
 @router.get("/evaluation")
@@ -176,6 +191,7 @@ def evaluation() -> Evaluation:
     v3_sets = []
     if V3_REPORT.exists():
         v3_sets = [V3Set.model_validate(s) for s in json.loads(V3_REPORT.read_text())["sets"]]
+    expected = (*MODEL_REPORTS, OCR_REPORT, ERRORS_REPORT, V3_REPORT)
     return Evaluation(
         models=models,
         macro_f1_target=MACRO_F1_TARGET,
@@ -183,6 +199,7 @@ def evaluation() -> Evaluation:
         ocr_target=OCR_TARGET,
         v2_errors=errors,
         v3_sets=v3_sets,
+        missing=[_report_name(p) for p in expected if not p.exists()],
     )
 
 
@@ -208,13 +225,18 @@ class Overview(BaseModel):
     decided_by_rules: int  # REJECTED, DENIED_BY_RULE, PENDED_BY_RULE
     reviewed_accepted: int
     reviewed_overridden: int
+    not_processed: int  # RECEIVED: read or filed, not processed yet
+    extras: OverviewExtras  # money, review times, override rate, top reasons, the last 14 days
 
 
 RULE_STATUSES = ("REJECTED", "DENIED_BY_RULE", "PENDED_BY_RULE")
 
 
 @router.get("/overview")
-def overview(session: Annotated[Session, Depends(get_session)]) -> Overview:
+def overview(
+    session: Annotated[Session, Depends(get_session)],
+    today: Annotated[date, Depends(get_today)],
+) -> Overview:
     by_status = dict(
         session.execute(select(Claim.status, func.count()).group_by(Claim.status)).tuples().all()
     )
@@ -240,6 +262,32 @@ def overview(session: Annotated[Session, Depends(get_session)]) -> Overview:
         decided_by_rules=sum(by_status.get(s, 0) for s in RULE_STATUSES),
         reviewed_accepted=reviews.get("REVIEW_ACCEPTED", 0),
         reviewed_overridden=reviews.get("REVIEW_OVERRIDDEN", 0),
+        not_processed=by_status.get("RECEIVED", 0),
+        extras=overview_extras(session, today),
+    )
+
+
+@router.get("/quality")
+def quality(session: Annotated[Session, Depends(get_session)]) -> dict[str, Any]:
+    """How reviewers use the model's recommendations (D-QLT-1): acceptance, the model-to-final
+    decision matrix, by tier, reviewer and policy, review times, feedback given and appeals."""
+    return review_quality(session)
+
+
+@router.get("/training-examples")
+def training_export(
+    session: Annotated[Session, Depends(get_session)], settings: SettingsDep
+) -> Response:
+    """The reviewed claims as training examples in the fine-tuning format, the reviewers'
+    corrections applied (D-FBK-1): one JSON object a line. Synthetic data only."""
+    lines = [
+        json.dumps(example, ensure_ascii=False, separators=(",", ":"))
+        for example in training_examples(session, settings.policy_set)
+    ]
+    return Response(
+        "\n".join(lines) + ("\n" if lines else ""),
+        media_type="application/x-ndjson",
+        headers={"Content-Disposition": 'attachment; filename="reviewer-examples.jsonl"'},
     )
 
 

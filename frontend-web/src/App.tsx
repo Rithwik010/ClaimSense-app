@@ -3,6 +3,7 @@
 // role's home: provider My claims, reviewer Review queue, admin Overview, member their My claims
 // (D-MEM-1).
 
+import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router";
 
 import { Allow, Home, RequireLogin } from "./components/Guards";
@@ -21,16 +22,34 @@ import { Metrics } from "./pages/Metrics";
 import { MyClaims } from "./pages/MyClaims";
 import { Overview } from "./pages/Overview";
 import { PatientEob } from "./pages/PatientEob";
+import { Policies } from "./pages/Policies";
+import { MemberPlan } from "./pages/MemberPlan";
+import { ReviewQuality } from "./pages/ReviewQuality";
+import { Users } from "./pages/Users";
 import { ReviewClaim } from "./pages/ReviewClaim";
 import { Returned } from "./pages/Returned";
 import { ReviewQueue } from "./pages/ReviewQueue";
 import { SubmitClaim } from "./pages/SubmitClaim";
 import { SystemStatus } from "./pages/SystemStatus";
 
+// The login panel's wordings to choose from (D-UI-11): dev server only; the production build has
+// neither the route nor its code.
+const LoginPanels = import.meta.env.DEV ? lazy(() => import("./design/LoginPanels")) : null;
+
 export function App() {
   return (
     <Routes>
       <Route path="login" element={<Login />} />
+      {LoginPanels && (
+        <Route
+          path="design/login-panel"
+          element={
+            <Suspense fallback={null}>
+              <LoginPanels />
+            </Suspense>
+          }
+        />
+      )}
       <Route element={<RequireLogin />}>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
@@ -43,6 +62,9 @@ export function App() {
           <Route element={<Allow roles={["reviewer"]} />}>
             <Route path="review/:claimId" element={<ReviewClaim />} />
           </Route>
+          <Route element={<Allow roles={["provider", "reviewer", "admin"]} />}>
+            <Route path="policies" element={<Policies />} />
+          </Route>
           <Route element={<Allow roles={["reviewer", "admin"]} />}>
             <Route path="queue" element={<ReviewQueue />} />
             <Route path="claims" element={<Claims />} />
@@ -52,14 +74,17 @@ export function App() {
           </Route>
           <Route element={<Allow roles={["admin"]} />}>
             <Route path="overview" element={<Overview />} />
+            <Route path="quality" element={<ReviewQuality />} />
             <Route path="metrics" element={<Metrics />} />
             <Route path="audit" element={<AuditLookup />} />
+            <Route path="users" element={<Users />} />
             <Route path="system" element={<SystemStatus />} />
           </Route>
           <Route element={<Allow roles={["member"]} />}>
             <Route path="member/claims" element={<MemberClaims />} />
             <Route path="member/claims/:claimId" element={<MemberClaim />} />
             <Route path="member/benefits" element={<MemberBenefits />} />
+            <Route path="member/plan" element={<MemberPlan />} />
             <Route path="member/profile" element={<MemberProfile />} />
           </Route>
           <Route path="*" element={<EmptyState title="Page not found" />} />

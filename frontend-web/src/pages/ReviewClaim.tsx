@@ -3,17 +3,23 @@
 // new decision, a required reason code for Deny or Pend (D-REV-9; the provider sees it), only when
 // needed the benefit category, and a required note for the audit trail. One primary action:
 // "Accept recommendation", or "Finalize claim" once a line is overridden; both are confirmed.
-// Reviewers never enter amounts: the calculator recomputes them.
+// Reviewers never enter amounts: the calculator recomputes them. The page says when another
+// reviewer opened the claim in the last 30 minutes (D-REV-10) and, for an appeal, who filed it and
+// why; the reviewer who made the decision under appeal cannot decide it (D-APL-1). Keys: A accepts
+// or finalizes, N opens the next claim, Q goes back to the queue. Once final, the reviewer can
+// correct the model's criteria for the next fine-tune (D-FBK-1).
 
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
-import { useAudit, useClaim, useOpenReview, useQueue, useSubmitReview } from "@/api/hooks";
+import { useAudit, useClaim, useOpenReview, useOthersReviewing, useQueue, useSubmitReview } from "@/api/hooks";
 import type { DecisionRecord, FinalLineDecision, LineDecision } from "@/api/types";
 import { Chip, OutcomeChip, StatusChip } from "@/components/Chip";
 import { ClaimWorkspace } from "@/components/ClaimWorkspace";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { FeedbackForm } from "@/components/Feedback";
+import { AppealHistory } from "@/components/FollowUps";
 import { PageTitle } from "@/components/Layout";
 import { OriginalFileButton } from "@/components/OriginalFile";
 import { AmountSummary } from "@/components/Record";
@@ -28,6 +34,8 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { useShortcuts } from "@/hooks/use-shortcuts";
+import { age } from "@/lib/format";
 import { answerErrors, DECISION, reasonOption, TIER } from "@/lib/labels";
 import { useUser } from "@/lib/auth";
 import {
@@ -160,13 +168,34 @@ export function OverrideForm({
   );
 }
 
+/** The keys the review pages take, where the reviewer sees them. */
+function Keys({ keys }: { keys: [string, string][] }) {
+  return (
+    <p className="hidden text-[13px] text-ink-muted md:block">
+      Keys:{" "}
+      {keys.map(([key, what], i) => (
+        <span key={key}>
+          {i > 0 && ", "}
+          <kbd className="rounded border border-rules bg-subtle px-1.5 font-mono text-[12px] text-ink">{key}</kbd> {what}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 function Finalized({ record }: { record: DecisionRecord }) {
   const audit = useAudit(record.claim_id);
   const claim = useClaim(record.claim_id); // the outcome every dashboard shows (D-UI-6)
   const queue = useQueue(null);
+  const navigate = useNavigate();
   // The next claim in the queue's order (most work first, then the oldest).
   const next = queue.data?.find((item) => item.claim_id !== record.claim_id);
+  useShortcuts({
+    n: () => next && navigate(`/review/${encodeURIComponent(next.claim_id)}`),
+    q: () => navigate("/queue"),
+  });
   return (
+    <>
     <div role="status" className="surface rounded-lg p-5">
       <div className="flex flex-wrap items-center gap-3">
         <p className="font-semibold">Claim {record.claim_id} is final</p>
@@ -194,8 +223,11 @@ function Finalized({ record }: { record: DecisionRecord }) {
         <Button asChild size="lg" variant="outline">
           <Link to="/queue">Back to the queue</Link>
         </Button>
+        <Keys keys={[["N", "next claim"], ["Q", "queue"]]} />
       </div>
     </div>
+    <FeedbackForm record={record} />
+    </>
   );
 }
 
@@ -204,13 +236,17 @@ function Review({
   record,
   submit,
   fill,
+  blocked = false,
 }: {
   view: Parameters<typeof ClaimWorkspace>[0]["view"];
   record: DecisionRecord;
   submit: ReturnType<typeof useSubmitReview>;
   fill: boolean;
+  /** This reviewer made the decision under appeal: they cannot decide it (D-APL-1). */
+  blocked?: boolean;
 }) {
   const reviewerId = useUser().username;
+  const navigate = useNavigate();
   const audit = useAudit(record.claim_id);
   const [lines, setLines] = useState(() => initialLines(record));
   const [editing, setEditing] = useState<LineState | null>(null);
@@ -226,6 +262,13 @@ function Review({
       : "Choose a different decision or category to override the line."
     : undefined;
   const draftField: FormField | undefined = editing ? draftCheck?.fields[editing.lineNo] : undefined;
+  useShortcuts(
+    {
+      a: () => !blocked && !submit.isPending && setConfirming(true),
+      q: () => navigate("/queue"),
+    },
+    editing === null && !confirming,
+  );
 
   const lineActions = (line: FinalLineDecision) => {
     const state = byLine.get(line.line_no);
@@ -292,16 +335,19 @@ function Review({
       <div className="sticky bottom-0 z-10 mt-6 -mx-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-rules bg-white px-4 py-3 shadow-[0_-8px_16px_-12px_rgb(16_24_40/0.18)] md:-mx-8 md:px-8">
         <Button
           size="lg"
-          disabled={submit.isPending}
+          disabled={submit.isPending || blocked}
           onClick={() => setConfirming(true)}
         >
           {overridden ? "Finalize claim" : "Accept all lines"}
         </Button>
-        <span className="text-[13px] text-ink-muted">
-          {overridden
-            ? `${overridden} line${overridden === 1 ? "" : "s"} overridden. The calculator recomputes the amounts.`
-            : "Accepts every line as recommended. Reviewers never enter amounts."}
+        <span className="min-w-0 flex-1 text-[13px] text-ink-muted">
+          {blocked
+            ? "You made the decision under appeal, so another reviewer decides it."
+            : overridden
+              ? `${overridden} line${overridden === 1 ? "" : "s"} overridden. The calculator recomputes the amounts.`
+              : "Accepts every line as recommended. Reviewers never enter amounts."}
         </span>
+        <Keys keys={[["A", overridden ? "finalize" : "accept"], ["Q", "queue"]]} />
       </div>
       <Sheet open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
         <SheetContent className="w-full sm:max-w-md">
@@ -375,6 +421,7 @@ export function ReviewClaim() {
   const opened = useRef<string | null>(null);
   const status = claim.data?.status;
   const fill = Boolean((state as { justProcessed?: boolean } | null)?.justProcessed);
+  const others = useOthersReviewing(claimId, status === "AWAITING_REVIEW" && !submit.data);
 
   // REVIEW_OPENED once per claim and reviewer: the start of the review time (D-REV-6).
   useEffect(() => {
@@ -397,6 +444,7 @@ export function ReviewClaim() {
   if (claim.error) return <ErrorNotice error={claim.error} onRetry={() => void claim.refetch()} />;
   const view = claim.data;
   const record = view.record;
+  const appeal = view.appeals?.find((a) => a.status === "OPEN");
   return (
     <>
       <PageTitle
@@ -416,6 +464,36 @@ export function ReviewClaim() {
           <ErrorNotice error={open.error} />
         </div>
       )}
+      {view.status === "AWAITING_REVIEW" && (others.data ?? []).length > 0 && (
+        <div className="mb-6">
+          <Note>
+            <p className="font-semibold">
+              {(others.data ?? [])
+                .map((o) => `${o.reviewer_id} opened this claim ${age(o.opened)} ago`)
+                .join("; ")}
+              .
+            </p>
+            <p className="mt-1">
+              Check with them before you review it: the first reviewer to finalize decides the claim, and the other
+              review is refused.
+            </p>
+          </Note>
+        </div>
+      )}
+      {view.status === "AWAITING_REVIEW" && appeal && (
+        <div className="mb-6">
+          <Note>
+            <p className="font-semibold">
+              Appeal: the {appeal.filed_role} asks for this denied claim to be decided again
+              {appeal.previous_reviewer ? `. ${appeal.previous_reviewer} made the decision under appeal` : ""}.
+            </p>
+            {appeal.reason && <p className="mt-1 break-words whitespace-pre-line">“{appeal.reason}”</p>}
+            <p className="mt-1 text-[14px] text-ink-muted">
+              The lines show the decision under appeal. Accept it to uphold it, or override lines to change it.
+            </p>
+          </Note>
+        </div>
+      )}
       {!record || view.status !== "AWAITING_REVIEW" ? (
         <EmptyState title="This claim is not awaiting review">
           <Link className="font-semibold text-link underline underline-offset-4" to={`/claims/${encodeURIComponent(view.claim_id)}`}>
@@ -424,8 +502,15 @@ export function ReviewClaim() {
           to see its decision and explanation.
         </EmptyState>
       ) : (
-        <Review view={view} record={record} submit={submit} fill={fill} />
+        <Review
+          view={view}
+          record={record}
+          submit={submit}
+          fill={fill}
+          blocked={appeal?.previous_reviewer === reviewerId}
+        />
       )}
+      {view.status !== "AWAITING_REVIEW" && <AppealHistory appeals={view.appeals} staff />}
     </>
   );
 }

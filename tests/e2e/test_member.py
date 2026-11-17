@@ -26,11 +26,12 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_today
 from app.api.main import app
+from app.calculator.progress import remaining, used_bps
 from app.db.curated import load_curated
 from app.db.models import Accumulator, Benefit, Member, Plan, VisitUsage
 from app.domain.contracts import ClaimStatus, DecisionRecord
 from app.explain.eob import EOB_STATUSES, NOT_A_BILL
-from app.explain.member import HEADINGS, PROCESSING
+from app.explain.member import DUPLICATE, HEADINGS, PROCESSING
 from app.explain.reasons import claim_outcome
 from tests.e2e.support import E2E_CASES, PROVIDER, StubModel, add_member_user, record_of
 from tests.e2e.test_provider_view import CASES, HIDDEN, HIDDEN_KEYS, run
@@ -136,6 +137,9 @@ def check_member(client, member: dict[str, str], case: dict[str, Any], record) -
         assert eob.status_code == 409
         return
     outcome = claim_outcome(status, record)
+    failed = [r for r in record.rules_outcome.rule_results if not r.passed]
+    if outcome == "REJECTED" and failed and all(r.reason_code == "RJ_DUPLICATE" for r in failed):
+        outcome = DUPLICATE  # a copy of a claim the plan has, not returned to the provider (fix 11)
     assert (shown["final"], shown["outcome"], shown["heading"]) == (
         True,
         outcome,
@@ -308,6 +312,11 @@ def check_benefits(benefits: dict[str, Any], facts: dict[str, Any]) -> None:
             "deductible_cents": deductible,
             "oop_met_cents": met[1],
             "oop_max_cents": oop_max,
+            # what is left and the share met: the calculator's (D-MEM-5), passed on as they are
+            "deductible_left_cents": remaining(deductible, met[0]),
+            "deductible_met_bps": used_bps(deductible, met[0]),
+            "oop_left_cents": remaining(oop_max, met[1]),
+            "oop_met_bps": used_bps(oop_max, met[1]),
         }
 
 
@@ -325,6 +334,11 @@ def test_benefits_are_the_stored_amounts_next_to_the_plans_limits(
     facts = stored(engine, "MBR-000318")
     check_benefits(before, facts)
     assert facts["met"]["IN_NETWORK"] == (20000, 30000)
+    # Worked by hand on PLN-HMO's 250.00 deductible and 4,000.00 maximum: 50.00 and 3,700.00 left,
+    # 80.00% and 7.50% met.
+    network = before["networks"][0]
+    assert (network["deductible_left_cents"], network["deductible_met_bps"]) == (5000, 8000)
+    assert (network["oop_left_cents"], network["oop_met_bps"]) == (370000, 750)
     assert (before["benefit_year_start"], before["benefit_year_end"], before["as_of"]) == (
         "2026-01-01",
         "2026-12-31",
@@ -337,7 +351,13 @@ def test_benefits_are_the_stored_amounts_next_to_the_plans_limits(
     )
     assert facts["rehab_limit"] == 20  # PLN-HMO REHAB_THERAPY: 20 visits a year (benefits.yaml)
     assert before["visits"] == [
-        {"benefit_category": "REHAB_THERAPY", "visit_limit": 20, "visits_used": 0}
+        {
+            "benefit_category": "REHAB_THERAPY",
+            "visit_limit": 20,
+            "visits_used": 0,
+            "visits_left": 20,
+            "used_bps": 0,
+        }
     ]
     assert member_unsafe(before, E2E_CASES["E2E-22"]) == []
 
@@ -359,8 +379,14 @@ def test_benefits_are_the_stored_amounts_next_to_the_plans_limits(
     )
     used = finalized["visit_usage"]["REHAB_THERAPY"]["after"]
     assert used == facts["rehab_visits"] == 1
-    assert after["visits"] == [
-        {"benefit_category": "REHAB_THERAPY", "visit_limit": 20, "visits_used": used}
+    assert after["visits"] == [  # 1 of 20 used: 19 left, 5.00%
+        {
+            "benefit_category": "REHAB_THERAPY",
+            "visit_limit": 20,
+            "visits_used": used,
+            "visits_left": 19,
+            "used_bps": 500,
+        }
     ]
 
 

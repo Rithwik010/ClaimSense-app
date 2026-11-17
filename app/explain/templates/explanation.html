@@ -2,7 +2,7 @@
 <section class="explanation-summary">
 <h2>Summary</h2>
 <dl>
-<dt>Status</dt><dd data-status="{{ status }}">{{ status_label }} ({{ status }})</dd>
+<dt>Status</dt><dd data-status="{{ status }}">{{ status_label }}</dd>
 {% if claim_decision %}
 <dt>Claim decision</dt><dd>{{ claim_decision }}</dd>
 {% endif %}
@@ -155,7 +155,7 @@
 <h2>Review</h2>
 <dl>
 <dt>Reviewer</dt><dd>{{ review.reviewer_id }}</dd>
-<dt>Action</dt><dd>{{ review.action }} at {{ review.timestamp }}</dd>
+<dt>Action</dt><dd>{{ review.action }}, {{ review.timestamp }}</dd>
 {% if review.reason %}
 <dt>Comment</dt><dd>{{ review.reason }}</dd>
 {% endif %}

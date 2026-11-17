@@ -39,7 +39,7 @@ Colour still means something. Every text pair meets WCAG AA on its surface.
 | `primary-hover` | `#001F99` | hovered buttons and links | |
 | `brand-tint` | `#E6EBFF` | hover, selected, in-review chips | |
 | `highlight` | `#FFF2CC` | evidence quotes, with `ink` text and an amber underline | 11.3:1 |
-| sidebar | `#0033FF` | the sidebar (19 rem wide, 4 rem as icons; 17 px links on 48 px rows, 22 px icons, a 28 px wordmark) and the login page's band; links white (7.2:1), the role label `#CCD6FF` (5.0:1), the page you are on white on `#001F99` (12.7:1) with a 4 px white bar on its left | |
+| sidebar | `#0033FF` | the sidebar (19 rem wide, 4 rem as icons; 17 px links on 48 px rows, 22 px icons, a 28 px wordmark) and the login page's panel; links white (7.2:1), the role label `#CCD6FF` (5.0:1), the page you are on white on `#001F99` (12.7:1) with a 4 px white bar on its left | |
 
 Decisions are always text plus an icon on a tint, as a pill, never colour alone:
 
@@ -78,7 +78,7 @@ claim shown in the original-file sheet is pretty-printed in the system monospace
 
 | Role | Size / line height | Weight |
 |---|---|---|
-| Login band headline (serif, white on the blue band) | 31 / 36 px (48 / 53 from 768 px) | 700 |
+| Login panel headline (serif, white on the blue panel) | 34 / 40 px (52 / 56 from 768 px) | 700 |
 | Page title (serif) | 28 / 36 px (34 / 42 from 768 px) | 700 |
 | Section title (serif) | 21 / 28 px | 700 |
 | Body | 15 / 24 px | 400 |
@@ -104,6 +104,16 @@ dependencies): `BlurFade`, `Spotlight`, `NumberTicker`, `LogoMark`, `Wordmark`, 
 Their ideas come from Magic UI (Blur Fade, Magic Card, Number Ticker, Animated Beam); no code was
 copied.
 
+Shared pieces added for the dashboard improvements (D-UI-12, no new dependencies):
+`ListTools` (a sortable column header kept in the URL, and a CSV download of the rows shown),
+`HeaderTools` (go to a claim by its ID; the notifications bell), `ClaimHeader` (the claim at a
+glance for staff), `FollowUps` (the provider's follow-up buttons, the appeal history and a text
+dialog with its length rules), `Feedback` (the reviewer's criterion corrections). Charts follow the
+one-colour rule: a single series in `primary` (#0033FF, checked on white for lightness, chroma and
+3:1 contrast), two measures as small multiples on one scale rather than two hues, always with a
+table view. A limit's progress is a thin `ink-strong` bar on `subtle`, `role="meter"`, its length
+the API's basis points.
+
 ## Motion
 
 Motion (`motion/react`) and CSS transitions, restrained:
@@ -115,7 +125,7 @@ Motion (`motion/react`) and CSS transitions, restrained:
    (the right column switches to its Clinical note tab first).
 5. After "Process claim", the stage strip fills in step by step (one stagger, about 1 s); the
    step waiting for a reviewer pulses softly.
-6. Entrances: the login card and admin tiles blur-fade in once (400 ms, small stagger).
+6. Entrances: the admin tiles blur-fade in once (400 ms, small stagger).
 7. Admin counts count up once (`NumberTicker`); outcome bars grow in once. Counts only: money and
    decisions never animate.
 8. Spotlight: admin tiles catch a faint blue tint under the pointer.
@@ -130,9 +140,9 @@ Checked at 390, 768 and 1440 px; no horizontal page scroll at any of them.
 
 | Width | Shell | Review claim and claim detail | Tables |
 |---|---|---|---|
-| 390 px | sidebar becomes a sheet behind a menu button; login shows the band's headline and the form card | one column: strip (scrolls sideways inside itself), lines, then the Summary, Clinical note and Audit trail tabs | scroll sideways inside their panel |
-| 768 px | sidebar collapsed to icons | one column; the tabs follow the lines | as at 390 px where needed |
-| 1440 px | sidebar open; login shows the journey band (the pipeline's eight steps) with the card over it: the form and what ClaimSense is (D-UI-9) | two columns: lines left (about 60%), the Summary, Clinical note and Audit trail tabs right, sticky (Summary first) | full width |
+| 390 px | sidebar becomes a sheet behind a menu button; login shows the form first, then the blue panel; the claim search moves out of the header (the bell and user menu stay) | one column: strip (scrolls sideways inside itself), lines, then the Summary, Clinical note and Audit trail tabs | the claim lists and the review queue are cards (D-UI-12); other tables scroll sideways inside their panel |
+| 768 px | sidebar collapsed to icons; login as at 390 px | one column; the tabs follow the lines | as at 390 px where needed |
+| 1440 px | sidebar open; login shows the blue panel on the left (46%: headline, what you can do, trust strip) beside the form (D-UI-11) | two columns: lines left (about 60%), the Summary, Clinical note and Audit trail tabs right, sticky (Summary first) | full width |
 
 ## Print
 

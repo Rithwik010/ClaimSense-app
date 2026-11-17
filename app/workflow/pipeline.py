@@ -309,6 +309,12 @@ def _explanation_built(session: Session, row: Claim, record: DecisionRecord, ver
     )
 
 
+def explanation_built(session: Session, row: Claim, record: DecisionRecord, version: int) -> None:
+    """EXPLANATION_BUILT for a record version saved outside the pipeline (an appeal's reopened
+    record, D-APL-1), as for every version the pipeline saves."""
+    _explanation_built(session, row, record, version)
+
+
 def _rules_payload(rules: RulesOutcome, reference: dict[str, Any]) -> dict:
     return {
         "claim_outcome": rules.claim_outcome.value,

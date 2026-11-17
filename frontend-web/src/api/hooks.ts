@@ -6,6 +6,7 @@ import { useUser } from "../lib/auth";
 import { request } from "./client";
 import type {
   AuditEvent,
+  AuditSearch,
   ClaimCheck,
   ClaimForm,
   ClaimStatus,
@@ -20,21 +21,34 @@ import type {
   MemberBenefits,
   MemberClaim,
   MemberProfile,
+  Notifications,
+  OtherReviewer,
   Overview,
   PatientEob,
   Plan,
+  PlanSummary,
+  PolicyDetail,
+  PolicySummary,
   ProviderClaimSummary,
   ProviderClaimView,
   QueueItem,
   Results,
+  ReviewQuality,
   ReviewTier,
+  Role,
   SystemVersions,
+  UserInfo,
 } from "./types";
+
+/** Lists and counts ask the API again on their own while their page is open (fix 9): new claims
+ * and decisions show without a reload. A page in a background tab does not ask. */
+export const REFRESH_MS = 30_000;
 
 export function useQueue(tier: ReviewTier | null) {
   return useQuery({
     queryKey: ["queue", tier],
     queryFn: () => request<QueueItem[]>(`/v1/review/queue${tier ? `?tier=${tier}` : ""}`),
+    refetchInterval: REFRESH_MS,
   });
 }
 
@@ -51,7 +65,11 @@ export function useHealth() {
 }
 
 export function useOverview() {
-  return useQuery({ queryKey: ["overview"], queryFn: () => request<Overview>("/v1/metrics/overview") });
+  return useQuery({
+    queryKey: ["overview"],
+    queryFn: () => request<Overview>("/v1/metrics/overview"),
+    refetchInterval: REFRESH_MS,
+  });
 }
 
 export function useSystemVersions() {
@@ -67,6 +85,7 @@ export function useMyClaims() {
   return useQuery({
     queryKey: ["claims", "mine"],
     queryFn: () => request<ProviderClaimSummary[]>("/v1/claims"),
+    refetchInterval: REFRESH_MS,
   });
 }
 
@@ -75,6 +94,7 @@ export function useClaims(statuses: ClaimStatus[] = []) {
   return useQuery({
     queryKey: ["claims", statuses],
     queryFn: () => request<ClaimSummary[]>(`/v1/claims${query ? `?${query}` : ""}`),
+    refetchInterval: REFRESH_MS,
   });
 }
 
@@ -221,15 +241,28 @@ export function useProcess() {
   });
 }
 
-/** Review actions name the logged-in reviewer, whom the API checks (D-AUTH-1). */
+/** Review actions name the logged-in reviewer, whom the API checks (D-AUTH-1). The answer names
+ * any other reviewer who opened the claim in the last 30 minutes (D-REV-10). */
 export function useOpenReview() {
   const user = useUser();
+  const client = useQueryClient();
   return useMutation({
     mutationFn: (claimId: string) =>
-      request(`/v1/claims/${encodeURIComponent(claimId)}/review/open`, {
-        method: "POST",
-        json: { reviewer_id: user.username },
-      }),
+      request<{ claim_id: string; opened: string; others: OtherReviewer[] }>(
+        `/v1/claims/${encodeURIComponent(claimId)}/review/open`,
+        { method: "POST", json: { reviewer_id: user.username } },
+      ),
+    onSuccess: (opened) => client.setQueryData(["others", opened.claim_id], opened.others),
+  });
+}
+
+/** Other reviewers with the claim open (D-REV-10), asked again every minute while it is shown. */
+export function useOthersReviewing(claimId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["others", claimId],
+    queryFn: () => request<OtherReviewer[]>(`/v1/claims/${encodeURIComponent(claimId)}/review/others`),
+    enabled: enabled && claimId !== "",
+    refetchInterval: 60_000,
   });
 }
 
@@ -301,7 +334,11 @@ export function usePatientEob(claimId: string) {
 
 /** The member's claims (those in which they are the patient). */
 export function useMemberClaims() {
-  return useQuery({ queryKey: ["member", "claims"], queryFn: () => request<MemberClaim[]>("/v1/member/claims") });
+  return useQuery({
+    queryKey: ["member", "claims"],
+    queryFn: () => request<MemberClaim[]>("/v1/member/claims"),
+    refetchInterval: REFRESH_MS,
+  });
 }
 
 export function useMemberClaim(claimId: string) {
@@ -326,4 +363,175 @@ export function useMemberBenefits() {
 
 export function useMemberProfile() {
   return useQuery({ queryKey: ["member", "profile"], queryFn: () => request<MemberProfile>("/v1/member/profile") });
+}
+
+// --- Follow-ups, appeals and feedback (D-FUP-1, D-APL-1, D-FBK-1) --------------------------------
+
+function claimPost<T>(claimId: string, action: string, json?: unknown) {
+  return request<T>(`/v1/claims/${encodeURIComponent(claimId)}/${action}`, { method: "POST", json });
+}
+
+/** A provider's follow-up on their decided claim; the answer is their view of it. */
+export function useFollowUp(claimId: string) {
+  const refresh = useRefresh();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (
+      step: { kind: "reopen" } | { kind: "documentation"; text: string } | { kind: "appeal"; reason: string },
+    ) =>
+      step.kind === "reopen"
+        ? claimPost<ProviderClaimView>(claimId, "reopen")
+        : step.kind === "documentation"
+          ? claimPost<ProviderClaimView>(claimId, "documentation", { text: step.text })
+          : claimPost<ProviderClaimView>(claimId, "appeal", { reason: step.reason }),
+    onSuccess: (view) => {
+      client.setQueryData(["claim", claimId, "mine"], view);
+      refresh(claimId);
+    },
+  });
+}
+
+/** A member appeals their denied claim; the answer is their view of it. */
+export function useMemberAppeal(claimId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (reason: string) =>
+      request<MemberClaim>(`/v1/member/claims/${encodeURIComponent(claimId)}/appeal`, {
+        method: "POST",
+        json: { reason },
+      }),
+    onSuccess: (claim) => {
+      client.setQueryData(["member", "claim", claimId], claim);
+      void client.invalidateQueries({ queryKey: ["member", "claims"] });
+    },
+  });
+}
+
+export interface CriterionFix {
+  criterion_id: string;
+  status: "MET" | "NOT_MET" | "NOT_DOCUMENTED" | "NOT_APPLICABLE";
+  quote?: string | null;
+}
+
+/** The finalizing reviewer's corrections of the model's criteria (D-FBK-1). */
+export function useFeedback(claimId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (lines: { line_no: number; criteria: CriterionFix[] }[]) =>
+      claimPost<{ claim_id: string; criteria_corrected: number }>(claimId, "feedback", { lines }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: ["audit", claimId] }),
+  });
+}
+
+// --- Everyone (D-NTF-1, D-POL-9, D-AUTH-2) ---------------------------------------------------------
+
+export function useNotifications() {
+  return useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => request<Notifications>("/v1/notifications"),
+    refetchInterval: REFRESH_MS,
+  });
+}
+
+export function usePolicies() {
+  return useQuery({
+    queryKey: ["policies"],
+    queryFn: () => request<PolicySummary[]>("/v1/policies"),
+    staleTime: Infinity,
+  });
+}
+
+export function usePolicy(policyId: string | null) {
+  return useQuery({
+    queryKey: ["policy", policyId],
+    queryFn: () => request<PolicyDetail>(`/v1/policies/${encodeURIComponent(policyId ?? "")}`),
+    enabled: policyId !== null,
+    staleTime: Infinity,
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (body: { current_password: string; new_password: string }) =>
+      request<void>("/v1/auth/password", { method: "POST", json: body }),
+  });
+}
+
+// --- The admin's (D-AUTH-2, D-AUD-1, D-QLT-1) -------------------------------------------------------
+
+export function useUsers() {
+  return useQuery({ queryKey: ["users"], queryFn: () => request<UserInfo[]>("/v1/users") });
+}
+
+export interface NewUser {
+  username: string;
+  display_name: string;
+  role: Role;
+  password: string;
+  provider_id?: string | null;
+  member_id?: string | null;
+}
+
+export function useUserAdmin() {
+  const client = useQueryClient();
+  const done = () => void client.invalidateQueries({ queryKey: ["users"] });
+  const path = (username: string, action: string) => `/v1/users/${encodeURIComponent(username)}/${action}`;
+  return {
+    create: useMutation({
+      mutationFn: (body: NewUser) => request<UserInfo>("/v1/users", { method: "POST", json: body }),
+      onSuccess: done,
+    }),
+    password: useMutation({
+      mutationFn: ({ username, password }: { username: string; password: string }) =>
+        request<void>(path(username, "password"), { method: "POST", json: { password } }),
+      onSuccess: done,
+    }),
+    active: useMutation({
+      mutationFn: ({ username, active }: { username: string; active: boolean }) =>
+        request<void>(path(username, "active"), { method: "POST", json: { active } }),
+      onSuccess: done,
+    }),
+    unlock: useMutation({
+      mutationFn: (username: string) => request<void>(path(username, "unlock"), { method: "POST" }),
+      onSuccess: done,
+    }),
+  };
+}
+
+export interface AuditQuery {
+  claim_id?: string;
+  actor?: string;
+  event_type?: string;
+  since?: string;
+  until?: string;
+}
+
+/** The admin's audit search; `query` null: nothing searched yet. */
+export function useAuditSearch(query: AuditQuery | null) {
+  const params = new URLSearchParams(
+    Object.entries(query ?? {}).filter((entry): entry is [string, string] => Boolean(entry[1])),
+  );
+  return useQuery({
+    queryKey: ["audit-search", params.toString()],
+    queryFn: () => request<AuditSearch>(`/v1/audit/events?${params.toString()}`),
+    enabled: query !== null,
+  });
+}
+
+export function useQuality() {
+  return useQuery({
+    queryKey: ["quality"],
+    queryFn: () => request<ReviewQuality>("/v1/metrics/quality"),
+    refetchInterval: REFRESH_MS,
+  });
+}
+
+// --- The member's plan summary (P3.2) ----------------------------------------------------------------
+
+export function usePlanSummary() {
+  return useQuery({
+    queryKey: ["member", "plan-summary"],
+    queryFn: () => request<PlanSummary>("/v1/member/plan-summary"),
+    staleTime: Infinity,
+  });
 }

@@ -180,6 +180,15 @@ def _criteria_items(record: DecisionRecord, reason: ClaimReason, detail: str) ->
         ]
         if not found and bypass_flagged(record, reason.line_no):
             found.append(BYPASS_DOCUMENTATION)
+        if not found:
+            # No criterion was marked not documented (a reviewer put the line on hold): the
+            # policy's requirements for the service, in their own words, say what the notes
+            # need to show; an exclusion or a criterion that does not apply is not one.
+            found = [
+                f"Documentation that shows: {c.text}"
+                for c, s in criteria
+                if c.criterion_type != "exclusion" and s is not CriterionStatus.NOT_APPLICABLE
+            ]
         return found or ["Documentation that supports the service."]
     not_met = [c for c, s in criteria if s is CriterionStatus.NOT_MET]
     exclusions = [c for c in not_met if c.criterion_type == "exclusion"]

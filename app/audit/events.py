@@ -5,6 +5,7 @@ codes, decisions and amounts only: never names, addresses, dates of birth or cli
 event keeps the ID of the API request that wrote it (D-OBS-1).
 """
 
+from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
@@ -33,6 +34,12 @@ class EventType(StrEnum):
     FINALIZED = "FINALIZED"
     AUTO_OUTCOME = "AUTO_OUTCOME"
     FIELD_CORRECTED = "FIELD_CORRECTED"  # a provider corrected a box before processing (D-FIX-1)
+    # Follow-ups after a decision (D-FUP-1, D-APL-1) and reviewer feedback (D-FBK-1).
+    CLAIM_REOPENED = "CLAIM_REOPENED"  # back to its provider to correct or add documentation
+    DOCUMENTATION_ADDED = "DOCUMENTATION_ADDED"  # the provider added to the clinical notes
+    APPEAL_FILED = "APPEAL_FILED"  # a provider or member asked another reviewer to decide again
+    APPEAL_DECIDED = "APPEAL_DECIDED"  # that reviewer finalized it: upheld or changed
+    REVIEWER_FEEDBACK = "REVIEWER_FEEDBACK"  # a reviewer corrected the model's criteria
 
 
 def record_event(
@@ -57,6 +64,36 @@ def record_event(
         )
     )
     session.flush()  # the id orders events; flush so it follows insertion order
+
+
+SEARCH_LIMIT = 500
+
+
+def search_events(
+    session: Session,
+    *,
+    claim_id: str | None = None,
+    actor: str | None = None,
+    event_type: str | None = None,
+    since: datetime | None = None,
+    until: datetime | None = None,
+    limit: int = 200,
+) -> list[AuditEvent]:
+    """Events across claims (the admin's audit search, D-AUD-1), newest first: any of a claim ID
+    (exact), an actor (exact), an event type, and a time window [since, until)."""
+    query = select(AuditEvent)
+    if claim_id:
+        query = query.where(AuditEvent.claim_id == claim_id)
+    if actor:
+        query = query.where(AuditEvent.actor == actor)
+    if event_type:
+        query = query.where(AuditEvent.event_type == event_type)
+    if since is not None:
+        query = query.where(AuditEvent.created_at >= since)
+    if until is not None:
+        query = query.where(AuditEvent.created_at < until)
+    query = query.order_by(AuditEvent.id.desc()).limit(max(1, min(limit, SEARCH_LIMIT)))
+    return list(session.scalars(query))
 
 
 def list_events(session: Session, claim_id: str) -> list[AuditEvent]:

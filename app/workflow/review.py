@@ -3,15 +3,15 @@
 PENDED_BY_RULE) are final and never in the queue."""
 
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from enum import StrEnum
 
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.audit.events import EventType, record_event
-from app.db.models import AuditEvent, Claim, Provider
+from app.db.models import Appeal, AuditEvent, Claim, Provider
 from app.domain.contracts import ClaimDecision, ClaimStatus, DecisionRecord, ReviewTier
 from app.ml.evidence import GUARD
 from app.workflow.pipeline import ClaimNotFound, latest_record
@@ -77,6 +77,7 @@ def review_queue(
     """Every claim AWAITING_REVIEW, optionally of one tier (a decision record stored under an older
     contract, which no longer validates, is left out)."""
     items = []
+    appealed = set(session.scalars(select(Appeal.claim_id).where(Appeal.status == "OPEN")))
     for row in session.scalars(
         select(Claim).where(Claim.status == ClaimStatus.AWAITING_REVIEW.value)
     ):
@@ -108,7 +109,8 @@ def review_queue(
                 if record.amounts
                 else sum(int(line.get("charge_cents") or 0) for line in lines),
                 lines=len(lines),
-                flags=queue_flags(
+                flags=(["APPEAL"] if row.claim_id in appealed else [])
+                + queue_flags(
                     record, row.field_confidences or {}, confidence_min, high_dollar_cents
                 ),
                 member_id=row.member_id,
@@ -140,6 +142,51 @@ def latest_opening(
         .order_by(AuditEvent.id.desc())
         .limit(1)
     )
+
+
+PRESENCE = timedelta(minutes=30)  # an opening this recent counts as still looking (D-REV-10)
+
+
+@dataclass(frozen=True)
+class OtherReviewer:
+    reviewer_id: str
+    opened: datetime
+
+
+def other_reviewers(session: Session, claim_id: str, reviewer_id: str) -> list[OtherReviewer]:
+    """Other reviewers who opened the claim in the last 30 minutes, latest opening each, while it
+    awaits review (D-REV-10): shown so two reviewers do not review the same claim unknowingly. An
+    opening before the claim last went to review (an earlier round) does not count."""
+    row = session.get(Claim, claim_id)
+    if row is None or row.status != ClaimStatus.AWAITING_REVIEW.value:
+        return []
+    since = session.scalar(select(func.now())) - PRESENCE
+    round_start = session.scalar(
+        select(func.max(AuditEvent.created_at)).where(
+            AuditEvent.claim_id == claim_id,
+            AuditEvent.event_type.in_(
+                (
+                    EventType.SLM_RECOMMENDED.value,
+                    EventType.OUTPUT_INVALID.value,
+                    EventType.APPEAL_FILED.value,
+                )
+            ),
+        )
+    )
+    if round_start is not None:
+        since = max(since, round_start)
+    found = session.execute(
+        select(AuditEvent.actor, func.max(AuditEvent.created_at))
+        .where(
+            AuditEvent.claim_id == claim_id,
+            AuditEvent.event_type == EventType.REVIEW_OPENED.value,
+            AuditEvent.actor != reviewer_id,
+            AuditEvent.created_at >= since,
+        )
+        .group_by(AuditEvent.actor)
+        .order_by(func.max(AuditEvent.created_at).desc())
+    )
+    return [OtherReviewer(actor, opened) for actor, opened in found.tuples()]
 
 
 def open_review(session: Session, claim_id: str, reviewer_id: str) -> datetime:

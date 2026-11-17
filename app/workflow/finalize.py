@@ -43,6 +43,12 @@ from app.review.actions import (
     review_decisions,
     visit_counts,
 )
+from app.workflow.followup import (
+    FollowUpRefused,
+    check_appeal_reviewer,
+    decide_appeal,
+    open_appeal,
+)
 from app.workflow.pipeline import ClaimNotFound, _calculate, _save, latest_record, load_intake
 from app.workflow.review import REVIEWER_ID_MAX, latest_opening
 from app.workflow.states import InvalidTransition
@@ -120,6 +126,11 @@ def _finalize(session: Session, claim_id: str, action: ReviewAction) -> Decision
     if record is None or record.context_refs is None or intake is None:
         raise ReviewRefused(f"claim {claim_id} has no recommendation to review")
     decisions = review_decisions(record, action)
+    appeal = open_appeal(session, claim_id)  # D-APL-1: decided by another reviewer
+    try:
+        check_appeal_reviewer(appeal, action.reviewer_id)
+    except FollowUpRefused as exc:
+        raise ReviewRefused(str(exc)) from exc
     member = _lock_member(session, row.member_id)
     if member is None:
         raise ReviewRefused(f"member {row.member_id} not found")
@@ -204,6 +215,8 @@ def _finalize(session: Session, claim_id: str, action: ReviewAction) -> Decision
         record.versions,
         actor=reviewer,
     )
+    if appeal is not None:
+        decide_appeal(session, appeal, reviewer, record.line_decisions, decisions, acted, record)
     final = DecisionRecord.model_validate(
         {
             **record.model_dump(),

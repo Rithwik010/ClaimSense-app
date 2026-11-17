@@ -3,7 +3,7 @@
 // ?reviewed=1 to those claims, under a note that shows them all again.
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -110,14 +110,16 @@ describe("the admin's overview", () => {
     openAt("/claims?reviewed=1");
     const user = userEvent.setup();
 
-    expect(await screen.findByRole("link", { name: "CLM-REVIEWED" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "CLM-BY-RULE" })).not.toBeInTheDocument(); // a rule outcome
-    expect(screen.queryByRole("link", { name: "CLM-WAITING" })).not.toBeInTheDocument();
+    // The list is cards on a phone and a table from 768 px, both in the page: look in the table.
+    const table = async () => within(await screen.findByRole("table"));
+    expect((await table()).getByRole("link", { name: "CLM-REVIEWED" })).toBeInTheDocument();
+    expect((await table()).queryByRole("link", { name: "CLM-BY-RULE" })).not.toBeInTheDocument(); // a rule outcome
+    expect((await table()).queryByRole("link", { name: "CLM-WAITING" })).not.toBeInTheDocument();
     expect(screen.getByText(/Showing the claims a reviewer finalized/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Show all claims" }));
-    expect(await screen.findByRole("link", { name: "CLM-BY-RULE" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "CLM-WAITING" })).toBeInTheDocument();
+    expect(await (await table()).findByRole("link", { name: "CLM-BY-RULE" })).toBeInTheDocument();
+    expect((await table()).getByRole("link", { name: "CLM-WAITING" })).toBeInTheDocument();
     expect(screen.queryByText(/Showing the claims a reviewer finalized/)).not.toBeInTheDocument();
   });
 });

@@ -7,15 +7,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   BarChart3,
+  BookOpen,
   ClipboardCheck,
+  FileText,
   FileUp,
   Files,
+  Gauge,
   History,
   IdCard,
   Inbox,
   LayoutDashboard,
   Scale,
   ShieldPlus,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
@@ -45,11 +49,15 @@ export const PAGES: Page[] = [
   { to: "/queue", label: "Review queue", icon: ClipboardCheck, roles: ["reviewer", "admin"] },
   { to: "/claims", label: "Claims", icon: Files, roles: ["reviewer", "admin"] },
   { to: "/rule-outcomes", label: "Returned and auto-denied", icon: Scale, roles: ["reviewer", "admin"] },
+  { to: "/policies", label: "Coverage policies", icon: BookOpen, roles: ["provider", "reviewer", "admin"] },
+  { to: "/quality", label: "Review quality", icon: Gauge, roles: ["admin"] },
   { to: "/metrics", label: "Model metrics", icon: BarChart3, roles: ["admin"] },
   { to: "/audit", label: "Audit lookup", icon: History, roles: ["admin"] },
+  { to: "/users", label: "Users", icon: UsersRound, roles: ["admin"] },
   { to: "/system", label: "System status", icon: Activity, roles: ["admin"] },
   { to: "/member/claims", label: "My claims", icon: Inbox, roles: ["member"] },
   { to: "/member/benefits", label: "My benefits", icon: ShieldPlus, roles: ["member"] },
+  { to: "/member/plan", label: "My plan", icon: FileText, roles: ["member"] },
   { to: "/member/profile", label: "Profile", icon: IdCard, roles: ["member"] },
 ];
 

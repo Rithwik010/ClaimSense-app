@@ -11,7 +11,18 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import Engine
 
-from app.api import auth, claims, member, metrics, plans, review
+from app.api import (
+    audit,
+    auth,
+    claims,
+    member,
+    metrics,
+    notifications,
+    plans,
+    policies,
+    review,
+    users,
+)
 from app.api.health import HealthReport, build_health_report, get_http_client
 from app.core.logging import (
     REQUEST_ID_HEADER,
@@ -41,6 +52,10 @@ app.include_router(review.router)
 app.include_router(metrics.router)
 app.include_router(plans.router)
 app.include_router(member.router)
+app.include_router(users.router)
+app.include_router(audit.router)
+app.include_router(policies.router)
+app.include_router(notifications.router)
 
 
 @app.middleware("http")

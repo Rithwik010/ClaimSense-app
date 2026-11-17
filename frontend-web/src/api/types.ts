@@ -180,6 +180,41 @@ export interface ClaimView {
   documents: DocumentInfo[];
   /** GET /v1/claims/{id}/eob has the patient's explanation of benefits (D-EOB-1). */
   eob?: boolean;
+  /** Plain names of the claim's codes, for the review header (D-REV-10). */
+  names?: CodeNames;
+  appeals?: Appeal[];
+  follow_ups?: FollowUps;
+}
+
+/** Plain names of a claim's procedure and diagnosis codes (code tables in data/raw). */
+export interface CodeNames {
+  procedures: Record<string, string>;
+  diagnoses: Record<string, string>;
+  /** The billing provider's name, when on file. */
+  provider?: string | null;
+}
+
+/** What can be done with a claim now (D-FUP-1, D-APL-1). */
+export interface FollowUps {
+  correct: boolean;
+  documentation: boolean;
+  appeal: boolean;
+  reopened: boolean;
+}
+
+/** An appeal of a denied claim (D-APL-1). Who decided and the reason are for staff and the filer. */
+export interface Appeal {
+  appeal_id: number;
+  status: "OPEN" | "DECIDED";
+  outcome: "UPHELD" | "CHANGED" | null;
+  filed_by: string;
+  filed_role: "provider" | "member";
+  filed_at: string;
+  previous_status: string;
+  previous_reviewer: string | null;
+  decided_by: string | null;
+  decided_at: string | null;
+  reason: string | null;
 }
 
 export interface QueueItem {
@@ -216,10 +251,14 @@ export interface ClaimSummary {
   provider_name: string | null;
   outcome: Outcome;
   reasons: Reason[];
+  patient_name?: string | null;
+  service_date?: string | null;
+  appeal_open?: boolean;
 }
 
 export interface AuditEvent {
   id: number;
+  claim_id?: string;
   event_type: string;
   actor: string;
   payload: Record<string, unknown>;
@@ -289,6 +328,8 @@ export interface Evaluation {
   ocr_target: number;
   v2_errors: V2Errors | null;
   v3_sets: V3Set[];
+  /** Reports not written on this machine, under data/generated/eval/. */
+  missing?: string[];
 }
 
 /** A line of the provider's explanation: the whole claim (line_no null) or one line. */
@@ -352,6 +393,9 @@ export interface ProviderClaimView {
   stages: string[];
   documents: DocumentInfo[];
   eob?: boolean;
+  follow_ups?: FollowUps;
+  appeals?: Appeal[];
+  names?: CodeNames;
 }
 
 /** A provider's own claim in their list: the decision and amounts only once final. */
@@ -367,6 +411,11 @@ export interface ProviderClaimSummary {
   total_billed_cents: number | null;
   total_allowed_cents: number | null;
   plan_pays_cents: number | null;
+  /** As filed (D-UI-12): the patient, the first date of service and the charges billed. */
+  patient_name?: string | null;
+  service_date?: string | null;
+  billed_cents?: number | null;
+  appeal_open?: boolean;
 }
 
 /** GET /health (public). */
@@ -386,6 +435,106 @@ export interface Overview {
   decided_by_rules: number;
   reviewed_accepted: number;
   reviewed_overridden: number;
+  /** RECEIVED: read or filed, not processed yet. */
+  not_processed?: number;
+  extras?: OverviewExtras;
+}
+
+/** The Overview's money, times, reasons and trend (D-QLT-1). Rates in basis points. */
+export interface OverviewExtras {
+  billed_cents: number;
+  plan_paid_cents: number;
+  member_owes_cents: number;
+  decided_claims: number;
+  review_wait_seconds: number | null;
+  review_seconds: number | null;
+  override_rate_bp: number | null;
+  top_reasons: { reason: string; claims: number }[];
+  daily: { date: string; received: number; decided: number }[];
+}
+
+export interface QualityTally {
+  reviews: number;
+  lines: number;
+  overridden: number;
+  override_rate_bp: number | null;
+  review_seconds: { count: number; median: number | null; p90: number | null };
+}
+
+/** GET /v1/metrics/quality (admin): how reviewers use the model's recommendations (D-QLT-1). */
+export interface ReviewQuality {
+  overall: QualityTally;
+  acceptance_rate_bp: number | null;
+  /** The model's line decision -> the final decision -> lines. */
+  matrix: Record<string, Record<string, number>>;
+  by_tier: Record<string, QualityTally>;
+  by_reviewer: (QualityTally & { reviewer: string })[];
+  by_policy: (QualityTally & { policy_id: string; title: string | null })[];
+  feedback: { lines: number; criteria: number };
+  appeals: { open: number; upheld: number; changed: number };
+}
+
+/** A login as the admin's Users page shows it (D-AUTH-2); never a password. */
+export interface UserInfo {
+  username: string;
+  display_name: string;
+  role: Role;
+  provider_id: string | null;
+  member_id: string | null;
+  active: boolean;
+  locked_until: string | null;
+  password_changed_at: string | null;
+  created_at: string | null;
+}
+
+/** GET /v1/audit/events (admin, D-AUD-1). */
+export interface AuditSearch {
+  events: (AuditEvent & { claim_id: string })[];
+  limit: number;
+  event_types: string[];
+}
+
+/** GET /v1/notifications (D-NTF-1): what happened lately on the user's claims. */
+export interface Notification {
+  id: number;
+  claim_id: string;
+  event_type: string;
+  outcome: Outcome | "DUPLICATE" | null;
+  appeal_outcome: "UPHELD" | "CHANGED" | null;
+  created_at: string;
+}
+
+export interface Notifications {
+  items: Notification[];
+  latest_id: number | null;
+}
+
+/** Another reviewer with the claim open (D-REV-10). */
+export interface OtherReviewer {
+  reviewer_id: string;
+  opened: string;
+}
+
+/** The coverage policy library (D-POL-9). */
+export interface PolicySummary {
+  policy_id: string;
+  title: string;
+  codes: { code: string; name: string | null }[];
+  criteria: number;
+  billing_article: string;
+  effective_date: string;
+}
+
+export interface PolicyDetail extends PolicySummary {
+  sources: string[];
+  items: {
+    criterion_id: string;
+    text: string;
+    criterion_type: string | null;
+    applies_to: string[];
+    group: string | null;
+    source: string;
+  }[];
 }
 
 /** GET /v1/metrics/system (admin): the versions the decision records name and the API's own. */
@@ -575,7 +724,7 @@ export interface MemberClaim {
   service_date: string | null;
   provider_name: string | null;
   final: boolean;
-  outcome: Outcome | "PROCESSING";
+  outcome: Outcome | "PROCESSING" | "DUPLICATE";
   heading: string;
   message: string;
   /** GET /v1/member/claims/{id}/eob has the claim's patient EOB (D-EOB-1). */
@@ -584,12 +733,52 @@ export interface MemberClaim {
   billed_cents: number | null;
   plan_pays_cents: number | null;
   patient_pays_cents: number | null;
+  /** Each service line's plain procedure name, in line order. */
+  services: string[];
+  appeal: MemberAppeal | null;
+  /** POST /v1/member/claims/{id}/appeal accepts it now (D-APL-1). */
+  can_appeal: boolean;
+}
+
+export interface MemberAppeal {
+  status: "OPEN" | "DECIDED";
+  outcome: "UPHELD" | "CHANGED" | null;
+  filed_on: string;
+  decided_on: string | null;
+  filed_by_you: boolean;
 }
 
 export interface VisitBenefit {
   benefit_category: string;
   visit_limit: number;
   visits_used: number;
+  /** The calculator's (D-MEM-5): never below zero. */
+  visits_left: number;
+  used_bps: number;
+}
+
+/** A network's year to date with what is left of each limit (the calculator's, D-MEM-3). */
+export interface NetworkProgress extends YearToDate {
+  deductible_left_cents: number;
+  deductible_met_bps: number;
+  oop_left_cents: number;
+  oop_met_bps: number;
+}
+
+/** The plan's summary of benefits and coverage (P3.2), read into blocks by the API. */
+export interface PlanSummary {
+  plan_id: string;
+  title: string;
+  sections: {
+    heading: string | null;
+    blocks: {
+      kind: "paragraph" | "list" | "table";
+      text: string | null;
+      items: string[];
+      header: string[];
+      rows: string[][];
+    }[];
+  }[];
 }
 
 /** The member's benefit year so far: each network's limits and what is met, as stored. */
@@ -601,7 +790,7 @@ export interface MemberBenefits {
   benefit_year_start: string;
   benefit_year_end: string;
   as_of: string;
-  networks: YearToDate[];
+  networks: NetworkProgress[];
   visits: VisitBenefit[];
 }
 

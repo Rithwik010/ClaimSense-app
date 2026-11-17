@@ -25,7 +25,7 @@ async function submit(page: Page, file: string, claimId: string, expected: RegEx
     mimeType: file.endsWith(".pdf") ? "application/pdf" : "application/json",
     buffer: readFileSync(DIR + file),
   });
-  await page.getByRole("button", { name: "Read claim" }).click();
+  await page.getByRole("button", { name: "Read and check first" }).click();
   await expect(page.getByText(`Claim ${claimId} was filed from`)).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole("heading", { name: "Fields read" })).toBeVisible();
   await page.getByRole("button", { name: "Process claim" }).click();

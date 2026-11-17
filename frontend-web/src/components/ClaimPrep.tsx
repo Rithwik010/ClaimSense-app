@@ -20,6 +20,8 @@ export function ClaimPrep({
   claim,
   contractErrors = [],
   processed = false,
+  reopened = false,
+  autoCheck = false,
 }: {
   claimId: string;
   sourceFormat: SourceFormat;
@@ -28,8 +30,12 @@ export function ClaimPrep({
   /** A JSON claim's contract errors at filing (a form claim's come with its boxes). */
   contractErrors?: string[];
   processed?: boolean;
+  /** Sent back to the provider (D-FUP-1): its boxes are correctable whatever its source. */
+  reopened?: boolean;
+  /** Run the check at once (Submit claim, D-UI-12). */
+  autoCheck?: boolean;
 }) {
-  const fromForm = sourceFormat !== "JSON";
+  const fromForm = sourceFormat !== "JSON" || reopened;
   const form = useClaimForm(claimId, fromForm);
   const checked = useClaimCheck(claimId, false); // what the check panel last found (cached only)
   const [editing, setEditing] = useState<string | null>(null);
@@ -48,7 +54,7 @@ export function ClaimPrep({
     <>
       {!processed && (
         <Section title="Check before processing">
-          <ClaimCheckPanel claimId={claimId} correctable={correctable} onCorrect={setEditing} />
+          <ClaimCheckPanel claimId={claimId} correctable={correctable} onCorrect={setEditing} autoCheck={autoCheck} />
         </Section>
       )}
       {errors.length > 0 && !processed && (

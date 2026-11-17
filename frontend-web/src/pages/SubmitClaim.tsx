@@ -1,16 +1,19 @@
 // Submit claim (providers, D-AUTH-1): drop a JSON claim, a PDF of the form or a scanned form, or the
-// form's pages as files (one claim, D-DOC-2, D-DOC-3); check the claim (D-CHK-1) and the boxes read
-// with their confidence, correcting any read wrong (D-FIX-1); process the claim, and the stage strip
-// fills in (motion moment 5). If the model is down (503) the claim stays received and "Try again"
-// processes it.
+// form's pages as files (one claim, D-DOC-2, D-DOC-3). "Submit claim" does it in one step (D-UI-12):
+// it reads the claim, runs the check (D-CHK-1) and, when the check finds nothing, processes it, and
+// the stage strip fills in (motion moment 5); when the check finds something, it stops there with
+// the check and the boxes read, to correct any read wrong (D-FIX-1) and process. "Read and check
+// first" stops after the check either way. If the model is down (503) the claim stays received and
+// "Try again" processes it.
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 
-import { ApiError } from "@/api/client";
+import { ApiError, request } from "@/api/client";
 import { useProcess, useUpload } from "@/api/hooks";
-import type { FiledWithErrors, IntakeResult } from "@/api/types";
+import type { ClaimCheck, FiledWithErrors, IntakeResult } from "@/api/types";
 import { OutcomeChip } from "@/components/Chip";
 import { ClaimPrep } from "@/components/ClaimPrep";
 import { DropZone } from "@/components/DropZone";
@@ -29,8 +32,10 @@ const FORMATS: Record<string, string> = {
 export function SubmitClaim() {
   const [files, setFiles] = useState<File[]>([]);
   const [sent, setSent] = useState(0); // how many files the claim was read from
+  const [stopped, setStopped] = useState<string | null>(null); // why "Submit claim" did not process
   const upload = useUpload();
   const process = useProcess();
+  const client = useQueryClient();
   const filed = upload.data;
   const errors = filed && "contract_errors" in filed ? (filed as FiledWithErrors) : null;
   const read = filed && "claim" in filed ? (filed as IntakeResult) : null;
@@ -41,13 +46,50 @@ export function SubmitClaim() {
 
   const choose = (next: File[]) => {
     setFiles(next);
+    setStopped(null);
     upload.reset();
     process.reset();
+  };
+  /** Read the claim, check it, and process it when the check finds nothing (`andProcess`). */
+  const submit = async (andProcess: boolean) => {
+    setSent(files.length);
+    setStopped(null);
+    let answer: IntakeResult | FiledWithErrors;
+    try {
+      answer = await upload.mutateAsync(files);
+    } catch {
+      return; // the page shows upload.error
+    }
+    const id = "claim" in answer ? String(answer.claim.claim_id) : answer.claim_id;
+    if (!id) return;
+    let check: ClaimCheck;
+    try {
+      check = await client.fetchQuery({
+        queryKey: ["check", id],
+        queryFn: () => request<ClaimCheck>(`/v1/claims/${encodeURIComponent(id)}/check`),
+        staleTime: 0,
+      });
+    } catch {
+      setStopped("The claim was read, but the check could not run. Check it again below, then process it.");
+      return;
+    }
+    if (!andProcess) {
+      toast.success("Claim read and checked");
+      return;
+    }
+    if (check.outcome !== "READY" || check.problems.length > 0 || "contract_errors" in answer) {
+      setStopped("The check found something to look at, so the claim was not processed. See what it found below.");
+      return;
+    }
+    process.mutate(id, {
+      onSuccess: (view) =>
+        toast.success(`Claim submitted: ${providerOutcome(view.outcome, view.status).label.toLowerCase()}`),
+    });
   };
   const runProcess = () => {
     if (!claimId) return;
     process.mutate(claimId, {
-      onSuccess: (view) => toast.success(`Claim processed: ${providerOutcome(view.outcome).label.toLowerCase()}`),
+      onSuccess: (view) => toast.success(`Claim processed: ${providerOutcome(view.outcome, view.status).label.toLowerCase()}`),
     });
   };
 
@@ -60,13 +102,18 @@ export function SubmitClaim() {
           <Button
             size="lg"
             variant={filed ? "outline" : "default"}
-            disabled={files.length === 0 || upload.isPending}
-            onClick={() => {
-              setSent(files.length);
-              upload.mutate(files, { onSuccess: () => toast.success("Claim read") });
-            }}
+            disabled={files.length === 0 || upload.isPending || process.isPending}
+            onClick={() => void submit(true)}
           >
-            {upload.isPending ? "Reading" : "Read claim"}
+            {upload.isPending ? "Reading" : process.isPending ? "Processing" : "Submit claim"}
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            disabled={files.length === 0 || upload.isPending || process.isPending}
+            onClick={() => void submit(false)}
+          >
+            Read and check first
           </Button>
           {upload.isPending && (
             <p role="status" className="text-[13px] text-ink-muted">
@@ -88,6 +135,12 @@ export function SubmitClaim() {
               .
             </p>
           )}
+        </div>
+      )}
+
+      {stopped && (
+        <div className="mb-6">
+          <Note>{stopped}</Note>
         </div>
       )}
 
@@ -165,6 +218,7 @@ export function SubmitClaim() {
             claim={read ? read.claim : (errors?.received ?? {})}
             contractErrors={errors?.contract_errors ?? []}
             processed={Boolean(result)}
+            autoCheck
           />
         </>
       )}

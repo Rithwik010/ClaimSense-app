@@ -9,6 +9,7 @@ import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../App";
+import { matchQuestion } from "./MemberAssistant";
 import type { MemberBenefits, MemberClaim, User } from "../api/types";
 import { TooltipProvider } from "./ui/tooltip";
 import { AuthProvider } from "../lib/auth";
@@ -29,6 +30,9 @@ const OLDER: MemberClaim = {
   billed_cents: 20800,
   plan_pays_cents: 9233,
   patient_pays_cents: 3000,
+  services: ["Physical therapy, therapeutic exercise"],
+  appeal: null,
+  can_appeal: false,
 };
 const NEWER: MemberClaim = {
   ...OLDER,
@@ -53,10 +57,34 @@ const BENEFITS: MemberBenefits = {
   benefit_year_end: "2026-12-31",
   as_of: "2026-10-30",
   networks: [
-    { network: "IN_NETWORK", period_start: "2026-01-01", deductible_met_cents: 42000, deductible_cents: 150000, oop_met_cents: 61240, oop_max_cents: 500000 },
-    { network: "OUT_OF_NETWORK", period_start: "2026-01-01", deductible_met_cents: 0, deductible_cents: 300000, oop_met_cents: 0, oop_max_cents: 1000000 },
+    // What is left and the share used are the calculator's: 1500.00 - 420.00 = 1080.00, 28.00%;
+    // 5000.00 - 612.40 = 4387.60, 12.24% rounded down.
+    {
+      network: "IN_NETWORK",
+      period_start: "2026-01-01",
+      deductible_met_cents: 42000,
+      deductible_cents: 150000,
+      oop_met_cents: 61240,
+      oop_max_cents: 500000,
+      deductible_left_cents: 108000,
+      deductible_met_bps: 2800,
+      oop_left_cents: 438760,
+      oop_met_bps: 1224,
+    },
+    {
+      network: "OUT_OF_NETWORK",
+      period_start: "2026-01-01",
+      deductible_met_cents: 0,
+      deductible_cents: 300000,
+      oop_met_cents: 0,
+      oop_max_cents: 1000000,
+      deductible_left_cents: 300000,
+      deductible_met_bps: 0,
+      oop_left_cents: 1000000,
+      oop_met_bps: 0,
+    },
   ],
-  visits: [{ benefit_category: "REHAB_THERAPY", visit_limit: 20, visits_used: 1 }],
+  visits: [{ benefit_category: "REHAB_THERAPY", visit_limit: 20, visits_used: 1, visits_left: 19, used_bps: 500 }],
 };
 
 function serve(routes: Record<string, unknown>) {
@@ -115,16 +143,26 @@ describe("the member's plan assistant preview", () => {
     expect(within(answers).getByRole("link", { name: "Open the claim" })).toHaveAttribute("href", "/member/claims/CLM-NEW-2");
   });
 
-  it("shows asking in one's own words as a later phase, disabled", async () => {
-    serve({ "/v1/auth/me": MEMBER, "/v1/member/claims": [] });
+  it("answers a question typed in the member's own words from their records", async () => {
+    serve({ "/v1/auth/me": MEMBER, "/v1/member/claims": [OLDER, NEWER], "/v1/member/benefits": BENEFITS });
     openAt("/member/claims");
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole("button", { name: /Ask about your plan/ }));
     const panel = await screen.findByRole("dialog", { name: /Plan assistant/ });
-    expect(within(panel).getByLabelText("Ask in your own words")).toBeDisabled();
+    const field = within(panel).getByLabelText("Ask in your own words");
     expect(within(panel).getByRole("button", { name: "Send" })).toBeDisabled();
-    expect(within(panel).getByText(/no AI model is used in this preview/)).toBeInTheDocument();
+    await user.type(field, "how much is left on my deductible?");
+    await user.click(within(panel).getByRole("button", { name: "Send" }));
+
+    const answers = within(panel).getByRole("list", { name: "Answers" });
+    expect(await within(answers).findByText(/you have met \$420\.00 of your\s+\$1,500\.00 deductible/)).toBeInTheDocument();
+    expect(field).toHaveValue("");
+
+    await user.type(field, "what's the weather?");
+    await user.click(within(panel).getByRole("button", { name: "Send" }));
+    expect(await within(answers).findByText("I can answer these from your records:")).toBeInTheDocument();
+    expect(within(panel).getByText(/no AI model is used/)).toBeInTheDocument();
   });
 
   it("is on a member's pages only", async () => {
@@ -133,5 +171,19 @@ describe("the member's plan assistant preview", () => {
 
     expect(await screen.findByRole("heading", { name: "My claims" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Ask about your plan/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("matching a typed question", () => {
+  it.each([
+    ["How much of my deductible is met?", "deductible"],
+    ["what's my out-of-pocket max", "oop"],
+    ["How many therapy visits do I have left", "visits"],
+    ["Was my last claim paid?", "latest"],
+    ["Does my plan cover an MRI?", "plan"],
+    ["I want to appeal, the decision is wrong", "appeal"],
+    ["hello", "unknown"],
+  ])("%s -> %s", (text, question) => {
+    expect(matchQuestion(text)).toBe(question);
   });
 });

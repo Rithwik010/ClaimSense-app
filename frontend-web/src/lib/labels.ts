@@ -25,8 +25,16 @@ export const OUTCOME: Record<Outcome, Label> = {
 };
 
 /** The status filter's options: the provider's, the reviewer's and admin's, and the returned page's. */
-export const PROVIDER_FILTERS: Outcome[] = ["IN_REVIEW", "APPROVED", "PARTLY_APPROVED", "PENDED", "DENIED", "REJECTED"];
-export const STAFF_FILTERS: Outcome[] = [...PROVIDER_FILTERS, "NOT_PROCESSED"];
+export const PROVIDER_FILTERS: Outcome[] = [
+  "NOT_PROCESSED",
+  "IN_REVIEW",
+  "APPROVED",
+  "PARTLY_APPROVED",
+  "PENDED",
+  "DENIED",
+  "REJECTED",
+];
+export const STAFF_FILTERS: Outcome[] = PROVIDER_FILTERS;
 export const RETURNED_FILTERS: Outcome[] = ["REJECTED", "DENIED", "PENDED"];
 
 /** Status labels in the same words, for counts kept by status (the admin overview). */
@@ -83,8 +91,16 @@ export const PROCESSING: Label = {
   tone: "neutral",
 };
 
+/** A member's claim the checks closed as a copy of one the plan already has (D-MEM-2). */
+export const DUPLICATE: Label = {
+  label: "Already sent",
+  hint: "A copy of a claim your plan already has: nothing to do",
+  tone: "neutral",
+};
+
 /** A member's label for their claim (the API's outcome; PROCESSING until final). */
-export function memberOutcome(outcome: Outcome | "PROCESSING"): Label {
+export function memberOutcome(outcome: Outcome | "PROCESSING" | "DUPLICATE"): Label {
+  if (outcome === "DUPLICATE") return DUPLICATE;
   return outcome === "PROCESSING" || outcome === "IN_REVIEW" || outcome === "NOT_PROCESSED"
     ? PROCESSING
     : OUTCOME[outcome];
@@ -96,10 +112,31 @@ export function benefitCategory(code: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-/** A provider's label for their claim's outcome (IN_REVIEW until final). */
-export function providerOutcome(outcome: Outcome): Label {
-  return outcome === "IN_REVIEW" || outcome === "NOT_PROCESSED" ? IN_REVIEW : OUTCOME[outcome];
+/** What a provider sees of a claim they filed and have not processed (fix 1, D-UI-6 as amended):
+ * nobody reviews it until they process it, so it is not "In review". */
+export const NOT_PROCESSED: Label = {
+  label: "Not processed",
+  hint: "Filed, not processed yet: open it to check and process it",
+  tone: "neutral",
+};
+
+/** A provider's label for their claim's outcome: "Not processed" until they process it (its
+ * status RECEIVED), then "In review" until final. */
+export function providerOutcome(outcome: Outcome, status?: string): Label {
+  if (status === "RECEIVED" || outcome === "NOT_PROCESSED") return NOT_PROCESSED;
+  return outcome === "IN_REVIEW" ? IN_REVIEW : OUTCOME[outcome];
 }
+
+/** A provider's claim as its list filters it: "Not processed" until they process it. */
+export function providerListOutcome(claim: { outcome: Outcome; status: string }): Outcome {
+  return claim.status === "RECEIVED" ? "NOT_PROCESSED" : claim.outcome;
+}
+
+/** An appeal's outcome (D-APL-1). */
+export const APPEAL_OUTCOME: Record<string, string> = {
+  UPHELD: "The decision stood",
+  CHANGED: "The decision changed",
+};
 
 export const CLAIM_DECISION: Record<string, Label> = {
   APPROVE: { label: "Approve", hint: "Every line approved", tone: "approve" },
@@ -184,6 +221,7 @@ export const FLAGS: Record<string, string> = {
   LOW_CONFIDENCE_FIELDS: "Low-confidence fields",
   HIGH_DOLLAR: "High amount",
   LINE_DECIDED_BY_RULE: "Line decided by a rule",
+  APPEAL: "Appeal: decide again",
 };
 
 const DECIDED: Record<LineDecision, string> = {

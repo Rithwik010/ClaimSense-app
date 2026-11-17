@@ -23,6 +23,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -64,6 +65,12 @@ AUDIT_EVENT_TYPES = (
     "FINALIZED",
     "AUTO_OUTCOME",
     "FIELD_CORRECTED",
+    # Migration 0012: follow-ups after a decision (D-FUP-1, D-APL-1), reviewer feedback (D-FBK-1).
+    "CLAIM_REOPENED",
+    "DOCUMENTATION_ADDED",
+    "APPEAL_FILED",
+    "APPEAL_DECIDED",
+    "REVIEWER_FEEDBACK",
 )
 
 
@@ -455,6 +462,54 @@ class User(Base):
     member_id: Mapped[str | None] = mapped_column(ForeignKey("members.member_id"))
     active: Mapped[bool] = mapped_column(Boolean, server_default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Login protection (D-AUTH-2, migration 0012): consecutive failed logins, the time the login is
+    # locked until after too many, and when the password last changed.
+    failed_logins: Mapped[int] = mapped_column(Integer, server_default="0")
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+APPEAL_ROLES = ("provider", "member")
+APPEAL_STATUSES = ("OPEN", "DECIDED")
+APPEAL_OUTCOMES = ("UPHELD", "CHANGED")
+
+
+class Appeal(Base):
+    """A request that another reviewer decide a denied claim again (D-APL-1, migration 0012): who
+    filed it and why, the decision it appeals, and once decided, who decided and whether the
+    decision changed. The reason may hold clinical detail, so it stays here and never in the audit
+    trail or the logs. One open appeal per claim at a time."""
+
+    __tablename__ = "appeals"
+    __table_args__ = (
+        CheckConstraint("filed_role IN ('provider', 'member')", name="filed_role"),
+        CheckConstraint("status IN ('OPEN', 'DECIDED')", name="status"),
+        CheckConstraint(
+            "(status = 'OPEN' AND outcome IS NULL AND decided_by IS NULL AND decided_at IS NULL)"
+            " OR (status = 'DECIDED' AND outcome IN ('UPHELD', 'CHANGED')"
+            " AND decided_by IS NOT NULL AND decided_at IS NOT NULL)",
+            name="decision",
+        ),
+        Index(
+            "uq_appeals_one_open_per_claim",
+            "claim_id",
+            unique=True,
+            postgresql_where=text("status = 'OPEN'"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.claim_id"), index=True)
+    filed_by: Mapped[str] = mapped_column(String(64))
+    filed_role: Mapped[str] = mapped_column(String(16))
+    reason: Mapped[str] = mapped_column(Text)
+    filed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    previous_status: Mapped[str] = mapped_column(String(24))
+    previous_reviewer: Mapped[str | None] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16), server_default="OPEN")
+    outcome: Mapped[str | None] = mapped_column(String(16))
+    decided_by: Mapped[str | None] = mapped_column(String(64))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class DecisionRecordRow(Base):

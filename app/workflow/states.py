@@ -24,8 +24,28 @@ ALLOWED_TRANSITIONS: dict[ClaimStatus, frozenset[ClaimStatus]] = {
 }
 
 
+# Follow-ups after a decision (D-FUP-1, D-APL-1): a decided claim that paid nothing goes back,
+# to its provider (RECEIVED, to correct or add documentation and process again) or to review (an
+# appeal). Kept apart from ALLOWED_TRANSITIONS: these claims are final, and stay final until a
+# provider or member asks for a follow-up (app/workflow/followup.py checks what each one needs).
+FOLLOW_UP_TRANSITIONS: dict[ClaimStatus, frozenset[ClaimStatus]] = {
+    ClaimStatus.REJECTED: frozenset({ClaimStatus.RECEIVED}),
+    ClaimStatus.DENIED_BY_RULE: frozenset({ClaimStatus.RECEIVED}),
+    ClaimStatus.PENDED_BY_RULE: frozenset({ClaimStatus.RECEIVED}),
+    ClaimStatus.FINAL_PENDED: frozenset({ClaimStatus.RECEIVED}),
+    ClaimStatus.FINAL_DENIED: frozenset({ClaimStatus.AWAITING_REVIEW}),
+}
+
+
 class InvalidTransition(ValueError):
     pass
+
+
+def check_follow_up(current: ClaimStatus, new: ClaimStatus) -> None:
+    if new not in FOLLOW_UP_TRANSITIONS.get(current, frozenset()):
+        raise InvalidTransition(
+            f"claim status {current.value} -> {new.value} is not a follow-up the plan allows"
+        )
 
 
 def check_transition(current: ClaimStatus, new: ClaimStatus) -> None:

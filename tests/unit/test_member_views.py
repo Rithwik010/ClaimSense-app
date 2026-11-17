@@ -59,6 +59,9 @@ CLAIM_FIELDS = {
     "billed_cents",
     "plan_pays_cents",
     "patient_pays_cents",
+    "services",  # plain procedure names (D-MEM-2)
+    "appeal",  # the member's view of an appeal (D-APL-1)
+    "can_appeal",
 }
 SECRETS = (NOTE, NOTE[:30], CRITERION_TEXT, EXCLUSION_TEXT, "reviewer-7", "1970-03-04", "Main St")
 REASON = "The note shows the criterion; overridden on review."
@@ -222,7 +225,10 @@ def test_the_benefits_are_the_plans_terms_and_the_stored_amounts_as_they_are() -
     shown = as_json(benefits, MemberBenefits)
 
     assert problems(shown) == []
-    assert "remaining" not in json.dumps(shown)  # not shown: a team decision (D-MEM-3)
+    # What is left and the share used are the calculator's (D-MEM-5), worked by hand:
+    # in network 500.00 - 465.00 = 35.00 left, 465/500 = 93.00% (9300); 3000.00 - 477.00 =
+    # 2523.00 left, 477/3000 = 15.90% (1590). Out of network nothing met: all left, 0. Visits:
+    # 30 - 7 = 23 left, 7/30 = 23.33% rounded down (2333).
     assert shown == {
         "member_id": "MBR-000123",
         "plan_id": "PLN-PPO-GOLD",
@@ -239,6 +245,10 @@ def test_the_benefits_are_the_plans_terms_and_the_stored_amounts_as_they_are() -
                 "deductible_cents": 50000,
                 "oop_met_cents": 47700,
                 "oop_max_cents": 300000,
+                "deductible_left_cents": 3500,
+                "deductible_met_bps": 9300,
+                "oop_left_cents": 252300,
+                "oop_met_bps": 1590,
             },
             {
                 "network": "OUT_OF_NETWORK",
@@ -247,9 +257,21 @@ def test_the_benefits_are_the_plans_terms_and_the_stored_amounts_as_they_are() -
                 "deductible_cents": 100000,
                 "oop_met_cents": 0,
                 "oop_max_cents": 600000,
+                "deductible_left_cents": 100000,
+                "deductible_met_bps": 0,
+                "oop_left_cents": 600000,
+                "oop_met_bps": 0,
             },
         ],
-        "visits": [{"benefit_category": "REHAB_THERAPY", "visit_limit": 30, "visits_used": 7}],
+        "visits": [
+            {
+                "benefit_category": "REHAB_THERAPY",
+                "visit_limit": 30,
+                "visits_used": 7,
+                "visits_left": 23,
+                "used_bps": 2333,
+            }
+        ],
     }
 
 

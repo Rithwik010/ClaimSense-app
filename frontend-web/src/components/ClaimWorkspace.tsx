@@ -10,6 +10,7 @@ import { useState, type ReactNode } from "react";
 import type { AuditEvent, ClaimView, FinalLineDecision } from "@/api/types";
 import { AdjustmentCodes } from "@/components/AdjustmentCodes";
 import { AuditTimeline } from "@/components/AuditTimeline";
+import { ClaimHeader, claimLines } from "@/components/ClaimHeader";
 import { ClaimSummary } from "@/components/ClaimSummary";
 import { ClinicalNote, type Quote } from "@/components/ClinicalNote";
 import { FieldsTable } from "@/components/Fields";
@@ -36,8 +37,10 @@ export function ClaimWorkspace({
   audit,
   lineActions,
   lineStatus,
+  providerName,
 }: {
   view: ClaimView;
+  providerName?: string | null;
   events: AuditEvent[];
   fill: boolean;
   extraTabs?: { value: string; label: string; content: ReactNode }[];
@@ -49,6 +52,12 @@ export function ClaimWorkspace({
   const [side, setSide] = useState<Side>("summary");
   const record = view.record;
   const claim = view.intake?.claim ?? view.received;
+  const procedures = Object.fromEntries(
+    claimLines(claim).map((line) => [
+      line.line_no,
+      { code: line.procedure_code, name: view.names?.procedures[line.procedure_code] ?? null },
+    ]),
+  );
   const notes = typeof claim.clinical_notes === "string" ? claim.clinical_notes : "";
   const unquoted = new Set(
     evidenceChecks(record?.output_errors ?? []).map((c) => quoteKey(c.lineNo, c.criterionId)),
@@ -81,6 +90,7 @@ export function ClaimWorkspace({
           actions={lineActions}
           status={lineStatus}
           adjustments={view.adjustments ?? []}
+          procedures={procedures}
         />
         </div>
       ) : (
@@ -107,6 +117,7 @@ export function ClaimWorkspace({
   ];
   return (
     <>
+      <ClaimHeader claim={claim} names={view.names} providerName={providerName ?? view.names?.provider} />
       <StageStrip list={stages(view, events)} fill={fill} />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Tabs defaultValue="lines" className="min-w-0">
