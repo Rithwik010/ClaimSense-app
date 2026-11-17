@@ -7,6 +7,7 @@ import { Fragment, useId, type ReactNode } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { ClaimJump, NotificationBell } from "@/components/HeaderTools";
 import { MemberAssistant } from "@/components/MemberAssistant";
 import { UserMenu } from "@/components/UserMenu";
 import {
@@ -78,6 +79,8 @@ export function Layout() {
               ))}
             </BreadcrumbList>
           </Breadcrumb>
+          <ClaimJump />
+          <NotificationBell />
           <UserMenu />
         </header>
         {/* SidebarInset is the page's <main> landmark; this is its animated content. */}

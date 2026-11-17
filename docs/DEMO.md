@@ -30,8 +30,11 @@ top right: **Log out**.
 
 ## The nine claims
 
-A provider files: **Submit claim** → drop the file on the box (or choose it) → **Read claim** →
-check **Fields read** → **Process claim** (the stage strip fills in) → **Open claim result**. A
+A provider files: **Submit claim** in the sidebar → drop the file on the box (or choose it) →
+**Submit claim**: it reads the claim, checks it and, when the check finds nothing, processes it (the
+stage strip fills in) → **Open claim result**. When the check finds something (claims 6 and 9), it
+stops with what it found and the **Fields read**; correct a box or press **Process claim**. **Read
+and check first** always stops after the check (D-UI-12). A
 reviewer reviews: **Review queue** → the tier's tab → the claim → **Accept all lines** (or
 **Override line**) → **Finalize claim** → confirm; then **Next claim** opens the next one waiting.
 
@@ -48,8 +51,8 @@ reviewer reviews: **Review queue** → the tier's tab → the claim → **Accept
 | 5 | provider2 | `05-rule-deny-r15.json`: file and process → **Open claim result** | **Denied** at once: **Claim denied**, why in plain words, what to check, CARC 11, RARC N115, the billing article and its LCD |
 | 6 | provider2 | `06-reject-invalid-npi.json`: file and process → **Open claim result** | **Rejected**: **Claim rejected**, the NPI that is not valid under **Please review the following details**, CARC 16 with RARC N257 |
 | 7 | provider1 | `07-duplicate-of-01.json`: file and process | **Rejected**: duplicate of claim 1, CARC 18 |
-| 8 | provider2 | `08-scanned-clean.pdf`: **Read claim** (OCR, a few seconds) → the confidence column → process | **In review**; it waits in the queue |
-| 9 | provider2 | `09-scanned-low-confidence.pdf` (human-style notes): **Read claim** → the mistyped NPI is highlighted → process | **Rejected** for a low-confidence field, never denied: CARC 16 with RARC MA130 |
+| 8 | provider2 | `08-scanned-clean.pdf`: **Read and check first** (OCR, a few seconds) → the confidence column → **Process claim** | **In review**; it waits in the queue |
+| 9 | provider2 | `09-scanned-low-confidence.pdf` (human-style notes): **Submit claim** → it stops: the mistyped NPI is highlighted → **Process claim** | **Rejected** for a low-confidence field, never denied: CARC 16 with RARC MA130 |
 
 ### Extra claims (`demo/extra/`)
 
@@ -125,9 +128,35 @@ the name, member ID, plan and coverage dates. After the run, member1 has claim 1
 (rejected), and member2 has claim 4 (partly approved). A member's account has no access to any
 provider, reviewer or admin page.
 
-Every dashboard uses one set of status labels: In review, Approved, Partly approved (some lines
-paid, some not), Pended, Denied, Rejected; reviewers and admins also see Not processed for a
-claim filed but never processed (a provider sees it as In review).
+Every dashboard uses one set of status labels: Not processed (filed, not processed yet), In
+review, Approved, Partly approved (some lines paid, some not), Pended, Denied, Rejected (D-UI-12:
+a provider now sees Not processed too). A member's duplicate (claim 7) reads **Already sent**: a
+copy of a claim the plan already has, nothing to do.
+
+## After the nine: follow-ups, appeals and the new pages
+
+Run these after the nine claims (D-FUP-1, D-APL-1, D-FBK-1, D-QLT-1, D-AUTH-2, D-AUD-1, D-POL-9,
+D-NTF-1, D-MEM-5).
+
+| Who | Steps | What shows |
+|---|---|---|
+| provider1 | The bell at the top right | Claim 1 approved, claims 2 and 7 final; a dot on the new ones |
+| provider1 | **My claims**: patient, date of service and billed columns → sort by **Billed** → **Download CSV** | The list as filed; `CLM-DEMO-02` reads **On hold**, not $0.00 |
+| provider1 | `CLM-DEMO-02` → **Send documentation** → type the missing findings → **Add to the claim** → **Process claim** | The claim goes back to review with the documentation in its notes; the audit trail keeps only its length |
+| reviewer2 | **Review queue** → **Start next claim** (or `CLM-DEMO-02`) → press **A** → confirm | Decided again; **N** opens the next claim |
+| provider2 | `CLM-DEMO-06` (rejected: the billing NPI is not valid) → **Correct and resubmit** → **Correct Billing NPI** (your own NPI) → **Check again** → **Process claim** | Back to **Not processed**, corrected and processed again |
+| reviewer1 | Deny a claim (override its lines to Deny with a reason), then as its provider: **Appeal the decision** with a reason | **In review** with the **Appeal** flag; reviewer1 cannot finalize it ("another reviewer decides it") |
+| reviewer2 | Open the appealed claim: the appeal note and reason → **Accept all lines** (upheld) or override (changed) | The appeal is decided; the provider and the member see how it stood |
+| reviewer1 | After finalizing: **Correct the model's criteria** → change a criterion, copy a quote from the note → **Save** | Kept for the next fine-tune; **Review quality** → **Download training examples** has it |
+| reviewer1 and reviewer2 | Both open the same waiting claim | The second sees "reviewer1 opened this claim … ago" |
+| admin | **Overview**: Not processed, money of the decided claims, review times, override rate, commonest reasons, the last 14 days | The API's numbers; **Show the numbers** gives the chart as a table |
+| admin | **Review quality** | Lines accepted, the model's decision against the final one, by tier, reviewer and policy, appeals |
+| admin | **Users** → **Add a login**; type a wrong password five times as that user | The login locks for 15 minutes; **Unlock** or **New password** frees it |
+| admin | **Audit lookup**: Who acted `reviewer1`, Event **Lines overridden** | Each override's lines, decisions, reason code and note |
+| provider1 | **Coverage policies** → search `97161` | What the notes must show for the service, before you write them |
+| anyone | Your name at the top right → **Change password** | The current password, then a new one of 10 characters or more |
+| member1 | **My benefits** | What is left of each deductible and maximum and the visits left, with bars |
+| member1 | **My plan**; then **Ask about your plan** → type "how much is left on my deductible?" | The plan's summary of benefits; the assistant answers from the records |
 
 ## If a step fails
 

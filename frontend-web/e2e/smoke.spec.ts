@@ -46,7 +46,7 @@ test("submit, process, review and explain a claim", async ({ page }) => {
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify(claim)),
   });
-  await page.getByRole("button", { name: "Read claim" }).click();
+  await page.getByRole("button", { name: "Read and check first" }).click();
   await expect(page.getByText(`Claim ${claimId} was filed from a JSON claim.`)).toBeVisible();
 
   await page.getByRole("button", { name: "Process claim" }).click();

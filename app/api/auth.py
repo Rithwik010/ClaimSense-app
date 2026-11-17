@@ -3,6 +3,7 @@ signed token in an httpOnly, SameSite=Strict cookie that expires after 8 hours. 
 cookie (a copied token stays valid until it expires: prototype). A member user (D-MEM-1) is told
 their member ID too; the other roles' answers are as before."""
 
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -11,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import LoggedInUser, get_session
 from app.auth.tokens import COOKIE, SESSION_HOURS, create_token
-from app.auth.users import AuthUser, authenticate
+from app.auth.users import AccountLocked, AuthUser, UserRefused, authenticate, change_password
 from app.core.logging import get_logger
 from app.core.settings import Settings, get_settings
 
@@ -55,7 +56,19 @@ def login(
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE, "SECRET_KEY is not set (make demo-users sets it)"
         )
-    user = authenticate(session, body.username, body.password)
+    try:
+        user = authenticate(session, body.username, body.password)
+    except AccountLocked as exc:
+        session.commit()
+        minutes = max(1, int((exc.until - datetime.now(UTC)).total_seconds() // 60) + 1)
+        log.info("login_locked")
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            f"Too many failed logins. Try again in {minutes} minute{'s' if minutes != 1 else ''}, "
+            "or ask your administrator to unlock your login.",
+            headers={"Retry-After": str(minutes * 60)},
+        ) from exc
+    session.commit()  # the failed-login count (D-AUTH-2)
     if user is None:
         log.info("login_failed")
         raise HTTPException(
@@ -85,3 +98,23 @@ def logout(response: Response) -> None:
 @router.get("/me")
 def me(user: LoggedInUser) -> UserView:
     return _view(user)
+
+
+class PasswordChange(BaseModel):
+    current_password: Annotated[str, StringConstraints(min_length=1, max_length=256)]
+    new_password: Annotated[str, StringConstraints(min_length=1, max_length=256)]
+
+
+@router.post("/password", status_code=status.HTTP_204_NO_CONTENT)
+def password(
+    body: PasswordChange,
+    user: LoggedInUser,
+    session: Annotated[Session, Depends(get_session)],
+) -> None:
+    """The logged-in user changes their own password, giving the current one (D-AUTH-2)."""
+    try:
+        change_password(session, user.username, body.current_password, body.new_password)
+    except UserRefused as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    session.commit()
+    log.info("password_changed", username=user.username)

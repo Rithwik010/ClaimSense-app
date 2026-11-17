@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     secret_key: SecretStr | None = None
     # The production build of the web app, served by the API on the same origin (D-AUTH-1).
     web_dist: Path = Path(__file__).resolve().parents[2] / "frontend-web/dist"
+    # The plans' summaries of benefits and coverage (P3.2), shown on the member's plan page.
+    sbc_dir: Path = Path(__file__).resolve().parents[2] / "data/generated/sbc"
     # /docs and /openapi.json are off: only login and /health are public (D-AUTH-1).
     api_docs: bool = False
 

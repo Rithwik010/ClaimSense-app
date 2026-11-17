@@ -4,23 +4,25 @@ explanation of benefits (the patient EOB of D-EOB-1), their benefits this benefi
 profile.
 
 Members only (403 for every other role; the claims, review, plan and metrics endpoints are 403 for
-a member). Another member's claim is 404, the same answer as a claim that does not exist. Read
-only: nothing here files, processes, corrects or reviews a claim. A claim shows its outcome once it
-is final, and until then only "Your claim is being processed". Built from the decision record, the
-stored accumulators and visit usage and the plan (app/explain/member.py); amounts are the
-calculator's or stored ones, shown as they are (H1).
+a member). Another member's claim is 404, the same answer as a claim that does not exist. Nothing
+here files, processes, corrects or reviews a claim; the one thing a member can ask is an appeal of
+a denied claim (D-APL-1), decided by a reviewer other than the one who denied it. A claim shows its
+outcome once it is final, and until then only "Your claim is being processed". Built from the
+decision record, the stored accumulators and visit usage and the plan (app/explain/member.py);
+amounts are the calculator's or stored ones, shown as they are (H1). The plan summary is the
+plan's generated summary of benefits and coverage (P3.2).
 """
 
 from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import ValidationError
+from pydantic import BaseModel, StringConstraints, ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.claims import claim_eob
-from app.api.deps import MemberUser, get_session, get_today, member_only
+from app.api.deps import MemberUser, SettingsDep, get_session, get_today, member_only
 from app.auth.users import AuthUser
 from app.calculator.engine import Accumulators, NetworkTerms
 from app.db import lookups
@@ -29,14 +31,25 @@ from app.domain.contracts import ClaimStatus, Network
 from app.explain.eob import PatientEob
 from app.explain.member import (
     NOT_FINAL,
+    MemberAppeal,
     MemberBenefits,
     MemberClaim,
     MemberProfile,
     member_benefits,
     member_claim,
     member_profile,
+    service_names,
 )
-from app.workflow.pipeline import latest_record
+from app.explain.sbc import PlanSummary, parse_sbc
+from app.workflow.followup import (
+    REASON_MAX,
+    FollowUpRefused,
+    claim_appeals,
+    file_appeal,
+    follow_ups,
+)
+from app.workflow.pipeline import ClaimNotFound, latest_record
+from app.workflow.states import InvalidTransition
 
 router = APIRouter(prefix="/v1/member", tags=["member"], dependencies=[Depends(member_only)])
 SessionDep = Annotated[Session, Depends(get_session)]
@@ -59,7 +72,23 @@ def _own_claim(session: Session, claim_id: str, user: AuthUser) -> Claim:
     return row
 
 
-def _view(session: Session, row: Claim) -> MemberClaim:
+def _appeal(session: Session, row: Claim, user: AuthUser) -> MemberAppeal | None:
+    """The claim's latest appeal as its member sees it (never the reason someone else gave, nor
+    who decided it)."""
+    appeals = claim_appeals(session, row.claim_id, user.username, staff=False)
+    if not appeals:
+        return None
+    latest = appeals[0]
+    return MemberAppeal(
+        status=latest.status,
+        outcome=latest.outcome,
+        filed_on=latest.filed_at.date().isoformat(),
+        decided_on=latest.decided_at.date().isoformat() if latest.decided_at else None,
+        filed_by_you=latest.filed_by == user.username,
+    )
+
+
+def _view(session: Session, row: Claim, user: AuthUser) -> MemberClaim:
     claim_status = ClaimStatus(row.status)
     record = None
     if claim_status not in NOT_FINAL:  # nothing of a recommendation in review is read
@@ -69,6 +98,11 @@ def _view(session: Session, row: Claim) -> MemberClaim:
             record = None
     npi = row.intake.get("billing_npi")
     provider = session.get(Provider, npi) if isinstance(npi, str) else None
+    codes = [
+        line.get("procedure_code")
+        for line in row.intake.get("service_lines") or []
+        if isinstance(line, dict) and isinstance(line.get("procedure_code"), str)
+    ]
     return member_claim(
         claim_status,
         record,
@@ -76,6 +110,9 @@ def _view(session: Session, row: Claim) -> MemberClaim:
         claim_id=row.claim_id,
         received=row.received_date,
         provider_name=provider.name if provider else None,
+        services=service_names(row.intake, lookups.procedure_descriptions(session, codes)),
+        appeal=_appeal(session, row, user),
+        can_appeal=record is not None and follow_ups(session, row, record).appeal,
     )
 
 
@@ -87,12 +124,36 @@ def list_claims(session: SessionDep, user: MemberUser) -> list[MemberClaim]:
         .where(Claim.member_id == _member(session, user).member_id)
         .order_by(Claim.updated_at.desc(), Claim.claim_id)
     )
-    return [_view(session, row) for row in rows]
+    return [_view(session, row, user) for row in rows]
 
 
 @router.get("/claims/{claim_id}")
 def get_claim(claim_id: str, session: SessionDep, user: MemberUser) -> MemberClaim:
-    return _view(session, _own_claim(session, claim_id, user))
+    return _view(session, _own_claim(session, claim_id, user), user)
+
+
+class AppealRequest(BaseModel):
+    reason: Annotated[str, StringConstraints(strip_whitespace=True, max_length=REASON_MAX)]
+
+
+@router.post("/claims/{claim_id}/appeal", status_code=status.HTTP_201_CREATED)
+def appeal_claim(
+    claim_id: str, body: AppealRequest, session: SessionDep, user: MemberUser
+) -> MemberClaim:
+    """The member asks for a denied claim to be decided again by another reviewer (D-APL-1), as the
+    provider can: 409 when the claim is not denied; 422 when it was appealed already or the reason
+    is not 10 to 2000 characters."""
+    row = _own_claim(session, claim_id, user)
+    try:
+        file_appeal(session, row.claim_id, user.username, "member", body.reason)
+    except FollowUpRefused as exc:
+        session.rollback()
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    except (InvalidTransition, ClaimNotFound) as exc:
+        session.rollback()
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    session.refresh(row)
+    return _view(session, row, user)
 
 
 @router.get("/claims/{claim_id}/eob")
@@ -144,6 +205,17 @@ def get_benefits(
         },
         visits_used=lookups.get_visits_used(session, member.member_id, year_start),
     )
+
+
+@router.get("/plan-summary")
+def get_plan_summary(session: SessionDep, settings: SettingsDep, user: MemberUser) -> PlanSummary:
+    """The member's plan's summary of benefits and coverage (P3.2), as generated from the plan's
+    terms; 404 when the plan has none."""
+    plan_id = _member(session, user).plan_id
+    path = settings.sbc_dir / f"{plan_id}.md"
+    if not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"no summary for plan {plan_id}")
+    return parse_sbc(plan_id, path.read_text(encoding="utf-8"))
 
 
 @router.get("/profile")

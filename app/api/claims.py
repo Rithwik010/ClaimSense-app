@@ -62,11 +62,13 @@ from app.audit.events import list_events
 from app.auth import Role
 from app.auth.users import AuthUser
 from app.core.settings import Settings, get_settings
+from app.db import lookups
 from app.db.curated import load_curated
 from app.db.models import DOCUMENT_TYPES, AuditEvent, Claim, ClaimDocument, Member, Plan, Provider
 from app.domain.contracts import (
     ClaimDecision,
     ClaimStatus,
+    CriterionStatus,
     DecisionRecord,
     IntakeResult,
     Network,
@@ -96,7 +98,21 @@ from app.workflow.corrections import (
     claim_form,
     correct_claim,
 )
+from app.workflow.feedback import (
+    CriterionCorrection,
+    FeedbackRefused,
+    LineFeedback,
+    record_feedback,
+)
 from app.workflow.finalize import ReviewBusy, finalize_review
+from app.workflow.followup import (
+    FollowUpRefused,
+    add_documentation,
+    claim_appeals,
+    file_appeal,
+    follow_ups,
+    reopen_for_correction,
+)
 from app.workflow.listing import ClaimSummary, claim_summaries
 from app.workflow.pipeline import (
     ClaimNotFound,
@@ -109,7 +125,7 @@ from app.workflow.pipeline import (
     load_intake,
     process_claim,
 )
-from app.workflow.review import REVIEWER_ID_MAX, open_review
+from app.workflow.review import REVIEWER_ID_MAX, open_review, other_reviewers
 from app.workflow.states import InvalidTransition
 
 router = APIRouter(prefix="/v1/claims", tags=["claims"])
@@ -155,6 +171,38 @@ class ReasonView(BaseModel):
     short: str
 
 
+class CodeNames(BaseModel):
+    """Plain names of the claim's codes, for the review header (D-REV-10): procedures from the
+    code table (paraphrased names, never AMA descriptors), diagnoses from ICD-10-CM."""
+
+    procedures: dict[str, str] = {}
+    diagnoses: dict[str, str] = {}
+    provider: str | None = None  # the billing provider's name, when on file
+
+
+class FollowUpsView(BaseModel):
+    """What can be done with the claim now (D-FUP-1, D-APL-1)."""
+
+    correct: bool = False
+    documentation: bool = False
+    appeal: bool = False
+    reopened: bool = False
+
+
+class AppealOut(BaseModel):
+    appeal_id: int
+    status: str  # OPEN or DECIDED
+    outcome: str | None  # UPHELD or CHANGED once decided
+    filed_by: str
+    filed_role: str
+    filed_at: datetime
+    previous_status: str
+    previous_reviewer: str | None  # staff only
+    decided_by: str | None  # staff only
+    decided_at: datetime | None
+    reason: str | None  # staff and the person who filed it
+
+
 class ClaimView(BaseModel):
     claim_id: str
     status: ClaimStatus
@@ -168,6 +216,9 @@ class ClaimView(BaseModel):
     summary: Summary  # a few short lines from the record (D-UI-6)
     documents: list[DocumentInfo]  # the original files kept, in page order (D-DOC-1, D-DOC-2)
     eob: bool = False  # GET /v1/claims/{id}/eob has the patient's EOB (D-EOB-1)
+    names: CodeNames = CodeNames()
+    appeals: list[AppealOut] = []
+    follow_ups: FollowUpsView = FollowUpsView()
 
 
 # A provider sees a claim's decision once it is final; a rule outcome is final at once.
@@ -209,6 +260,45 @@ class ProviderClaimView(BaseModel):
     stages: list[str] = []
     documents: list[DocumentInfo] = []  # the original files kept, in page order
     eob: bool = False  # GET /v1/claims/{id}/eob has the patient's EOB (D-EOB-1)
+    follow_ups: FollowUpsView = FollowUpsView()  # what the provider can do now (D-FUP-1, D-APL-1)
+    appeals: list[AppealOut] = []
+    names: CodeNames = CodeNames()
+
+
+REOPENING_EVENTS = ("CLAIM_REOPENED",)
+
+
+def current_stages(event_types: list[str]) -> list[str]:
+    """The audit event types since the claim was last sent back to its provider (its stage strip
+    shows the run now under way, not the decision it had before). An appeal runs nothing again:
+    the claim goes back to review with the stages it went through."""
+    marks = [i for i, kind in enumerate(event_types) if kind in REOPENING_EVENTS]
+    return event_types[marks[-1] + 1 :] if marks else event_types
+
+
+def code_names(session: Session, claim: dict[str, Any]) -> CodeNames:
+    lines = [line for line in claim.get("service_lines") or [] if isinstance(line, dict)]
+    codes = sorted({str(line["procedure_code"]) for line in lines if line.get("procedure_code")})
+    diagnoses = [str(code) for code in claim.get("diagnoses") or [] if isinstance(code, str)]
+    npi = claim.get("billing_npi")
+    provider = session.get(Provider, npi) if isinstance(npi, str) else None
+    return CodeNames(
+        procedures=lookups.procedure_descriptions(session, codes) if codes else {},
+        diagnoses=lookups.icd10_longest_descriptions(session, diagnoses) if diagnoses else {},
+        provider=provider.name if provider is not None else None,
+    )
+
+
+def _appeals(session: Session, claim_id: str, user: AuthUser) -> list[AppealOut]:
+    staff = user.role in (Role.REVIEWER, Role.ADMIN)
+    return [
+        AppealOut.model_validate(asdict(a))
+        for a in claim_appeals(session, claim_id, user.username, staff)
+    ]
+
+
+def _follow_ups(session: Session, row: Claim, record: DecisionRecord | None) -> FollowUpsView:
+    return FollowUpsView.model_validate(asdict(follow_ups(session, row, record)))
 
 
 def _claim_row(session: Session, claim_id: str) -> Claim:
@@ -270,12 +360,13 @@ def without_review(record: DecisionRecord) -> DecisionRecord:
     return record.model_copy(update={"review": None})
 
 
-def _provider_view(session: Session, row: Claim, settings: Settings) -> ProviderClaimView:
+def _provider_view(
+    session: Session, row: Claim, settings: Settings, user: AuthUser | None = None
+) -> ProviderClaimView:
     claim_status = ClaimStatus(row.status)
     final = claim_status in FINAL_STATUSES
-    record = latest_record(session, row.claim_id) if final else None
-    if record is not None:
-        record = without_review(record)
+    full = latest_record(session, row.claim_id) if final else None
+    record = without_review(full) if full is not None else None
     outcome = claim_outcome(claim_status, record)
     return ProviderClaimView(
         claim_id=row.claim_id,
@@ -295,9 +386,12 @@ def _provider_view(session: Session, row: Claim, settings: Settings) -> Provider
         )
         if record is not None
         else None,
-        stages=[event.event_type for event in list_events(session, row.claim_id)],
+        stages=current_stages([event.event_type for event in list_events(session, row.claim_id)]),
         documents=_documents(session, row.claim_id),
         eob=claim_status in EOB_STATUSES,
+        follow_ups=_follow_ups(session, row, full),
+        appeals=_appeals(session, row.claim_id, user) if user else [],
+        names=code_names(session, row.intake),
     )
 
 
@@ -332,10 +426,16 @@ class ReviewOpen(BaseModel):
     ]
 
 
+class OtherReviewerView(BaseModel):
+    reviewer_id: str
+    opened: datetime
+
+
 class ReviewOpened(BaseModel):
     claim_id: str
     reviewer_id: str
     opened: datetime
+    others: list[OtherReviewerView] = []  # other reviewers with it open (D-REV-10)
 
 
 FILE_NAME_HEADER = "X-File-Name"  # the uploaded file's name, percent-encoded (D-DOC-1)
@@ -504,7 +604,29 @@ def open_for_review(
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
     except InvalidTransition as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
-    return ReviewOpened(claim_id=claim_id, reviewer_id=body.reviewer_id, opened=opened)
+    return ReviewOpened(
+        claim_id=claim_id,
+        reviewer_id=body.reviewer_id,
+        opened=opened,
+        others=[
+            OtherReviewerView(reviewer_id=o.reviewer_id, opened=o.opened)
+            for o in other_reviewers(session, claim_id, body.reviewer_id)
+        ],
+    )
+
+
+@router.get("/{claim_id}/review/others")
+def others_reviewing(
+    claim_id: str, session: SessionDep, user: ReviewerUser
+) -> list[OtherReviewerView]:
+    """Other reviewers who opened this claim in the last 30 minutes while it awaits review
+    (D-REV-10), for the review page's notice; the page asks again every minute."""
+    if session.get(Claim, claim_id) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"claim {claim_id} not found")
+    return [
+        OtherReviewerView(reviewer_id=o.reviewer_id, opened=o.opened)
+        for o in other_reviewers(session, claim_id, user.username)
+    ]
 
 
 @router.post("/{claim_id}/review")
@@ -560,6 +682,9 @@ class ClaimSummaryView(BaseModel):
     provider_name: str | None
     outcome: str
     reasons: list[ReasonView]  # rejected, denied, pended and partly approved claims only
+    patient_name: str | None = None
+    service_date: date | None = None
+    appeal_open: bool = False
 
 
 class ProviderClaimSummary(BaseModel):
@@ -577,6 +702,12 @@ class ProviderClaimSummary(BaseModel):
     total_billed_cents: int | None
     total_allowed_cents: int | None
     plan_pays_cents: int | None
+    # The claim as the provider filed it (D-UI-12): the patient, the first date of service and
+    # the amount billed (the sum of the lines' charges, what the provider asked for).
+    patient_name: str | None = None
+    service_date: date | None = None
+    billed_cents: int | None = None
+    appeal_open: bool = False
 
 
 def _reason_views(reasons: list[ClaimReason]) -> list[ReasonView]:
@@ -600,6 +731,10 @@ def _provider_summary(item: ClaimSummary) -> ProviderClaimSummary:
         total_billed_cents=item.total_billed_cents if final else None,
         total_allowed_cents=item.total_allowed_cents if final else None,
         plan_pays_cents=item.plan_pays_cents if final else None,
+        patient_name=item.patient_name,
+        service_date=item.service_date,
+        billed_cents=item.billed_cents,
+        appeal_open=item.appeal_open,
     )
 
 
@@ -632,9 +767,11 @@ def get_claim(
 ) -> ClaimView | ProviderClaimView:
     row = _own_claim(session, claim_id, user)
     if user.role is Role.PROVIDER:
-        return _provider_view(session, row, settings)
-    record = latest_record(session, claim_id)
+        return _provider_view(session, row, settings, user)
     claim_status = ClaimStatus(row.status)
+    # A claim reopened for its provider (D-FUP-1) is not processed again yet: its last record is
+    # the decision it had, not one to show as current.
+    record = latest_record(session, claim_id) if claim_status is not ClaimStatus.RECEIVED else None
     return ClaimView(
         claim_id=row.claim_id,
         status=claim_status,
@@ -655,6 +792,9 @@ def get_claim(
         ),
         documents=_documents(session, claim_id),
         eob=claim_status in EOB_STATUSES,
+        names=code_names(session, row.intake),
+        appeals=_appeals(session, claim_id, user),
+        follow_ups=_follow_ups(session, row, record),
     )
 
 
@@ -871,3 +1011,119 @@ def claim_eob(session: Session, row: Claim) -> PatientEob:
         year_to_date=_year_to_date(session, claim_id, plan),
         coinsurance_bps=_coinsurance_bps(session, record),
     )
+
+
+# --- Follow-ups after a decision (D-FUP-1, D-APL-1) and reviewer feedback (D-FBK-1) -------------
+
+
+class Documentation(BaseModel):
+    text: Annotated[str, StringConstraints(min_length=1, max_length=8000)]
+
+
+class AppealRequest(BaseModel):
+    reason: Annotated[str, StringConstraints(min_length=1, max_length=2000)]
+
+
+def _follow_up_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, ClaimNotFound):
+        return HTTPException(status.HTTP_404_NOT_FOUND, str(exc))
+    if isinstance(exc, InvalidTransition):
+        return HTTPException(status.HTTP_409_CONFLICT, str(exc))
+    return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc))
+
+
+@router.post("/{claim_id}/reopen")
+def reopen(
+    claim_id: str, session: SessionDep, settings: SettingsDep, user: ProviderUser
+) -> ProviderClaimView:
+    """Correct and resubmit: a claim the checks returned, denied or put on hold goes back to its
+    provider (RECEIVED) to correct its boxes and process again."""
+    _own_claim(session, claim_id, user)
+    try:
+        reopen_for_correction(session, claim_id, user.username)
+    except (ClaimNotFound, InvalidTransition, FollowUpRefused) as exc:
+        session.rollback()
+        raise _follow_up_error(exc) from exc
+    return _provider_view(session, _claim_row(session, claim_id), settings, user)
+
+
+@router.post("/{claim_id}/documentation")
+def documentation(
+    claim_id: str,
+    body: Documentation,
+    session: SessionDep,
+    settings: SettingsDep,
+    user: ProviderUser,
+) -> ProviderClaimView:
+    """Send documentation: added to the clinical notes of a claim on hold, which goes back to
+    RECEIVED to be processed again."""
+    _own_claim(session, claim_id, user)
+    try:
+        add_documentation(session, claim_id, user.username, body.text, settings)
+    except (ClaimNotFound, InvalidTransition, FollowUpRefused) as exc:
+        session.rollback()
+        raise _follow_up_error(exc) from exc
+    return _provider_view(session, _claim_row(session, claim_id), settings, user)
+
+
+@router.post("/{claim_id}/appeal")
+def appeal(
+    claim_id: str,
+    body: AppealRequest,
+    session: SessionDep,
+    settings: SettingsDep,
+    user: ProviderUser,
+) -> ProviderClaimView:
+    """Appeal a denied claim: another reviewer decides it again."""
+    _own_claim(session, claim_id, user)
+    try:
+        file_appeal(session, claim_id, user.username, "provider", body.reason)
+    except (ClaimNotFound, InvalidTransition, FollowUpRefused) as exc:
+        session.rollback()
+        raise _follow_up_error(exc) from exc
+    return _provider_view(session, _claim_row(session, claim_id), settings, user)
+
+
+class CriterionFix(BaseModel):
+    criterion_id: Annotated[str, StringConstraints(min_length=1, max_length=48)]
+    status: CriterionStatus
+    quote: Annotated[str, StringConstraints(max_length=600)] | None = None
+
+
+class LineFix(BaseModel):
+    line_no: Annotated[int, Field(ge=1)]
+    criteria: Annotated[list[CriterionFix], Field(min_length=1, max_length=40)]
+
+
+class Feedback(BaseModel):
+    lines: Annotated[list[LineFix], Field(min_length=1, max_length=50)]
+
+
+class FeedbackSaved(BaseModel):
+    claim_id: str
+    criteria_corrected: int
+
+
+@router.post("/{claim_id}/feedback")
+def feedback(
+    claim_id: str, body: Feedback, session: SessionDep, user: ReviewerUser
+) -> FeedbackSaved:
+    """The reviewer who finalized the claim corrects the model's criteria (training data)."""
+    _claim_row(session, claim_id)
+    try:
+        changed = record_feedback(
+            session,
+            claim_id,
+            user.username,
+            [
+                LineFeedback(
+                    line.line_no,
+                    [CriterionCorrection(c.criterion_id, c.status, c.quote) for c in line.criteria],
+                )
+                for line in body.lines
+            ],
+        )
+    except (ClaimNotFound, FeedbackRefused) as exc:
+        session.rollback()
+        raise _follow_up_error(exc) from exc
+    return FeedbackSaved(claim_id=claim_id, criteria_corrected=changed)

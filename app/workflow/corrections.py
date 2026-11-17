@@ -73,9 +73,26 @@ class ClaimForm:
 BOX_ORDER = [box.field for box in [*ALL_PAGE_ONE_BOXES, NOTES_BOX, *PRIMARY_PAID_BOXES]]
 
 
-def correctable(row: Claim) -> bool:
+def was_reopened(session: Session, claim_id: str) -> bool:
+    """The claim was reopened for its provider to correct it (D-FUP-1)."""
     return (
-        row.status == ClaimStatus.RECEIVED.value and SourceFormat(row.source_format) in FORM_SOURCES
+        session.scalar(
+            select(AuditEvent.id)
+            .where(
+                AuditEvent.claim_id == claim_id,
+                AuditEvent.event_type == EventType.CLAIM_REOPENED.value,
+            )
+            .limit(1)
+        )
+        is not None
+    )
+
+
+def correctable(row: Claim, reopened: bool = False) -> bool:
+    """A claim not processed yet read from a form, or reopened for its provider to correct (any
+    source, D-FUP-1)."""
+    return row.status == ClaimStatus.RECEIVED.value and (
+        reopened or SourceFormat(row.source_format) in FORM_SOURCES
     )
 
 
@@ -101,7 +118,7 @@ def correct_claim(
             f"claim {claim_id} is {row.status}; only a claim not processed yet can be corrected"
         )
     source = SourceFormat(row.source_format)
-    if source not in FORM_SOURCES:
+    if source not in FORM_SOURCES and not was_reopened(session, claim_id):
         raise CorrectionNotAllowed(
             "a JSON claim is read exactly, so it has nothing to correct; file a new claim instead"
         )
@@ -178,7 +195,7 @@ def claim_form(session: Session, row: Claim) -> ClaimForm:
     every box with a value or a reading (a box read but unreadable has a confidence and no text)."""
     texts = form_text(row.intake)
     confidences = row.field_confidences or {}
-    can_correct = correctable(row)
+    can_correct = correctable(row, was_reopened(session, row.claim_id))
     corrected = corrected_fields(session, row.claim_id)
     try:
         _, failures = contract_failures(row.intake)

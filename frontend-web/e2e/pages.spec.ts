@@ -56,7 +56,10 @@ async function axeClean(page: Page, what: string, scope?: string) {
 }
 
 async function shownClaims(page: Page): Promise<string[]> {
-  return (await page.getByRole("table").getByRole("link").allTextContents()).sort();
+  // A list's table, or on Returned and auto-denied its cards, one a claim (fix 5).
+  const cards = page.getByRole("list", { name: "Claims decided by the checks" });
+  const shown = (await cards.count()) ? cards : page.getByRole("table");
+  return (await shown.getByRole("link").allTextContents()).sort();
 }
 
 async function chooseStatus(page: Page, label: string) {
@@ -187,9 +190,15 @@ test("admin: the Claims page reads and filters every claim, view only", async ({
 test("the Reason column and the renamed page", async ({ page }) => {
   await loginAs(page, "reviewer1");
   await page.goto("/claims");
-  const reasonOf = (id: string) => page.getByRole("row").filter({ has: page.getByRole("link", { name: id }) });
+  // A claim's table row, or its card on Returned and auto-denied (fix 5).
+  const reasonOf = (id: string) =>
+    page
+      .getByRole("row")
+      .or(page.getByRole("listitem"))
+      .filter({ has: page.getByRole("link", { name: id, exact: true }) });
   await expect(reasonOf("CLM-DEMO-06").getByTestId("reason")).toHaveText(/A provider NPI is not valid/);
-  await expect(reasonOf("CLM-DEMO-01").getByRole("cell").nth(2)).toHaveText("—");
+  // Claim, Patient, Status, Reason: an approved claim has no reason.
+  await expect(reasonOf("CLM-DEMO-01").getByRole("cell").nth(3)).toHaveText("—");
   await reasonOf("CLM-DEMO-04").getByTestId("reason").focus();
   await expect(page.getByRole("tooltip")).toContainText("DN_NCCI_BUNDLED, R11");
 
@@ -226,7 +235,7 @@ test("the original file: a JSON claim, a PDF and an image, in the sheet and a ne
     await loginAs(page, "provider1");
     await page.goto("/submit");
     await page.getByLabel("Claim file").setInputFiles(image);
-    await page.getByRole("button", { name: "Read claim" }).click();
+    await page.getByRole("button", { name: "Read and check first" }).click();
     await expect(page.getByText(`Claim ${IMAGE_CLAIM} was filed from a scanned form`)).toBeVisible({ timeout: 60_000 });
   } finally {
     rmSync(folder, { recursive: true, force: true });
@@ -296,7 +305,7 @@ test("one claim from its form's two pages in two files (D-DOC-2)", async ({ page
     await expect(chosen.getByRole("listitem").first()).toContainText("scan page 2.png");
     await page.getByRole("button", { name: "Swap pages" }).click();
     await axeClean(page, "submit with two files");
-    await page.getByRole("button", { name: "Read claim" }).click();
+    await page.getByRole("button", { name: "Read and check first" }).click();
     await expect(page.getByText(`Claim ${PAGES_CLAIM} was filed from 2 files, a scanned form`)).toBeVisible({
       timeout: 60_000,
     });
@@ -339,13 +348,14 @@ test("check a claim, correct a misread box, then the patient EOB (D-CHK-1, D-FIX
     await loginAs(page, "provider1");
     await page.goto("/submit");
     await page.getByLabel("Claim file").setInputFiles(pdf);
-    await page.getByRole("button", { name: "Read claim" }).click();
+    await page.getByRole("button", { name: "Read and check first" }).click();
     await expect(page.getByText(`Claim ${FIX_CLAIM} was filed from a digital PDF`)).toBeVisible({ timeout: 60_000 });
   } finally {
     rmSync(folder, { recursive: true, force: true });
   }
 
-  await page.getByRole("button", { name: "Check claim" }).click();
+  // "Read and check first" ran the check already (D-UI-12): the panel offers to check again.
+  await expect(page.getByRole("button", { name: "Check again" })).toBeVisible();
   await expect(page.getByText("Would be rejected", { exact: true })).toBeVisible();
   const found = page.getByRole("list", { name: "What the checks found" });
   await expect(found).toContainText(`Billing provider NPI, read as: ${MISREAD_NPI}`);

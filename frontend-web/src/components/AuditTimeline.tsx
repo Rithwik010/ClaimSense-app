@@ -1,10 +1,13 @@
-// The audit trail as a simple timeline (§8.9): when, what happened, who did it, the versions the
-// step ran with and the request that wrote it (D-OBS-1). A provider's corrections before processing
-// name the boxes and, for all but the patient's, the text before and after (D-FIX-1). Read from
-// GET /v1/claims/{id}/audit; insert-only on the server.
+// The audit trail as a simple timeline (§8.9): when (to the second), what happened, who did it, the
+// versions the step ran with and the request that wrote it (D-OBS-1). A provider's corrections
+// before processing name the boxes and, for all but the patient's, the text before and after
+// (D-FIX-1); an override names each line's decision before and after, its reason code and the
+// reviewer's note (fix 4); follow-ups, appeals and feedback say what they did (D-FUP-1, D-APL-1,
+// D-FBK-1). Read from GET /v1/claims/{id}/audit (staff only); insert-only on the server.
 
-import type { AuditEvent } from "@/api/types";
-import { dateTime, fieldLabel } from "@/lib/format";
+import type { AuditEvent, ClaimStatus } from "@/api/types";
+import { dateTimeSeconds, fieldLabel } from "@/lib/format";
+import { APPEAL_OUTCOME, CRITERION_STATUS, DECISION, STATUS } from "@/lib/labels";
 
 export const EVENTS: Record<string, string> = {
   INTAKE_COMPLETED: "Claim received",
@@ -22,7 +25,69 @@ export const EVENTS: Record<string, string> = {
   REVIEW_OVERRIDDEN: "Lines overridden",
   FINALIZED: "Finalized",
   FIELD_CORRECTED: "Boxes corrected by the provider",
+  CLAIM_REOPENED: "Sent back to the provider",
+  DOCUMENTATION_ADDED: "Documentation added",
+  APPEAL_FILED: "Appeal filed",
+  APPEAL_DECIDED: "Appeal decided",
+  REVIEWER_FEEDBACK: "Reviewer corrected the model's criteria",
 };
+
+interface Change {
+  line_no: number;
+  reason?: string | null;
+  reason_code?: string | null;
+  before?: { decision?: string; benefit_category?: string | null };
+  after?: { decision?: string; benefit_category?: string | null };
+}
+
+function decision(value: string | undefined): string {
+  return value ? (DECISION[value as keyof typeof DECISION]?.label ?? value) : "—";
+}
+
+function statusLabel(value: unknown): string {
+  return typeof value === "string" ? (STATUS[value as ClaimStatus]?.label ?? value) : "";
+}
+
+/** What an event did, in a line or two each: overrides line by line, follow-ups, appeals and
+ * feedback. The payloads hold IDs, codes and counts only (§8.9). */
+export function details(event: AuditEvent): string[] {
+  const p = event.payload;
+  switch (event.event_type) {
+    case "REVIEW_OVERRIDDEN":
+      return ((p.changes as Change[] | undefined) ?? []).map((c) => {
+        const code = c.reason_code ? ` (${c.reason_code})` : "";
+        const note = c.reason ? `. Note: ${c.reason}` : "";
+        return `Line ${c.line_no}: ${decision(c.before?.decision)} → ${decision(c.after?.decision)}${code}${note}`;
+      });
+    case "AUTO_OUTCOME":
+    case "FINALIZED":
+      return p.status ? [statusLabel(p.status)] : [];
+    case "CLAIM_REOPENED":
+      return [
+        `${p.purpose === "documentation" ? "To add documentation" : "To correct and resubmit"}; it was ${statusLabel(p.previous_status).toLowerCase()}`,
+      ];
+    case "DOCUMENTATION_ADDED":
+      return [`${Number(p.characters ?? 0).toLocaleString("en-US")} characters added to the clinical notes`];
+    case "APPEAL_FILED":
+      return [
+        `By the ${p.filed_role === "member" ? "member" : "provider"}${p.previous_reviewer ? `; first decided by ${String(p.previous_reviewer)}, who cannot decide the appeal` : ""}`,
+      ];
+    case "APPEAL_DECIDED":
+      return [APPEAL_OUTCOME[String(p.outcome)] ?? String(p.outcome ?? "")];
+    case "REVIEWER_FEEDBACK":
+      return (
+        (p.lines as { line_no: number; criteria: { criterion_id: string; model_status: string; status: string }[] }[]) ??
+        []
+      ).flatMap((line) =>
+        line.criteria.map(
+          (c) =>
+            `Line ${line.line_no}, ${c.criterion_id}: ${CRITERION_STATUS[c.model_status] ?? c.model_status} → ${CRITERION_STATUS[c.status] ?? c.status}`,
+        ),
+      );
+    default:
+      return [];
+  }
+}
 
 interface Corrected {
   field: string;
@@ -64,11 +129,11 @@ export function AuditTimeline({ events }: { events: AuditEvent[] }) {
           <div className="min-w-0">
             <p className="font-semibold">{EVENTS[event.event_type] ?? event.event_type}</p>
             <p className="text-[13px] text-ink-muted">
-              <time dateTime={event.created_at}>{dateTime(event.created_at)}</time>, by {event.actor}
+              <time dateTime={event.created_at}>{dateTimeSeconds(event.created_at)}</time>, by {event.actor}
             </p>
-            {corrections(event).length > 0 && (
-              <ul className="text-[13px] break-words text-ink-muted">
-                {corrections(event).map((text) => (
+            {[...corrections(event), ...details(event)].length > 0 && (
+              <ul className="text-[13px] break-words text-ink">
+                {[...corrections(event), ...details(event)].map((text) => (
                   <li key={text}>{text}</li>
                 ))}
               </ul>

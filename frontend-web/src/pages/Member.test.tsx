@@ -35,6 +35,9 @@ const PROCESSING: MemberClaim = {
   billed_cents: null,
   plan_pays_cents: null,
   patient_pays_cents: null,
+  services: ["Physical therapy, therapeutic exercise"],
+  appeal: null,
+  can_appeal: false,
 };
 const APPROVED: MemberClaim = {
   ...PROCESSING,
@@ -97,9 +100,15 @@ const BENEFITS: MemberBenefits = {
       deductible_cents: 25000,
       oop_met_cents: 399800,
       oop_max_cents: 400000,
+      // The calculator's: nothing left of the deductible (100%); 4000.00 - 3998.00 = 2.00 left,
+      // 99.95% used.
+      deductible_left_cents: 0,
+      deductible_met_bps: 10000,
+      oop_left_cents: 200,
+      oop_met_bps: 9995,
     },
   ],
-  visits: [{ benefit_category: "REHAB_THERAPY", visit_limit: 20, visits_used: 13 }],
+  visits: [{ benefit_category: "REHAB_THERAPY", visit_limit: 20, visits_used: 13, visits_left: 7, used_bps: 6500 }],
 };
 const PROFILE: MemberProfile = {
   member_id: "MBR-000152",
@@ -220,7 +229,7 @@ describe("a member's pages", () => {
     expect(await screen.findByText("Not found: claim CLM-DEMO-04 not found")).toBeInTheDocument();
   });
 
-  it("shows the benefits as the API sends them, computing nothing", async () => {
+  it("shows the benefits as the API sends them, what is left included, computing nothing", async () => {
     serve({ ...ME, "/v1/member/benefits": { status: 200, body: BENEFITS } });
     openAt("/member/benefits");
 
@@ -230,12 +239,16 @@ describe("a member's pages", () => {
     expect(within(inNetwork).getByText("of a $250.00 deductible")).toBeInTheDocument();
     expect(within(inNetwork).getByText("$3,998.00")).toBeInTheDocument();
     expect(within(inNetwork).getByText("of a $4,000.00 out-of-pocket maximum")).toBeInTheDocument();
-    expect(screen.queryByText(/\$2\.00|\$0\.00|remaining|left/i)).not.toBeInTheDocument(); // no subtraction
+    // What is left and the bars are the API's (the calculator's, D-MEM-5), as sent.
+    expect(within(inNetwork).getByText("Met for this year")).toBeInTheDocument();
+    expect(within(inNetwork).getByText("$2.00 to go before you pay no more cost share for covered care")).toBeInTheDocument();
+    expect(within(inNetwork).getByRole("meter", { name: "Out-of-pocket spent" })).toHaveAttribute("aria-valuenow", "99.95");
     expect(screen.queryByRole("region", { name: "Out of network" })).not.toBeInTheDocument();
     expect(screen.getByText("Your plan covers in-network care only.")).toBeInTheDocument();
     const visits = within(screen.getByRole("table", { name: "Visits" })).getByRole("row", { name: /Rehab therapy/ });
     expect(within(visits).getByText("13")).toBeInTheDocument();
     expect(within(visits).getByText("20")).toBeInTheDocument();
+    expect(within(visits).getByText("7")).toBeInTheDocument(); // visits left, as sent
     expect(screen.getByText(/ClaimSense HMO Select \(HMO\), benefit year 01\/01\/2026 to 12\/31\/2026/)).toBeInTheDocument();
   });
 

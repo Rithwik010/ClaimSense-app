@@ -1,19 +1,42 @@
 // My claims (a member's home, D-MEM-1): the claims in which the member is the patient, the latest
 // changed first. A claim shows "Being processed" until it is final, and nothing else of its outcome;
 // once final, its outcome and, when the plan calculated it, what the plan paid and what the member
-// may owe, as the API sends them (the page computes nothing). Open a claim for its explanation of
-// benefits. On a phone each claim is a card (as on the EOB page), so its status shows at once.
+// may owe, as the API sends them (the page computes nothing); a claim on hold has paid nothing yet
+// and says so. Each claim names its services in plain words (D-MEM-2) and any appeal (D-APL-1). Open
+// a claim for its explanation of benefits. On a phone each claim is a card (as on the EOB page), so
+// its status shows at once.
 
 import { Link } from "react-router";
 
 import { useMemberClaims } from "@/api/hooks";
 import type { MemberClaim } from "@/api/types";
-import { Chip } from "@/components/Chip";
+import { Chip, PlainBadge } from "@/components/Chip";
 import { PageTitle } from "@/components/Layout";
 import { EmptyState, ErrorNotice, Skeleton } from "@/components/States";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { dateOnly, money } from "@/lib/format";
 import { memberOutcome } from "@/lib/labels";
+
+function planPaid(claim: MemberClaim): string {
+  if (!claim.final) return "—";
+  return claim.outcome === "PENDED" ? "On hold" : money(claim.plan_pays_cents);
+}
+
+function youOwe(claim: MemberClaim): string {
+  if (!claim.final || claim.outcome === "PENDED") return "—";
+  return money(claim.patient_pays_cents);
+}
+
+/** The claim's services in plain words: "Office visit…, and 2 more". */
+export function servicesText(services: string[]): string {
+  if (services.length === 0) return "—";
+  return services.length === 1 ? services[0]! : `${services[0]}, and ${services.length - 1} more`;
+}
+
+function AppealBadge({ claim }: { claim: MemberClaim }) {
+  if (!claim.appeal) return null;
+  return <PlainBadge>{claim.appeal.status === "OPEN" ? "Appeal under review" : "Appeal decided"}</PlainBadge>;
+}
 
 function ClaimLink({ claim }: { claim: MemberClaim }) {
   return (
@@ -36,19 +59,25 @@ function Cards({ claims }: { claims: MemberClaim[] }) {
             <ClaimLink claim={claim} />
             <Chip label={memberOutcome(claim.outcome)} />
           </div>
+          <p className="mt-2 text-[15px]">{servicesText(claim.services)}</p>
           <p className="mt-1 text-[13px] text-ink-muted">
             Date of service {dateOnly(claim.service_date)}
             {claim.provider_name ? ` · ${claim.provider_name}` : ""}
           </p>
+          {claim.appeal && (
+            <p className="mt-2">
+              <AppealBadge claim={claim} />
+            </p>
+          )}
           {claim.final && claim.plan_pays_cents !== null && (
             <dl className="mt-3 grid grid-cols-2 gap-x-4 border-t border-rules pt-3 text-[14px]">
               <div>
                 <dt className="text-ink-muted">Plan paid</dt>
-                <dd className="font-semibold tabular-nums">{money(claim.plan_pays_cents)}</dd>
+                <dd className="font-semibold tabular-nums">{planPaid(claim)}</dd>
               </div>
               <div>
                 <dt className="text-ink-muted">You may owe</dt>
-                <dd className="font-semibold tabular-nums">{money(claim.patient_pays_cents)}</dd>
+                <dd className="font-semibold tabular-nums">{youOwe(claim)}</dd>
               </div>
             </dl>
           )}
@@ -80,6 +109,7 @@ export function MemberClaims() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Claim</TableHead>
+                  <TableHead>Care</TableHead>
                   <TableHead>Date of service</TableHead>
                   <TableHead>Provider</TableHead>
                   <TableHead>Status</TableHead>
@@ -93,17 +123,17 @@ export function MemberClaims() {
                     <TableCell>
                       <ClaimLink claim={claim} />
                     </TableCell>
+                    <TableCell className="max-w-[20rem] min-w-48">{servicesText(claim.services)}</TableCell>
                     <TableCell className="whitespace-nowrap tabular-nums">{dateOnly(claim.service_date)}</TableCell>
                     <TableCell className="min-w-40">{claim.provider_name ?? "—"}</TableCell>
                     <TableCell>
-                      <Chip label={memberOutcome(claim.outcome)} />
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
+                        <Chip label={memberOutcome(claim.outcome)} />
+                        <AppealBadge claim={claim} />
+                      </span>
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap tabular-nums">
-                      {claim.final ? money(claim.plan_pays_cents) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap tabular-nums">
-                      {claim.final ? money(claim.patient_pays_cents) : "—"}
-                    </TableCell>
+                    <TableCell className="text-right whitespace-nowrap tabular-nums">{planPaid(claim)}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap tabular-nums">{youOwe(claim)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

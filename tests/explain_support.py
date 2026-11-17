@@ -18,6 +18,16 @@ from app.domain.contracts import AmountTotals, ClaimStatus, DecisionRecord, Line
 MONEY = re.compile(r"-?\$[\d,]+\.\d{2}")
 CODE = re.compile(r"\b(?:RJ|DN|PD)_[A-Z0-9_]+\b|\bMODEL_OUTPUT_INVALID\b")
 DECISIONS = {"APPROVE": "Approved", "DENY": "Denied", "PEND": "Needs information"}
+STATUSES = {  # the summary's status label of each claim status, one each
+    "FINAL_APPROVED": "Approved",
+    "FINAL_DENIED": "Denied",
+    "FINAL_PENDED": "Needs information",
+    "FINAL_PARTIAL": "Partly approved",
+    "REJECTED": "Rejected",
+    "DENIED_BY_RULE": "Denied by a rule",
+    "PENDED_BY_RULE": "Needs information (a rule)",
+    "AWAITING_REVIEW": "Awaiting review",
+}
 AMOUNT_LABELS = {
     "billed_cents": "Billed",
     "allowed_cents": "Allowed",
@@ -93,7 +103,7 @@ def mismatches(record: DecisionRecord, text: str) -> list[str]:
             problems.append(f"{name}: explanation {got!r}, record {want!r}")
 
     summary = parts.get("Summary", [])
-    check("status", any(f"({record.status.value})" in s for s in summary[:1]), True)
+    check("status", [s.strip() for s in summary[:1]], [f"Status: {STATUSES[record.status.value]}"])
 
     # Lines: decision, reason codes and amounts of each.
     blocks: dict[int, dict] = {}

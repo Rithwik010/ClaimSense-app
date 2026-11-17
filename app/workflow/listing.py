@@ -11,7 +11,8 @@ from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db.models import Claim, Provider
+from app.calculator.progress import total_cents
+from app.db.models import Appeal, Claim, Provider
 from app.domain.contracts import ClaimDecision, ClaimStatus, ReviewTier
 from app.explain.codes import Adjustment, adjustments, procedure_codes
 from app.explain.reasons import ClaimReason, claim_outcome, shown_reasons
@@ -47,6 +48,37 @@ class ClaimSummary:
     provider_name: str | None = None  # when the reference data knows it
     outcome: str = "NOT_PROCESSED"  # app.explain.reasons.claim_outcome
     reasons: list[ClaimReason] = field(default_factory=list)  # shown_reasons
+    # As filed (D-UI-12): the patient's name, the first date of service and the lines' charges.
+    patient_name: str | None = None
+    service_date: date | None = None
+    billed_cents: int | None = None
+    appeal_open: bool = False  # an appeal waits for a reviewer (D-APL-1)
+
+
+def _patient_name(claim: dict) -> str | None:
+    patient = claim.get("patient")
+    if not isinstance(patient, dict):
+        return None
+    name = " ".join(str(patient.get(k) or "").strip() for k in ("first_name", "last_name")).strip()
+    return name or None
+
+
+def _filed(claim: dict) -> tuple[date | None, int | None]:
+    """The first date of service and the sum of the lines' charges, as filed."""
+    lines = [line for line in claim.get("service_lines") or [] if isinstance(line, dict)]
+    days = []
+    for line in lines:
+        try:
+            days.append(date.fromisoformat(str(line.get("date_of_service"))))
+        except ValueError:
+            continue
+    charges = [line.get("charge_cents") for line in lines]
+    billed = (
+        total_cents(c for c in charges if isinstance(c, int) and not isinstance(c, bool) and c >= 0)
+        if lines
+        else None
+    )
+    return (min(days) if days else None), billed
 
 
 def claim_summaries(
@@ -59,9 +91,15 @@ def claim_summaries(
     if provider_id is not None:
         query = query.where(Claim.provider_id == provider_id)
     found = []
+    appealed = set(session.scalars(select(Appeal.claim_id).where(Appeal.status == "OPEN")))
     for row in session.scalars(query):
         try:
-            record = latest_record(session, row.claim_id)
+            # A claim reopened for its provider (D-FUP-1) is listed as not processed yet.
+            record = (
+                latest_record(session, row.claim_id)
+                if row.status != ClaimStatus.RECEIVED.value
+                else None
+            )
         except ValidationError:  # a record stored under an older contract: listed without it
             record = None
         totals = record.amounts.totals if record and record.amounts else None
@@ -70,6 +108,7 @@ def claim_summaries(
         provider = session.get(Provider, npi) if npi else None
         status = ClaimStatus(row.status)
         outcome = claim_outcome(status, record)
+        service_day, billed = _filed(row.intake)
         found.append(
             ClaimSummary(
                 claim_id=row.claim_id,
@@ -93,6 +132,10 @@ def claim_summaries(
                 provider_name=provider.name if provider else None,
                 outcome=outcome,
                 reasons=shown_reasons(outcome, record),
+                patient_name=_patient_name(row.intake),
+                service_date=service_day,
+                billed_cents=billed,
+                appeal_open=row.claim_id in appealed,
             )
         )
     return found

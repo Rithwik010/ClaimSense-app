@@ -312,7 +312,16 @@ PROVIDERS = frozenset({"provider"})
 REVIEWERS = frozenset({"reviewer"})
 ADMINS = frozenset({"admin"})
 # Values for the path parameters of the route templates.
-PATH_VALUES = {"claim_id": CLAIM, "file_no": "1", "plan_id": "PLN-PPO-GOLD"}
+PATH_VALUES = {
+    "claim_id": CLAIM,
+    "file_no": "1",
+    "plan_id": "PLN-PPO-GOLD",
+    "username": "nobody-here",  # no such user: 404 after the role check, nothing changes
+    "policy_id": "POL-IMG-001",
+}
+# Bodies refused after the role check, so the matrix changes nothing for the requests after it.
+WRONG_PASSWORD = {"json": {"current_password": "not-the-password", "new_password": "a-new-one-1"}}
+SHORT_REASON = {"json": {"reason": "short"}}  # 422: a reason has 10 to 2000 characters
 CORRECTION = {"json": {"corrections": [{"field": "billing_npi", "value": "1234567893"}]}}
 OTHER_REVIEW = {  # a review of another claim: refused (422) after the role check
     "json": {
@@ -360,6 +369,33 @@ ROUTE_ACCESS: dict[tuple[str, str], tuple[frozenset[str], dict[str, Any]]] = {
     ("GET", "/v1/member/claims/{claim_id}/eob"): (MEMBERS, {}),
     ("GET", "/v1/member/benefits"): (MEMBERS, {}),
     ("GET", "/v1/member/profile"): (MEMBERS, {}),
+    # Follow-ups, appeals and feedback (D-FUP-1, D-APL-1, D-FBK-1): CLAIM awaits review, so each
+    # is refused (409 or 422) after the role check.
+    ("POST", "/v1/claims/{claim_id}/reopen"): (PROVIDERS, {}),
+    ("POST", "/v1/claims/{claim_id}/documentation"): (PROVIDERS, {"json": {"text": "More."}}),
+    ("POST", "/v1/claims/{claim_id}/appeal"): (PROVIDERS, SHORT_REASON),
+    ("POST", "/v1/claims/{claim_id}/feedback"): (REVIEWERS, {"json": {"lines": []}}),
+    ("GET", "/v1/claims/{claim_id}/review/others"): (REVIEWERS, {}),
+    ("POST", "/v1/member/claims/{claim_id}/appeal"): (MEMBERS, SHORT_REASON),
+    ("GET", "/v1/member/plan-summary"): (MEMBERS, {}),
+    # Everyone's own (D-AUTH-2, D-NTF-1).
+    ("POST", "/v1/auth/password"): (EVERYONE | MEMBERS, WRONG_PASSWORD),
+    ("GET", "/v1/notifications"): (EVERYONE | MEMBERS, {}),
+    # The policy library (D-POL-9): the people who work with claims.
+    ("GET", "/v1/policies"): (EVERYONE, {}),
+    ("GET", "/v1/policies/{policy_id}"): (EVERYONE, {}),
+    # The admin's (D-AUTH-2, D-AUD-1, D-QLT-1, D-FBK-1).
+    ("GET", "/v1/users"): (ADMINS, {}),
+    ("POST", "/v1/users"): (
+        ADMINS,
+        {"json": {"username": "new-user", "role": "reviewer", "password": "short"}},
+    ),
+    ("POST", "/v1/users/{username}/password"): (ADMINS, {"json": {"password": "long-enough-1"}}),
+    ("POST", "/v1/users/{username}/active"): (ADMINS, {"json": {"active": True}}),
+    ("POST", "/v1/users/{username}/unlock"): (ADMINS, {}),
+    ("GET", "/v1/audit/events"): (ADMINS, {}),
+    ("GET", "/v1/metrics/quality"): (ADMINS, {}),
+    ("GET", "/v1/metrics/training-examples"): (ADMINS, {}),
 }
 # Public routes (D-AUTH-1: login, logout and /health), always served.
 PUBLIC_ROUTES = {("POST", "/v1/auth/login"), ("POST", "/v1/auth/logout"), ("GET", "/health")}

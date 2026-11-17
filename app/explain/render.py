@@ -13,11 +13,13 @@ not documented, in the criterion text of the context package.
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from datetime import UTC, date, datetime
 from typing import Any
 
 from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescape
 
 from app.domain.contracts import (
+    ClaimDecision,
     ClaimStatus,
     CriterionResult,
     CriterionStatus,
@@ -25,6 +27,8 @@ from app.domain.contracts import (
     LineAmounts,
     LineDecision,
     RetrievedCriterion,
+    ReviewActionType,
+    ReviewTier,
 )
 from app.explain.codes import adjustments
 
@@ -71,6 +75,21 @@ STATUS_LABELS = {
     ClaimStatus.PENDED_BY_RULE: "Needs information (a rule)",
     ClaimStatus.AWAITING_REVIEW: "Awaiting review",
 }
+CLAIM_DECISION_LABELS = {
+    ClaimDecision.APPROVE: "Approve",
+    ClaimDecision.DENY: "Deny",
+    ClaimDecision.PEND: "Needs information",
+    ClaimDecision.PARTIAL: "Partly approve",
+}
+TIER_LABELS = {
+    ReviewTier.QUICK: "Quick",
+    ReviewTier.STANDARD: "Standard",
+    ReviewTier.FULL: "Full",
+}
+ACTION_LABELS = {
+    ReviewActionType.ACCEPT: "Accepted the recommendation",
+    ReviewActionType.OVERRIDE: "Changed the recommendation",
+}
 CRITERION_LABELS = {
     CriterionStatus.MET: "met",
     CriterionStatus.NOT_MET: "not met",
@@ -109,6 +128,16 @@ def guarded(output_errors: list[str]) -> set[tuple[int, str]]:
         for entry in output_errors
         if (m := GUARD_NOTE.match(entry))
     }
+
+
+def when(value: date | datetime | None) -> str | None:
+    """A record's time as people read it: to the second, in UTC, said so; a day as YYYY-MM-DD."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        moment = value if value.tzinfo else value.replace(tzinfo=UTC)
+        return moment.astimezone(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+    return value.isoformat()
 
 
 def money(cents: int) -> str:
@@ -222,9 +251,15 @@ def view(
         "claim_id": record.claim_id,
         "status": record.status.value,
         "status_label": STATUS_LABELS.get(record.status, record.status.value),
-        "claim_decision": record.claim_decision.value if record.claim_decision else None,
-        "review_tier": record.review_tier.value if record.review_tier else None,
-        "timestamps": record.timestamps,
+        "claim_decision": (
+            CLAIM_DECISION_LABELS[record.claim_decision] if record.claim_decision else None
+        ),
+        "review_tier": TIER_LABELS[record.review_tier] if record.review_tier else None,
+        "timestamps": {
+            "received": when(record.timestamps.received),
+            "processed": when(record.timestamps.processed),
+            "finalized": when(record.timestamps.finalized),
+        },
         "rules": [
             {
                 "rule_id": r.rule_id,
@@ -253,8 +288,8 @@ def view(
         "review": (
             {
                 "reviewer_id": review.reviewer_id,
-                "action": review.action.value,
-                "timestamp": review.timestamp,
+                "action": ACTION_LABELS[review.action],
+                "timestamp": when(review.timestamp),
                 "reason": review.reason or "",
                 "overrides": [
                     {

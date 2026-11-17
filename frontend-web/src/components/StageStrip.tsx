@@ -51,7 +51,7 @@ function intakeStage(view: { source_format: ClaimView["source_format"]; field_co
 export function providerStages(view: ProviderClaimView): Stage[] {
   const seen = new Set(view.stages);
   const byChecks = seen.has("AUTO_OUTCOME");
-  const outcome = providerOutcome(view.outcome).label;
+  const outcome = providerOutcome(view.outcome, view.status).label;
   const step = (name: string, events: string[], result: string): Stage =>
     events.some((e) => seen.has(e))
       ? { name, state: "done", result }
@@ -68,7 +68,13 @@ export function providerStages(view: ProviderClaimView): Stage[] {
         ? { name: "Review", state: "not-reached", result: "Not needed: decided by the checks" }
         : { name: "Review", state: "done", result: outcome }
       : view.status === "IN_REVIEW"
-        ? { name: "Review", state: "waiting", result: "Waiting for a reviewer" }
+        ? {
+            name: "Review",
+            state: "waiting",
+            result: view.appeals?.some((a) => a.status === "OPEN")
+              ? "Appealed: another reviewer decides"
+              : "Waiting for a reviewer",
+          }
         : { name: "Review", state: "not-reached", result: "Not processed yet" },
   ];
 }

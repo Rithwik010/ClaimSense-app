@@ -34,17 +34,20 @@ export function StatusChip({ status, showHint }: { status: ClaimStatus; showHint
   return <Chip label={STATUS[status]} showHint={showHint} />;
 }
 
-/** A claim's outcome, as the API names it (D-UI-6); `provider`: in review until final. */
+/** A claim's outcome, as the API names it (D-UI-6); `provider`: not processed, then in review
+ * until final (`status` tells a claim not processed yet apart). */
 export function OutcomeChip({
   outcome,
   showHint,
   provider = false,
+  status,
 }: {
   outcome: Outcome;
   showHint?: boolean;
   provider?: boolean;
+  status?: string;
 }) {
-  return <Chip label={provider ? providerOutcome(outcome) : OUTCOME[outcome]} showHint={showHint} />;
+  return <Chip label={provider ? providerOutcome(outcome, status) : OUTCOME[outcome]} showHint={showHint} />;
 }
 
 export function DecisionChip({ decision, showHint }: { decision: LineDecision; showHint?: boolean }) {

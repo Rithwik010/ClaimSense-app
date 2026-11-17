@@ -1,5 +1,8 @@
 // The claim's service lines, each expanding to its criteria with their status and quote (motion
 // moment 2: the line opens and closes). Selecting a criterion with a quote shows it in the note.
+// The criteria that decide a line come first (not met, then not documented, then met); those that
+// do not apply to the service are folded under one line to open (fix 2). Every line names its
+// procedure code and plain name, a rule-decided line too.
 
 import { ChevronDown, CircleCheck, CircleDashed, CircleMinus, CircleX } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -24,6 +27,14 @@ export function quoteKey(lineNo: number, criterionId: string): string {
   return `${lineNo}:${criterionId}`;
 }
 
+/** The order criteria are shown in: what decides the line first. */
+const WEIGHT: Record<string, number> = { NOT_MET: 0, NOT_DOCUMENTED: 1, MET: 2, NOT_APPLICABLE: 3 };
+
+export interface LineProcedure {
+  code: string;
+  name?: string | null;
+}
+
 function LinePanel({
   record,
   line,
@@ -34,10 +45,12 @@ function LinePanel({
   actions,
   status,
   codes = [],
+  procedure,
 }: {
   record: DecisionRecord;
   line: FinalLineDecision;
   codes?: Adjustment[];
+  procedure?: LineProcedure;
   open: boolean;
   onToggle: () => void;
   onQuote: (key: string) => void;
@@ -55,8 +68,17 @@ function LinePanel({
       .filter((c) => c.lineNo === line.line_no)
       .map((c) => c.criterionId),
   );
-  const criteria = line.source === "RULE" ? [] : (answer?.criteria ?? []);
+  const [folded, setFolded] = useState(true);
+  const all = line.source === "RULE" ? [] : (answer?.criteria ?? []);
+  const statusOf = (c: { criterion_id: string; status: string }) =>
+    unquoted.has(c.criterion_id) ? "NOT_DOCUMENTED" : c.status;
+  const ordered = [...all].sort((a, b) => (WEIGHT[statusOf(a)] ?? 3) - (WEIGHT[statusOf(b)] ?? 3));
+  const notApplying = ordered.filter((c) => statusOf(c) === "NOT_APPLICABLE");
+  const criteria = folded && notApplying.length > 0 && notApplying.length < ordered.length
+    ? ordered.filter((c) => statusOf(c) !== "NOT_APPLICABLE")
+    : ordered;
   const id = `line-${line.line_no}-body`;
+  const code = context?.procedure_code ?? procedure?.code;
   return (
     <div className="surface rounded-lg">
       <div className="flex flex-wrap items-start gap-x-4 gap-y-2 p-4">
@@ -74,8 +96,9 @@ function LinePanel({
           <span className="min-w-0">
             <span className="block font-semibold">
               Line {line.line_no}
-              {context && <span className="ml-2 font-normal text-ink-muted">Procedure {context.procedure_code}</span>}
+              {code && <span className="ml-2 font-normal text-ink-muted">Procedure {code}</span>}
             </span>
+            {procedure?.name && <span className="block text-[14px]">{procedure.name}</span>}
             <span className="block text-[13px] text-ink-muted">
               {SOURCE[line.source] ?? line.source}
               {line.benefit_category && `, ${line.benefit_category.replaceAll("_", " ").toLowerCase()}`}
@@ -165,6 +188,18 @@ function LinePanel({
                   })}
                 </ul>
               )}
+              {notApplying.length > 0 && notApplying.length < ordered.length && (
+                <button
+                  type="button"
+                  aria-expanded={!folded}
+                  onClick={() => setFolded((now) => !now)}
+                  className="text-[14px] font-semibold text-link underline-offset-4 hover:underline"
+                >
+                  {folded
+                    ? `Show ${notApplying.length} criteri${notApplying.length === 1 ? "on" : "a"} that do not apply`
+                    : "Hide the criteria that do not apply"}
+                </button>
+              )}
               {line.decision === "PEND" && line.source !== "RULE" && (
                 <p className="text-[14px]">
                   Awaiting documentation for{" "}
@@ -208,9 +243,12 @@ export function ServiceLines({
   actions,
   status,
   adjustments = [],
+  procedures = {},
 }: {
   record: DecisionRecord;
   adjustments?: Adjustment[];
+  /** Each line's procedure code and plain name, from the claim as filed. */
+  procedures?: Record<number, LineProcedure>;
   onQuote: (key: string) => void;
   activeKey: string | null;
   actions?: (line: FinalLineDecision) => ReactNode;
@@ -248,6 +286,7 @@ export function ServiceLines({
           actions={actions?.(line)}
           status={status?.(line)}
           codes={line.decision === "DENY" ? adjustments.filter((a) => a.line_no === line.line_no) : []}
+          procedure={procedures[line.line_no]}
         />
       ))}
     </div>

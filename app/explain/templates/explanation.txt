@@ -1,7 +1,7 @@
 Claim {{ claim_id }}: explanation
 
 Summary
-  Status: {{ status_label }} ({{ status }})
+  Status: {{ status_label }}
 {% if claim_decision %}
   Claim decision: {{ claim_decision }}
 {% endif %}
@@ -107,7 +107,7 @@ Totals
 
 Review
   Reviewer: {{ review.reviewer_id }}
-  Action: {{ review.action }} at {{ review.timestamp }}
+  Action: {{ review.action }}, {{ review.timestamp }}
 {% if review.reason %}
   Comment: {{ review.reason | oneline }}
 {% endif %}

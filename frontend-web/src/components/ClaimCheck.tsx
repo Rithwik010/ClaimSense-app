@@ -108,13 +108,18 @@ export function ClaimCheckPanel({
   claimId,
   correctable = new Set<string>(),
   onCorrect,
+  autoCheck = false,
 }: {
   claimId: string;
   correctable?: Set<string>;
   onCorrect?: (field: string) => void;
+  /** Check at once, without "Check claim" (Submit claim checks every claim it reads, D-UI-12); a
+   * correction then checks it again, as after "Check claim". */
+  autoCheck?: boolean;
 }) {
-  const [asked, setAsked] = useState(false);
+  const [asked, setAsked] = useState(autoCheck);
   const check = useClaimCheck(claimId, asked);
+  const shown = asked || check.data !== undefined;
   const result = check.data;
   return (
     <Panel className="p-5">
@@ -126,9 +131,9 @@ export function ClaimCheckPanel({
         <Button
           variant="outline"
           disabled={check.isFetching}
-          onClick={() => (asked ? void check.refetch() : setAsked(true))}
+          onClick={() => (shown ? void check.refetch() : setAsked(true))}
         >
-          <ClipboardCheck aria-hidden /> {check.isFetching ? "Checking" : asked ? "Check again" : "Check claim"}
+          <ClipboardCheck aria-hidden /> {check.isFetching ? "Checking" : shown ? "Check again" : "Check claim"}
         </Button>
       </div>
       {asked && check.isPending && (

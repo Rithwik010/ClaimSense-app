@@ -118,3 +118,9 @@ AnyUser = Annotated[AuthUser, Depends(require(Role.PROVIDER, Role.REVIEWER, Role
 member_only = require(Role.MEMBER)  # also the member router's own guard (one check per request)
 MemberUser = Annotated[AuthUser, Depends(member_only)]
 LoggedInUser = Annotated[AuthUser, Depends(require(*Role))]  # any role: who is logged in
+
+# For the routers that share them (users, audit, policies).
+SessionDep = Annotated[Session, Depends(get_session)]
+SettingsDep = Annotated[Settings, Depends(get_settings)]
+# Providers, reviewers and admins: the staff and the providers, every role but members.
+WorkUser = Annotated[AuthUser, Depends(require(Role.PROVIDER, Role.REVIEWER, Role.ADMIN))]
